@@ -1,0 +1,30 @@
+<div ng-style="{height: 'calc(100vh - ' + (gridOffset + 45) + 'px)'}" ui-grid="jobGrid" ui-grid-auto-resize class="job-grid"></div>
+<script type="text/ng-template" id="grid-row.html">
+	<div data-entity="{{row.entity}}" ng-class="{processing: row.entity.status==='Processing', failed: row.entity.status==='Failed'}" 
+	ng-click="grid.appScope.fnOne(row)" ng-repeat="col in colContainer.renderedColumns track by col.colDef.name" class="ui-grid-cell" 
+	ui-grid-cell></div>
+</script>
+<script type="text/ng-template" id="grid-user.html">
+	<div class="ui-grid-cell-contents">
+		<a ui-sref="users.user({user:COL_FIELD})">{{COL_FIELD}}</a>
+	</div>
+</script>
+<script type="text/ng-template" id="grid-status.html">
+	<div class="ui-grid-cell-contents" style="cursor:default" uib-tooltip="{{row.entity.allData.error}}" tooltip-placement="left">
+		{{COL_FIELD}}
+	</div>
+</script>
+<script type="text/ng-template" id="grid-queue.html">
+	<div class="ui-grid-cell-contents">
+		<a ui-sref="queues.queue({queue:COL_FIELD})">{{COL_FIELD}}</a>
+	</div>
+</script>
+<script type="text/ng-template" id="grid-menu.html">
+	<div uib-dropdown>
+		<a uib-dropdown-toggle class="menu close"><span class="glyphicon glyphicon-option-vertical"></span></a>
+		<ul class="dropdown-menu dropdown-menu-right" uib-dropdown-menu dropdown-append-to-body="true" aria-labelledby="simple-dropdown">
+			<li ng-class="{disabled: !row.entity.allData.printed}"><a href ng-click="grid.appScope.refund(row.entity.allData)">{{row.entity.allData.refunded ? 'Un-Refund' : 'Refund'}}</a></li>
+			<li ng-class="{disabled: !row.entity.allData.file}"><a href ng-click="grid.appScope.reprint(row.entity.allData)">Reprint</a></li>
+		</ul>
+	</div>
+</script>

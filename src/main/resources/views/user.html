@@ -1,0 +1,30 @@
+<h2 ng-if="self">Welcome, {{user.salutation}}</h2>
+<h3 ng-if="!self">{{user.displayName}}</h3>
+<div ng-if="!paidFund && !self && !ctfer">		
+	<label class="check">
+	<input type="checkbox" ng-change="setExchange()" ng-model="user.exchange" />
+	<span>Exchange Student</span>
+	</label>
+</div>
+<p ng-if="paidFund || user.exchange || ctfer">{{self?'You':'User'}} {{self?'have':'has'}} <b>{{quota}} pages</b> of {{self?'your':'their'}} term printing quota remaining. </p>
+<ul class="list-unstyled" style="vertical-align:top;display:inline-block;width:calc(50vw - 150px)">
+<li ng-if="probationary||ctfer||freshman">
+	<span ng-if="probationary" class="label label-danger">Probationary</span>
+	<span ng-if="ctfer" class="label label-info" style="background-color: #458A19">CTF Volunteer</span>
+	<span ng-if="freshman" class="label label-primary">Freshman</span>
+</li>
+<li><b>Short Username:</b> {{user.shortUser}}</li>
+<li><b>Long Username:</b> {{user.longUser}}</li>
+<li ng-if="!self && preferredName && preferredName!==user.displayName"><b>Preferred Name:</b> {{preferredName}}</li>
+<li ng-if="self && preferredName && preferredName!==user.displayName"><b>Display Name:</b> {{user.displayName}}</li>
+<li ng-if="user.email!==user.longUser"><b>Email:</b> {{user.email}}</li>
+<li ng-if="!self && user.studentId"><b>ID:</b> <span style="cursor:pointer" ng-click="showId()">{{showingId?user.studentId:'Click to show...'}}</span></li>
+<li ng-if="!staff && faculty"><b>Faculty:</b> {{faculty}}</li>
+<li ng-if="staff && department"><b>Department:</b> {{department}}</li>
+<li><b>Current Status:</b> {{grad ? 'Graduate Student' : (staff ? (academicStaff?'Academic Staff':'Staff') : (currentlyStudent?'Active':'Alumnus?'))}}</li>
+<li ng-if="program"><b>Program:</b> {{program}}</li>
+<li><b>{{staff ? 'Employed Since' : (currentlyStudent?'Student Since':'Began Studies')}}:</b> {{studentSince(user)}}</li>
+<li>{{self?'You':'User'}} <b>{{self?((paidFund||user.exchange)?'have':'have not'):((paidFund||user.exchange)?'has':'has not')}}</b> paid into the 21st Century Fund</li>
+</ul>
+<div ng-include="'views/acct-options.html'" ng-controller="AcctOptionsCtrl" style="vertical-align:top;display:inline-block;width:calc(50vw - 155px)"></div>
+<job-grid show-queue ng-if="paidFund || user.exchange || ctfer" grid-model="jobs || []"></job-grid>

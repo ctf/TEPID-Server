@@ -1,0 +1,49 @@
+<form class="login" style="position:relative;top:calc(50vh - 400px)" ng-submit="login()">
+	<h1><span style="display:block;margin:0 auto 25px auto">Welcome to </span><img style="display:block;margin:0 auto;max-height:18vh;min-height:140px" alt="TEPID" src="images/logo_black.svg" /></h1>
+	<div ng-if="adminConfigured" class="card signin-card">
+		<h2 ng-style="{opacity:error?0:1}"><span class="glyphicon glyphicon-lock"></span> Sign In To Your Account</h2>
+		<h2 ng-style="{opacity:error?1:0}"class="error"><span class="glyphicon glyphicon-remove-circle"></span> Please Try Again</h2>
+		<label class="label-float" ng-class="{filled:!!loginForm.username}">
+		<span>McGill Username</span>
+		<input type="text" ng-model="loginForm.username" autofocus focus-if="true" class="form-control" />
+		</label>
+		<label class="label-float" ng-class="{filled:!!loginForm.password}">
+		<span>Password</span>
+		<input type="password" ng-model="loginForm.password" class="form-control" />
+		</label>
+		<label class="check">
+		<input type="checkbox" ng-model="loginForm.staySignedIn" />
+		<span>Stay signed in</span>
+		</label>
+		<input type="submit" ng-disabled="loggingIn" class="fancy-button fancy-button-submit" ng-value="loggingIn?'Signing in...':'Sign in'" />
+	</div>
+	<div ng-if="!adminConfigured" class="card signin-card">
+		<h2 ng-style="{opacity:error?0:1}"><span class="glyphicon glyphicon-lock"></span> Create a local admin account</h2>
+		<h2 ng-style="{opacity:error?1:0}"class="error"><span class="glyphicon glyphicon-remove-circle"></span> Please Try Again</h2>
+		<label class="label-float" ng-class="{filled:!!newAdmin.givenName}">
+		<span>Given Name</span>
+		<input type="text" ng-model="newAdmin.givenName" autofocus focus-if="true" class="form-control" />
+		</label>
+		<label class="label-float" ng-class="{filled:!!newAdmin.lastName}">
+		<span>Family Name</span>
+		<input type="text" ng-model="newAdmin.lastName" autofocus class="form-control" />
+		</label>
+		<label class="label-float" ng-class="{filled:!!newAdmin.shortUser}">
+		<span>Username</span>
+		<input type="text" ng-model="newAdmin.shortUser" autofocus class="form-control" />
+		</label>
+		<label class="label-float" ng-class="{filled:!!newAdmin.email}">
+		<span>Email</span>
+		<input type="text" ng-model="newAdmin.email" autofocus class="form-control" />
+		</label>
+		<label class="label-float" ng-class="{filled:!!newAdmin.password}">
+		<span>Password</span>
+		<input type="password" ng-model="newAdmin.password" class="form-control" />
+		</label>
+		<label class="check">
+		<input type="checkbox" ng-model="loginForm.staySignedIn" />
+		<span>Stay signed in</span>
+		</label>
+		<input type="submit" ng-disabled="loggingIn" class="fancy-button fancy-button-submit" ng-value="loggingIn?'Signing in...':'Sign in'" />
+	</div>
+</form>

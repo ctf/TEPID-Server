@@ -1,0 +1,72 @@
+<h1>Queue Configuration</h1>
+<h3>Queues  <button class="btn btn-success btn-sm pull-right" ng-disabled="qChanged || savingQ" ng-click="saveQueues()"><span ng-class="{'glyphicon-floppy-save':savingQ,'glyphicon-floppy-disk':!savingQ}" class="glyphicon"></span></button></h3>
+<uib-accordion>
+	<uib-accordion-group ng-repeat="q in queues" heading="{{in.waffl.q.name}}" template-url="accordion-group.html">
+		<ul class="list-unstyled" style="min-height:250px">
+		<li class="form-inline"><label for="do-{{$index}}">Default on:</label> <input id="do-{{$index}}" placeholder="520-*" type="text" class="form-control" ng-model="in.waffl.q.defaultOn"/></li>
+		<li><label for="lb-{{$index}}">Load balancer </label><input id="lb-{{$index}}" type="text" class="form-control" ng-model="in.waffl.q.loadBalancer"/></li>
+		<li>
+			<label>Destinations </label>
+			<div class="dest-list">
+				<span ng-repeat="d in in.waffl.q.destinations">{{destinations[d].name + ($last?'':'; ')}}</span>
+				<span><a ng-mouseenter="openDestMenu(q, $event)"><span class="glyphicon glyphicon-plus"></span></a></span>
+				<div class="tooltip bottom tooltip-menu" ng-mouseenter="openDestMenu(q, $event)"  ng-mouseleave="closeDestMenu(q)"  ng-class="{open:in.waffl.q.destMenuOpen}"
+				ng-style="destMenuPos(q)" role="tooltip"> 
+					<div class="tooltip-arrow"></div>
+					<div class="tooltip-inner">
+						<ul class="list-unstyled">
+							<li ng-repeat="d in destinations"><a ng-click="addDest(q, d)" ng-class="{disabled:destAssigned(q, d)}">{{d.name}}</a></li>
+						</ul>
+					</div> 
+				</div>
+			</div>
+		</li>
+		</ul>
+	</uib-accordion-group>
+</uib-accordion>
+<div style="position:relative">
+<a class="btn btn-default btn-block" ng-click="startQueue()"><span class="glyphicon glyphicon-plus-sign"></span> Add a Queue</a>
+<form ng-style="{opacity:enterQueue?1:0,'z-index':enterQueue?100:-100}" style="transition:opacity 0.4s ease-in-out,z-index 0.4s ease-in-out;position:absolute;top:0;left:0;right:0" ng-submit="addQueue()">
+	<input class="form-control" ng-model="newQueue" ng-blur="blurQueue()" focus-if="enterQueue" type="text" placeholder="Name for new queue" />
+</form>
+</div>
+
+<h3>Destinations <button class="btn btn-success btn-sm pull-right" ng-disabled="destChanged" ng-click="saveDestinations()"><span class="glyphicon glyphicon-floppy-disk"></span></button></h3>
+<uib-accordion>
+	<uib-accordion-group ng-repeat="d in destinations" heading="{{d.name}}" template-url="accordion-group.html">
+		<ul class="list-unstyled">
+		<li><label>Protocol: </label> {{d.protocol}}</li>
+		<li><label for="ph-{{$index}}">Path </label><input id="ph-{{$index}}" type="text" class="form-control" ng-model="d.path"/></li>
+		<li><label for="un-{{$index}}">Username </label><input id="un-{{$index}}" type="text" class="form-control" ng-model="d.username"/></li>
+		<li><label for="pw-{{$index}}">Password </label><input id="pw-{{$index}}" type="password" class="form-control" ng-model="d.password"/></li>
+		<li><label for="dn-{{$index}}">Domain </label><input id="dn-{{$index}}" type="text" class="form-control" ng-model="d.domain"/></li>
+		<li><label for="pm-{{$index}}">PPM </label><input id="pm-{{$index}}" type="text" class="form-control" ng-model="d.ppm"/></li>
+		</ul>
+	</uib-accordion-group>
+</uib-accordion>
+<div style="position:relative">
+<a class="btn btn-default btn-block" ng-click="startDest()"><span class="glyphicon glyphicon-plus-sign"></span> Add a Destination</a>
+<form ng-style="{opacity:enterDest?1:0,'z-index':enterDest?100:-100}" style="transition:opacity 0.4s ease-in-out,z-index 0.4s ease-in-out;position:absolute;top:0;left:0;right:0" ng-submit="addDestination()">
+	<input class="form-control" ng-model="newDest" ng-blur="blurDest()" focus-if="enterDest" type="text" placeholder="Name for new destination" />
+</form>
+</div>
+
+<script type="text/ng-template" id="accordion-group.html">
+<div class="panel" ng-class="panelClass || 'panel-default'" ng-init="o=$parent.q||$parent.d;finishRename=$parent.finishRename;renameKey=$parent.renameKey">
+  <div role="tab" id="{{::headingId}}" aria-selected="{{isOpen}}" class="panel-heading" ng-keypress="toggleOpen($event)">
+    <h4 class="panel-title">
+      <a ng-if="!o.renaming" role="button" data-toggle="collapse" href aria-expanded="{{isOpen}}" aria-controls="{{::panelId}}" tabindex="0" class="accordion-toggle" ng-click="toggleOpen()" uib-accordion-transclude="heading"><span ng-class="{'text-muted': isDisabled}">{{heading}}</span></a>
+		<form ng-if="o.renaming" style="display:inline" ng-submit="finishRename(o)">
+			<input focus-if="o.renaming" ng-blur="finishRename(o)" ng-keydown="renameKey(o, $event)" ng-model="o.name" type="text" class="unstyled" />
+		</form>
+		<span class="pull-right">
+			<a uib-tooltip="Delete" tooltip-popup-delay="800" ng-click="$parent.delete(o)" class="close">&times;</a>
+			<a uib-tooltip="Rename" tooltip-popup-delay="800" ng-click="$parent.rename(o)" class="close"><span class="glyphicon glyphicon-pencil"></span></a>
+		</span>
+    </h4>
+  </div>
+  <div id="{{::panelId}}" aria-labelledby="{{::headingId}}" aria-hidden="{{!isOpen}}" role="tabpanel" class="panel-collapse collapse" uib-collapse="!isOpen">
+    <div class="panel-body" ng-transclude></div>
+  </div>
+</div>
+</script>

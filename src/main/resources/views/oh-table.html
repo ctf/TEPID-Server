@@ -1,0 +1,47 @@
+<h3>{{ slotsMissing() === 0 ? "You have signed up for all your required time slots." : "You need to sign up for " + slotsMissing() + " more 30-minute slot" + (slotsMissing() !== 1 ? "s" : "") + "." }}</h3>
+
+<div class="signup-table">
+	<table class="table">
+		<thead>
+			<tr>
+				<th ng-repeat="header in tableHeaders()">{{ header }}</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr ng-repeat="(day, slotDict) in userOHTable">
+				<th>{{day}}</th>
+				<td ng-repeat="(start, end) in slotDict">{{ start }} - {{ end }}<br></td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+
+<div class="OH-table">
+	<h3>Office Hour Table</h3>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Time</th>
+				<th>Monday</th>
+				<th>Tuesday</th>
+				<th>Wednesday</th>
+				<th>Thursday</th>
+				<th>Friday</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr ng-repeat="timeslot in timeLiteralArray">
+				<td>{{timeslot}}</td>
+				<td ng-repeat="day in days" ng-mouseover="hoverOnButton()" ng-mouseleave="hoverOutButton()">
+					<div class="OH-tooltip" uib-tooltip="{{arrayToString(sortedOfficeHours[day][timeslot])}}" tooltip-placement="top" />
+					<div ng-repeat="name in sortedOfficeHours[day][timeslot]">{{name}}</div>
+					<br ng-if="sortedOfficeHours[day][timeslot].length > 0">
+					<button type="button" class="btn OHButton" ng-if="(undergrad && timeslot < '17:00' || !undergrad) && sortedOfficeHours[day][timeslot].length < 6 && slotsMissing() !== 0 && (userOH.slots[day] === undefined || userOH.slots[day].indexOf(timeslot) == -1)" ng-click="signUp(day, timeslot, true)"><span class="glyphicon glyphicon-plus-sign" ng-show="hoverButton"/></button>
+					<button type="button" class="btn OHButton" ng-if="(undergrad && timeslot < '17:00' || !undergrad) && userOH.slots[day] !== undefined && userOH.slots[day].indexOf(timeslot) > -1" ng-click="signUp(day, timeslot, false)">
+						<span class="glyphicon glyphicon-remove-circle" ng-show="hoverButton"/>
+					</button>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>

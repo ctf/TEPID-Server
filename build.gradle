@@ -1,0 +1,79 @@
+group 'ca.mcgill.science.ctf.tepid'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'war'
+apply plugin: 'com.craigburke.client-dependencies'
+
+sourceCompatibility = 1.8
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.craigburke.gradle:client-dependencies:1.4.0'
+    }
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+        maven { url "https://jitpack.io" }
+    }
+}
+
+clientDependencies {
+    installDir = 'src/main/resources/bower_components'
+    bower {
+        'angular'('^1.6.1')
+        'angular-ui-router'('^0.4.2')
+        'moment'('^2.17.1')
+        'angular-ui-grid'('^3.1.1')
+        'angular-animate'('^1.6.1')
+        'angular-bootstrap'('^1.1.2')
+        'angular-md5'('^0.1.10')
+        'ng-focus-if'('^1.0.4')
+        'angular-loading-bar'('^0.8.0')
+        'pure-uuid'('^1.1.0') {
+            include '**/*.min.js' //include minified files as well
+        }
+        'angular-ui-router-title'('^0.0.4')
+    }
+}
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+
+    compile 'com.github.CTFMcGill:TEPID-commons:d2469a63ae49855957f134dbab65865154f0e9bb'
+
+    // https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils
+    compile group: 'commons-beanutils', name: 'commons-beanutils', version: '1.8.3'
+    // https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-common
+    compile group: 'org.glassfish.jersey.core', name: 'jersey-common', version: '2.25'
+    // https://mvnrepository.com/artifact/org.glassfish.hk2.external/aopalliance-repackaged
+    compile group: 'org.glassfish.hk2.external', name: 'aopalliance-repackaged', version: '2.4.0'
+    // https://mvnrepository.com/artifact/log4j/log4j
+//    compile group: 'log4j', name: 'log4j', version: '1.2.17'
+    // https://mvnrepository.com/artifact/org.glassfish.jersey.containers/jersey-container-servlet
+    compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-servlet', version: '2.25'
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-email
+    compile group: 'org.apache.commons', name: 'commons-email', version: '1.4'
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-jaxb-annotations
+    compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-jaxb-annotations', version: '2.5.4'
+    // https://mvnrepository.com/artifact/org.glassfish.hk2/hk2-locator
+//    compile group: 'org.glassfish.hk2', name: 'hk2-locator', version: '2.4.0'
+    // https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api
+    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.0.1'
+    // https://mvnrepository.com/artifact/org.ow2.asm/asm-debug-all
+//    compile group: 'org.ow2.asm', name: 'asm-debug-all', version: '5.0.4'
+    // https://mvnrepository.com/artifact/org.tukaani/xz
+    compile group: 'org.tukaani', name: 'xz', version: '1.5'
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.jaxrs/jackson-jaxrs-json-provider
+    compile group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-json-provider', version: '2.5.4'
+    // https://mvnrepository.com/artifact/javax.ws.rs/javax.ws.rs-api
+    compile group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'
+    // https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson
+    compile group: 'org.glassfish.jersey.media', name: 'jersey-media-json-jackson', version: '2.22.1'
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.5.4'
+}

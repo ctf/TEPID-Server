@@ -1,0 +1,33 @@
+<div>
+	<h1 class="page-header">Taskforce Endpoint Manager</h1>
+
+	<ul class="nav nav-tabs nav-justified">
+		<li ui-sref-active="active" ng-repeat="(sref, title) in tab">
+			<a ui-sref="{{sref}}">{{title}}</a>
+		</li>
+	</ul>
+	
+	<div class="tab-content">
+		<div class="tab-pane active" ui-view>
+			<div class="endpoint-table">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>User Name</th>
+							<th>Computer Name</th>
+							<th>Last Seen</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat="endpoint in endpoints['rows']">
+							<td>{{endpoint['value']['hardwareInfo']['userName']}}</td>
+							<td>{{endpoint['value']['hardwareInfo']['computerName']}}</td>
+							<td>{{endpoint['value']['lastSeen'] | date:'medium'}}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+</div>

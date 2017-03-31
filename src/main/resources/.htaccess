@@ -1,0 +1,8 @@
+#redirect static pages to dynamic ones
+RewriteEngine on
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-l
+# Main URL rewriting.
+RewriteRule ^(.*)?$ index.html [L]

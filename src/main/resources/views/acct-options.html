@@ -1,0 +1,25 @@
+<ul ng-if="paidFund || user.exchange || ctfer" class="list-unstyled">
+<li><b>Preferred Salutation:</b> <span class="form-inline">
+	<input type="text" class="form-control" ng-model="user.nick" placeholder="{{user.preferredName[1]||user.givenName}}" ng-keydown="keyDown($event)" ng-blur="changeNick()" />
+	<span class="saving-nick glyphicon glyphicon-floppy-disk" ng-class="{visible:savingNick}"></span>
+</span></li>
+<li style="margin:10px 0">
+	<b>Jobs expire after:</b> 
+	<span uib-dropdown>
+		<span uib-dropdown-toggle style="cursor:pointer">{{formatExpiration(user.jobExpiration)}} <span class="caret"></span></span>
+		<ul class="dropdown-menu" uib-dropdown-menu>
+			<li ng-repeat="(k, v) in expirationOptions"><a ng-click="setExpiration(v)" ng-style="{fontWeight:user.jobExpiration===v?'bold':'normal'}" href>{{k}}</a></li>
+		</ul>
+	</span>
+</li>
+<li><b>Colour Printing:</b> <span ng-style="{color:user.colorPrinting&&user.acceptDisclaimer?'green':'red'}" style="cursor:pointer" ng-click="toggleColor()">{{user.colorPrinting?'On':'Off'}}</span></li>
+<li ng-if="user.colorPrinting" style="padding-left:15px">
+	<input type="checkbox" style="vertical-align:top;margin-top:0.35em" ng-model="user.acceptDisclaimer"/> 
+	<span style="display:inline-block;width:calc(100% - 25px);cursor:default" ng-click="user.acceptDisclaimer = !user.acceptDisclaimer">
+		I understand that correct use of the colour printing 
+		feature is my responsibility, and that I will not be refunded 
+		for accidental printing. I know that for every colour page I 
+		print I will be charged for <b>3 pages</b>.
+	</span>
+</li>
+</ul>
