@@ -1,6 +1,6 @@
 # Tepid Web Server
 
-## Setup
+### Setup
 
 1. Firstly, make sure that the IntelliJ project works properly. Download [Tomcat 7.x](https://tomcat.apache.org/download-70.cgi) and make sure the exploded artifact is built and deployed when running.
 
@@ -17,7 +17,7 @@
 
 1. Go to [http://localhost/tepid/](http://localhost/tepid/) and do your magic
 
-## Possible Errors
+### Possible Errors
 
 If you messed up with the tepid link, you may redo it by starting a cmd prompt right in the parent of Apache24 and running
 > mklink /d Apache24\htdocs\tepid %repo%\src\main\resources
@@ -32,7 +32,7 @@ If the files are not showing inside the project, you'll need to manually import 
 
 Keep pressing okay and it should recognize all the modules
 
-## Info
+### Info
 
 Bower components are now added through gradle using [this plugin](https://github.com/craigburke/client-dependencies-gradle).
 Since they are now pushed in the repo, you shouldn't have to reinstall them yourself. Check the plugin docs for more information.
