@@ -22,7 +22,7 @@
 If you messed up with the tepid link, you may redo it by starting a cmd prompt right in the parent of Apache24 and running
 > mklink /d Apache24\htdocs\tepid %repo%\src\main\resources
 
-Where %repo% is the root project directory
+Where `%repo%` is the root project directory
 
 Running and testing tepid requires very specific configurations, that are uploaded to .idea for your convenience. When you import the project through IntelliJ, you can check out from VCS to save all the settings. In the off chance that you import the project and rewrite the configs, you'll need to set up tomcat yourself.
 Tomcat can either be used externally if you know how or through the dropdown beside run &rarr; edit configurations. Make sure the context and paths are set to /tepid/ and that the exploded artifacts are built.
