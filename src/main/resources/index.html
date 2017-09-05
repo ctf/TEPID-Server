@@ -2,7 +2,7 @@
 <html ng-app="tepid">
 <head>
     <title ng-bind="($title ? $title + ' - ' : '') + 'TEPID'">TEPID</title>
-    <base href="/tepid/">
+    <base href="/">
     <link rel="stylesheet" href="style/bootstrap.min.css" type="text/css"/>
     <!-- bower:css -->
     <link rel="stylesheet" href="bower_components/angular-ui-grid/ui-grid.css"/>
@@ -29,6 +29,7 @@
             <a ui-sref="queues.queue({queue:firstQ})"><span class="glyphicon glyphicon-th-list"></span> Queues</a></li>
         <li ng-if="role==='ctfer'||role==='elder'||role==='user'" ui-sref-active="active"><a ui-sref="account"><span
                 class="glyphicon glyphicon-user"></span> My Account</a></li>
+        <li ng-if="role==='ctfer'||role==='elder'"><a target="_blank" href="***REMOVED***"><span class="glyphicon glyphicon-book"></span> Wiki</a></li>
         <!-- admin -->
         <li ng-if="role==='elder'" ui-sref-active="active"><a ui-sref="qconfig"><span
                 class="glyphicon glyphicon-cog"></span> Queue Configuration</a></li>

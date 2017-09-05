@@ -1,7 +1,6 @@
 angular.module('tepid')
 .service('tepidServer', function($rootScope, $http, $log, $q, $timeout, $window) {
-	//~ this.url = '***REMOVED***';
-	this.url = 'http://localhost:8080/tepid';
+	this.url = 'https://tepid.science.mcgill.ca:8443/tepid';
 	var service = this, watchers = {},
 	reqs = {}, pollQueue = function(since, queue) {
 		if (watchers[queue] < 1) return;
@@ -12,7 +11,7 @@ angular.module('tepid')
 			since = response.data.last_seq;
 			if (response.data.results && response.data.results.length) {
 				service._notifyWatchers({changes:response.data.results, queue:queue});
-			} 
+			}
 			pollQueue(since, queue);
 		}, function(){
 			//if long-poll fails
@@ -21,7 +20,7 @@ angular.module('tepid')
 			}, 1000);
 		});
 	};
-		
+
 	var RequestOptions = function() {
 		this.options = {};
 	};
@@ -45,7 +44,7 @@ angular.module('tepid')
 		return new RequestOptions()
 		.addHeader('Authorization', 'Token ' + $window.btoa(service.getSessionUn() + ':' + service.getSessionId()));
 	};
-	
+
 	this.processError = function(err) {
 		if (err.status === 401) {
 			service.session = null;
@@ -54,24 +53,24 @@ angular.module('tepid')
 			$log.error(err);
 		}
 	}
-	
+
 	this.getSession = function() {
 		if (!service.session) {
 			service.session = $rootScope.session;
 		}
 		return service.session;
 	}
-	
+
 	this.getSessionId = function() {
 		var session = service.getSession();
 		return session && session._id ? session._id : '';
 	}
-	
+
 	this.getSessionUn = function() {
 		var session = service.getSession();
 		return session && session.user ? session.user.shortUser : '';
 	}
-	
+
 	this.watchQueue = function(scope, queue, cb) {
 		if (!watchers[queue]) {
 			watchers[queue] = 1;
@@ -87,13 +86,13 @@ angular.module('tepid')
 			});
 		}
 	};
-	
+
 	this._unwatch = function(queue) {
 		watchers[queue]--;
 		//cancel polling for queue no longer being watched
 		if (watchers[queue] < 1 && reqs[queue]) reqs[queue].resolve();
 	};
-	
+
 	this._notifyWatchers = function(data) {
 		$rootScope.$emit('queue-change-' + data.queue, data.changes);
 	};
@@ -131,15 +130,15 @@ angular.module('tepid')
 			});
 		}
 	};
-	
+
 	this.saveQueues = function(queues) {
 		return $http.put(service.url + "/queues", queues, service.getOptions().build());
 	};
-	
+
 	this.deleteQueue = function(id) {
 		return $http.delete(service.url + "/queues/" + id, service.getOptions().build());
 	};
-	
+
 	this.deleteDestination = function(id) {
 		return $http.delete(service.url + "/destinations/" + id, service.getOptions().build());
 	};
@@ -152,14 +151,14 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.saveDestinations = function(destinations) {
 		return $http.put(service.url + "/destinations", destinations, service.getOptions().build()).catch(function(err) {
 			service.processError(err);
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.setDestinationUp = function(id, up, reason) {
 		if (!up && !reason) return;
 		return $http.post(service.url + "/destinations/" + id, {up: up, reason:reason}, service.getOptions().build()).catch(function(err) {
@@ -167,7 +166,7 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	var getPages = function(job, max, queue) {
 		if (!job.processed) return null;
 		if (!max) max = job.pages;
@@ -179,7 +178,7 @@ angular.module('tepid')
 		});
 		return out;
 	};
-	
+
 	this.getUser = function(user) {
 		return $http.get(service.url + "/users/" + user + '?noRedirect', service.getOptions().build()).then(function(response) {
 			return response.data;
@@ -188,7 +187,7 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.setExchange = function(user, exchange) {
 		return $http.put(service.url + "/users/" + user + '/exchange', exchange, service.getOptions().build()).then(function(response) {
 			return response.data;
@@ -197,7 +196,7 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.setNick = function(user, nick) {
 		return $http.put(service.url + "/users/" + user + '/nick', nick, service.getOptions().ignoreLoadingBar().build()).then(function(response) {
 			return response.data;
@@ -206,7 +205,7 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.setColorPrinting = function(user, color) {
 		return $http.put(service.url + "/users/" + user + '/color', color, service.getOptions().build()).then(function(response) {
 			return response.data;
@@ -215,7 +214,7 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.authenticate = function(username, password, persistent) {
 		var deferred = $q.defer();
 		$http.post(service.url + "/sessions/", {username:username,password:password,persistent:persistent}).then(function(response) {
@@ -233,7 +232,7 @@ angular.module('tepid')
 		});
 		return deferred.promise;
 	};
-	
+
 	this.checkSession = function(username, token) {
 		return $http.get(service.url + "/sessions/" + username + "/" + token).then(function(response) {
 			return response.status === 200 && !!response.data;
@@ -250,14 +249,14 @@ angular.module('tepid')
 			}
 		});
 	};
-	
+
 	this.logout = function() {
 		if (service.session) return $http.delete(service.url + "/sessions/" + service.session._id, service.getOptions().build()).then(function(out) {
 			service.session = null;
 			return out;
 		});
 	};
-	
+
 	this.getUserAutoSuggest = function(user) {
 		return $http.get(service.url + "/users/autosuggest/" + user + "?limit=15", service.getOptions().ignoreLoadingBar().build()).then(function(response) {
 			for (var i = 0; i < response.data.length; i++) {
@@ -270,11 +269,11 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.getBarcode = function() {
 		var deferred = $q.defer();
 		return {
-			cancel: deferred, 
+			cancel: deferred,
 			req: $http.get(service.url + "/barcode/_wait", service.getOptions().timeout(deferred.promise).ignoreLoadingBar().build()).then(function(response) {
 				return response.data;
 			}, function(err) {
@@ -283,7 +282,7 @@ angular.module('tepid')
 			})
 		};
 	};
-	
+
 	this.getJobsByUser = function(user) {
 		return $http.get(service.url + "/jobs/" + user, service.getOptions().build()).then(function(response) {
 			var jobs = [];
@@ -308,7 +307,7 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.getJobs = function(queue, limit) {
 		return $http.get(service.url + "/queues/" + queue + (limit?'?limit='+limit:''), service.getOptions().build()).then(function(response) {
 			var jobs = [];
@@ -333,7 +332,7 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.setJobRefunded = function(id, refunded) {
 		return $http.put(service.url + "/jobs/job/" + id + '/refunded', refunded, service.getOptions().build()).then(function(response) {
 			return response.data;
@@ -342,7 +341,7 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.reprintJob = function(id) {
 		return $http.post(service.url + "/jobs/job/" + id + '/reprint', null, service.getOptions().build()).then(function(response) {
 			return response.data;
@@ -351,7 +350,7 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.setJobExpiration = function(sam, expiration) {
 		return $http.put(service.url + "/users/" + sam + '/jobExpiration', expiration, service.getOptions().build()).then(function(response) {
 			return response.data;
@@ -360,7 +359,7 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.getQuota = function(shortUser) {
 		return $http.get(service.url + "/users/" + shortUser + "/quota", service.getOptions().build()).then(function(response) {
 			return response.data;
@@ -369,7 +368,7 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.getAdminConfigured = function() {
 		return $http.get(service.url + "/users/configured", service.getOptions().ignoreLoadingBar().build()).then(function(response) {
 			return response.data;
@@ -378,7 +377,7 @@ angular.module('tepid')
 			return $q(function(resolve,reject){reject(err)});
 		});
 	};
-	
+
 	this.createLocalAdmin = function(newAdmin) {
 		return $http.put(service.url + "/users/" + newAdmin.shortUser, newAdmin, service.getOptions().build()).catch(function(err) {
 			service.processError(err);
@@ -492,7 +491,7 @@ angular.module('tepid')
 			});
 		}
 	};
-	
+
 	this.getEndpoints = function() {
 		return $http.get(service.url + "/endpoints/", service.getOptions().build()).then(function(response) {
 			return response.data;

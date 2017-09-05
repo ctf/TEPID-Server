@@ -30,8 +30,8 @@ import java.util.List;
 
 @Path("/users")
 public class Users {
-	private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/database.html?tepid");
+	private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+	private static final int HashMap = 0;
 
 	@GET
 	@Path("/{sam}")
@@ -49,10 +49,10 @@ public class Users {
 				return Response.seeOther(new URI("users/" + user.shortUser)).build();
 			}
 		} catch (URISyntaxException e) {
-		} 
+		}
 		return Response.ok(user).build();
 	}
-	
+
 	@PUT
 	@Path("/{sam}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -70,7 +70,7 @@ public class Users {
 		String res = couchdb.path("u" + shortUser).request(MediaType.APPLICATION_JSON).put(Entity.entity(newAdmin, MediaType.APPLICATION_JSON)).readEntity(String.class);
 		return Response.ok(res).build();
 	}
-	
+
 	@PUT
 	@Path("/{sam}/exchange")
 	@RolesAllowed({"ctfer", "elder"})
@@ -78,7 +78,7 @@ public class Users {
 	public void setExchange(@PathParam("sam") String sam, boolean exchange) {
 		SessionManager.getInstance().setExchangeStudent(sam, exchange);
 	}
-	
+
 	@PUT
 	@Path("/{sam}/nick")
 	@RolesAllowed({"user", "ctfer", "elder"})
@@ -94,7 +94,7 @@ public class Users {
 		System.out.println("Nick for " + user.shortUser + " set to " + nick);
 		return Response.ok(res).build();
 	}
-	
+
 	@PUT
 	@Path("/{sam}/jobExpiration")
 	@RolesAllowed({"user", "ctfer", "elder"})
@@ -110,7 +110,7 @@ public class Users {
 		System.out.println("Job expiration for " + user.shortUser + " set to " + jobExpiration);
 		return Response.ok(res).build();
 	}
-	
+
 	@PUT
 	@Path("/{sam}/color")
 	@RolesAllowed({"user", "ctfer", "elder"})
@@ -137,7 +137,7 @@ public class Users {
 		}
 		return getQuota(shortUser);
 	}
-	
+
 	int getQuota(String shortUser) {
 		int totalPrinted = 0;
 		Date earliestJob = null;
@@ -151,26 +151,37 @@ public class Users {
 		}
 		User user = SessionManager.getInstance().queryUser(shortUser, null);
 		if (user == null || SessionManager.getInstance().getRole(user) == null) return 0;
-		if (earliestJob == null) return 500;
-		Calendar d1 = Calendar.getInstance(),
-		d2 = Calendar.getInstance();
-		d1.setTime(earliestJob);
-		int m1 = d1.get(Calendar.MONTH) + 1,
-		y1 = d1.get(Calendar.YEAR),
-		m2 = d2.get(Calendar.MONTH) + 1,
-		y2 = d2.get(Calendar.YEAR);
-		return (y2 - y1) * 1000 + ((m2 > 8 && (y1 != y2 || m1 < 8)) ? 1000 : 500) - totalPrinted;
+		if (user == null || SessionManager.getInstance().getRole(user) == null)
+			return 0;
+//		if (earliestJob == null)
+//			return 1000; // TODO should default to current semester's allocation
+//		Calendar d1 = Calendar.getInstance(),
+//		d2 = Calendar.getInstance();
+//		d1.setTime(earliestJob);
+//		int m1 = d1.get(Calendar.MONTH) + 1,
+//		y1 = d1.get(Calendar.YEAR),
+//		m2 = d2.get(Calendar.MONTH) + 1,
+//		y2 = d2.get(Calendar.YEAR);
+//		return (y2 - y1) * 1000 + ((m2 > 8 && (y1 != y2 || m1 < 8)) ? 1500 : 1000) - totalPrinted;
+		HashMap<String, Integer> quotaAllocations = couchdb.path("quotaAllocations").request(MediaType.APPLICATION_JSON).get(HashMap.class);
+		int totalAllocations = 0;
+		for (String semester : quotaAllocations.keySet())
+		{
+			if (user.getStartSemester().compareTo(semester) > -1)
+				totalAllocations += quotaAllocations.get(semester);
+		}
+		return totalAllocations - totalPrinted;
 	}
 
 	@GET
-	@Path("/autosuggest/{like}") 
+	@Path("/autosuggest/{like}")
 	@RolesAllowed({"ctfer", "elder"})
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<User> ldapAutoSuggest(@PathParam("like") String like, @QueryParam("limit") int limit) {
 		Promise<List<User>> resultsPromise = SessionManager.getInstance().autoSuggest(like, limit);
 		return resultsPromise.getResult(20_000);
 	}
-	
+
 	@GET
 	@Path("/configured")
 	@Produces(MediaType.APPLICATION_JSON)

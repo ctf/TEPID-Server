@@ -21,9 +21,11 @@ public class FiftyFifty extends LoadBalancer {
     private final List<Destination> destinations;
     private int currentDest;
     private boolean allDown = true;
+    private QueueManager qM;
 
     public FiftyFifty(QueueManager qm) {
         super(qm);
+        qM = qm;
         this.destinations = new ArrayList<>(qm.queueConfig.destinations.size());
         for (String d : qm.queueConfig.destinations) {
             Destination dest = couchdb.path(d).request(MediaType.APPLICATION_JSON).get(Destination.class);
@@ -31,6 +33,18 @@ public class FiftyFifty extends LoadBalancer {
             if (dest.isUp()) this.allDown = false;
         }
     }
+
+    // hack fix until we rewrite the load balancer, prevents needing to restart TEPID when printer status changes
+    private void refreshDestinationsStatus() {
+      destinations.clear(); // clear out the old Destination objects
+      for (String d : qM.queueConfig.destinations) {
+        Destination dest = couchdb.path(d).request(MediaType.APPLICATION_JSON).get(Destination.class);
+        destinations.add(dest); // replace with shiny new Destination objects
+        if (dest.isUp()) this.allDown  = false;
+      }
+      // maybe we should be concerned about the efficiency of a db query for every dest in the queue on every print job...
+    }
+
 
     /**
      * Cycle through available {@link Destination} and sends job to the first one available
@@ -40,6 +54,7 @@ public class FiftyFifty extends LoadBalancer {
      */
     @Override
     public LoadBalancerResults processJob(PrintJob j) {
+        refreshDestinationsStatus();
         if (allDown) return null;
         do currentDest = (currentDest + 1) % destinations.size(); while (!destinations.get(currentDest).isUp());
         LoadBalancerResults lbr = new LoadBalancerResults();
