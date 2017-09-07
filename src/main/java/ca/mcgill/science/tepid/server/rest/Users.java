@@ -31,7 +31,6 @@ import java.util.List;
 @Path("/users")
 public class Users {
 	private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
-	private static final int HashMap = 0;
 
 	@GET
 	@Path("/{sam}")
@@ -151,8 +150,6 @@ public class Users {
 		}
 		User user = SessionManager.getInstance().queryUser(shortUser, null);
 		if (user == null || SessionManager.getInstance().getRole(user) == null) return 0;
-		if (user == null || SessionManager.getInstance().getRole(user) == null)
-			return 0;
 //		if (earliestJob == null)
 //			return 1000; // TODO should default to current semester's allocation
 //		Calendar d1 = Calendar.getInstance(),

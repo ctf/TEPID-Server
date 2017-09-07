@@ -4,8 +4,10 @@ version '1.0-SNAPSHOT'
 apply plugin: 'java'
 apply plugin: 'war'
 apply plugin: 'com.craigburke.client-dependencies'
+apply plugin: 'com.bmuschko.tomcat'
 
 sourceCompatibility = 1.8
+war.baseName = 'tepid-war'
 
 buildscript {
     repositories {
@@ -13,6 +15,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.craigburke.gradle:client-dependencies:1.4.0'
+        classpath 'com.bmuschko:gradle-tomcat-plugin:2.3'
     }
 }
 
@@ -75,4 +78,13 @@ dependencies {
     compile group: 'org.glassfish.jersey.media', name: 'jersey-media-json-jackson', version: '2.22.1'
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.5.4'
+
+    def tomcatVersion = '7.0.76'
+    tomcat "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}",
+            "org.apache.tomcat.embed:tomcat-embed-logging-juli:${tomcatVersion}",
+            "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}"
+
 }
+
+tomcatRun.contextPath = '/'
+tomcatRunWar.contextPath = '/'
