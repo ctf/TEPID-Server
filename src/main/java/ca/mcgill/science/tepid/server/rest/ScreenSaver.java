@@ -18,14 +18,14 @@ import javax.ws.rs.core.MediaType;
 import java.util.*;
 
 @Path("/screensaver")
-public class ScreenSaver 
+public class ScreenSaver
 {
 	private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
 //	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid/");
-	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@tepid.sus.mcgill.ca:5984/tepid/");
+	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@tepid.science.mcgill.ca:5984/tepid/");
 	/**
-	 * GETs a list of queues  
-	 * @return 	A list of the PrintQueue 
+	 * GETs a list of queues
+	 * @return 	A list of the PrintQueue
 	 */
 	@GET
 	@Path("queues")
@@ -38,19 +38,19 @@ public class ScreenSaver
 				.get(QueueResultSet.class)
 				.rows;
 		List<PrintQueue> out = new ArrayList<>();
-		for (QueueResultSet.Row r : rows) 
+		for (QueueResultSet.Row r : rows)
 		{
 			out.add(r.value);
 		}
 		return out;
 	}
-	
+
 	@JsonInclude(Include.NON_NULL)			//TODO: comment this
 	@JsonIgnoreProperties(ignoreUnknown = true)
-	public static class QueueResultSet 
+	public static class QueueResultSet
 	{
 		@JsonIgnoreProperties(ignoreUnknown = true)
-		public static class Row 
+		public static class Row
 		{
 			@JsonProperty("value")
 			PrintQueue value;
@@ -58,7 +58,7 @@ public class ScreenSaver
 		@JsonProperty("rows")
 		List<Row> rows;
 	}
-	
+
 	/**
 	 * @param queue	The name of the queue to retrieve from
 	 * @param limit	The number of PrintJob to return
@@ -81,10 +81,10 @@ public class ScreenSaver
 				.request(MediaType.APPLICATION_JSON)
 				.get(JobResultSet.class)
 				.rows;
-		Collection<PrintJob> out = new TreeSet<>(new Comparator<PrintJob>() 
+		Collection<PrintJob> out = new TreeSet<>(new Comparator<PrintJob>()
 		{
 			@Override
-			public int compare(PrintJob j1, PrintJob j2) 
+			public int compare(PrintJob j1, PrintJob j2)
 			{
 				Date p1 = j1.getProcessed(), p2 = j2.getProcessed();
 				if (j1.getFailed() != null) p1 = j1.started;
@@ -95,23 +95,23 @@ public class ScreenSaver
 				return p2.compareTo(p1) == 0 ? j2.getId().compareTo(j1.getId()) : p2.compareTo(p1);
 			}
 		});
-		for (Row<List<String>,PrintJob> r : rows) 
+		for (Row<List<String>,PrintJob> r : rows)
 		{
-			out.add(r.value); 
+			out.add(r.value);
 		}
-		if (limit < 0 || limit >= out.size()) 
+		if (limit < 0 || limit >= out.size())
 		{
 			return out;
-		} 
-		else 
+		}
+		else
 		{
 			return new ArrayList<>(out).subList(0, limit);
 		}
 	}
-	
+
 	/**
-	 * Gets the Up status for each Queue. 
-	 * Returns a HashMap<String, Boolean> mapping the Queue name to the up status. 
+	 * Gets the Up status for each Queue.
+	 * Returns a HashMap<String, Boolean> mapping the Queue name to the up status.
 	 * The Up status is determined by whether at least one of the printers associated with the Queue is working.
 	 * It will automatically look up which Destinations are associated with the Queue
 	 * @returnType Map<String, Boolean> as JSON
@@ -127,19 +127,19 @@ public class ScreenSaver
 				.request(MediaType.APPLICATION_JSON)
 				.get(DestinationResultSet.class)
 				.rows;
-		
+
 		List<QueueResultSet.Row> rowQueues = couchdb		//gets a list of the queues
 				.path("_design/main/_view").path("queues")
 				.request(MediaType.APPLICATION_JSON)
 				.get(QueueResultSet.class)
 				.rows;
-		
+
 		Map<String, Destination> destinations = new HashMap <>();
 		for (Row<String,Destination> r : rowDestinations)				//creates a HashMap of the destinations by ID
 		{
 			destinations.put(r.value.getId(), r.value);
 		}
-		
+
 		Map<String, Boolean> out = new HashMap<>();				//declares out
 		for (QueueResultSet.Row q : rowQueues)					//iterates over every queue
 		{
@@ -157,7 +157,7 @@ public class ScreenSaver
 		}
 		return out;
 	}
-	
+
 	/**GETs the data for the marquee
 	 * @returnType List<MarqueeData>
 	 * @return	a list of the marquee messages
@@ -179,10 +179,10 @@ public class ScreenSaver
 			out.add(r.value);
 		}
 		return (out);
-		
+
 	}
-	
-	
+
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("office-hours/on-duty/{timeSlot}")
@@ -190,7 +190,7 @@ public class ScreenSaver
 	{
 		return new OfficeHours().onDuty(timeSlot);
 	}
-	
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("office-hours/checked-in")
@@ -198,9 +198,9 @@ public class ScreenSaver
 	{
 		return new ArrayList<String> (CheckInUtils.getCheckedIn().getCurrentCheckIn().keySet());
 	}
-	
-	
+
+
 	private static class JobResultSet extends ViewResultSet<List<String>,PrintJob> {}
 	private static class DestinationResultSet extends ViewResultSet<String,Destination> {}
-	private static class MarqueeDataResultSet extends ViewResultSet<String,MarqueeData> {}	
+	private static class MarqueeDataResultSet extends ViewResultSet<String,MarqueeData> {}
 }

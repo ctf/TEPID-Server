@@ -26,7 +26,7 @@ import java.util.List;
 public class BarcodeCheckInListener implements ServletContextListener {
 
     private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-    private final WebTarget couchdbBarcodes = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@tepid.sus.mcgill.ca:5984/barcodes");
+    private final WebTarget couchdbBarcodes = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@tepid.science.mcgill.ca:5984/barcodes");
     private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid");
     private static final boolean START = true;
 
