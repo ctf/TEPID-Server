@@ -2,33 +2,8 @@
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio
 
 ## Directory-based project format:
-#.idea/
-# if you remove the above rule, at least ignore the following:
+.idea/
 
-# User-specific stuff:
-.idea/workspace.xml
-.idea/modules.xml
-.idea/tasks.xml
-.idea/dictionaries
-
-# Sensitive or high-churn files:
-.idea/dataSources.ids
-.idea/dataSources.xml
-.idea/sqlDataSources.xml
-#############################################################################
-#
-# .gitignore declares what files should be ignored by git
-#
-#    This particular file is a composite of github's Android and Eclipse 
-#                          files, along with some custom additions.
-#
-#############################################################################
-
-#############################################################################
-# Eclipse related files
-#############################################################################
-
-*.pydevproject
 .metadata
 .gradle
 bin/
@@ -111,3 +86,5 @@ crashlytics.properties
 crashlytics-build.properties
 ### Vagrant template
 .vagrant/
+.idea/inspectionProfiles/
+.idea/webserver.iml
