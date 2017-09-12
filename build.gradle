@@ -46,7 +46,7 @@ clientDependencies {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
 
-    compile 'com.github.CTFMcGill:TEPID-commons:d2469a63ae49855957f134dbab65865154f0e9bb'
+    compile 'com.github.ctf:TEPID-commons:06d31a0f55'
 
     // https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils
     compile group: 'commons-beanutils', name: 'commons-beanutils', version: '1.8.3'
