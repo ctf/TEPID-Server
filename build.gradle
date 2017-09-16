@@ -44,53 +44,37 @@ clientDependencies {
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile "junit:junit:4.12"
 
-    compile 'com.github.ctf:TEPID-commons:06d31a0f55'
-
-    // https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils
-    compile group: 'commons-beanutils', name: 'commons-beanutils', version: '1.8.3'
-    // https://mvnrepository.com/artifact/org.glassfish.jersey.core/jersey-common
-    compile group: 'org.glassfish.jersey.core', name: 'jersey-common', version: '2.25'
-    // https://mvnrepository.com/artifact/org.glassfish.hk2.external/aopalliance-repackaged
-    compile group: 'org.glassfish.hk2.external', name: 'aopalliance-repackaged', version: '2.4.0'
-    // https://mvnrepository.com/artifact/log4j/log4j
-//    compile group: 'log4j', name: 'log4j', version: '1.2.17'
-    // https://mvnrepository.com/artifact/org.glassfish.jersey.containers/jersey-container-servlet
-    compile group: 'org.glassfish.jersey.containers', name: 'jersey-container-servlet', version: '2.25'
-    // https://mvnrepository.com/artifact/org.apache.commons/commons-email
-    compile group: 'org.apache.commons', name: 'commons-email', version: '1.4'
-    // https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-jaxb-annotations
-    compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-jaxb-annotations', version: '2.5.4'
-    // https://mvnrepository.com/artifact/org.glassfish.hk2/hk2-locator
-//    compile group: 'org.glassfish.hk2', name: 'hk2-locator', version: '2.4.0'
-    // https://mvnrepository.com/artifact/javax.servlet/javax.servlet-api
-    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.0.1'
-    // https://mvnrepository.com/artifact/org.ow2.asm/asm-debug-all
-//    compile group: 'org.ow2.asm', name: 'asm-debug-all', version: '5.0.4'
-    // https://mvnrepository.com/artifact/org.tukaani/xz
-    compile group: 'org.tukaani', name: 'xz', version: '1.5'
-    // https://mvnrepository.com/artifact/com.fasterxml.jackson.jaxrs/jackson-jaxrs-json-provider
-    compile group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-json-provider', version: '2.5.4'
-    // https://mvnrepository.com/artifact/javax.ws.rs/javax.ws.rs-api
-    compile group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'
-    // https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson
-    compile group: 'org.glassfish.jersey.media', name: 'jersey-media-json-jackson', version: '2.22.1'
-    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.5.4'
-    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.1'
-// https://mvnrepository.com/artifact/org.jetbrains/annotations
-    compile group: 'org.jetbrains', name: 'annotations', version: '15.0'
-
-
-
+    def jackson_version = '2.9.1'
+    def glassfish_hk2_version = '2.5.0-b54'
+    def glassfish_jersey_version = '2.26'
     def tomcatVersion = '7.0.76'
-    tomcat "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}",
-            "org.apache.tomcat.embed:tomcat-embed-logging-juli:${tomcatVersion}",
-            "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}"
+    
+    compile "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
+    compile "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
+    compile "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:$jackson_version"
+    compile "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:$jackson_version"
+    compile "com.github.ctf:TEPID-commons:06d31a0f55"
+    compile "commons-beanutils:commons-beanutils:1.9.3"
+    compile "javax.servlet:javax.servlet-api:4.0.0"
+    compile "javax.ws.rs:javax.ws.rs-api:2.1"
+    compile "org.apache.commons:commons-email:1.5"
+    compile "org.apache.logging.log4j:log4j-core:2.9.0"
+    compile "org.glassfish.hk2.external:aopalliance-repackaged:$glassfish_hk2_version"
+    compile "org.glassfish.hk2:hk2-locator:$glassfish_hk2_version"
+    compile "org.glassfish.jersey.containers:jersey-container-servlet:$glassfish_jersey_version"
+    compile "org.glassfish.jersey.core:jersey-common:$glassfish_jersey_version"
+    compile "org.glassfish.jersey.media:jersey-media-json-jackson:$glassfish_jersey_version"
+    compile "org.ow2.asm:asm-debug-all:5.2"
+    compile "org.tukaani:xz:1.6"
+    compile "com.google.code.findbugs:jsr305:3.0.2"
+
+    tomcat "org.apache.tomcat.embed:tomcat-embed-core:$tomcatVersion",
+            "org.apache.tomcat.embed:tomcat-embed-logging-juli:$tomcatVersion",
+            "org.apache.tomcat.embed:tomcat-embed-jasper:$tomcatVersion"
 
 }
 
-tomcatRun.contextPath = '/'
-tomcatRunWar.contextPath = '/'
+tomcatRun.contextPath = '/tepid'
+tomcatRunWar.contextPath = '/tepid'

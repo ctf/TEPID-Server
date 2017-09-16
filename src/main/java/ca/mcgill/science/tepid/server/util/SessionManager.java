@@ -7,11 +7,11 @@ import ca.mcgill.science.tepid.common.ViewResultSet;
 import in.waffl.q.Promise;
 import in.waffl.q.Q;
 import org.glassfish.jersey.jackson.JacksonFeature;
-import org.jetbrains.annotations.Nullable;
 import org.mindrot.jbcrypt.BCrypt;
 import shared.Config;
 import shared.ConfigKeys;
 
+import javax.annotation.Nullable;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
