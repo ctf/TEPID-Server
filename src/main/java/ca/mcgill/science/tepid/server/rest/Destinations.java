@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.common.Destination.DestinationTicket;
 import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -29,8 +30,7 @@ import java.util.Map;
 
 @Path("/destinations")
 public class Destinations {
-    private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-    private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid");
+	private final WebTarget couchdb = CouchClient.getTepidWebTarget();
 
     /**
      * Put destination map to CouchDb

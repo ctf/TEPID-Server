@@ -6,6 +6,8 @@ import org.glassfish.jersey.jackson.JacksonFeature;
 import shared.Config;
 import shared.ConfigKeys;
 
+import ca.mcgill.science.tepid.server.util.CouchClient;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -16,8 +18,7 @@ import javax.ws.rs.core.MediaType;
 
 @Path("/barcode")
 public class Barcode {
-    private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-    private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@tepid.sus.mcgill.ca:5984/barcodes");
+	private final WebTarget couchdb = CouchClient.getBarcodesWebTarget();
 
     /**
      * Listen for next barcode event

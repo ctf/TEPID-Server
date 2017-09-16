@@ -31,7 +31,7 @@ import java.util.Map;
 @Path("/check-in")
 public class CheckIn {
     private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-    private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid");
+    private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.COUCHDB_PASSWORD) + "@localhost:5984/tepid");
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

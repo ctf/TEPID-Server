@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.User;
 import ca.mcgill.science.tepid.common.Utils;
 import ca.mcgill.science.tepid.common.ViewResultSet;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import in.waffl.q.Promise;
 import in.waffl.q.Q;
 import org.glassfish.jersey.jackson.JacksonFeature;
@@ -30,8 +31,7 @@ public class SessionManager {
         return instance;
     }
 
-    private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-    private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid");
+    private final WebTarget couchdb = CouchClient.getTepidWebTarget();
 
     private static class UserResultSet extends ViewResultSet<String, User> {
     }

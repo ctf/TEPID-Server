@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.common.Utils;
 import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -35,8 +36,7 @@ import java.util.List;
 
 @Path("/queues")
 public class Queues {
-	private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid");
+	private final WebTarget couchdb = CouchClient.getTepidWebTarget();
 
 	@PUT
 	@RolesAllowed({"elder"})

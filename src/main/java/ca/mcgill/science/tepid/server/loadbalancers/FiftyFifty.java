@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.loadbalancers;
 
 import ca.mcgill.science.tepid.common.Destination;
 import ca.mcgill.science.tepid.common.PrintJob;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import ca.mcgill.science.tepid.server.util.QueueManager;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import shared.Config;
@@ -16,8 +17,7 @@ import java.util.List;
 
 public class FiftyFifty extends LoadBalancer {
 
-    private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-    private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid");
+    private final WebTarget couchdb = CouchClient.getTepidWebTarget();
     private final List<Destination> destinations;
     private int currentDest;
     private boolean allDown = true;

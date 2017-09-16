@@ -11,10 +11,24 @@ public class ConfigSample {
 
     public static String getSetting(ConfigKeys key) {
         switch (key) {
-            case DB_PASSWORD:
-                return "admin";
+	    case COUCHDB_URL:
+		return "";
+     	    case COUCHDB_USERNAME:
+		return "";
+	    case COUCHDB_PASSWORD:
+                return "";
+            case BARCODES_USERNAME:
+		return "";
+            case BARCODES_PASSWORD:
+		return "";
+            case BARCODES_URL:
+		return "";
+            case TEM_URL:
+		return "";
             case RESOURCE_CREDENTIALS:
-                return "test";
+                return "";
+            case LDAP_ENABLED:
+                return "";
             default:
                 System.err.println(String.format("Config key %s not set", key));
                 return null;

@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.gs.GS;
 import ca.mcgill.science.tepid.server.gs.GS.InkCoverage;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import ca.mcgill.science.tepid.server.util.QueueManager;
 import ca.mcgill.science.tepid.server.util.SessionManager;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -35,8 +36,7 @@ public class Jobs {
 	
 	public static final Map<String, Thread> processingThreads = new ConcurrentHashMap<>();
 	
-	private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid");
+	private final WebTarget couchdb = CouchClient.getTepidWebTarget();
 	
 	private static class JobResultSet extends ViewResultSet<String,PrintJob> {}
 	

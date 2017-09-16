@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.rest;
 import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.SessionRequest;
 import ca.mcgill.science.tepid.common.User;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import ca.mcgill.science.tepid.server.util.SessionManager;
 
 import javax.ws.rs.*;

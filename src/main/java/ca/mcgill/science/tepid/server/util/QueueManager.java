@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.common.PrintJob;
 import ca.mcgill.science.tepid.common.PrintQueue;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer.LoadBalancerResults;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import shared.Config;
@@ -21,6 +22,9 @@ import java.util.Map;
 public class QueueManager {
 
 	private static final  Map<String, QueueManager> instances = new HashMap<>();
+	public final PrintQueue queueConfig; 
+	private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+	private final LoadBalancer loadBalancer;
 	
 	public static QueueManager getInstance(String queueName) {
 		synchronized (instances) {
@@ -32,15 +36,9 @@ public class QueueManager {
 	}
 	
 	public static PrintJob assignDestination(String id) {
-		PrintJob j =  ClientBuilder.newBuilder().register(JacksonFeature.class).build().target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid")
-					.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob.class);
+		PrintJob j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob.class);
 		return getInstance(j.getQueueName()).assignDestination(j);
 	}
-	
-	public final PrintQueue queueConfig; 
-	private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid");
-	private final LoadBalancer loadBalancer;
 	
 	private QueueManager(String queueName) {
 		System.out.println("Instantiate queue manager for " + queueName);

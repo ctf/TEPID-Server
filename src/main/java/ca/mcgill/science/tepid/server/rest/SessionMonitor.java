@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.rest;
 import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -19,8 +20,7 @@ import java.util.List;
 
 public class SessionMonitor implements Runnable {
 
-	private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid");
+	private final WebTarget couchdb = CouchClient.getTepidWebTarget();
 	
 	private static class SessionResultSet extends ViewResultSet<String,Session> {}
 	

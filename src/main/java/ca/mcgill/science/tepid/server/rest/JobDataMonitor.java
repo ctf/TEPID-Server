@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.rest;
 import ca.mcgill.science.tepid.common.PrintJob;
 import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import shared.Config;
 import shared.ConfigKeys;
@@ -17,8 +18,7 @@ import java.util.List;
 
 public class JobDataMonitor implements Runnable {
 
-	private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid");
+	private final WebTarget couchdb = CouchClient.getTepidWebTarget();
 	
 	private static class JobResultSet extends ViewResultSet<String,PrintJob> {}
 	

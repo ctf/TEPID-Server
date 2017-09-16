@@ -2,6 +2,8 @@ package ca.mcgill.science.tepid.server.rest;
 
 import org.glassfish.jersey.jackson.JacksonFeature;
 
+import ca.mcgill.science.tepid.server.util.CouchClient;
+
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -13,8 +15,7 @@ import javax.ws.rs.core.MediaType;
 
 @Path("/endpoints")
 public class EndpointManager {
-	private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-	private final WebTarget couchdb = client.target("http://tem.sus.mcgill.ca:5984/endpoints");
+	private final WebTarget couchdb = CouchClient.getTemWebTarget();
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)

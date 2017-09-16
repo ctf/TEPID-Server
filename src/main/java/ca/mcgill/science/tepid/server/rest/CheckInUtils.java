@@ -24,7 +24,7 @@ public class CheckInUtils {
      * @return checkIn data
      */
     public static CheckedIn getCheckedIn() {
-        WebTarget tgt = ClientBuilder.newBuilder().register(JacksonFeature.class).build().target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid").path("_design/main/_view").path("checkin");
+        WebTarget tgt = ClientBuilder.newBuilder().register(JacksonFeature.class).build().target("http://admin:" + Config.getSetting(ConfigKeys.COUCHDB_PASSWORD) + "@localhost:5984/tepid").path("_design/main/_view").path("checkin");
         List<CheckedInResult.Row> checkedInRow = tgt.request(MediaType.APPLICATION_JSON)
                 .get(CheckedInResult.class).rows;
         System.out.println(checkedInRow.get(0).value);

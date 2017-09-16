@@ -18,7 +18,7 @@ import java.util.Set;
 public class UncheckedOHMonitor implements Runnable {
 	
 	private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid");
+	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.COUCHDB_PASSWORD) + "@localhost:5984/tepid");
 	
 	public void run() {
 		WebTarget tgt = couchdb.path("_design/main/_view").path("checkin");

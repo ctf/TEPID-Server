@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.rest;
 
 import ca.mcgill.science.tepid.common.*;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -20,9 +21,8 @@ import java.util.*;
 @Path("/screensaver")
 public class ScreenSaver
 {
-	private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-//	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@localhost:5984/tepid/");
-	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.DB_PASSWORD) + "@tepid.science.mcgill.ca:5984/tepid/");
+	private final WebTarget couchdb = CouchClient.getTepidWebTarget();
+
 	/**
 	 * GETs a list of queues
 	 * @return 	A list of the PrintQueue
