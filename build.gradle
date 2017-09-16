@@ -63,6 +63,7 @@ dependencies {
     compile "org.apache.logging.log4j:log4j-core:2.9.0"
     compile "org.glassfish.hk2.external:aopalliance-repackaged:$glassfish_hk2_version"
     compile "org.glassfish.hk2:hk2-locator:$glassfish_hk2_version"
+    compile "org.glassfish.jersey.inject:jersey-hk2:$glassfish_jersey_version"
     compile "org.glassfish.jersey.containers:jersey-container-servlet:$glassfish_jersey_version"
     compile "org.glassfish.jersey.core:jersey-common:$glassfish_jersey_version"
     compile "org.glassfish.jersey.media:jersey-media-json-jackson:$glassfish_jersey_version"

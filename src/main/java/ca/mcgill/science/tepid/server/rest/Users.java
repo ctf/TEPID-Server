@@ -136,12 +136,7 @@ public class Users {
 		return getQuota(shortUser);
 	}
 
-	//todo check annotations. the headers were not available before
-	@GET
-	@Path("/{sam}/quota")
-	@RolesAllowed({"ctfer", "elder"})
-	@Produces(MediaType.APPLICATION_JSON)
-	public int getQuota(@PathParam("sam") String shortUser) {
+	public int getQuota(String shortUser) {
 		int totalPrinted = 0;
 		Date earliestJob = null;
 		try {
