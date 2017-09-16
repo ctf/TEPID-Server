@@ -1,12 +1,10 @@
 package ca.mcgill.science.tepid.server.rest;
 
-import ca.mcgill.science.tepid.common.Session;
-import ca.mcgill.science.tepid.server.util.CouchClient;
+
 import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.User;
 import ca.mcgill.science.tepid.server.util.CouchClient;
 import ca.mcgill.science.tepid.server.util.SessionManager;
-import ca.mcgill.sus.tepid.server.util.SessionManager;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import in.waffl.q.Promise;
@@ -137,7 +135,12 @@ public class Users {
 		}
 		return getQuota(shortUser);
 	}
-	
+
+	//todo check annotations. the headers were not available before
+	@GET
+	@Path("/{sam}/quota")
+	@RolesAllowed({"ctfer", "elder"})
+	@Produces(MediaType.APPLICATION_JSON)
 	public int getQuota(@PathParam("sam") String shortUser) {
 		int totalPrinted = 0;
 		Date earliestJob = null;
@@ -151,6 +154,8 @@ public class Users {
 		}
 		User user = SessionManager.getInstance().queryUser(shortUser, null);
 		if (user == null || SessionManager.getInstance().getRole(user) == null) return 0;
+
+		//todo verify
 		if (earliestJob == null) return 1000; // init to 1000 for new users
 		Calendar d1 = Calendar.getInstance(),
 		d2 = Calendar.getInstance();

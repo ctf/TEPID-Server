@@ -4,8 +4,10 @@ version '1.0-SNAPSHOT'
 apply plugin: 'java'
 apply plugin: 'war'
 apply plugin: 'com.craigburke.client-dependencies'
+apply plugin: 'com.bmuschko.tomcat'
 
 sourceCompatibility = 1.8
+war.baseName = 'tepid-war'
 
 buildscript {
     repositories {
@@ -13,6 +15,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.craigburke.gradle:client-dependencies:1.4.0'
+        classpath 'com.bmuschko:gradle-tomcat-plugin:2.3'
     }
 }
 
@@ -43,7 +46,7 @@ clientDependencies {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
 
-    compile 'com.github.CTFMcGill:TEPID-commons:d2469a63ae49855957f134dbab65865154f0e9bb'
+    compile 'com.github.ctf:TEPID-commons:06d31a0f55'
 
     // https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils
     compile group: 'commons-beanutils', name: 'commons-beanutils', version: '1.8.3'
@@ -75,4 +78,19 @@ dependencies {
     compile group: 'org.glassfish.jersey.media', name: 'jersey-media-json-jackson', version: '2.22.1'
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.5.4'
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.1'
+// https://mvnrepository.com/artifact/org.jetbrains/annotations
+    compile group: 'org.jetbrains', name: 'annotations', version: '15.0'
+
+
+
+    def tomcatVersion = '7.0.76'
+    tomcat "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}",
+            "org.apache.tomcat.embed:tomcat-embed-logging-juli:${tomcatVersion}",
+            "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}"
+
 }
+
+tomcatRun.contextPath = '/'
+tomcatRunWar.contextPath = '/'
