@@ -31,7 +31,7 @@ public class SessionManager {
         return instance;
     }
 
-    private final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
 
     private static class UserResultSet extends ViewResultSet<String, User> {
     }
@@ -98,6 +98,30 @@ public class SessionManager {
         }
     }
 
+    /*
+     * TODO compare method above against method below (from the old repo)
+    public User authenticate(String sam, String pw) {
+        User dbUser = null;
+        try {
+            if (sam.contains("@")) {
+                UserResultSet results = couchdb.path("_design").path("main").path("_view").path("byLongUser").queryParam("key", "\""+sam.replace("@", "%40")+"\"").request(MediaType.APPLICATION_JSON).get(UserResultSet.class);
+                if (!results.rows.isEmpty()) dbUser = results.rows.get(0).value;
+            } else {
+                dbUser = couchdb.path("u" + sam).request(MediaType.APPLICATION_JSON).get(User.class);
+            }
+        } catch (Exception e) {}
+        if (dbUser != null && dbUser.authType != null && dbUser.authType.equals("local")) {
+            if (BCrypt.checkpw(pw, dbUser.password)) {
+                return dbUser;
+            } else {
+                return null;
+            }
+        } else {
+            return Ldap.authenticate(sam, pw);
+        }
+    }
+    */
+
     /**
      * Retrieve user from Ldap if available, otherwise retrieves from cache
      *
@@ -123,7 +147,7 @@ public class SessionManager {
             } else {
                 return couchdb.path("u" + sam).request(MediaType.APPLICATION_JSON).get(User.class);
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
         return null;
     }
@@ -139,7 +163,9 @@ public class SessionManager {
     User queryUserCache(String sam) {
         User dbUser = getSam(sam);
         if (dbUser == null) return null;
-        dbUser.salutation = dbUser.nick == null ? ((dbUser.preferredName != null && !dbUser.preferredName.isEmpty()) ? dbUser.preferredName.get(dbUser.preferredName.size() - 1) : dbUser.givenName) : dbUser.nick;
+        dbUser.salutation = dbUser.nick == null ?
+                ((dbUser.preferredName != null && !dbUser.preferredName.isEmpty())
+                        ? dbUser.preferredName.get(dbUser.preferredName.size() - 1) : dbUser.givenName) : dbUser.nick;
         return dbUser;
     }
 

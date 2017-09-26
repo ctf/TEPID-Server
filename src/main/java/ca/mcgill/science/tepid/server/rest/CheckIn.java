@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.common.CheckedIn;
 import ca.mcgill.science.tepid.common.EmailReasons;
 import ca.mcgill.science.tepid.common.SignUp;
 import ca.mcgill.science.tepid.server.rest.OfficeHours.SignUpResult;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -30,8 +31,7 @@ import java.util.Map;
 
 @Path("/check-in")
 public class CheckIn {
-    private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-    private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.COUCHDB_PASSWORD) + "@localhost:5984/tepid");
+    private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -88,8 +88,9 @@ public class CheckIn {
 
     /**
      * Sends email
+     *
      * @param heading subject
-     * @param body body
+     * @param body    body
      */
     public static void sendEmail(String heading, String body) {
         System.out.println(body);

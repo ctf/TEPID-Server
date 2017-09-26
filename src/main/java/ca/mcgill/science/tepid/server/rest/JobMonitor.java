@@ -18,7 +18,7 @@ import java.util.List;
 
 public class JobMonitor implements Runnable {
 
-    private final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
 
     private static class JobResultSet extends ViewResultSet<String, PrintJob> {
     }

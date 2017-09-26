@@ -30,7 +30,7 @@ import java.util.Map;
 
 @Path("/destinations")
 public class Destinations {
-	private final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private final WebTarget couchdb = CouchClient.getTepidWebTarget();
 
     /**
      * Put destination map to CouchDb

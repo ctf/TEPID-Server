@@ -15,13 +15,12 @@ import javax.ws.rs.core.MediaType;
 
 @Path("/endpoints")
 public class EndpointManager {
-	private final WebTarget couchdb = CouchClient.getTemWebTarget();
-	
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({"ctfer", "elder"})
-	public String getAuthorizedEndpoints() {
-		WebTarget tgt = couchdb.path("_design/main/_view").path("authorizedEndpoints");
-		return tgt.request(MediaType.APPLICATION_JSON).get(String.class);
-	}
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"ctfer", "elder"})
+    public String getAuthorizedEndpoints() {
+        WebTarget tgt = CouchClient.getTemWebTarget().path("_design/main/_view").path("authorizedEndpoints");
+        return tgt.request(MediaType.APPLICATION_JSON).get(String.class);
+    }
 }

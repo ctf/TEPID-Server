@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.common.CheckedIn;
 import ca.mcgill.science.tepid.common.SignUp;
 import ca.mcgill.science.tepid.common.User;
 import ca.mcgill.science.tepid.server.rest.OfficeHours.SignUpResult;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import ca.mcgill.science.tepid.server.util.SessionManager;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -25,9 +26,9 @@ import java.util.List;
 
 public class BarcodeCheckInListener implements ServletContextListener {
 
-    private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-    private final WebTarget couchdbBarcodes = client.target("http://admin:" + Config.getSetting(ConfigKeys.COUCHDB_PASSWORD) + "@tepid.science.mcgill.ca:5984/barcodes");
-    private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.COUCHDB_PASSWORD) + "@localhost:5984/tepid");
+    private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final WebTarget barcodesdb = CouchClient.getBarcodesWebTarget();
+
     private static final boolean START = true;
 
     private Thread myThread = null;
@@ -35,17 +36,17 @@ public class BarcodeCheckInListener implements ServletContextListener {
     private class BarcodeListener implements Runnable {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
-                JsonNode change = couchdbBarcodes.path("_changes").queryParam("feed", "longpoll")
+                JsonNode change = barcodesdb.path("_changes").queryParam("feed", "longpoll")
                         .queryParam("since", "now").queryParam("include_docs", "true")
                         .request(MediaType.APPLICATION_JSON).get(ObjectNode.class);
-                //New barcode found; parse
                 if (change.get("results").has(0)) {
                     String studentID = change.get("results").get(0).get("doc").get("code").toString().substring(2);
                     SessionManager sm = SessionManager.getInstance();
                     User user = sm.queryUser(studentID, null);
-                    String givenName = user.givenName; //TODO address NPE or remove unused method - Allan
+                    if (user == null) return; //todo verify this is desired. Null check didn't exist before - Allan
+                    String givenName = user.givenName;
                     String shortUser = user.shortUser;
-                    ArrayList<String> hours = new ArrayList<String>();
+                    ArrayList<String> hours = new ArrayList<>();
                     CheckedIn checkedIn = CheckInUtils.getCheckedIn();
 
                     if (checkIfUserHasOH(shortUser, hours) && !CheckInUtils.userCheckedIn(shortUser, checkedIn)) {
@@ -99,7 +100,7 @@ public class BarcodeCheckInListener implements ServletContextListener {
     public void contextDestroyed(ServletContextEvent sce) {
         try {
             myThread.interrupt();
-        } catch (Exception ex) {
+        } catch (Exception ignored) {
         }
     }
 }

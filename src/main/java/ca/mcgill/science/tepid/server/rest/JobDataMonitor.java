@@ -33,7 +33,9 @@ public class JobDataMonitor implements Runnable {
                     if (j.getFile() != null) {
                         try {
                             File f = new File(j.getFile());
-                            if (f.exists()) f.delete();
+                            if (f.exists())
+                                if (!f.delete())
+                                    System.out.println("Failed to delete file");
                         } catch (Exception ignored) {
                         }
                         j.setFile(null);

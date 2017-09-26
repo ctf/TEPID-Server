@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.rest;
 
 import ca.mcgill.science.tepid.common.CheckedIn;
 import ca.mcgill.science.tepid.server.rest.CheckIn.CheckedInResult;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import shared.Config;
 import shared.ConfigKeys;
@@ -15,9 +16,9 @@ import java.util.List;
 import java.util.Map;
 
 public class MoveLateCheckOuts implements Runnable {
-	private final Client client = ClientBuilder.newBuilder().register(JacksonFeature.class).build();
-	private final WebTarget couchdb = client.target("http://admin:" + Config.getSetting(ConfigKeys.COUCHDB_PASSWORD) + "@localhost:5984/tepid");
-	
+
+	private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+
 	public void run() {
 		WebTarget tgtStudent = couchdb.path("_design/main/_view").path("checkin");
 		List<CheckedInResult.Row> rows = tgtStudent.request(MediaType.APPLICATION_JSON).get(CheckedInResult.class).rows;

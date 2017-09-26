@@ -20,28 +20,30 @@ import java.util.List;
 
 public class SessionMonitor implements Runnable {
 
-	private final WebTarget couchdb = CouchClient.getTepidWebTarget();
-	
-	private static class SessionResultSet extends ViewResultSet<String,Session> {}
-	
-	@Override
-	public void run() {
-		try {
-			List<Row<String,Session>> rows = couchdb.path("_design/main/_view").path("sessions").request(MediaType.APPLICATION_JSON).get(SessionResultSet.class).rows;
-			JsonNodeFactory nf = JsonNodeFactory.instance;
-			ObjectNode root = nf.objectNode();
-			ArrayNode docs = root.putArray("docs");
-			for (Row<String,Session> r : rows) {
-				Session s = r.value;
-				if (s.getExpiration().getTime() < System.currentTimeMillis()) {
-					ObjectNode o = nf.objectNode().put("_id", s.getId()).put("_rev", s.getRev()).put("_deleted", true);
-					docs.add(o);
-				}
-			}
-			if (docs.size() > 0) couchdb.path("_bulk_docs").request().post(Entity.entity(root, MediaType.APPLICATION_JSON));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+    private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+
+    private static class SessionResultSet extends ViewResultSet<String, Session> {
+    }
+
+    @Override
+    public void run() {
+        try {
+            List<Row<String, Session>> rows = couchdb.path("_design/main/_view").path("sessions").request(MediaType.APPLICATION_JSON).get(SessionResultSet.class).rows;
+            JsonNodeFactory nf = JsonNodeFactory.instance;
+            ObjectNode root = nf.objectNode();
+            ArrayNode docs = root.putArray("docs");
+            for (Row<String, Session> r : rows) {
+                Session s = r.value;
+                if (s.getExpiration().getTime() < System.currentTimeMillis()) {
+                    ObjectNode o = nf.objectNode().put("_id", s.getId()).put("_rev", s.getRev()).put("_deleted", true);
+                    docs.add(o);
+                }
+            }
+            if (docs.size() > 0)
+                couchdb.path("_bulk_docs").request().post(Entity.entity(root, MediaType.APPLICATION_JSON));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 }
