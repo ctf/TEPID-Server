@@ -18,8 +18,6 @@ import javax.ws.rs.core.MediaType;
 
 @Path("/barcode")
 public class Barcode {
-	private final WebTarget couchdb = CouchClient.getBarcodesWebTarget();
-
     /**
      * Listen for next barcode event
      *
@@ -29,7 +27,7 @@ public class Barcode {
     @Path("/_wait")
     @Produces(MediaType.APPLICATION_JSON)
     public JsonNode getBarcode() {
-        ObjectNode change = couchdb.path("_changes").queryParam("feed", "longpoll").queryParam("since", "now").queryParam("include_docs", "true").request(MediaType.APPLICATION_JSON).get(ObjectNode.class);
+        ObjectNode change = CouchClient.getBarcodesWebTarget().path("_changes").queryParam("feed", "longpoll").queryParam("since", "now").queryParam("include_docs", "true").request(MediaType.APPLICATION_JSON).get(ObjectNode.class);
         System.out.println(change.get("results").get(0).get("doc").asText());
         return change.get("results").get(0).get("doc");
     }

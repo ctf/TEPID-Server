@@ -7,7 +7,8 @@ public abstract class LoadBalancer {
 
 	@SuppressWarnings("unchecked")
 	public static final Class<? extends LoadBalancer>[] loadBalancers = new Class[] {FiftyFifty.class};
-	
+
+	//todo check usage. Surely there's a better way such as enums
 	@SuppressWarnings("unchecked")
 	public static Class<? extends LoadBalancer> getLoadBalancer(String name) {
 		try {
