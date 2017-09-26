@@ -43,7 +43,7 @@ public class BarcodeCheckInListener implements ServletContextListener {
                     String studentID = change.get("results").get(0).get("doc").get("code").toString().substring(2);
                     SessionManager sm = SessionManager.getInstance();
                     User user = sm.queryUser(studentID, null);
-                    String givenName = user.givenName;
+                    String givenName = user.givenName; //TODO address NPE or remove unused method - Allan
                     String shortUser = user.shortUser;
                     ArrayList<String> hours = new ArrayList<String>();
                     CheckedIn checkedIn = CheckInUtils.getCheckedIn();

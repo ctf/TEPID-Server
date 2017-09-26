@@ -68,6 +68,7 @@ public class GS {
         };
     }
 
+    //todo check unused method. Seems to be useless? - Allan
     public static List<InkCoverage> inkCoverage(final InputStream f) {
         Process p = GS.run("-sOutputFile=%stdout%", "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q", "-sDEVICE=inkcov", "-");
         return inkCoverageBase(p);

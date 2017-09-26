@@ -85,8 +85,8 @@ public class Destinations {
         Destination dest = null;
         try {
             dest = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(Destination.class);
-        } catch (Exception e) {
-        };
+        } catch (Exception ignored) {
+        }
         if (dest == null) return Response.status(404).entity("Could not find destination " + id).build();
         if (ticket.up) {
             dest.setUp(true);
