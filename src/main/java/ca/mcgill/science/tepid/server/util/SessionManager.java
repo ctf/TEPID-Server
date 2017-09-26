@@ -4,17 +4,11 @@ import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.User;
 import ca.mcgill.science.tepid.common.Utils;
 import ca.mcgill.science.tepid.common.ViewResultSet;
-import ca.mcgill.science.tepid.server.util.CouchClient;
 import in.waffl.q.Promise;
 import in.waffl.q.Q;
-import org.glassfish.jersey.jackson.JacksonFeature;
 import org.mindrot.jbcrypt.BCrypt;
-import shared.Config;
-import shared.ConfigKeys;
 
 import javax.annotation.Nullable;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;

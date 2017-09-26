@@ -8,14 +8,9 @@ import ca.mcgill.science.tepid.server.util.CouchClient;
 import ca.mcgill.science.tepid.server.util.SessionManager;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.glassfish.jersey.jackson.JacksonFeature;
-import shared.Config;
-import shared.ConfigKeys;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;

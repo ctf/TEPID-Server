@@ -4,12 +4,7 @@ import ca.mcgill.science.tepid.common.PrintJob;
 import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.util.CouchClient;
-import org.glassfish.jersey.jackson.JacksonFeature;
-import shared.Config;
-import shared.ConfigKeys;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;

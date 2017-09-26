@@ -12,14 +12,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.mail.DefaultAuthenticator;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.SimpleEmail;
-import org.glassfish.jersey.jackson.JacksonFeature;
-import shared.Config;
-import shared.ConfigKeys;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.AsyncResponse;

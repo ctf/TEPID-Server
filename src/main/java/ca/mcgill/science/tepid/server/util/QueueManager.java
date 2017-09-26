@@ -4,14 +4,8 @@ import ca.mcgill.science.tepid.common.PrintJob;
 import ca.mcgill.science.tepid.common.PrintQueue;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer.LoadBalancerResults;
-import ca.mcgill.science.tepid.server.util.CouchClient;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.glassfish.jersey.jackson.JacksonFeature;
-import shared.Config;
-import shared.ConfigKeys;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;

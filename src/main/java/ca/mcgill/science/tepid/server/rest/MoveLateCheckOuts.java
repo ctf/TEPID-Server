@@ -3,12 +3,7 @@ package ca.mcgill.science.tepid.server.rest;
 import ca.mcgill.science.tepid.common.CheckedIn;
 import ca.mcgill.science.tepid.server.rest.CheckIn.CheckedInResult;
 import ca.mcgill.science.tepid.server.util.CouchClient;
-import org.glassfish.jersey.jackson.JacksonFeature;
-import shared.Config;
-import shared.ConfigKeys;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
