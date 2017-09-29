@@ -2,12 +2,8 @@ package ca.mcgill.science.tepid.server.rest;
 
 import ca.mcgill.science.tepid.common.CheckedIn;
 import ca.mcgill.science.tepid.server.rest.CheckIn.CheckedInResult;
-import org.glassfish.jersey.jackson.JacksonFeature;
-import shared.Config;
-import shared.ConfigKeys;
+import ca.mcgill.science.tepid.server.util.CouchClient;
 
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -21,11 +17,11 @@ public class CheckInUtils {
 
     /**
      * Get {@link CheckIn} for current time
+     *
      * @return checkIn data
      */
     public static CheckedIn getCheckedIn() {
-        WebTarget tgt = ClientBuilder.newBuilder().register(JacksonFeature.class).build().target("http://admin:" + Config.getSetting(ConfigKeys.COUCHDB_PASSWORD) + "@localhost:5984/tepid").path("_design/main/_view").path("checkin");
-        List<CheckedInResult.Row> checkedInRow = tgt.request(MediaType.APPLICATION_JSON)
+        List<CheckedInResult.Row> checkedInRow = CouchClient.getTepidWebTarget().request(MediaType.APPLICATION_JSON)
                 .get(CheckedInResult.class).rows;
         System.out.println(checkedInRow.get(0).value);
         return checkedInRow.get(0).value;
@@ -33,6 +29,7 @@ public class CheckInUtils {
 
     /**
      * Check if user should be checked out at current time
+     *
      * @param shortUser shortId
      * @param checkedIn those who should be checked in
      * @return true if

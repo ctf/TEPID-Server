@@ -13,20 +13,20 @@ import java.util.Date;
 @Provider
 @Priority(Priorities.HEADER_DECORATOR)
 public class AuthTokenFilter implements ContainerResponseFilter {
-	
+
     @Override
     public void filter(ContainerRequestContext req, ContainerResponseContext res) {
-    	Session session = (Session) req.getProperty("session");
+        Session session = (Session) req.getProperty("session");
         if (session != null) {
-        	res.getHeaders().add("X-TEPID-Session", session.getId());
-        	res.getHeaders().add("X-TEPID-Role", session.getRole());
-        	if (req.getHeaders().containsKey("X-TEPID-Session-Timeout")) {
-        		int hours = Integer.parseInt(req.getHeaders().getFirst("X-TEPID-Session-Timeout"));
-        		session.setExpiration(new Date(System.currentTimeMillis() + (hours * 60 * 60 * 1000)));
-        	}
-        	if (req.getHeaders().containsKey("X-TEPID-Session-Persistent")) {
-        		session.setPersistent(Boolean.valueOf(req.getHeaders().getFirst("X-TEPID-Session-Persisten")));
-        	}
+            res.getHeaders().add("X-TEPID-Session", session.getId());
+            res.getHeaders().add("X-TEPID-Role", session.getRole());
+            if (req.getHeaders().containsKey("X-TEPID-Session-Timeout")) {
+                int hours = Integer.parseInt(req.getHeaders().getFirst("X-TEPID-Session-Timeout"));
+                session.setExpiration(new Date(System.currentTimeMillis() + (hours * 60 * 60 * 1000)));
+            }
+            if (req.getHeaders().containsKey("X-TEPID-Session-Persistent")) {
+                session.setPersistent(Boolean.valueOf(req.getHeaders().getFirst("X-TEPID-Session-Persisten")));
+            }
         }
     }
 

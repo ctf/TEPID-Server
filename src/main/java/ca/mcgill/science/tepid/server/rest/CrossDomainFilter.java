@@ -10,7 +10,7 @@ import javax.ws.rs.ext.Provider;
 @Provider
 @Priority(Priorities.HEADER_DECORATOR)
 public class CrossDomainFilter implements ContainerResponseFilter {
-	
+
     @Override
     public void filter(ContainerRequestContext creq, ContainerResponseContext cres) {
         cres.getHeaders().add("Access-Control-Allow-Origin", "*");
@@ -18,7 +18,7 @@ public class CrossDomainFilter implements ContainerResponseFilter {
         cres.getHeaders().add("Access-Control-Allow-Credentials", "true");
         String allow = cres.getHeaderString("Allow");
         if (allow != null && !allow.contains("HEAD")) allow += ",HEAD";
-        cres.getHeaders().add("Access-Control-Allow-Methods", (allow==null?"OPTIONS,GET,POST,PUT,DELETE,HEAD":allow));
+        cres.getHeaders().add("Access-Control-Allow-Methods", (allow == null ? "OPTIONS,GET,POST,PUT,DELETE,HEAD" : allow));
         cres.getHeaders().add("Access-Control-Max-Age", "1209600");
     }
 

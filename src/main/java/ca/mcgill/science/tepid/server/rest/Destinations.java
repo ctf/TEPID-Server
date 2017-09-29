@@ -10,14 +10,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.glassfish.jersey.jackson.JacksonFeature;
-import shared.Config;
-import shared.ConfigKeys;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -30,7 +25,7 @@ import java.util.Map;
 
 @Path("/destinations")
 public class Destinations {
-	private final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private final WebTarget couchdb = CouchClient.getTepidWebTarget();
 
     /**
      * Put destination map to CouchDb
@@ -85,8 +80,8 @@ public class Destinations {
         Destination dest = null;
         try {
             dest = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(Destination.class);
-        } catch (Exception e) {
-        };
+        } catch (Exception ignored) {
+        }
         if (dest == null) return Response.status(404).entity("Could not find destination " + id).build();
         if (ticket.up) {
             dest.setUp(true);

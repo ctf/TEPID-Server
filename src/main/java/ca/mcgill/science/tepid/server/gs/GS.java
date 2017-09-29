@@ -37,26 +37,19 @@ public class GS {
         }
         Process p = GS.run("-dNOPAUSE", "-dBATCH", "-dSAFER", "-sDEVICE=pdfwrite", "-dQUIET", "-q", "-sstdout=%stderr",
                 "-sOutputFile=" + f.getAbsolutePath(), "-c", ".setpdfwrite", "-");
-        getDataCopyProcess(p, is).start();
+        copyData(p, is);
         return f;
     }
 
-    /**
-     * Attaches data copy thread to process
-     *
-     * @param process for attachment
-     * @param f       InputStream
-     * @return newly created thread
-     */
-    private static Thread getDataCopyProcess(Process process, final InputStream f) {
-        final OutputStream os = process.getOutputStream();
-        return new Thread("GS copy data into process") {
+    private static void copyData(Process p, InputStream is) {
+        final OutputStream os = p.getOutputStream();
+        new Thread("GS copy data into process") {
             @Override
             public void run() {
                 try {
                     byte[] buf = new byte[4092];
                     int bytes;
-                    while ((bytes = f.read(buf)) > 0) {
+                    while ((bytes = is.read(buf)) > 0) {
                         os.write(buf, 0, bytes);
                     }
                     os.flush();
@@ -65,31 +58,23 @@ public class GS {
                     e.printStackTrace();
                 }
             }
-        };
+        }.start();
     }
 
+    //todo check unused method. Seems to be useless? - Allan
     public static List<InkCoverage> inkCoverage(final InputStream f) {
         Process p = GS.run("-sOutputFile=%stdout%", "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q", "-sDEVICE=inkcov", "-");
-        return inkCoverageBase(p);
+        copyData(p, f);
+        return inkCoverage(p);
     }
 
-    public static List<InkCoverage> inkCoverage(final File f) {
-        Process p = GS.run("-sOutputFile=%stdout%", "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q", "-sDEVICE=inkcov", f.getAbsolutePath());
-        return inkCoverageBase(p);
-    }
+    private static final Pattern floats = Pattern.compile("([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)");
 
-    /**
-     * Execute ghostscript for ink coverage
-     *
-     * @param p process to hook
-     * @return list of {@link InkCoverage}
-     */
-    private static List<InkCoverage> inkCoverageBase(Process p) {
+    private static List<InkCoverage> inkCoverage(Process p) {
         List<InkCoverage> out = new ArrayList<>();
         try {
             BufferedReader gs = new BufferedReader(new InputStreamReader(p.getInputStream()));
             String line;
-            Pattern floats = Pattern.compile("([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)\\s+([0-9]+\\.[0-9]+)");
             while ((line = gs.readLine()) != null) {
                 line = line.trim();
                 Matcher vals = floats.matcher(line);
@@ -107,11 +92,16 @@ public class GS {
         return out;
     }
 
+    public static List<InkCoverage> inkCoverage(final File f) {
+        Process p = GS.run("-sOutputFile=%stdout%", "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q", "-sDEVICE=inkcov", f.getAbsolutePath());
+        return inkCoverage(p);
+    }
+
     public static class InkCoverage {
         public final float c, m, y, k;
         public final boolean monochrome;
 
-        InkCoverage(float c, float m, float y, float k) {
+        public InkCoverage(float c, float m, float y, float k) {
             this.c = c;
             this.m = m;
             this.y = y;
@@ -141,7 +131,7 @@ public class GS {
         public InputStream nextPage() {
             try {
                 return out.take();
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
             return null;
         }
@@ -168,7 +158,7 @@ public class GS {
                     Process p = GS.run("-dNOPAUSE", "-dBATCH", "-dSAFER", "-sDEVICE=" + format,
                             "-dGraphicsAlphaBits=4", "-dTextAlphaBits=4", "-dDownScaleFactor=2",
                             "-sOutputFile=%stdout%", "-r" + res * 2, "-");
-                    getDataCopyProcess(p, f).start();
+                    copyData(p, f);
                     InputStream is = p.getInputStream();
                     byte[] buf = new byte[2048];
                     int bytesRead, magic = 0, iend = 0;
@@ -178,7 +168,7 @@ public class GS {
                         int start = 0, length = -1;
                         for (int i = 0; i < bytesRead; i++) {
                             byte b = buf[i];
-                            if (b == 0x89) magic = 0; //TODO check use of this line
+                            if (b == 0x89) magic = 0; //todo check always false statement
                             else if (magic == 0 && b == 'P') magic = 1;
                             else if (magic == 1 && b == 'N') magic = 2;
                             else if (magic == 2 && b == 'G') {
