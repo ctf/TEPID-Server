@@ -3,7 +3,10 @@ package ca.mcgill.science.tepid.server.rest;
 import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.User;
 import ca.mcgill.science.tepid.server.util.SessionManager;
+
 import org.glassfish.jersey.internal.util.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Priority;
 import javax.annotation.security.DenyAll;
@@ -17,6 +20,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
+
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;

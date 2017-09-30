@@ -5,10 +5,15 @@ import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.User;
 import ca.mcgill.science.tepid.server.util.CouchClient;
 import ca.mcgill.science.tepid.server.util.SessionManager;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import in.waffl.q.Promise;
+
 import org.mindrot.jbcrypt.BCrypt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
@@ -19,6 +24,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Calendar;
@@ -29,6 +35,7 @@ import java.util.List;
 public class Users {
 
     private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final Logger logger = LoggerFactory.getLogger(Users.class);
 
     @GET
     @Path("/{sam}")
@@ -37,9 +44,13 @@ public class Users {
     public Response queryLdap(@PathParam("sam") String shortUser, @QueryParam("pw") String pw, @Context ContainerRequestContext crc, @Context UriInfo uriInfo) {
         Session session = (Session) crc.getProperty("session");
         User user = SessionManager.getInstance().queryUser(shortUser, pw);
-        if (user == null)
+        //TODO security wise, should the second check not happen before the first?
+        if (user == null) {
+        	logger.warn("Could not find user {}.", shortUser);
             throw new NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build());
+        }
         if (session.getRole().equals("user") && !session.getUser().shortUser.equals(user.shortUser)) {
+        	logger.warn("Unauthorized attempt to lookup {} by user {}.", shortUser, session.getUser().longUser);
             return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build();
         }
         try {
@@ -56,6 +67,7 @@ public class Users {
     @Produces(MediaType.APPLICATION_JSON)
     public Response createLocalAdmin(@PathParam("sam") String shortUser, User newAdmin, @Context ContainerRequestContext req, @Context UriInfo uriInfo) {
         if (this.getAdminConfigured()) {
+        	logger.warn("Unauthorized attempt to add a local admin by {}.", ((Session) req.getProperty("session")).getUser().longUser);
             return Response.status(Response.Status.UNAUTHORIZED).entity("Local admin already exists").type(MediaType.TEXT_PLAIN).build();
         }
         String hashedPw = BCrypt.hashpw(newAdmin.password, BCrypt.gensalt());
@@ -67,6 +79,7 @@ public class Users {
         newAdmin.salutation = newAdmin.givenName;
         newAdmin.longUser = newAdmin.email;
         String res = couchdb.path("u" + shortUser).request(MediaType.APPLICATION_JSON).put(Entity.entity(newAdmin, MediaType.APPLICATION_JSON)).readEntity(String.class);
+        logger.info("Added local admin {}.", newAdmin.shortUser);
         return Response.ok(res).build();
     }
 

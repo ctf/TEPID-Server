@@ -8,18 +8,24 @@ import ca.mcgill.science.tepid.server.util.CouchClient;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.util.List;
 
 public class JobDataMonitor implements Runnable {
 
     private final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final Logger logger = LoggerFactory.getLogger(JobDataMonitor.class);
 
     private static class JobResultSet extends ViewResultSet<String, PrintJob> {
     }
 
     @Override
     public void run() {
+    	logger.info("Deleting expired job data.");
         try {
             List<Row<String, PrintJob>> rows = couchdb.path("_design/main/_view").path("storedJobs").request(MediaType.APPLICATION_JSON).get(JobResultSet.class).rows;
             for (Row<String, PrintJob> r : rows) {

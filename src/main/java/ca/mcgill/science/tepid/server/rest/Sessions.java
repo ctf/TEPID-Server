@@ -9,8 +9,13 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Path("/sessions")
 public class Sessions {
+	
+    private static final Logger logger = LoggerFactory.getLogger(Sessions.class);
 
     @GET
     @Path("/{user}/{token}")
@@ -48,12 +53,14 @@ public class Sessions {
             if (s != null) {
                 s.setPersistent(req.persistent);
                 s.setRole(SessionManager.getInstance().getRole(user));
+                logger.debug("Started session for user {}.", req.username);
                 return Response.ok(s).build();
             }
         } catch (Exception e) {
             System.err.println("Exception caught: " + e.getClass().getCanonicalName());
             e.printStackTrace();
         }
+        logger.debug("Failed to start session for user {}.", req.username);
         return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\":\"Username or password incorrect\"}").build();
     }
 

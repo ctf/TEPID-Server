@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.util.CouchClient;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -19,13 +20,19 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Path("/destinations")
 public class Destinations {
+	
     private final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final Logger logger = LoggerFactory.getLogger(Destinations.class);
 
     /**
      * Put destination map to CouchDb
@@ -40,6 +47,8 @@ public class Destinations {
     public String putDestinations(Map<String, Destination> destinations) {
         ObjectNode root = JsonNodeFactory.instance.objectNode();
         root.putArray("docs").addAll(new ObjectMapper().convertValue(destinations.values(), ArrayNode.class));
+        for (Destination d : destinations.values())
+        	logger.info("Added new destination {}", d.getName());
         return couchdb.path("_bulk_docs").request().post(Entity.entity(root, MediaType.APPLICATION_JSON)).readEntity(String.class);
     }
 
@@ -91,6 +100,7 @@ public class Destinations {
             dest.setTicket(ticket);
         }
         couchdb.path(id).request().put(Entity.entity(dest, MediaType.APPLICATION_JSON));
+        logger.info("Destination {} marked as {}.", id, (ticket.up ? "up" : "down"));
         return Response.ok(id + " marked as " + (ticket.up ? "up" : "down")).build();
     }
 
@@ -101,6 +111,7 @@ public class Destinations {
     @Produces(MediaType.APPLICATION_JSON)
     public String deleteQueue(@PathParam("dest") String destination) {
         String rev = couchdb.path(destination).request(MediaType.APPLICATION_JSON).get().readEntity(ObjectNode.class).get("_rev").asText();
+        logger.info("Deleted queue {}.", destination);
         return couchdb.path(destination).queryParam("rev", rev).request().delete().readEntity(String.class);
     }
 

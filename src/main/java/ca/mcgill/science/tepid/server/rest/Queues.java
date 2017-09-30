@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer;
 import ca.mcgill.science.tepid.server.util.CouchClient;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -23,6 +24,10 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,7 +36,9 @@ import java.util.List;
 
 @Path("/queues")
 public class Queues {
+	
     private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final Logger logger = LoggerFactory.getLogger(Queues.class);
 
     @PUT
     @RolesAllowed({"elder"})
@@ -40,6 +47,8 @@ public class Queues {
     public String putQueues(List<PrintQueue> queues) {
         ObjectNode root = JsonNodeFactory.instance.objectNode();
         root.putArray("docs").addAll(new ObjectMapper().convertValue(queues, ArrayNode.class));
+        for (PrintQueue q : queues)
+        	logger.info("Added new queue {}.", q.name);
         return couchdb.path("_bulk_docs").request().post(Entity.entity(root, MediaType.APPLICATION_JSON)).readEntity(String.class);
     }
 
@@ -105,6 +114,7 @@ public class Queues {
     @Produces(MediaType.APPLICATION_JSON)
     public String deleteQueue(@PathParam("queue") String queue) {
         String rev = couchdb.path(queue).request(MediaType.APPLICATION_JSON).get().readEntity(ObjectNode.class).get("_rev").asText();
+        logger.info("Deleted queue {}", queue);
         return couchdb.path(queue).queryParam("rev", rev).request().delete().readEntity(String.class);
     }
 

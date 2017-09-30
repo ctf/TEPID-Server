@@ -163,18 +163,20 @@ public class ScreenSaver {
     }
 
 
+    //TODO broke the screensaver?
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("office-hours/on-duty/{timeSlot}")
-    public List<SignUp> onDuty(@PathParam("timeSlot") String timeSlot) {
-        return new OfficeHours().onDuty(timeSlot);
+    public List onDuty(@PathParam("timeSlot") String timeSlot) {
+        //return new OfficeHours().onDuty(timeSlot);
+    	return new ArrayList();
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("office-hours/checked-in")
     public List<String> checkedIn() {
-        return new ArrayList<String>(CheckInUtils.getCheckedIn().getCurrentCheckIn().keySet());
+        return new ArrayList<String>();
     }
 
 

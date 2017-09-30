@@ -4,14 +4,19 @@ import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.User;
 import ca.mcgill.science.tepid.common.Utils;
 import ca.mcgill.science.tepid.common.ViewResultSet;
+import ca.mcgill.science.tepid.server.rest.Sessions;
 import in.waffl.q.Promise;
 import in.waffl.q.Q;
+
 import org.mindrot.jbcrypt.BCrypt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
@@ -19,6 +24,7 @@ import java.util.List;
 public class SessionManager {
 
     private static SessionManager instance;
+    private static final Logger logger = LoggerFactory.getLogger(SessionManager.class);
 
     public static synchronized SessionManager getInstance() {
         if (instance == null) instance = new SessionManager();
@@ -68,6 +74,7 @@ public class SessionManager {
     public void end(String s) {
         Session over = couchdb.path(s).request(MediaType.APPLICATION_JSON).get(Session.class);
         couchdb.path(over.getId()).queryParam("rev", over.getRev()).request().delete(String.class);
+        logger.debug("Ending session for {}.", over.getUser().longUser);
     }
 
     /**

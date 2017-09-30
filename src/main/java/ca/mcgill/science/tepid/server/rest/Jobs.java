@@ -10,7 +10,11 @@ import ca.mcgill.science.tepid.server.gs.GS.InkCoverage;
 import ca.mcgill.science.tepid.server.util.CouchClient;
 import ca.mcgill.science.tepid.server.util.QueueManager;
 import ca.mcgill.science.tepid.server.util.SessionManager;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tukaani.xz.XZInputStream;
 
 import javax.annotation.security.RolesAllowed;
@@ -21,6 +25,7 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.*;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
@@ -30,8 +35,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Jobs {
 
     public static final Map<String, Thread> processingThreads = new ConcurrentHashMap<>();
-
     private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final Logger logger = LoggerFactory.getLogger(Jobs.class);
+
 
     private static class JobResultSet extends ViewResultSet<String, PrintJob> {
     }
@@ -70,6 +76,7 @@ public class Jobs {
         j.setUserIdentification(((Session) req.getProperty("session")).getUser().shortUser);
         j.setDeleteDataOn(System.currentTimeMillis() + SessionManager.getInstance().queryUserCache(j.getUserIdentification()).jobExpiration);
         System.out.println(j);
+        logger.debug("Starting new print job {} for {}...", j.getName(), ((Session)req.getProperty("session")).getUser().longUser);
         return couchdb.request(MediaType.TEXT_PLAIN).post(Entity.entity(j, MediaType.APPLICATION_JSON)).readEntity(String.class);
     }
 
@@ -145,6 +152,7 @@ public class Jobs {
             };
             processingThreads.put(id, processing);
             processing.start();
+            logger.debug("Job data for {} successfully uploaded.",id);
             return "Job data for " + id + " successfully uploaded";
         } catch (IOException e) {
             e.printStackTrace();
@@ -159,6 +167,7 @@ public class Jobs {
         PrintJob j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob.class);
         j.setFailed(new Date(), error);
         couchdb.path(j.getId()).request(MediaType.TEXT_PLAIN).put(Entity.entity(j, MediaType.APPLICATION_JSON));
+        logger.debug("Job {} failed:{}.", id, error);
     }
 
     public static boolean sendToSMB(File f, Destination destination) {
@@ -248,6 +257,7 @@ public class Jobs {
         }
         j.setRefunded(refunded);
         couchdb.path(j.getId()).request().put(Entity.entity(j, MediaType.APPLICATION_JSON));
+        logger.debug("Refunded job {}.", id);
         return Response.ok().build();
     }
 
@@ -281,6 +291,7 @@ public class Jobs {
                 }
             }
         }.start();
+        logger.debug("Reprinted job {}, new id {}.", id, newId);
         return Response.ok("Reprinted " + id + " new id " + newId).build();
     }
 

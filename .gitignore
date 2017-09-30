@@ -10,6 +10,8 @@ bin/
 *~.nib
 local.properties
 .settings/
+.project
+.classpath
 .loadpath
 build/
 

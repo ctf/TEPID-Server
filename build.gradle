@@ -70,6 +70,8 @@ dependencies {
     compile "org.ow2.asm:asm-debug-all:5.2"
     compile "org.tukaani:xz:1.6"
     compile "com.google.code.findbugs:jsr305:3.0.2"
+    compile 'org.slf4j:slf4j-log4j12:1.8.0-alpha2'    
+    compile 'org.apache.logging.log4j:log4j-web:2.9.1'
 
     tomcat "org.apache.tomcat.embed:tomcat-embed-core:$tomcatVersion",
             "org.apache.tomcat.embed:tomcat-embed-logging-juli:$tomcatVersion",
