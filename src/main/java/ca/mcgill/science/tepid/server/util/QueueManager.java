@@ -17,7 +17,7 @@ public class QueueManager {
 
     private static final Map<String, QueueManager> instances = new HashMap<>();
     public final PrintQueue queueConfig;
-    private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final WebTarget couchdb = CouchClientKt.getCouchdb();;
     private final LoadBalancer loadBalancer;
 
     public static QueueManager getInstance(String queueName) {
@@ -36,8 +36,7 @@ public class QueueManager {
 
     private QueueManager(String queueName) {
         System.out.println("Instantiate queue manager for " + queueName);
-        //todo verify in/waffl/q; old build had just q - Allan
-        this.queueConfig = couchdb.path("in/waffl/q" + queueName).request(MediaType.APPLICATION_JSON).get(PrintQueue.class);
+        this.queueConfig = couchdb.path("q" + queueName).request(MediaType.APPLICATION_JSON).get(PrintQueue.class);
         Class<? extends LoadBalancer> lb = LoadBalancer.getLoadBalancer(queueConfig.loadBalancer);
         try {
             this.loadBalancer = lb.getConstructor(QueueManager.class).newInstance(this);

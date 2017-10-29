@@ -3,12 +3,13 @@ package ca.mcgill.science.tepid.server.rest;
 import ca.mcgill.science.tepid.common.PrintJob;
 import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
-import ca.mcgill.science.tepid.server.util.CouchClient;
+import ca.mcgill.science.tepid.server.util.CouchClientKt;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 
+import ca.mcgill.science.tepid.server.util.CouchClientKt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,7 @@ import java.util.List;
 
 public class JobDataMonitor implements Runnable {
 
-    private final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private final WebTarget couchdb = CouchClientKt.getCouchdb();
     private static final Logger logger = LoggerFactory.getLogger(JobDataMonitor.class);
 
     private static class JobResultSet extends ViewResultSet<String, PrintJob> {

@@ -7,7 +7,7 @@ import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.gs.GS;
 import ca.mcgill.science.tepid.server.gs.GS.InkCoverage;
-import ca.mcgill.science.tepid.server.util.CouchClient;
+import ca.mcgill.science.tepid.server.util.CouchClientKt;
 import ca.mcgill.science.tepid.server.util.QueueManager;
 import ca.mcgill.science.tepid.server.util.SessionManager;
 
@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Jobs {
 
     public static final Map<String, Thread> processingThreads = new ConcurrentHashMap<>();
-    private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final WebTarget couchdb = CouchClientKt.getCouchdb();
     private static final Logger logger = LoggerFactory.getLogger(Jobs.class);
 
 
@@ -251,10 +251,6 @@ public class Jobs {
     @Produces(MediaType.APPLICATION_JSON)
     public Response setJobRefunded(@PathParam("id") String id, @Context ContainerRequestContext req, boolean refunded) {
         PrintJob j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob.class);
-        Session session = (Session) req.getProperty("session");
-        if (session.getRole().equals("ctfer") && session.getUser().shortUser.equals(j.getUserIdentification())) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot refund your own jobs").type(MediaType.TEXT_PLAIN).build();
-        }
         j.setRefunded(refunded);
         couchdb.path(j.getId()).request().put(Entity.entity(j, MediaType.APPLICATION_JSON));
         logger.debug("Refunded job {}.", id);

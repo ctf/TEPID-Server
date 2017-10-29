@@ -7,12 +7,11 @@ import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.server.rest.Sessions;
 import in.waffl.q.Promise;
 import in.waffl.q.Q;
-
+import org.jetbrains.annotations.Nullable;
 import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
+import shared.Config;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
@@ -31,7 +30,7 @@ public class SessionManager {
         return instance;
     }
 
-    private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final WebTarget couchdb = CouchClientKt.getCouchdb();;
 
     private static class UserResultSet extends ViewResultSet<String, User> {
     }
@@ -134,7 +133,7 @@ public class SessionManager {
     public
     @Nullable
     User queryUser(String sam, String pw) {
-        if (Ldap.LDAP_ENABLED) return Ldap.queryUser(sam, pw);
+        if (Config.LDAP_ENABLED) return Ldap.queryUser(sam, pw);
         return queryUserCache(sam);
     }
 
@@ -178,7 +177,7 @@ public class SessionManager {
      * @return list of matching users
      */
     public Promise<List<User>> autoSuggest(String like, int limit) {
-        if (!Ldap.LDAP_ENABLED) {
+        if (!Config.LDAP_ENABLED) {
             Q<List<User>> emptyPromise = Q.defer();
             emptyPromise.resolve(Arrays.asList(new User[0]));
             return emptyPromise.promise;
@@ -226,7 +225,7 @@ public class SessionManager {
      * @param exchange boolean for exchange status
      */
     public void setExchangeStudent(String sam, boolean exchange) {
-        if (Ldap.LDAP_ENABLED) Ldap.setExchangeStudent(sam, exchange);
+        if (Config.LDAP_ENABLED) Ldap.setExchangeStudent(sam, exchange);
     }
 
 }
