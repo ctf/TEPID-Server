@@ -6,7 +6,7 @@ import ca.mcgill.science.tepid.common.Utils;
 import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer;
-import ca.mcgill.science.tepid.server.util.CouchClient;
+import ca.mcgill.science.tepid.server.util.CouchClientKt;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -37,7 +37,7 @@ import java.util.List;
 @Path("/queues")
 public class Queues {
 	
-    private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final WebTarget couchdb = CouchClientKt.getCouchdb();
     private static final Logger logger = LoggerFactory.getLogger(Queues.class);
 
     @PUT

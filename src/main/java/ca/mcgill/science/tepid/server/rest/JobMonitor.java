@@ -3,29 +3,23 @@ package ca.mcgill.science.tepid.server.rest;
 import ca.mcgill.science.tepid.common.PrintJob;
 import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
-import ca.mcgill.science.tepid.server.util.CouchClient;
+import ca.mcgill.science.tepid.server.util.CouchClientKt;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Date;
 import java.util.List;
 
 public class JobMonitor implements Runnable {
 
-    private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
-    private static final Logger logger = LoggerFactory.getLogger(JobMonitor.class);
+    private static final WebTarget couchdb = CouchClientKt.getCouchdb();
 
     private static class JobResultSet extends ViewResultSet<String, PrintJob> {
     }
 
     @Override
     public void run() {
-    	logger.info("Removing jobs that have timed out from database.");
         try {
             List<Row<String, PrintJob>> rows = couchdb.path("_design/main/_view").path("oldJobs")
                     .queryParam("endkey", System.currentTimeMillis() - 1_800_000).request(MediaType.APPLICATION_JSON).get(JobResultSet.class).rows;

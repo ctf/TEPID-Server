@@ -1,6 +1,6 @@
 package ca.mcgill.science.tepid.server.rest;
 
-import ca.mcgill.science.tepid.server.util.CouchClient;
+import ca.mcgill.science.tepid.server.util.CouchClientKt;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
@@ -16,7 +16,7 @@ public class EndpointManager {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({"ctfer", "elder"})
     public String getAuthorizedEndpoints() {
-        WebTarget tgt = CouchClient.getTemWebTarget().path("_design/main/_view").path("authorizedEndpoints");
+        WebTarget tgt = CouchClientKt.getTemdb().path("_design/main/_view").path("authorizedEndpoints");
         return tgt.request(MediaType.APPLICATION_JSON).get(String.class);
     }
 }

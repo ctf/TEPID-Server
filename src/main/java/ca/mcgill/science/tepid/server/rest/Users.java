@@ -3,7 +3,7 @@ package ca.mcgill.science.tepid.server.rest;
 
 import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.User;
-import ca.mcgill.science.tepid.server.util.CouchClient;
+import ca.mcgill.science.tepid.server.util.CouchClientKt;
 import ca.mcgill.science.tepid.server.util.SessionManager;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -34,7 +34,7 @@ import java.util.List;
 @Path("/users")
 public class Users {
 
-    private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final WebTarget couchdb = CouchClientKt.getCouchdb();
     private static final Logger logger = LoggerFactory.getLogger(Users.class);
 
     @GET

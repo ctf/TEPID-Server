@@ -5,12 +5,13 @@ import ca.mcgill.science.tepid.common.Destination.DestinationTicket;
 import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
-import ca.mcgill.science.tepid.server.util.CouchClient;
-
+import ca.mcgill.science.tepid.server.util.CouchClientKt;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
@@ -20,10 +21,6 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +28,7 @@ import java.util.Map;
 @Path("/destinations")
 public class Destinations {
 	
-    private final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final WebTarget couchdb = CouchClientKt.getCouchdb();
     private static final Logger logger = LoggerFactory.getLogger(Destinations.class);
 
     /**

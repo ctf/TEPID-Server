@@ -2,7 +2,7 @@ package ca.mcgill.science.tepid.server.rest;
 
 import ca.mcgill.science.tepid.common.*;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
-import ca.mcgill.science.tepid.server.util.CouchClient;
+import ca.mcgill.science.tepid.server.util.CouchClientKt;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -15,7 +15,7 @@ import java.util.*;
 
 @Path("/screensaver")
 public class ScreenSaver {
-    private static final WebTarget couchdb = CouchClient.getTepidWebTarget();
+    private static final WebTarget couchdb = CouchClientKt.getCouchdb();
 
     /**
      * GETs a list of queues
