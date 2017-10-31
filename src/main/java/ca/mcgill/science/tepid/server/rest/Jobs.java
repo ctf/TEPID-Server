@@ -109,12 +109,31 @@ public class Jobs {
                         tmp.delete();
                         XZInputStream decompress = new XZInputStream(new FileInputStream(tmpXz));
                         Files.copy(decompress, tmp.toPath());
+
+                        // Detect PostScript monochrome instruction
+                        BufferedReader br = new BufferedReader(tmp.toPath());
+                        String currentLine = null;
+                        boolean psMonochrome = false;
+                        while ((currentLine = br.readLine()) != null) {
+                            if (currentLine.contains("/ProcessColorModel /DeviceGray")) {
+                                // Printer will convert to monochrome. Ignore any ink coverage information.
+                                psMonochrome = true;
+                                break;
+                            } else if (currentLine.contains("/ProcessColorModel /DeviceCMYK")) {
+                                // Need to check ink coverage.
+                                break;
+                            }
+                        }
+
                         //count pages
                         List<InkCoverage> inkCov = GS.inkCoverage(tmp);
                         int color = 0;
-                        for (InkCoverage i : inkCov) {
-                            if (!i.monochrome) color++;
+                        if (!psMonochrome) {
+                            for (InkCoverage i : inkCov) {
+                                if (!i.monochrome) color++;
+                            }
                         }
+
                         //update page count and status in db
                         PrintJob j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob.class);
                         j.setPages(inkCov.size());
@@ -122,6 +141,7 @@ public class Jobs {
                         j.setProcessed(new Date());
                         System.err.println(id + " setting stats (" + inkCov.size() + " pages, " + color + " color)");
                         couchdb.path(id).request(MediaType.TEXT_PLAIN).put(Entity.entity(j, MediaType.APPLICATION_JSON));
+
                         //check if user has color printing enabled
                         if (color > 0 && !SessionManager.getInstance().queryUser(j.getUserIdentification(), null).colorPrinting) {
                             failJob(id, "Color disabled");
