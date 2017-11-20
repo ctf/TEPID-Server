@@ -111,7 +111,7 @@ public class Jobs {
                         Files.copy(decompress, tmp.toPath());
 
                         // Detect PostScript monochrome instruction
-                        BufferedReader br = new BufferedReader(tmp.toPath());
+                        BufferedReader br = new BufferedReader(new FileReader(tmp.getAbsolutePath()));
                         String currentLine = null;
                         boolean psMonochrome = false;
                         while ((currentLine = br.readLine()) != null) {
