@@ -3,12 +3,15 @@ package ca.mcgill.science.tepid.server.rest;
 import ca.mcgill.science.tepid.common.*;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.util.CouchClientKt;
+import ca.mcgill.science.tepid.server.util.SessionManager;
 
 import javax.ws.rs.*;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.lang.reflect.Field;
 import java.util.*;
 
 @Path("/screensaver")
@@ -172,6 +175,28 @@ public class ScreenSaver {
         }
         return out;
 
+    }
+
+    @GET
+    @Path("/user/{username}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Object> getUserInfo(@PathParam("username") String username) {
+        User user = SessionManager.getInstance().queryUser(username, null);
+        if (user == null) {
+            throw new NotFoundException(Response.status(404).entity("Could not find user " + username).type(MediaType.TEXT_PLAIN).build());
+        }
+        String[] fields = {"type", "displayName", "givenName", "middleName", "lastName", "shortUser", "longUser", "email", "nick", "realName", "salutation", "preferredName"};
+        Map<String, Object> cleanUser = new HashMap<>();
+        //sanitize user info by copying selected fields to clean user
+        for (String f : fields) {
+            try {
+                Field field = User.class.getField(f);
+                Object o = field.get(user);
+                if (o != null) cleanUser.put(f, o);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+            }
+        }
+        return cleanUser;
     }
 
     private static class JobResultSet extends ViewResultSet<List<String>, PrintJob> {
