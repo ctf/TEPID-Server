@@ -7,12 +7,10 @@ import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.gs.GS;
 import ca.mcgill.science.tepid.server.gs.GS.InkCoverage;
-import ca.mcgill.science.tepid.server.util.CouchClientKt;
 import ca.mcgill.science.tepid.server.util.QueueManager;
 import ca.mcgill.science.tepid.server.util.SessionManager;
-
+import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tukaani.xz.XZInputStream;
@@ -25,7 +23,6 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.*;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
@@ -35,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Jobs {
 
     public static final Map<String, Thread> processingThreads = new ConcurrentHashMap<>();
-    private static final WebTarget couchdb = CouchClientKt.getCouchdb();
+    private static final WebTarget couchdb = WebTargetsKt.getCouchdb();
     private static final Logger logger = LoggerFactory.getLogger(Jobs.class);
 
 
@@ -76,7 +73,7 @@ public class Jobs {
         j.setUserIdentification(((Session) req.getProperty("session")).getUser().shortUser);
         j.setDeleteDataOn(System.currentTimeMillis() + SessionManager.getInstance().queryUserCache(j.getUserIdentification()).jobExpiration);
         System.out.println(j);
-        logger.debug("Starting new print job {} for {}...", j.getName(), ((Session)req.getProperty("session")).getUser().longUser);
+        logger.debug("Starting new print job {} for {}...", j.getName(), ((Session) req.getProperty("session")).getUser().longUser);
         return couchdb.request(MediaType.TEXT_PLAIN).post(Entity.entity(j, MediaType.APPLICATION_JSON)).readEntity(String.class);
     }
 
@@ -111,8 +108,8 @@ public class Jobs {
                         Files.copy(decompress, tmp.toPath());
 
                         // Detect PostScript monochrome instruction
-                        BufferedReader br = new BufferedReader(tmp.toPath());
-                        String currentLine = null;
+                        BufferedReader br = new BufferedReader(new FileReader(tmp.toPath().toString()));
+                        String currentLine;
                         boolean psMonochrome = false;
                         while ((currentLine = br.readLine()) != null) {
                             if (currentLine.contains("/ProcessColorModel /DeviceGray")) {
@@ -172,7 +169,7 @@ public class Jobs {
             };
             processingThreads.put(id, processing);
             processing.start();
-            logger.debug("Job data for {} successfully uploaded.",id);
+            logger.debug("Job data for {} successfully uploaded.", id);
             return "Job data for " + id + " successfully uploaded";
         } catch (IOException e) {
             e.printStackTrace();

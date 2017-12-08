@@ -4,18 +4,16 @@ import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.User;
 import ca.mcgill.science.tepid.common.Utils;
 import ca.mcgill.science.tepid.common.ViewResultSet;
-import ca.mcgill.science.tepid.server.rest.Sessions;
 import in.waffl.q.Promise;
 import in.waffl.q.Q;
 import org.jetbrains.annotations.Nullable;
 import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import shared.Config;
+
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
-
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
@@ -30,7 +28,8 @@ public class SessionManager {
         return instance;
     }
 
-    private static final WebTarget couchdb = CouchClientKt.getCouchdb();;
+    private static final WebTarget couchdb = WebTargetsKt.getCouchdb();
+    ;
 
     private static class UserResultSet extends ViewResultSet<String, User> {
     }
@@ -133,7 +132,7 @@ public class SessionManager {
     public
     @Nullable
     User queryUser(String sam, String pw) {
-        if (Config.LDAP_ENABLED) return Ldap.queryUser(sam, pw);
+        if (Config.INSTANCE.getLDAP_ENABLED()) return Ldap.queryUser(sam, pw);
         return queryUserCache(sam);
     }
 
@@ -177,7 +176,7 @@ public class SessionManager {
      * @return list of matching users
      */
     public Promise<List<User>> autoSuggest(String like, int limit) {
-        if (!Config.LDAP_ENABLED) {
+        if (!Config.INSTANCE.getLDAP_ENABLED()) {
             Q<List<User>> emptyPromise = Q.defer();
             emptyPromise.resolve(Arrays.asList(new User[0]));
             return emptyPromise.promise;
@@ -225,7 +224,7 @@ public class SessionManager {
      * @param exchange boolean for exchange status
      */
     public void setExchangeStudent(String sam, boolean exchange) {
-        if (Config.LDAP_ENABLED) Ldap.setExchangeStudent(sam, exchange);
+        if (Config.INSTANCE.getLDAP_ENABLED()) Ldap.setExchangeStudent(sam, exchange);
     }
 
 }

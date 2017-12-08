@@ -1,60 +1,36 @@
-group 'ca.mcgill.science.ctf.tepid'
-version '1.1'
+group 'ca.mcgill.science.ctf'
+
+buildscript {
+    ext.kotlin_version = '1.1.60'
+
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
 
 apply plugin: 'java'
 apply plugin: 'kotlin'
 apply plugin: 'war'
-apply plugin: 'com.craigburke.client-dependencies'
-apply plugin: 'com.bmuschko.tomcat'
 
 sourceCompatibility = 1.8
-war.baseName = 'tepid-war'
-
-buildscript {
-    ext.kotlin_version = '1.1.51'
-    repositories {
-        jcenter()
-    }
-    dependencies {
-        classpath 'com.craigburke.gradle:client-dependencies:1.4.0'
-        classpath 'com.bmuschko:gradle-tomcat-plugin:2.3'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
+war.baseName = 'tepid'
 
 repositories {
     mavenCentral()
     maven { url "https://jitpack.io" }
 }
 
-clientDependencies {
-    installDir = 'src/main/resources/bower_components'
-    bower {
-        'angular'('^1.6.1')
-        'angular-ui-router'('^0.4.2')
-        'moment'('^2.17.1')
-        'angular-ui-grid'('^3.1.1')
-        'angular-animate'('^1.6.1')
-        'angular-bootstrap'('^1.1.2')
-        'angular-md5'('^0.1.10')
-        'ng-focus-if'('^1.0.4')
-        'angular-loading-bar'('^0.8.0')
-        'pure-uuid'('^1.1.0') {
-            include '**/*.min.js' //include minified files as well
-        }
-        'angular-ui-router-title'('^0.0.4')
-    }
-}
-
 dependencies {
     testCompile "junit:junit:4.12"
-
-    compile 'com.github.CTFMcGill:TEPID-commons:d2469a63ae49855957f134dbab65865154f0e9bb'
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
 
     def jackson_version = "2.9.1"
     def glassfish_hk2_version = "2.5.0-b54"
     def glassfish_jersey_version = "2.26"
-    def tomcatVersion = "7.0.76"
+    def apache_log4j = "2.9.1"
 
     compile "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
     compile "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
@@ -66,7 +42,8 @@ dependencies {
     compile "javax.servlet:javax.servlet-api:4.0.0"
     compile "javax.ws.rs:javax.ws.rs-api:2.1"
     compile "org.apache.commons:commons-email:1.5"
-    compile "org.apache.logging.log4j:log4j-core:2.9.0"
+    compile "org.apache.logging.log4j:log4j-api:$apache_log4j"
+    compile "org.apache.logging.log4j:log4j-core:$apache_log4j"
     compile "org.glassfish.hk2.external:aopalliance-repackaged:$glassfish_hk2_version"
     compile "org.glassfish.hk2:hk2-locator:$glassfish_hk2_version"
     compile "org.glassfish.jersey.inject:jersey-hk2:$glassfish_jersey_version"
@@ -76,22 +53,29 @@ dependencies {
     compile "org.ow2.asm:asm-debug-all:5.2"
     compile "org.tukaani:xz:1.6"
     compile "com.google.code.findbugs:jsr305:3.0.2"
-    compile 'org.slf4j:slf4j-log4j12:1.8.0-alpha2'    
-    compile 'org.apache.logging.log4j:log4j-web:2.9.1'
+    compile 'org.slf4j:slf4j-api:1.7.25'
+    compile "org.apache.logging.log4j:log4j-web:$apache_log4j"
 
-    tomcat "org.apache.tomcat.embed:tomcat-embed-core:$tomcatVersion",
-            "org.apache.tomcat.embed:tomcat-embed-logging-juli:$tomcatVersion",
-            "org.apache.tomcat.embed:tomcat-embed-jasper:$tomcatVersion"
+    compile group: 'javax.el', name: 'javax.el-api', version: '3.0.0'
+    compile group: 'javax.servlet.jsp', name: 'javax.servlet.jsp-api', version: '2.3.1'
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
 }
+
 compileKotlin {
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
+    kotlinOptions.jvmTarget = "1.8"
 }
 compileTestKotlin {
-    kotlinOptions {
-        jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+test {
+    dependsOn cleanTest
+    testLogging.showStandardStreams = true
+}
+
+war {
+    from('./') {
+        include 'priv.properties'
     }
 }

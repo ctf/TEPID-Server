@@ -4,17 +4,16 @@ import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.SessionRequest;
 import ca.mcgill.science.tepid.common.User;
 import ca.mcgill.science.tepid.server.util.SessionManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 @Path("/sessions")
 public class Sessions {
-	
+
     private static final Logger logger = LoggerFactory.getLogger(Sessions.class);
 
     @GET

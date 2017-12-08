@@ -17,7 +17,8 @@ public class QueueManager {
 
     private static final Map<String, QueueManager> instances = new HashMap<>();
     public final PrintQueue queueConfig;
-    private static final WebTarget couchdb = CouchClientKt.getCouchdb();;
+    private static final WebTarget couchdb = WebTargetsKt.getCouchdb();
+    ;
     private final LoadBalancer loadBalancer;
 
     public static QueueManager getInstance(String queueName) {

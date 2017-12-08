@@ -5,7 +5,7 @@ import ca.mcgill.science.tepid.common.Destination.DestinationTicket;
 import ca.mcgill.science.tepid.common.Session;
 import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
-import ca.mcgill.science.tepid.server.util.CouchClientKt;
+import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -27,8 +27,8 @@ import java.util.Map;
 
 @Path("/destinations")
 public class Destinations {
-	
-    private static final WebTarget couchdb = CouchClientKt.getCouchdb();
+
+    private static final WebTarget couchdb = WebTargetsKt.getCouchdb();
     private static final Logger logger = LoggerFactory.getLogger(Destinations.class);
 
     /**
@@ -45,7 +45,7 @@ public class Destinations {
         ObjectNode root = JsonNodeFactory.instance.objectNode();
         root.putArray("docs").addAll(new ObjectMapper().convertValue(destinations.values(), ArrayNode.class));
         for (Destination d : destinations.values())
-        	logger.info("Added new destination {}", d.getName());
+            logger.info("Added new destination {}", d.getName());
         return couchdb.path("_bulk_docs").request().post(Entity.entity(root, MediaType.APPLICATION_JSON)).readEntity(String.class);
     }
 

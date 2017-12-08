@@ -2,7 +2,7 @@ package ca.mcgill.science.tepid.server.rest;
 
 import ca.mcgill.science.tepid.common.*;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
-import ca.mcgill.science.tepid.server.util.CouchClientKt;
+import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -15,7 +15,7 @@ import java.util.*;
 
 @Path("/screensaver")
 public class ScreenSaver {
-    private static final WebTarget couchdb = CouchClientKt.getCouchdb();
+    private static final WebTarget couchdb = WebTargetsKt.getCouchdb();
 
     /**
      * GETs a list of queues
@@ -169,7 +169,7 @@ public class ScreenSaver {
     @Path("office-hours/on-duty/{timeSlot}")
     public List onDuty(@PathParam("timeSlot") String timeSlot) {
         //return new OfficeHours().onDuty(timeSlot);
-    	return new ArrayList();
+        return new ArrayList();
     }
 
     @GET

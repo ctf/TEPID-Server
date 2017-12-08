@@ -1,6 +1,6 @@
 package ca.mcgill.science.tepid.server.rest;
 
-import ca.mcgill.science.tepid.server.util.CouchClientKt;
+import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -20,7 +20,7 @@ public class Barcode {
     @Path("/_wait")
     @Produces(MediaType.APPLICATION_JSON)
     public JsonNode getBarcode() {
-        ObjectNode change = CouchClientKt.getBarcodesdb().path("_changes").queryParam("feed", "longpoll").queryParam("since", "now").queryParam("include_docs", "true").request(MediaType.APPLICATION_JSON).get(ObjectNode.class);
+        ObjectNode change = WebTargetsKt.getBarcodesdb().path("_changes").queryParam("feed", "longpoll").queryParam("since", "now").queryParam("include_docs", "true").request(MediaType.APPLICATION_JSON).get(ObjectNode.class);
         System.out.println(change.get("results").get(0).get("doc").asText());
         return change.get("results").get(0).get("doc");
     }

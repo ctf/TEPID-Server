@@ -2,8 +2,8 @@ package ca.mcgill.science.tepid.server.loadbalancers;
 
 import ca.mcgill.science.tepid.common.Destination;
 import ca.mcgill.science.tepid.common.PrintJob;
-import ca.mcgill.science.tepid.server.util.CouchClientKt;
 import ca.mcgill.science.tepid.server.util.QueueManager;
+import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
@@ -12,7 +12,7 @@ import java.util.List;
 
 public class FiftyFifty extends LoadBalancer {
 
-    private final WebTarget couchdb = CouchClientKt.getCouchdb();
+    private final WebTarget couchdb = WebTargetsKt.getCouchdb();
     private final List<Destination> destinations;
     private int currentDest;
     private boolean allDown = true;

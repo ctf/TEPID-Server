@@ -3,22 +3,19 @@ package ca.mcgill.science.tepid.server.rest;
 import ca.mcgill.science.tepid.common.PrintJob;
 import ca.mcgill.science.tepid.common.ViewResultSet;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
-import ca.mcgill.science.tepid.server.util.CouchClientKt;
+import ca.mcgill.science.tepid.server.util.WebTargetsKt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
-
-import ca.mcgill.science.tepid.server.util.CouchClientKt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.util.List;
 
 public class JobDataMonitor implements Runnable {
 
-    private final WebTarget couchdb = CouchClientKt.getCouchdb();
+    private final WebTarget couchdb = WebTargetsKt.getCouchdb();
     private static final Logger logger = LoggerFactory.getLogger(JobDataMonitor.class);
 
     private static class JobResultSet extends ViewResultSet<String, PrintJob> {
@@ -26,7 +23,7 @@ public class JobDataMonitor implements Runnable {
 
     @Override
     public void run() {
-    	logger.info("Deleting expired job data.");
+        logger.info("Deleting expired job data.");
         try {
             List<Row<String, PrintJob>> rows = couchdb.path("_design/main/_view").path("storedJobs").request(MediaType.APPLICATION_JSON).get(JobResultSet.class).rows;
             for (Row<String, PrintJob> r : rows) {
