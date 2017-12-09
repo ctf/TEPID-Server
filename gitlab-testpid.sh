@@ -17,6 +17,7 @@ if [ -n "$CI" ] && [ ! -f "priv.properties" ]; then
     printf "Creating priv properties\n"
     touch priv.properties
     echo "DEBUG=true" >> priv.properties
+    echo "LDAP_ENABLED=true" >> priv.properties
     echo "COUCHDB_USERNAME=$COUCHDB_USERNAME" >> priv.properties
     echo "COUCHDB_PASSWORD=$COUCHDB_PASSWORD" >> priv.properties
     echo "RESOURCE_CREDENTIALS=$RESOURCE_CREDENTIALS" >> priv.properties
