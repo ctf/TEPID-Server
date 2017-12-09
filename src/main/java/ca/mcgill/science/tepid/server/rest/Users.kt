@@ -37,7 +37,7 @@ class Users {
     @Path("/{sam}")
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
-    fun queryLdap(@PathParam("sam") shortUser: String, @QueryParam("pw") pw: String, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
+    fun queryLdap(@PathParam("sam") shortUser: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getProperty("session") as Session
         val user = SessionManager.getInstance().queryUser(shortUser, pw)
         //TODO security wise, should the second check not happen before the first?
@@ -75,7 +75,7 @@ class Users {
         newAdmin.displayName = "${newAdmin.givenName} ${newAdmin.lastName}"
         newAdmin.salutation = newAdmin.givenName
         newAdmin.longUser = newAdmin.email
-        val res = couchdb.path("u $shortUser").request(MediaType.APPLICATION_JSON).put(Entity.entity(newAdmin, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
+        val res = couchdb.path("u$shortUser").request(MediaType.APPLICATION_JSON).put(Entity.entity(newAdmin, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
         log.info("Added local admin {}.", newAdmin.shortUser)
         return Response.ok(res).build()
     }
@@ -95,12 +95,12 @@ class Users {
     fun setNick(@PathParam("sam") sam: String, nick: String, @Context req: ContainerRequestContext): Response {
         val session = req.getProperty("session") as Session
         val user = SessionManager.getInstance().queryUser(sam, null)
-        if (session.role == "user" && session.user.shortUser != user!!.shortUser) {
+        if (session.role == "user" && session.user.shortUser != user?.shortUser) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot change this resource").type(MediaType.TEXT_PLAIN).build()
         }
         user!!.nick = if (nick.isEmpty()) null else nick
-        val res = couchdb.path("u" + user.shortUser).request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
-        println("Nick for " + user.shortUser + " set to " + nick)
+        val res = couchdb.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
+        println("Nick for ${user.shortUser} set to $nick")
         return Response.ok(res).build()
     }
 
@@ -115,8 +115,8 @@ class Users {
             return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot change this resource").type(MediaType.TEXT_PLAIN).build()
         }
         user!!.jobExpiration = jobExpiration
-        val res = couchdb.path("u" + user.shortUser).request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
-        println("Job expiration for " + user.shortUser + " set to " + jobExpiration)
+        val res = couchdb.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
+        println("Job expiration for ${user.shortUser} set to $jobExpiration")
         return Response.ok(res).build()
     }
 
@@ -131,7 +131,7 @@ class Users {
             return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot change this resource").type(MediaType.TEXT_PLAIN).build()
         }
         user!!.colorPrinting = color
-        val res = couchdb.path("u" + user.shortUser).request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
+        val res = couchdb.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
         return Response.ok(res).build()
     }
 
@@ -150,7 +150,7 @@ class Users {
         var totalPrinted = 0
         var earliestJob: Date? = null
         try {
-            val rows = couchdb.path("_design/main/_view").path("totalPrinted").queryParam("key", "\"" + shortUser + "\"").request(MediaType.APPLICATION_JSON).get(ObjectNode::class.java).get("rows")
+            val rows = couchdb.path("_design/main/_view").path("totalPrinted").queryParam("key", "\"$shortUser\"").request(MediaType.APPLICATION_JSON).get(ObjectNode::class.java).get("rows")
             totalPrinted = rows.get(0).get("value").get("sum").asInt(0)
             val ej = rows.get(0).get("value").get("earliestJob").asLong(0)
             earliestJob = Date(ej)
