@@ -27,12 +27,7 @@ object SessionManager : WithLogging() {
             s = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(Session::class.java)
         } catch (e: Exception) {
         }
-
-        return if (s != null && s.expiration.time > System.currentTimeMillis()) {
-            s
-        } else {
-            null
-        }
+        return if (s != null && s.expiration.time > System.currentTimeMillis()) s else null
     }
 
     /**
@@ -41,13 +36,11 @@ object SessionManager : WithLogging() {
      * @param s sessionId
      * @return true for valid, false otherwise
      */
-    fun valid(s: String): Boolean {
-        return this[s] != null
-    }
+    fun valid(s: String): Boolean = this[s] != null
 
     fun end(s: String) {
         val over = couchdb.path(s).request(MediaType.APPLICATION_JSON).get(Session::class.java)
-        couchdb.path(over.getId()).queryParam("rev", over.getRev()).request().delete(String::class.java)
+        couchdb.path(over.getId()).queryParam("rev", over.rev).request().delete(String::class.java)
         log.debug("Ending session for {}.", over.getUser().longUser)
     }
 
@@ -60,12 +53,8 @@ object SessionManager : WithLogging() {
      */
     fun authenticate(sam: String, pw: String): User? {
         val dbUser = getSam(sam)
-        return if (dbUser != null && dbUser.authType != null && dbUser.authType == "local") {
-            if (BCrypt.checkpw(pw, dbUser.password)) {
-                dbUser
-            } else {
-                null
-            }
+        return if (dbUser?.authType != null && dbUser.authType == "local") {
+            if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
         } else {
             Ldap.authenticate(sam, pw)
         }
@@ -180,11 +169,7 @@ object SessionManager : WithLogging() {
             }
             return null
         } else {
-            return if (u.role != null && u.role == "admin") {
-                "elder"
-            } else {
-                "user"
-            }
+            return if (u.role != null && u.role == "admin") "elder" else "user"
         }
     }
 
