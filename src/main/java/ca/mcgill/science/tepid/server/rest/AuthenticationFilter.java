@@ -68,8 +68,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                     System.out.println("Validating " + token);
                     boolean longUser = sam.contains(".");
                     Session s = null;
-                    if (SessionManager.getInstance().valid(token)) {
-                        s = SessionManager.getInstance().get(token);
+                    if (SessionManager.Companion.getInstance().valid(token)) {
+                        s = SessionManager.Companion.getInstance().get(token);
                         if (!(longUser ? s.getUser().longUser : s.getUser().shortUser).equals(sam) || s.getExpiration().getTime() < System.currentTimeMillis()) {
                             s = null;
                         }
@@ -79,8 +79,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 case "Basic":
                     String[] samAndPassword = new String(Base64.decode(credentials.getBytes())).split(":");
                     String username = samAndPassword[0].split("@")[0];
-                    User user = SessionManager.getInstance().authenticate(username, samAndPassword[1]);
-                    session = user != null ? SessionManager.getInstance().start(user, 24) : null;
+                    User user = SessionManager.Companion.getInstance().authenticate(username, samAndPassword[1]);
+                    session = user != null ? SessionManager.Companion.getInstance().start(user, 24) : null;
                     break;
                 default:
                     //Someone is trying to use an unsupported auth scheme
@@ -93,7 +93,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 return;
             }
             requestContext.setProperty("session", session);
-            String role = SessionManager.getInstance().getRole(session.getUser());
+            String role = SessionManager.Companion.getInstance().getRole(session.getUser());
             if (role == null) {
                 //user is not allow to access the system at all
                 requestContext.abortWith(ACCESS_DENIED);
