@@ -40,8 +40,8 @@ object SessionManager : WithLogging() {
 
     fun end(s: String) {
         val over = couchdb.path(s).request(MediaType.APPLICATION_JSON).get(Session::class.java)
-        couchdb.path(over.getId()).queryParam("rev", over.rev).request().delete(String::class.java)
-        log.debug("Ending session for {}.", over.getUser().longUser)
+        couchdb.path(over.id).queryParam("rev", over.rev).request().delete(String::class.java)
+        log.debug("Ending session for {}.", over.user.longUser)
     }
 
     /**
@@ -100,7 +100,7 @@ object SessionManager : WithLogging() {
         try {
             if (sam.contains("@")) {
                 val results = couchdb.path("_design").path("main").path("_view").path("byLongUser").queryParam("key", "\"" + sam.replace("@", "%40") + "\"").request(MediaType.APPLICATION_JSON).get(UserResultSet::class.java)
-                if (!results.rows.isEmpty()) return results.rows.get(0).value
+                if (!results.rows.isEmpty()) return results.rows[0].value
             } else {
                 return couchdb.path("u" + sam).request(MediaType.APPLICATION_JSON).get(User::class.java)
             }
@@ -157,16 +157,10 @@ object SessionManager : WithLogging() {
         val userGroups = arrayOf("***REMOVED***", "***REMOVED***" + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F")
         val ctferGroups = arrayOf("***REMOVED***", "***REMOVED***")
         if (u.authType == null || u.authType != "local") {
-            if (u.groups == null) return null
-            for (g in elderGroups) {
-                if (u.groups.contains(g)) return "elder"
-            }
-            for (g in ctferGroups) {
-                if (u.groups.contains(g)) return "ctfer"
-            }
-            for (g in userGroups) {
-                if (u.groups.contains(g)) return "user"
-            }
+            val g = u.groups ?: return  null
+            if (elderGroups.any(g::contains)) return "elder"
+            if (ctferGroups.any(g::contains)) return "ctfer"
+            if (userGroups.any(g::contains)) return "user"
             return null
         } else {
             return if (u.role != null && u.role == "admin") "elder" else "user"
