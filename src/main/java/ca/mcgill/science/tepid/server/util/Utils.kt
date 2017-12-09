@@ -1,9 +1,13 @@
 package ca.mcgill.science.tepid.server.util
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import kotlin.reflect.full.companionObject
 
 /**
  * Created by Allan Wang on 2017-09-29.
@@ -12,6 +16,12 @@ fun Exception.tepidLog() {
     System.err.println("WebServer Exception Caught: ${javaClass.canonicalName}")
     printStackTrace()
 }
+
+/**
+ * Helper to generate text responses with the given status info
+ */
+fun responseStatus(status: Response.Status, message: String) =
+        Response.status(status).entity("${status.statusCode} $message").type(MediaType.TEXT_PLAIN)
 
 fun unauthorizedResponse(errorMessage: String): Response = Response.status(Response.Status.UNAUTHORIZED)
         .entity("{\"error\":\"$errorMessage\"}").build()
@@ -69,19 +79,19 @@ inline fun <reified T : Any> T.logBase(condition: Boolean = true, error: Boolean
  *
  * See <a href="https://stackoverflow.com/a/34462577/4407321">Stack Overflow</a>
  */
-//fun <T : Any> T.logger() = logger(this.javaClass)
-//
-//private fun <T : Any> logger(forClass: Class<T>): Logger
-//        = Logger.getLogger(unwrapCompanionClass(forClass).name)
-//
-//// unwrap companion class to enclosing class given a Java Class
-//private fun <T : Any> unwrapCompanionClass(ofClass: Class<T>): Class<*>
-//        = if (ofClass.enclosingClass != null && ofClass.enclosingClass.kotlin.companionObject?.java == ofClass)
-//    ofClass.enclosingClass else ofClass
-//
-//interface Loggable {
-//    val log: Logger
-//}
+fun <T : Any> T.logger() = logger(this.javaClass)
+
+private fun <T : Any> logger(forClass: Class<T>): Logger
+        = LoggerFactory.getLogger(unwrapCompanionClass(forClass).name)
+
+// unwrap companion class to enclosing class given a Java Class
+private fun <T : Any> unwrapCompanionClass(ofClass: Class<T>): Class<*>
+        = if (ofClass.enclosingClass != null && ofClass.enclosingClass.kotlin.companionObject?.java == ofClass)
+    ofClass.enclosingClass else ofClass
+
+interface Loggable {
+    val log: Logger
+}
 
 /**
  * Single configuration for log4j
@@ -97,9 +107,9 @@ private val configurator: Unit by lazy {
  *
  * companion object: WithLogging()
  */
-//abstract class WithLogging : Loggable {
-//    override val log: Logger by lazy { configurator; this.logger() }
-//}
+abstract class WithLogging : Loggable {
+    override val log: Logger by lazy { this.logger() }
+}
 
 /**
  * Collection of helper methods
