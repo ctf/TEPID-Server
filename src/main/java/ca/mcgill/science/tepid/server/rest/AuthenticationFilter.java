@@ -65,6 +65,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                     String[] samAndToken = new String(Base64.decode(credentials.getBytes())).split(":");
                     String sam = samAndToken[0].split("@")[0],
                             token = samAndToken[1];
+                    System.out.println("Validating " + token);
                     boolean longUser = sam.contains(".");
                     Session s = null;
                     if (SessionManager.getInstance().valid(token)) {
