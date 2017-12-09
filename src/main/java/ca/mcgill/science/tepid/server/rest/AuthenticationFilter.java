@@ -54,6 +54,10 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 return;
             }
             final String[] parts = authorization.get(0).split("\\s");
+            if (parts.length < 2) {
+                requestContext.abortWith(ACCESS_FORBIDDEN);
+                return;
+            }
             final String authScheme = parts[0], credentials = parts[1];
             Session session;
             switch (authScheme) {
