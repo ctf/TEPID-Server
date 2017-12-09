@@ -103,7 +103,7 @@ class SessionManager private constructor() {
      * @return user if found
      * @see .queryUserCache
      */
-    fun queryUser(sam: String, pw: String): User? {
+    fun queryUser(sam: String, pw: String?): User? {
         return if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else queryUserCache(sam)
     }
 
