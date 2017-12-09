@@ -144,6 +144,14 @@ object SessionManager : WithLogging() {
         return Ldap.autoSuggest(like, limit)
     }
 
+    private val elderGroups = arrayOf("***REMOVED***")
+    private val userGroups: Array<String>
+        get() {
+            val cal = Calendar.getInstance()
+            return arrayOf("***REMOVED***", "***REMOVED***" + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F")
+        }
+    private val ctferGroups = arrayOf("***REMOVED***", "***REMOVED***")
+
     /**
      * Retrieves user role
      *
@@ -152,12 +160,8 @@ object SessionManager : WithLogging() {
      */
     fun getRole(u: User?): String? {
         if (u == null) return null
-        val cal = Calendar.getInstance()
-        val elderGroups = arrayOf("***REMOVED***")
-        val userGroups = arrayOf("***REMOVED***", "***REMOVED***" + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F")
-        val ctferGroups = arrayOf("***REMOVED***", "***REMOVED***")
         if (u.authType == null || u.authType != "local") {
-            val g = u.groups ?: return  null
+            val g = u.groups?.toSet() ?: return null
             if (elderGroups.any(g::contains)) return "elder"
             if (ctferGroups.any(g::contains)) return "ctfer"
             if (userGroups.any(g::contains)) return "user"
