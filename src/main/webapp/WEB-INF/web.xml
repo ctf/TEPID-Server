@@ -28,7 +28,7 @@
         <servlet-name>TEPID REST Service</servlet-name>
         <url-pattern>/*</url-pattern>
     </servlet-mapping>
-    <!--<listener>-->
-        <!--<listener-class>ca.mcgill.science.tepid.server.rest.BackgroundTasks</listener-class>-->
-    <!--</listener>-->
+    <listener>
+        <listener-class>ca.mcgill.science.tepid.server.rest.BackgroundTasks</listener-class>
+    </listener>
 </web-app>

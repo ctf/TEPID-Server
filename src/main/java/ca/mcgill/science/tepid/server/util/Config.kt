@@ -107,6 +107,7 @@ object Config {
         }
 
         println("Debug mode: $DEBUG")
+        println("LDAP mode: $LDAP_ENABLED")
         if (COUCHDB_URL.isEmpty())
             warn("COUCHDB_URL not set")
         if (COUCHDB_PASSWORD.isEmpty())
