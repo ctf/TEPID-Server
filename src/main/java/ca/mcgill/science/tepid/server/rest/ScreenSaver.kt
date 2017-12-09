@@ -1,17 +1,14 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.common.*
-import ca.mcgill.science.tepid.common.ViewResultSet.Row
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.util.WithLogging
+import ca.mcgill.science.tepid.server.util.couchdb
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonInclude.Include
-import com.fasterxml.jackson.annotation.JsonProperty
-
-import javax.ws.rs.*
-import javax.ws.rs.client.WebTarget
-import javax.ws.rs.core.MediaType
 import java.util.*
+import javax.ws.rs.*
+import javax.ws.rs.core.MediaType
 
 @Path("/screensaver")
 class ScreenSaver {

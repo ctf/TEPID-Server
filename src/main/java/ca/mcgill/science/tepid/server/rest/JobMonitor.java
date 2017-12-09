@@ -27,13 +27,13 @@ public class JobMonitor implements Runnable {
                 PrintJob j = r.value;
                 j.setFailed(new Date(), "Timed out");
                 couchdb.path(j.getId()).request(MediaType.TEXT_PLAIN).put(Entity.entity(j, MediaType.APPLICATION_JSON));
-                if (Jobs.processingThreads.containsKey(j.getId())) {
-                    Thread t = Jobs.processingThreads.get(j.getId());
+                if (Jobs.Companion.getProcessingThreads().containsKey(j.getId())) {
+                    Thread t = Jobs.Companion.getProcessingThreads().get(j.getId());
                     try {
                         t.interrupt();
                     } catch (Exception ignored) {
                     }
-                    Jobs.processingThreads.remove(j.getId());
+                    Jobs.Companion.getProcessingThreads().remove(j.getId());
                 }
             }
         } catch (Exception e) {

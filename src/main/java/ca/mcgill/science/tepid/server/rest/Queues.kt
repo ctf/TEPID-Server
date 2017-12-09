@@ -4,30 +4,27 @@ import ca.mcgill.science.tepid.common.PrintJob
 import ca.mcgill.science.tepid.common.PrintQueue
 import ca.mcgill.science.tepid.common.Utils
 import ca.mcgill.science.tepid.common.ViewResultSet
-import ca.mcgill.science.tepid.common.ViewResultSet.Row
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.util.WithLogging
+import ca.mcgill.science.tepid.server.util.couchdb
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonInclude.Include
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
+import java.io.InputStream
+import java.util.*
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
 import javax.ws.rs.client.Entity
-import javax.ws.rs.client.WebTarget
 import javax.ws.rs.container.AsyncResponse
 import javax.ws.rs.container.Suspended
-import javax.ws.rs.core.*
-import java.io.InputStream
-import java.util.ArrayList
-import java.util.Date
+import javax.ws.rs.core.Context
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
+import javax.ws.rs.core.UriInfo
 
 @Path("/queues")
 class Queues {

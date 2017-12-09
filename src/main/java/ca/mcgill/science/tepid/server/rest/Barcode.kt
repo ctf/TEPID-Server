@@ -1,9 +1,8 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.util.barcodesdb
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
-
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
