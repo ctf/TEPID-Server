@@ -11,7 +11,7 @@ import java.util.*
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
-class SessionManager private constructor() {
+object SessionManager : WithLogging() {
 
     private class UserResultSet : ViewResultSet<String, User>()
 
@@ -196,18 +196,6 @@ class SessionManager private constructor() {
      */
     fun setExchangeStudent(sam: String, exchange: Boolean) {
         if (Config.LDAP_ENABLED) Ldap.setExchangeStudent(sam, exchange)
-    }
-
-    companion object : WithLogging() {
-
-        private var instanceImpl: SessionManager? = null
-
-        @Synchronized
-        fun getInstance(): SessionManager {
-            if (instanceImpl == null) instanceImpl = SessionManager()
-            return instanceImpl!!
-        }
-
     }
 
 }

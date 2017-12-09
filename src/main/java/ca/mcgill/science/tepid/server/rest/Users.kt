@@ -39,7 +39,7 @@ class Users {
     @Produces(MediaType.APPLICATION_JSON)
     fun queryLdap(@PathParam("sam") shortUser: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getProperty("session") as Session
-        val user = SessionManager.getInstance().queryUser(shortUser, pw)
+        val user = SessionManager.queryUser(shortUser, pw)
         //TODO security wise, should the second check not happen before the first?
         if (user == null) {
             log.warn("Could not find user {}.", shortUser)
@@ -85,7 +85,7 @@ class Users {
     @RolesAllowed("ctfer", "elder")
     @Consumes(MediaType.APPLICATION_JSON)
     fun setExchange(@PathParam("sam") sam: String, exchange: Boolean) {
-        SessionManager.getInstance().setExchangeStudent(sam, exchange)
+        SessionManager.setExchangeStudent(sam, exchange)
     }
 
     @PUT
@@ -94,7 +94,7 @@ class Users {
     @Consumes(MediaType.APPLICATION_JSON)
     fun setNick(@PathParam("sam") sam: String, nick: String, @Context req: ContainerRequestContext): Response {
         val session = req.getProperty("session") as Session
-        val user = SessionManager.getInstance().queryUser(sam, null)
+        val user = SessionManager.queryUser(sam, null)
         if (session.role == "user" && session.user.shortUser != user?.shortUser) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot change this resource").type(MediaType.TEXT_PLAIN).build()
         }
@@ -110,7 +110,7 @@ class Users {
     @Consumes(MediaType.APPLICATION_JSON)
     fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context req: ContainerRequestContext): Response {
         val session = req.getProperty("session") as Session
-        val user = SessionManager.getInstance().queryUser(sam, null)
+        val user = SessionManager.queryUser(sam, null)
         if (session.role == "user" && session.user.shortUser != user!!.shortUser) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot change this resource").type(MediaType.TEXT_PLAIN).build()
         }
@@ -126,7 +126,7 @@ class Users {
     @Consumes(MediaType.APPLICATION_JSON)
     fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context req: ContainerRequestContext): Response {
         val session = req.getProperty("session") as Session
-        val user = SessionManager.getInstance().queryUser(sam, null)
+        val user = SessionManager.queryUser(sam, null)
         if (session.role == "user" && session.user.shortUser != user!!.shortUser) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot change this resource").type(MediaType.TEXT_PLAIN).build()
         }
@@ -158,8 +158,8 @@ class Users {
             //			e.printStackTrace();
         }
 
-        val user = SessionManager.getInstance().queryUser(shortUser, null)
-        if (user == null || SessionManager.getInstance().getRole(user) == null) return 0
+        val user = SessionManager.queryUser(shortUser, null)
+        if (user == null || SessionManager.getRole(user) == null) return 0
 
         //todo verify
         if (earliestJob == null) return 1000 // init to 1000 for new users
@@ -178,7 +178,7 @@ class Users {
     @RolesAllowed("ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
     fun ldapAutoSuggest(@PathParam("like") like: String, @QueryParam("limit") limit: Int): List<User>? {
-        val resultsPromise = SessionManager.getInstance().autoSuggest(like, limit)
+        val resultsPromise = SessionManager.autoSuggest(like, limit)
         return resultsPromise.getResult(20000)
     }
 

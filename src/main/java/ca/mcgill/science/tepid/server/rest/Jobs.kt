@@ -61,7 +61,7 @@ class Jobs {
     @Consumes(MediaType.APPLICATION_JSON)
     fun newJob(j: PrintJob, @Context req: ContainerRequestContext): String {
         j.userIdentification = (req.getProperty("session") as Session).user.shortUser
-        j.deleteDataOn = System.currentTimeMillis() + SessionManager.getInstance().queryUserCache(j.userIdentification)!!.jobExpiration
+        j.deleteDataOn = System.currentTimeMillis() + SessionManager.queryUserCache(j.userIdentification)!!.jobExpiration
         println(j)
         log.debug("Starting new print job {} for {}...", j.name, (req.getProperty("session") as Session).user.longUser)
         return couchdb.request(MediaType.TEXT_PLAIN).post(Entity.entity(j, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
@@ -124,7 +124,7 @@ class Jobs {
                         couchdb.path(id).request(MediaType.TEXT_PLAIN).put(Entity.entity<PrintJob>(j2, MediaType.APPLICATION_JSON))
 
                         //check if user has color printing enabled
-                        if (color > 0 && (SessionManager.getInstance().queryUser(j2.userIdentification, null)?.colorPrinting != true)) {
+                        if (color > 0 && (SessionManager.queryUser(j2.userIdentification, null)?.colorPrinting != true)) {
                             failJob(id, "Color disabled")
                         } else {
                             //check if user has sufficient quota to print this job
@@ -253,7 +253,7 @@ class Jobs {
         reprint.originalHost = "REPRINT"
         reprint.queueName = j.queueName
         reprint.userIdentification = j.userIdentification
-        reprint.deleteDataOn = System.currentTimeMillis() + SessionManager.getInstance().queryUserCache(j.userIdentification)!!.jobExpiration
+        reprint.deleteDataOn = System.currentTimeMillis() + SessionManager.queryUserCache(j.userIdentification)!!.jobExpiration
         println(reprint)
         val newId = couchdb.request(MediaType.APPLICATION_JSON).post(Entity.entity(reprint, MediaType.APPLICATION_JSON)).readEntity(ObjectNode::class.java).get("id").asText()
         Utils.startCaughtThread("Reprint $id") { addJobData(FileInputStream(file), newId) }
