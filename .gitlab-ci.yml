@@ -2,5 +2,3 @@ deploy_job:
   script:
   - chmod 550 gitlab-testpid.sh
   - ./gitlab-testpid.sh
-  only:
-  - /^((?!\[skip\]).)*$/
