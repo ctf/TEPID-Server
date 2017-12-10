@@ -68,6 +68,57 @@ internal object Ldap : WithLogging() {
 
     private class LdapUserResultSet : ViewResultSet<String, User>()
 
+    /**
+     * Creates a blank user and attempts to retrieve as many attributes
+     * as possible from the specified attributes
+     */
+    private fun Attributes.toUser(ctx: LdapContext): User {
+        fun attr(name: String) = get(name)?.get()?.toString() ?: ""
+        val out = User(
+                displayName = attr("displayName"),
+                givenName = attr("givenName"),
+                lastName = attr("sn"),
+                shortUser = attr("sAMAccountName"),
+                longUser = attr("userPrincipalName").toLowerCase(),
+                email = attr("mail"),
+                middleName = attr("middleName"),
+                faculty = attr("department")
+        )
+        try {
+            out.activeSince = SimpleDateFormat("yyyyMMddHHmmss.SX").parse(attr("whenCreated"))
+        } catch (e: ParseException) {
+
+        }
+
+        val memberOf = get("memberOf")
+        val groups = if (memberOf != null) {
+            (0 until memberOf.size()).map { memberOf.get(it).toString() }.mapNotNull {
+                try {
+                    ctx.getAttributes(it, arrayOf("CN")).get("CN").get().toString()
+                } catch (e: NamingException) {
+                    null
+                }
+            }.sorted()
+        } else emptyList()
+        out.groups = groups
+        return out
+    }
+
+    /**
+     * Copy over attributes from another user
+     */
+    private fun User.mergeFrom(other: User?) {
+        other ?: return
+        _id = other._id
+        _rev = other._rev
+        studentId = other.studentId
+        preferredName = other.preferredName
+        nick = nick ?: other.nick
+        colorPrinting = other.colorPrinting
+        jobExpiration = other.jobExpiration
+        shortUser = shortUser ?: other.shortUser
+    }
+
     fun queryUser(sam: String, dbPromise: Promise<User>, pw: String?): Promise<User> {
         val ldapDeferred = Q.defer<User>()
         if (!Config.LDAP_ENABLED) {
@@ -107,64 +158,20 @@ internal object Ldap : WithLogging() {
                         } catch (e: Exception) {
                             System.err.println("Failed to bind to LDAP, trying again")
                         }
-
                     }
                     val searchControls = SearchControls()
                     searchControls.searchScope = SearchControls.SUBTREE_SCOPE
                     val results = ctx.search(ldapSearchBase, searchFilter, searchControls)
                     val searchResult = results.nextElement()
                     results.close()
-                    var out: User = User()
-                    if (searchResult != null) {
-                        val attributes = searchResult.attributes
-                        fun attr(name: String) = attributes.get(name)?.get()?.toString() ?: ""
-                        out = User(
-                                displayName = attr("displayName"),
-                                givenName = attr("givenName"),
-                                lastName = attr("sn"),
-                                shortUser = attr("sAMAccountName"),
-                                longUser = attr("userPrincipalName").toLowerCase(),
-                                email = attr("mail"),
-                                middleName = attr("middleName"),
-                                faculty = attr("department")
-                        )
-                        try {
-                            out.activeSince = SimpleDateFormat("yyyyMMddHHmmss.SX").parse(attr("whenCreated"))
-                        } catch (e: ParseException) {
-
-                        }
-
-                        val groups = ArrayList<String>()
-                        val memberOf = attributes.get("memberOf")
-                        if (memberOf != null) {
-                            for (i in 0 until memberOf.size()) {
-                                val group = memberOf.get(i).toString()
-                                println(String.format("Group is %s", group))
-                                try {
-                                    val cn = ctx.getAttributes(group, arrayOf("CN")).get("CN")
-                                    groups.add(cn.get().toString())
-                                } catch (e1: NamingException) {
-                                }
-
-                            }
-                        }
-                        Collections.sort(groups)
-                        out.groups = groups
-                    }
+                    val out: User = searchResult?.attributes?.toUser(ctx) ?: User()
                     ctx.close()
                     // todo should we overwrite ldap values so easily?
                     // if anything they should take precedence
-                    val dbUser = dbPromise.result?.apply {
-                        out._id = getId()
-                        out._rev = getRev()
-                        out.studentId = studentId
-                        out.preferredName = preferredName
-                        out.nick = nick
-                        out.colorPrinting = colorPrinting
-                        out.jobExpiration = jobExpiration
-                        if (out.shortUser == null)
-                            out.shortUser = shortUser
-                    }
+                    out.mergeFrom(dbPromise.result)
+                    val dbUser = dbPromise.result
+
+                    out.mergeFrom(dbUser)
 //                    if (pw != null && out != null && out.longUser != null) {
 //                        val idRequest = Ldap.getIdData(out.longUser, pw)
 //                        val idInfo = idRequest.getResult(15000)
@@ -271,70 +278,17 @@ internal object Ldap : WithLogging() {
                     val ldapSearchBase = ***REMOVED***
                     val searchFilter = "(&(objectClass=user)(|(userPrincipalName=$like*)(samaccountname=$like*)))"
                     //					System.out.println(searchFilter);
-                    var ctx: LdapContext? = null
-                    while (ctx == null) {
-                        try {
-                            val env = Hashtable<String, Any>()
-                            env.put(SECURITY_AUTHENTICATION, "simple")
-                            env.put(PROVIDER_URL, ***REMOVED***)
-                            env.put(SECURITY_PRINCIPAL, "***REMOVED***\\***REMOVED***")
-                            env.put(SECURITY_CREDENTIALS, Config.RESOURCE_CREDENTIALS)
-                            env.put(INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-                            env.put("com.sun.jndi.ldap.read.timeout", "5000")
-                            env.put("com.sun.jndi.ldap.connect.timeout", "500")
-                            ctx = InitialLdapContext(env, null)
-                        } catch (e: Exception) {
-                            System.err.println("Failed to bind to LDAP, trying again")
-                        }
-
-                    }
+                    val ctx = bindLdap() ?: return q.resolve(emptyList())
                     val searchControls = SearchControls()
                     searchControls.searchScope = SearchControls.SUBTREE_SCOPE
                     val results = ctx.search(ldapSearchBase, searchFilter, searchControls)
-                    val out = ArrayList<User>(limit)
+                    val out = mutableListOf<User>()
                     var res = 0
-                    var searchResult: SearchResult? = results.nextElement()
-                    while (searchResult != null && res++ < limit) {
-                        var user: User? = null
-                        user = User()
-                        val attributes = searchResult.attributes
-                        user.displayName = attributes.get("displayName").get().toString()
-                        user.givenName = attributes.get("givenName").get().toString()
-                        user.longUser = attributes.get("userPrincipalName").get().toString()
-                        if (attributes.get("sn") == null || user.longUser!!.split("@".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0].indexOf('.') < 0) {
-                            searchResult = results.nextElement()
-                            continue
-                        }
-                        user.lastName = attributes.get("sn").get().toString()
-                        user.shortUser = attributes.get("sAMAccountName").get().toString()
-                        if (attributes.get("mail") != null) user.email = attributes.get("mail").get().toString()
-                        if (attributes.get("middleName") != null)
-                            user.middleName = attributes.get("middleName").get().toString()
-                        if (attributes.get("department") != null)
-                            user.faculty = attributes.get("department").get().toString()
-                        val whenCreated = attributes.get("whenCreated").get().toString()
-                        try {
-                            user.activeSince = SimpleDateFormat("yyyyMMddHHmmss.SX").parse(whenCreated)
-                        } catch (e: ParseException) {
-                        }
-
-                        val groups = ArrayList<String>()
-                        val memberOf = attributes.get("memberOf")
-                        if (memberOf != null) {
-                            for (i in 0 until memberOf.size()) {
-                                val group = memberOf.get(i).toString()
-                                try {
-                                    val cn = ctx.getAttributes(group, arrayOf("CN")).get("CN")
-                                    groups.add(cn.get().toString())
-                                } catch (e1: NamingException) {
-                                }
-
-                            }
-                        }
-                        Collections.sort(groups)
-                        user.groups = groups
-                        out.add(user)
-                        searchResult = results.nextElement()
+                    val iter = results.iterator()
+                    while (iter.hasNext() && res++ < limit) {
+                        val user = iter.next().attributes.toUser(ctx)
+                        if (user.longUser?.split("@")?.getOrNull(0)?.indexOf(".") ?: -1 > 0)
+                            out.add(user)
                     }
                     results.close()
                     ctx.close()
@@ -342,28 +296,49 @@ internal object Ldap : WithLogging() {
                 } catch (ne: NamingException) {
                     q.reject("Could not get autosuggest", ne)
                 }
-
             }
         }.start()
         return q.promise
+    }
+
+    private fun createAuthMap(user: String, password: String, withTimeout: Boolean) = Hashtable<String, String>().apply {
+        put(SECURITY_AUTHENTICATION, "simple")
+        put(INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
+        put(PROVIDER_URL, ***REMOVED***)
+        put(SECURITY_PRINCIPAL, "***REMOVED***\\$user")
+        put(SECURITY_CREDENTIALS, password)
+        if (withTimeout) {
+            put("com.sun.jndi.ldap.read.timeout", "5000")
+            put("com.sun.jndi.ldap.connect.timeout", "500")
+        }
+    }
+
+    private fun bindLdap(): LdapContext? {
+        if (!Config.LDAP_ENABLED) {
+            System.err.println("LDAP not enabled; cannot bind")
+            return null
+        }
+        var retries = 15
+        while (retries-- > 0) {
+            try {
+                val auth = createAuthMap("***REMOVED***", Config.RESOURCE_CREDENTIALS, true)
+                return InitialLdapContext(auth, null)
+            } catch (e: Exception) {
+                System.err.println("Failed to bind to LDAP")
+            }
+        }
+        return null
     }
 
     fun authenticate(sam: String, pw: String): User? {
         if (!Config.LDAP_ENABLED) return null
         val user = Ldap.queryUser(sam, pw)
         try {
-            val props = Properties()
-            props.put(SECURITY_AUTHENTICATION, "simple")
-            props.put(INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-            props.put(PROVIDER_URL, ***REMOVED***)
-            props.put(SECURITY_PRINCIPAL, "***REMOVED***\\" + user!!.shortUser!!)
-            props.put(SECURITY_CREDENTIALS, pw)
-            val ctx = InitialDirContext(props)
-            ctx.close()
+            val auth = createAuthMap(user?.shortUser ?: "", pw, false)
+            InitialDirContext(auth).close()
         } catch (e: Exception) {
             return null
         }
-
         return user
     }
 
@@ -371,23 +346,7 @@ internal object Ldap : WithLogging() {
         val longUser = sam.contains(".")
         val ldapSearchBase = ***REMOVED***
         val searchFilter = "(&(objectClass=user)(" + (if (longUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (longUser) "@mail.mcgill.ca" else "") + "))"
-        var ctx: LdapContext? = null
-        while (ctx == null) {
-            try {
-                val env = Hashtable<String, Any>()
-                env.put(SECURITY_AUTHENTICATION, "simple")
-                env.put(PROVIDER_URL, ***REMOVED***)
-                env.put(SECURITY_PRINCIPAL, "***REMOVED***\\***REMOVED***")
-                env.put(SECURITY_CREDENTIALS, Config.RESOURCE_CREDENTIALS)
-                env.put(INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-                env.put("com.sun.jndi.ldap.read.timeout", "5000")
-                env.put("com.sun.jndi.ldap.connect.timeout", "500")
-                ctx = InitialLdapContext(env, null)
-            } catch (e: Exception) {
-                System.err.println("Failed to bind to LDAP, trying again")
-            }
-
-        }
+        val ctx = bindLdap() ?: return
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
         var searchResult: SearchResult? = null

@@ -98,7 +98,6 @@ class Jobs {
 
                         // Detect PostScript monochrome instruction
                         val br = BufferedReader(FileReader(tmp.toPath().toString()))
-                        var currentLine: String
                         var psMonochrome = true
                         br.lines().forEach {
                             if (it.contains("/ProcessColorModel /DeviceGray")) {

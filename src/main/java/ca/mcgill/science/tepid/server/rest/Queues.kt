@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
-import ca.mcgill.science.tepid.models.data.Utils
 import ca.mcgill.science.tepid.models.data.ViewResultSet
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer
 import ca.mcgill.science.tepid.server.util.WithLogging
@@ -61,14 +60,13 @@ class Queues {
         //TODO limit param no longer user, should be replaced by from param in client
         // this should get all jobs in "queue" from the past 2 days
         val from = Date().time - 1000 * 60 * 60 * 24 * 2 // from 2 days ago
-        val tgt = couchdb
+        return couchdb
                 .path("_design/temp/_view")
                 .path("JobsByQueueAndTime")
                 .queryParam("descending", true)
                 .queryParam("startkey", "[\"$queue\",%7B%7D]")
                 .queryParam("endkey", "[\"$queue\",$from]")
-        val rows = tgt.request(MediaType.APPLICATION_JSON).get(JobResultSet::class.java).rows
-        return rows.map { it.value }
+                .request(MediaType.APPLICATION_JSON).get(JobResultSet::class.java).getValues()
     }
 
     @GET
@@ -130,7 +128,7 @@ class Queues {
         var target = couchdb.path("_changes").queryParam("filter", "main/byQueue")
         val qp = uriInfo.queryParameters
         if (qp.containsKey("feed")) target = target.queryParam("feed", qp.getFirst("feed"))
-        var since = Utils.intValue(qp.getFirst("since"), -1)
+        var since = qp.getFirst("since").toIntOrNull() ?: -1
         if (since < 0) {
             since = couchdb.path("_changes").queryParam("filter", "main/byQueue").queryParam("since", 0).request().get(ObjectNode::class.java).get("last_seq").asInt()
         }
