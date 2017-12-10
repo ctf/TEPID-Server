@@ -1,8 +1,8 @@
 package ca.mcgill.science.tepid.server.rest
 
 
-import ca.mcgill.science.tepid.common.Session
-import ca.mcgill.science.tepid.common.User
+import ca.mcgill.science.tepid.models.data.Session
+import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.util.SessionManager
 import ca.mcgill.science.tepid.server.util.WithLogging
 import ca.mcgill.science.tepid.server.util.couchdb
@@ -146,7 +146,8 @@ class Users {
         } else getQuota(shortUser)
     }
 
-    fun getQuota(shortUser: String): Int {
+    fun getQuota(shortUser: String?): Int {
+        shortUser ?: return 0
         var totalPrinted = 0
         var earliestJob: Date? = null
         try {

@@ -1,6 +1,6 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.common.*
+import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.util.WithLogging
 import ca.mcgill.science.tepid.server.util.couchdb
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
@@ -42,17 +42,15 @@ class ScreenSaver {
     @Path("queues/{queue}")
     @Produces(MediaType.APPLICATION_JSON)
     fun listJobs(@PathParam("queue") queue: String, @QueryParam("limit") @DefaultValue("13") limit: Int, @QueryParam("from") @DefaultValue("0") from: Long): Collection<PrintJob> {
-        val tgt = couchdb
+        val data = couchdb
                 .path("_design/main/_view").path("jobsByQueueAndTime")
                 .queryParam("startkey", "[\"$queue\",%7B%7D]")
                 .queryParam("endkey", "[\"$queue\",$from]")
                 .queryParam("descending", true)
                 .queryParam("limit", limit)
-        //		System.out.println(tgt.getUri());
-        val rows = tgt
                 .request(MediaType.APPLICATION_JSON)
                 .get(JobResultSet::class.java)
-                .rows
+                .getValues()
         val out = TreeSet(Comparator<PrintJob> { j1, j2 ->
             var p1: Date? = j1.processed
             var p2: Date? = j2.processed
@@ -61,10 +59,10 @@ class ScreenSaver {
             if (p1 == null && p2 == null) return@Comparator j1.started.compareTo(j2.started)
             if (p1 == null) return@Comparator -1
             if (p2 == null) return@Comparator 1
-            if (p2.compareTo(p1) == 0) j2.id.compareTo(j1.id) else p2.compareTo(p1)
+            if (p2.compareTo(p1) == 0) j2._id.compareTo(j1._id) else p2.compareTo(p1)
         })
         return if (limit < 0 || limit >= out.size) {
-            rows.map { it.value }
+            data
         } else {
             ArrayList(out).subList(0, limit)
         }
@@ -82,26 +80,25 @@ class ScreenSaver {
     @Path("queues/status")
     @Produces(MediaType.APPLICATION_JSON)
     fun getStatus(): Map<String, Boolean> {
-        val rowDestinations = couchdb    //gets a list of the destinations
+        val destinations = couchdb    //gets a list of the destinations
                 .path("_design/main/_view").path("destinations")
                 .request(MediaType.APPLICATION_JSON)
-                .get(DestinationResultSet::class.java)
-                .rows
+                .get(DestinationResultSet::class.java).getValues()
+                .map { it._id to it }.toMap()
 
-        val rowQueues = couchdb        //gets a list of the queues
+        val queues = couchdb        //gets a list of the queues
                 .path("_design/main/_view").path("queues")
                 .request(MediaType.APPLICATION_JSON)
                 .get(QueueResultSet::class.java)
-                .rows
-
-        val destinations = rowDestinations.map { it.value.id to it.value }.toMap()
+                .rows.map { it.value }
 
         val out = mutableMapOf<String, Boolean>()
 
-        rowQueues.forEach { q ->
-            q.value.destinations.forEach {
-                out.put(q.value.name,
-                        destinations[it]?.isUp ?: false || out[q.value.name] ?: false)
+        queues.forEach forQueue@ { q ->
+            val name = q.name ?: return@forQueue
+            q.destinations.forEach forDest@ {
+                val isUp = destinations[it]?.up ?: return@forDest
+                out.put(name, isUp || out[name] ?: false)
             }
         }
 
@@ -116,16 +113,11 @@ class ScreenSaver {
     @GET
     @Path("marquee")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getMarquee(): List<MarqueeData> {
-        val tgt = couchdb
-                .path("_design/marquee/_view").path("all")
-        val rows = tgt
-                .request(MediaType.APPLICATION_JSON)
-                .get(MarqueeDataResultSet::class.java)
-                .rows
-        return rows.map { it.value }
-
-    }
+    fun getMarquee(): List<MarqueeData> =
+            couchdb.path("_design/marquee/_view").path("all")
+                    .request(MediaType.APPLICATION_JSON)
+                    .get(MarqueeDataResultSet::class.java)
+                    .getValues()
 
 
     //TODO broke the screensaver?

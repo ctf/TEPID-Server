@@ -13,7 +13,7 @@ apply plugin: 'java'
 apply plugin: 'kotlin'
 apply plugin: 'war'
 
-sourceCompatibility = SOURCE_COMPATIBILITY
+sourceCompatibility = JVM_TARGET
 war.baseName = 'tepid'
 
 repositories {
@@ -28,12 +28,13 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$KOTLIN"
     compile "org.jetbrains.kotlin:kotlin-reflect:$KOTLIN"
 
+    compile "ca.mcgill:tepid-commons:$TEPID_COMMONS"
+
     compile "com.fasterxml.jackson.core:jackson-annotations:$JACKSON"
     compile "com.fasterxml.jackson.core:jackson-databind:$JACKSON"
     compile "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:$JACKSON"
     compile "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:$JACKSON"
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:$JACKSON"
-    compile "com.github.ctf:TEPID-commons:06d31a0f55"
     compile "commons-beanutils:commons-beanutils:1.9.3"
     compile "javax.servlet:javax.servlet-api:4.0.0"
     compile "javax.ws.rs:javax.ws.rs-api:2.1"
@@ -57,10 +58,10 @@ dependencies {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = SOURCE_COMPATIBILITY
+    kotlinOptions.jvmTarget = JVM_TARGET
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = SOURCE_COMPATIBILITY
+    kotlinOptions.jvmTarget = JVM_TARGET
 }
 
 test {

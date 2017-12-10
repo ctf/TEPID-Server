@@ -1,9 +1,9 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.common.PrintJob
-import ca.mcgill.science.tepid.common.PrintQueue
-import ca.mcgill.science.tepid.common.Utils
-import ca.mcgill.science.tepid.common.ViewResultSet
+import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.PrintQueue
+import ca.mcgill.science.tepid.models.data.Utils
+import ca.mcgill.science.tepid.models.data.ViewResultSet
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer
 import ca.mcgill.science.tepid.server.util.WithLogging
 import ca.mcgill.science.tepid.server.util.couchdb

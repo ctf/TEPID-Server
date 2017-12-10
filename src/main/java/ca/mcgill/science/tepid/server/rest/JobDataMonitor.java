@@ -1,8 +1,8 @@
 package ca.mcgill.science.tepid.server.rest;
 
-import ca.mcgill.science.tepid.common.PrintJob;
-import ca.mcgill.science.tepid.common.ViewResultSet;
-import ca.mcgill.science.tepid.common.ViewResultSet.Row;
+import ca.mcgill.science.tepid.models.data.PrintJob;
+import ca.mcgill.science.tepid.models.data.ViewResultSet;
+import ca.mcgill.science.tepid.models.data.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,9 +25,9 @@ public class JobDataMonitor implements Runnable {
     public void run() {
         logger.info("Deleting expired job data.");
         try {
-            List<Row<String, PrintJob>> rows = couchdb.path("_design/main/_view").path("storedJobs").request(MediaType.APPLICATION_JSON).get(JobResultSet.class).rows;
-            for (Row<String, PrintJob> r : rows) {
-                PrintJob j = r.value;
+            List<PrintJob> jobs = couchdb.path("_design/main/_view").path("storedJobs")
+                    .request(MediaType.APPLICATION_JSON).get(JobResultSet.class).getValues();
+            jobs.forEach(j -> {
                 if (j.getDeleteDataOn() < System.currentTimeMillis()) {
                     if (j.getFile() != null) {
                         try {
@@ -44,7 +44,7 @@ public class JobDataMonitor implements Runnable {
                     }
                     couchdb.path(j.getId()).request(MediaType.TEXT_PLAIN).put(Entity.entity(j, MediaType.APPLICATION_JSON));
                 }
-            }
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }

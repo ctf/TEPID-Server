@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.common.Session
-import ca.mcgill.science.tepid.common.SessionRequest
+import ca.mcgill.science.tepid.models.data.Session
+import ca.mcgill.science.tepid.models.data.SessionRequest
 import ca.mcgill.science.tepid.server.util.SessionManager
 import ca.mcgill.science.tepid.server.util.WithLogging
 import javax.ws.rs.*
@@ -22,7 +22,7 @@ class Sessions {
             if (SessionManager.valid(token)) {
                 s = SessionManager.get(token)
                 if (s != null) {
-                    if (s.expiration.time < System.currentTimeMillis()
+                    if (s.expiration?.time ?: -1 < System.currentTimeMillis()
                             || longUser && s.user.longUser != username
                             || !longUser && s.user.shortUser != username)
                         s = null
@@ -48,7 +48,7 @@ class Sessions {
             //persistent sessions expire in 768 hours (32 days), permanent (printing) sessions expire in 35040 hours (4 years), other sessions expire in 24 hours
             val s = if (user != null) SessionManager.start(user, if (req.permanent) 35040 else if (req.persistent) 768 else 24) else null
             if (s != null) {
-                s.isPersistent = req.persistent
+                s.persistent = req.persistent
                 s.role = SessionManager.getRole(user)
                 log.debug("Started session for user {}.", req.username)
                 return Response.ok(s).build()

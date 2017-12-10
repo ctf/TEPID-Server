@@ -1,8 +1,8 @@
 package ca.mcgill.science.tepid.server.rest;
 
-import ca.mcgill.science.tepid.common.PrintJob;
-import ca.mcgill.science.tepid.common.ViewResultSet;
-import ca.mcgill.science.tepid.common.ViewResultSet.Row;
+import ca.mcgill.science.tepid.models.data.PrintJob;
+import ca.mcgill.science.tepid.models.data.ViewResultSet;
+import ca.mcgill.science.tepid.models.data.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 
 import javax.ws.rs.client.Entity;
@@ -21,10 +21,9 @@ public class JobMonitor implements Runnable {
     @Override
     public void run() {
         try {
-            List<Row<String, PrintJob>> rows = couchdb.path("_design/main/_view").path("oldJobs")
-                    .queryParam("endkey", System.currentTimeMillis() - 1_800_000).request(MediaType.APPLICATION_JSON).get(JobResultSet.class).rows;
-            for (Row<String, PrintJob> r : rows) {
-                PrintJob j = r.value;
+            List<PrintJob> jobs = couchdb.path("_design/main/_view").path("oldJobs")
+                    .queryParam("endkey", System.currentTimeMillis() - 1_800_000).request(MediaType.APPLICATION_JSON).get(JobResultSet.class).getValues();
+            jobs.forEach(j -> {
                 j.setFailed(new Date(), "Timed out");
                 couchdb.path(j.getId()).request(MediaType.TEXT_PLAIN).put(Entity.entity(j, MediaType.APPLICATION_JSON));
                 if (Jobs.Companion.getProcessingThreads().containsKey(j.getId())) {
@@ -35,7 +34,7 @@ public class JobMonitor implements Runnable {
                     }
                     Jobs.Companion.getProcessingThreads().remove(j.getId());
                 }
-            }
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }

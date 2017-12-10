@@ -1,9 +1,9 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.common.Destination
-import ca.mcgill.science.tepid.common.Destination.DestinationTicket
-import ca.mcgill.science.tepid.common.Session
-import ca.mcgill.science.tepid.common.ViewResultSet
+import ca.mcgill.science.tepid.models.data.Destination
+import ca.mcgill.science.tepid.models.data.DestinationTicket
+import ca.mcgill.science.tepid.models.data.Session
+import ca.mcgill.science.tepid.models.data.ViewResultSet
 import ca.mcgill.science.tepid.server.util.WithLogging
 import ca.mcgill.science.tepid.server.util.couchdb
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -51,7 +51,7 @@ class Destinations {
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
         val session = ctx.getProperty("session") as Session
         val rows = couchdb.path("_design/main/_view").path("destinations")
-                .request(MediaType.APPLICATION_JSON).get(DestinationResultSet::class.java).rows
+                .request(MediaType.APPLICATION_JSON).get(DestinationResultSet::class.java)
 
         // todo, figure out why we do this
         fun Destination.update() = apply {
@@ -62,7 +62,7 @@ class Destinations {
             }
         }
 
-        return rows.map { it.value.update() }.map { it.id to it }.toMap()
+        return rows.getValues().map(Destination::update).map { it._id to it }.toMap()
     }
 
     @POST
@@ -81,7 +81,7 @@ class Destinations {
 
         if (dest == null) return Response.status(404).entity("Could not find destination " + id).build()
 
-        dest.isUp = ticket.up
+        dest.up = ticket.up
         dest.ticket = if (ticket.up) null else ticket
 
         couchdb.path(id).request().put(Entity.entity(dest, MediaType.APPLICATION_JSON))

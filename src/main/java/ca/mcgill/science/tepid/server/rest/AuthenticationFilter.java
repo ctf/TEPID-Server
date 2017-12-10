@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.rest;
 
-import ca.mcgill.science.tepid.common.Session;
-import ca.mcgill.science.tepid.common.User;
+import ca.mcgill.science.tepid.models.data.Session;
+import ca.mcgill.science.tepid.models.data.User;
 import ca.mcgill.science.tepid.server.util.SessionManager;
 import org.glassfish.jersey.internal.util.Base64;
 
@@ -65,14 +65,11 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                     String[] samAndToken = new String(Base64.decode(credentials.getBytes())).split(":");
                     String sam = samAndToken[0].split("@")[0],
                             token = samAndToken[1];
-                    System.out.println("Validating " + token);
-                    boolean longUser = sam.contains(".");
                     Session s = null;
                     if (SessionManager.INSTANCE.valid(token)) {
                         s = SessionManager.INSTANCE.get(token);
-                        if (!(longUser ? s.getUser().longUser : s.getUser().shortUser).equals(sam) || s.getExpiration().getTime() < System.currentTimeMillis()) {
+                        if (s != null && !s.getUser().isMatch(sam))
                             s = null;
-                        }
                     }
                     session = s;
                     break;

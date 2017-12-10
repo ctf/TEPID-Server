@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.util
 
+import ca.mcgill.science.tepid.models.data.About
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
@@ -54,9 +55,9 @@ object Config {
     val HASH: String
 
     /**
-     * Encaptulates config data that can be made public
+     * Encapsulates config data that can be made public
      */
-    val PUBLIC: PublicConfig
+    val PUBLIC: About
 
     /**
      * Unfortunately, due to the nature of bundled and exploded wars,
@@ -116,12 +117,8 @@ object Config {
             warn("RESOURCE_CREDENTIALS not set")
         println("Build hash: $HASH")
 
-        PUBLIC = PublicConfig(DEBUG, LDAP_ENABLED, Utils.now(), HASH, warnings)
+        PUBLIC = About(DEBUG, LDAP_ENABLED, Utils.now(), HASH, warnings)
     }
 
 
 }
-
-data class PublicConfig(val isDebug: Boolean, val isLdapEnabled: Boolean,
-                        val startTime: String,
-                        val hash: String, val warnings: List<String>)

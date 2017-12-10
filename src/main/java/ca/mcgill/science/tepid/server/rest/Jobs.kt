@@ -1,9 +1,9 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.common.Destination
-import ca.mcgill.science.tepid.common.PrintJob
-import ca.mcgill.science.tepid.common.Session
-import ca.mcgill.science.tepid.common.ViewResultSet
+import ca.mcgill.science.tepid.models.data.Destination
+import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.Session
+import ca.mcgill.science.tepid.models.data.ViewResultSet
 import ca.mcgill.science.tepid.server.gs.GS
 import ca.mcgill.science.tepid.server.util.*
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -37,8 +37,8 @@ class Jobs {
         if (session.role == "user" && session.user.shortUser != sam) {
             return null
         }
-        val rows = couchdb.path("_design/main/_view").path("byUser").queryParam("key", "\"" + sam + "\"")
-                .request(MediaType.APPLICATION_JSON).get(JobResultSet::class.java).rows
+        val data = couchdb.path("_design/main/_view").path("byUser").queryParam("key", "\"" + sam + "\"")
+                .request(MediaType.APPLICATION_JSON).get(JobResultSet::class.java).getValues()
 
         // todo why are we sorting stuff in java
         val out = TreeSet<PrintJob> { j1, j2 ->
@@ -49,9 +49,9 @@ class Jobs {
             if (p1 == null && p2 == null) return@TreeSet j1.started.compareTo(j2.started)
             if (p1 == null) return@TreeSet -1
             if (p2 == null) return@TreeSet 1
-            if (p2.compareTo(p1) == 0) j2.id.compareTo(j1.id) else p2.compareTo(p1)
+            if (p2.compareTo(p1) == 0) j2._id.compareTo(j1._id) else p2.compareTo(p1)
         }
-        out.addAll(rows.map { it.value })
+        out.addAll(data)
         return out
     }
 
@@ -137,7 +137,7 @@ class Jobs {
                                 if (sendToSMB(tmp, dest)) {
                                     j2.printed = Date()
                                     couchdb.path(id).request(MediaType.TEXT_PLAIN).put(Entity.entity<PrintJob>(j2, MediaType.APPLICATION_JSON))
-                                    System.err.println(j2.id + " sent to destination")
+                                    System.err.println(j2._id + " sent to destination")
                                 } else {
                                     failJob(id, "Could not send to destination")
                                 }
@@ -167,7 +167,7 @@ class Jobs {
     fun failJob(id: String, error: String) {
         val j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob::class.java)
         j.setFailed(Date(), error)
-        couchdb.path(j.id).request(MediaType.TEXT_PLAIN).put(Entity.entity<PrintJob>(j, MediaType.APPLICATION_JSON))
+        couchdb.path(j._id).request(MediaType.TEXT_PLAIN).put(Entity.entity<PrintJob>(j, MediaType.APPLICATION_JSON))
         log.debug("Job {} failed:{}.", id, error)
     }
 
@@ -266,7 +266,7 @@ class Jobs {
         val processingThreads: MutableMap<String, Thread> = ConcurrentHashMap()
 
         fun sendToSMB(f: File, destination: Destination): Boolean {
-            if (destination.path == null || destination.path.trim { it <= ' ' }.isEmpty()) {
+            if (destination.path?.trim { it <= ' ' }?.isNotEmpty() != false) {
                 //this is a dummy destination
                 try {
                     Thread.sleep(4000)

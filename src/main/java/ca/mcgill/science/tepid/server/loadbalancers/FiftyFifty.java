@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.loadbalancers;
 
-import ca.mcgill.science.tepid.common.Destination;
-import ca.mcgill.science.tepid.common.PrintJob;
+import ca.mcgill.science.tepid.models.data.Destination;
+import ca.mcgill.science.tepid.models.data.PrintJob;
 import ca.mcgill.science.tepid.server.util.QueueManager;
 import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 

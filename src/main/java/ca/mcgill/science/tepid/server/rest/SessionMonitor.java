@@ -1,8 +1,8 @@
 package ca.mcgill.science.tepid.server.rest;
 
-import ca.mcgill.science.tepid.common.Session;
-import ca.mcgill.science.tepid.common.ViewResultSet;
-import ca.mcgill.science.tepid.common.ViewResultSet.Row;
+import ca.mcgill.science.tepid.models.data.Session;
+import ca.mcgill.science.tepid.models.data.ViewResultSet;
+import ca.mcgill.science.tepid.models.data.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;

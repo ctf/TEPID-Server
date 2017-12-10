@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.util;
 
-import ca.mcgill.science.tepid.common.PrintJob;
-import ca.mcgill.science.tepid.common.PrintQueue;
+import ca.mcgill.science.tepid.models.data.PrintJob;
+import ca.mcgill.science.tepid.models.data.PrintQueue;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer.LoadBalancerResults;
 import com.fasterxml.jackson.databind.node.ObjectNode;

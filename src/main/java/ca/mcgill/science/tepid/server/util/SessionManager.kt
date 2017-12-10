@@ -2,10 +2,10 @@ package ca.mcgill.science.tepid.server.util
 
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
-import ca.mcgill.science.tepid.common.Session
-import ca.mcgill.science.tepid.common.User
-import ca.mcgill.science.tepid.common.Utils
-import ca.mcgill.science.tepid.common.ViewResultSet
+import ca.mcgill.science.tepid.models.Utils
+import ca.mcgill.science.tepid.models.data.Session
+import ca.mcgill.science.tepid.models.data.User
+import ca.mcgill.science.tepid.models.data.ViewResultSet
 import org.mindrot.jbcrypt.BCrypt
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -17,7 +17,7 @@ object SessionManager : WithLogging() {
 
     fun start(user: User, expiration: Int): Session {
         val s = Session(Utils.newSessionId(), user, expiration.toLong())
-        couchdb.path(s.id).request().put(Entity.entity(s, MediaType.APPLICATION_JSON))
+        couchdb.path(s._id).request().put(Entity.entity(s, MediaType.APPLICATION_JSON))
         return s
     }
 
@@ -27,7 +27,7 @@ object SessionManager : WithLogging() {
             s = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(Session::class.java)
         } catch (e: Exception) {
         }
-        return if (s != null && s.expiration.time > System.currentTimeMillis()) s else null
+        return if (s?.expiration?.time ?: -1 > System.currentTimeMillis()) s else null
     }
 
     /**
@@ -40,7 +40,7 @@ object SessionManager : WithLogging() {
 
     fun end(s: String) {
         val over = couchdb.path(s).request(MediaType.APPLICATION_JSON).get(Session::class.java)
-        couchdb.path(over.id).queryParam("rev", over.rev).request().delete(String::class.java)
+        couchdb.path(over._id).queryParam("rev", over._rev).request().delete(String::class.java)
         log.debug("Ending session for {}.", over.user.longUser)
     }
 
@@ -92,11 +92,12 @@ object SessionManager : WithLogging() {
      * @return user if found
      * @see .queryUserCache
      */
-    fun queryUser(sam: String, pw: String?): User? {
+    fun queryUser(sam: String?, pw: String?): User? {
         return if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else queryUserCache(sam)
     }
 
-    private fun getSam(sam: String): User? {
+    private fun getSam(sam: String?): User? {
+        if (sam == null) return null
         try {
             if (sam.contains("@")) {
                 val results = couchdb.path("_design").path("main").path("_view").path("byLongUser").queryParam("key", "\"" + sam.replace("@", "%40") + "\"").request(MediaType.APPLICATION_JSON).get(UserResultSet::class.java)
@@ -116,10 +117,10 @@ object SessionManager : WithLogging() {
      * @param sam shortId
      * @return user if exists
      */
-    fun queryUserCache(sam: String): User? {
+    fun queryUserCache(sam: String?): User? {
         val dbUser = getSam(sam) ?: return null
         dbUser.salutation = if (dbUser.nick == null)
-            if (dbUser.preferredName != null && !dbUser.preferredName.isEmpty())
+            if (!dbUser.preferredName.isEmpty())
                 dbUser.preferredName[dbUser.preferredName.size - 1]
             else
                 dbUser.givenName
@@ -138,7 +139,7 @@ object SessionManager : WithLogging() {
     fun autoSuggest(like: String, limit: Int): Promise<List<User>> {
         if (!Config.LDAP_ENABLED) {
             val emptyPromise = Q.defer<List<User>>()
-            emptyPromise.resolve(Arrays.asList(*arrayOfNulls(0)))
+            emptyPromise.resolve(emptyList())
             return emptyPromise.promise
         }
         return Ldap.autoSuggest(like, limit)
@@ -158,16 +159,16 @@ object SessionManager : WithLogging() {
      * @param u user to check
      * @return String for role
      */
-    fun getRole(u: User?): String? {
-        if (u == null) return null
+    fun getRole(u: User?): String {
+        if (u == null) return ""
         if (u.authType == null || u.authType != "local") {
-            val g = u.groups?.toSet() ?: return null
+            val g = u.groups.toSet()
             if (elderGroups.any(g::contains)) return "elder"
             if (ctferGroups.any(g::contains)) return "ctfer"
             if (userGroups.any(g::contains)) return "user"
-            return null
+            return ""
         } else {
-            return if (u.role != null && u.role == "admin") "elder" else "user"
+            return if (u.role == "admin") "elder" else "user"
         }
     }
 
