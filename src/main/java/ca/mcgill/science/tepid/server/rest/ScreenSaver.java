@@ -3,14 +3,15 @@ package ca.mcgill.science.tepid.server.rest;
 import ca.mcgill.science.tepid.common.*;
 import ca.mcgill.science.tepid.common.ViewResultSet.Row;
 import ca.mcgill.science.tepid.server.util.CouchClientKt;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import ca.mcgill.science.tepid.server.util.SessionManager;
 
 import javax.ws.rs.*;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.lang.reflect.Field;
 import java.util.*;
 
 @Path("/screensaver")
@@ -26,29 +27,17 @@ public class ScreenSaver {
     @Path("queues")
     @Produces(MediaType.APPLICATION_JSON)
     public List<PrintQueue> getQueues() {
-        List<QueueResultSet.Row> rows = couchdb
+        List<Row<String, PrintQueue>> rows = couchdb
                 .path("_design/main/_view").path("queues")
                 .request(MediaType.APPLICATION_JSON)
                 .get(QueueResultSet.class)
                 .rows;
         List<PrintQueue> out = new ArrayList<>();
-        for (QueueResultSet.Row r : rows) {
+        for (Row<String, PrintQueue> r : rows) {
             out.add(r.value);
         }
         return out;
-    }
 
-    @JsonInclude(Include.NON_NULL)            //TODO: comment this
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class QueueResultSet {
-        @JsonIgnoreProperties(ignoreUnknown = true)
-        public static class Row {
-            @JsonProperty("value")
-            PrintQueue value;
-        }
-
-        @JsonProperty("rows")
-        List<Row> rows;
     }
 
     /**
@@ -111,7 +100,7 @@ public class ScreenSaver {
                 .get(DestinationResultSet.class)
                 .rows;
 
-        List<QueueResultSet.Row> rowQueues = couchdb        //gets a list of the queues
+        List<Row<String, PrintQueue>> rowQueues = couchdb        //gets a list of the queues
                 .path("_design/main/_view").path("queues")
                 .request(MediaType.APPLICATION_JSON)
                 .get(QueueResultSet.class)
@@ -124,7 +113,7 @@ public class ScreenSaver {
         }
 
         Map<String, Boolean> out = new HashMap<>();                //declares out
-        for (QueueResultSet.Row q : rowQueues)                    //iterates over every queue
+        for (Row<String, PrintQueue> q : rowQueues)                    //iterates over every queue
         {
             for (String d : q.value.destinations)                //then through every destination therein
             {
@@ -162,23 +151,53 @@ public class ScreenSaver {
 
     }
 
-
-    //TODO broke the screensaver?
+    /**
+     * GETs the data for the marquee
+     *
+     * @return a list of the marquee messages
+     */
     @GET
+    @Path("destinations")
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("office-hours/on-duty/{timeSlot}")
-    public List onDuty(@PathParam("timeSlot") String timeSlot) {
-        //return new OfficeHours().onDuty(timeSlot);
-    	return new ArrayList();
+    public Map<String, Destination> getDestinations(@Context ContainerRequestContext ctx) {
+        List<Row<String, Destination>> rows = couchdb.path("_design/main/_view").path("destinations")
+                .request(MediaType.APPLICATION_JSON).get(DestinationResultSet.class).rows;
+        Map<String, Destination> out = new HashMap<>();
+        for (Row<String, Destination> r : rows) {
+            Destination d = r.value;
+            d.setDomain(null);
+            d.setUsername(null);
+            d.setPassword(null);
+            d.setPath(null);
+            d.setProtocol(null);
+            d.setTicket(null);
+            out.put(d.getId(), d);
+        }
+        return out;
+
     }
 
     @GET
+    @Path("/user/{username}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("office-hours/checked-in")
-    public List<String> checkedIn() {
-        return new ArrayList<String>();
+    public Map<String, Object> getUserInfo(@PathParam("username") String username) {
+        User user = SessionManager.getInstance().queryUser(username, null);
+        if (user == null) {
+            throw new NotFoundException(Response.status(404).entity("Could not find user " + username).type(MediaType.TEXT_PLAIN).build());
+        }
+        String[] fields = {"type", "displayName", "givenName", "middleName", "lastName", "shortUser", "longUser", "email", "nick", "realName", "salutation", "preferredName"};
+        Map<String, Object> cleanUser = new HashMap<>();
+        //sanitize user info by copying selected fields to clean user
+        for (String f : fields) {
+            try {
+                Field field = User.class.getField(f);
+                Object o = field.get(user);
+                if (o != null) cleanUser.put(f, o);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+            }
+        }
+        return cleanUser;
     }
-
 
     private static class JobResultSet extends ViewResultSet<List<String>, PrintJob> {
     }
@@ -186,6 +205,10 @@ public class ScreenSaver {
     private static class DestinationResultSet extends ViewResultSet<String, Destination> {
     }
 
+    private static class QueueResultSet extends ViewResultSet<String, PrintQueue> {
+    }
+
     private static class MarqueeDataResultSet extends ViewResultSet<String, MarqueeData> {
     }
+
 }

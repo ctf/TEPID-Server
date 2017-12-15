@@ -69,6 +69,9 @@ public class Destinations {
                 d.setDomain(null);
                 d.setUsername(null);
                 d.setPassword(null);
+                d.setPath(null);
+                d.setProtocol(null);
+                d.setTicket(null);
             }
             out.put(r.value.getId(), d);
         }
