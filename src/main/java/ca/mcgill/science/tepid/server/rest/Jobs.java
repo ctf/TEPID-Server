@@ -199,10 +199,9 @@ public class Jobs {
             }
             return true;
         }
-        System.setProperty("jcifs.smb.client.useNTSmbs", "false");
         try {
             Process p = new ProcessBuilder("smbclient", "//" + destination.getPath(), destination.getPassword(), "-c",
-                    "print " + f.getAbsolutePath(), "-U", destination.getDomain() + "\\" + destination.getUsername()).start();
+                    "print " + f.getAbsolutePath(), "-U", destination.getDomain() + "\\" + destination.getUsername(), "-mSMB3").start();
             p.waitFor();
         } catch (IOException | InterruptedException e) {
             return false;
