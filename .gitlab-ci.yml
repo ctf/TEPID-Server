@@ -3,4 +3,4 @@ deploy_job:
   - chmod 550 gitlab-testpid.sh
   - ./gitlab-testpid.sh
   except:
-  - (wip|test).*
+  - /^(wip|test).*$/
