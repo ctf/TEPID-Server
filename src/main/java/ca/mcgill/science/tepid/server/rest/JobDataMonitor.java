@@ -1,8 +1,7 @@
 package ca.mcgill.science.tepid.server.rest;
 
 import ca.mcgill.science.tepid.models.data.PrintJob;
-import ca.mcgill.science.tepid.models.data.ViewResultSet;
-import ca.mcgill.science.tepid.models.data.ViewResultSet.Row;
+import ca.mcgill.science.tepid.models.data.ViewResultMap;
 import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,10 +14,10 @@ import java.util.List;
 
 public class JobDataMonitor implements Runnable {
 
-    private final WebTarget couchdb = WebTargetsKt.getCouchdb();
+    private final WebTarget couchdb = WebTargetsKt.getCouchdbOld();
     private static final Logger logger = LoggerFactory.getLogger(JobDataMonitor.class);
 
-    private static class JobResultSet extends ViewResultSet<String, PrintJob> {
+    private static class JobResultSet extends ViewResultMap<String, PrintJob> {
     }
 
     @Override
@@ -42,6 +41,7 @@ public class JobDataMonitor implements Runnable {
                     if (j.getAdditionalProperties().containsKey("_attachments")) {
                         j.getAdditionalProperties().remove("_attachments");
                     }
+                    // todo verify; originally request(MediaType.TEXT_PLAIN)
                     couchdb.path(j.getId()).request(MediaType.TEXT_PLAIN).put(Entity.entity(j, MediaType.APPLICATION_JSON));
                 }
             });

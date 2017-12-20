@@ -12,7 +12,7 @@ import java.util.List;
 
 public class FiftyFifty extends LoadBalancer {
 
-    private final WebTarget couchdb = WebTargetsKt.getCouchdb();
+    private final WebTarget couchdb = WebTargetsKt.getCouchdbOld();
     private final List<Destination> destinations;
     private int currentDest;
     private boolean allDown = true;

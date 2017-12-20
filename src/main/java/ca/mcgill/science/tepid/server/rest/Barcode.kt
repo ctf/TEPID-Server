@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.server.util.barcodesdb
+import ca.mcgill.science.tepid.server.util.query
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import javax.ws.rs.GET
@@ -19,11 +20,11 @@ class Barcode {
     @Path("/_wait")
     @Produces(MediaType.APPLICATION_JSON)
     fun getBarcode(): JsonNode {
-        val change = barcodesdb.path("_changes")
-                .queryParam("feed", "longpoll")
-                .queryParam("since", "now")
-                .queryParam("include_docs", "true")
-                .request(MediaType.APPLICATION_JSON)
+        val change = barcodesdb.path("_changes").query(
+                "feed" to "longpoll",
+                "since" to "now",
+                "include_docs" to "true"
+        ).request(MediaType.APPLICATION_JSON)
                 .get(ObjectNode::class.java)
         println(change.get("results").get(0).get("doc").asText())
         return change.get("results").get(0).get("doc")

@@ -3,9 +3,10 @@ package ca.mcgill.science.tepid.server.util
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.Utils
+import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
-import ca.mcgill.science.tepid.models.data.ViewResultSet
+import ca.mcgill.science.tepid.models.data.ViewResultMap
 import org.mindrot.jbcrypt.BCrypt
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -13,18 +14,16 @@ import javax.ws.rs.core.MediaType
 
 object SessionManager : WithLogging() {
 
-    private class UserResultSet : ViewResultSet<String, User>()
-
-    fun start(user: User, expiration: Int): Session {
+    fun start(user: FullUser, expiration: Int): Session {
         val s = Session(Utils.newSessionId(), user, expiration.toLong())
-        couchdb.path(s._id).request().put(Entity.entity(s, MediaType.APPLICATION_JSON))
+        couchdbOld.path(s._id).request().put(Entity.entity(s, MediaType.APPLICATION_JSON))
         return s
     }
 
     operator fun get(id: String): Session? {
         var s: Session? = null
         try {
-            s = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(Session::class.java)
+            s = couchdbOld.path(id).request(MediaType.APPLICATION_JSON).get(Session::class.java)
         } catch (e: Exception) {
         }
         return if (s?.expiration?.time ?: -1 > System.currentTimeMillis()) s else null
@@ -39,8 +38,8 @@ object SessionManager : WithLogging() {
     fun valid(s: String): Boolean = this[s] != null
 
     fun end(s: String) {
-        val over = couchdb.path(s).request(MediaType.APPLICATION_JSON).get(Session::class.java)
-        couchdb.path(over._id).queryParam("rev", over._rev).request().delete(String::class.java)
+        val over = couchdbOld.path(s).request(MediaType.APPLICATION_JSON).get(Session::class.java)
+        couchdbOld.path(over._id).queryParam("rev", over._rev).request().delete(String::class.java)
         log.debug("Ending session for {}.", over.user.longUser)
     }
 
@@ -51,7 +50,7 @@ object SessionManager : WithLogging() {
      * @param pw  password
      * @return authenticated user
      */
-    fun authenticate(sam: String, pw: String): User? {
+    fun authenticate(sam: String, pw: String): FullUser? {
         val dbUser = getSam(sam)
         return if (dbUser?.authType != null && dbUser.authType == "local") {
             if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
@@ -66,10 +65,10 @@ object SessionManager : WithLogging() {
         User dbUser = null;
         try {
             if (sam.contains("@")) {
-                UserResultSet results = couchdb.path("_design").path("main").path("_view").path("byLongUser").queryParam("key", "\""+sam.replace("@", "%40")+"\"").request(MediaType.APPLICATION_JSON).get(UserResultSet.class);
+                UserResultSet results = couchdbOld.path("_design").path("main").path("_view").path("byLongUser").queryParam("key", "\""+sam.replace("@", "%40")+"\"").request(MediaType.APPLICATION_JSON).get(UserResultSet.class);
                 if (!results.rows.isEmpty()) dbUser = results.rows.get(0).value;
             } else {
-                dbUser = couchdb.path("u" + sam).request(MediaType.APPLICATION_JSON).get(User.class);
+                dbUser = couchdbOld.path("u" + sam).request(MediaType.APPLICATION_JSON).get(User.class);
             }
         } catch (Exception e) {}
         if (dbUser != null && dbUser.authType != null && dbUser.authType.equals("local")) {
@@ -92,18 +91,20 @@ object SessionManager : WithLogging() {
      * @return user if found
      * @see .queryUserCache
      */
-    fun queryUser(sam: String?, pw: String?): User? {
+    fun queryUser(sam: String?, pw: String?): FullUser? {
         return if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else queryUserCache(sam)
     }
 
-    private fun getSam(sam: String?): User? {
+    private fun getSam(sam: String?): FullUser? {
         if (sam == null) return null
         try {
             if (sam.contains("@")) {
-                val results = couchdb.path("_design").path("main").path("_view").path("byLongUser").queryParam("key", "\"" + sam.replace("@", "%40") + "\"").request(MediaType.APPLICATION_JSON).get(UserResultSet::class.java)
-                if (!results.rows.isEmpty()) return results.rows[0].value
+                val results = CouchDb.getViewRows<FullUser>("byLongUser") {
+                    query("key" to "\"${sam.replace("@", "%40")}\"")
+                }
+                if (!results.isEmpty()) return results[0]
             } else {
-                return couchdb.path("u" + sam).request(MediaType.APPLICATION_JSON).get(User::class.java)
+                return CouchDb.path("u$sam").getJson()
             }
         } catch (ignored: Exception) {
         }
@@ -117,7 +118,7 @@ object SessionManager : WithLogging() {
      * @param sam shortId
      * @return user if exists
      */
-    fun queryUserCache(sam: String?): User? {
+    fun queryUserCache(sam: String?): FullUser? {
         val dbUser = getSam(sam) ?: return null
         dbUser.salutation = if (dbUser.nick == null)
             if (!dbUser.preferredName.isEmpty())
@@ -159,7 +160,7 @@ object SessionManager : WithLogging() {
      * @param u user to check
      * @return String for role
      */
-    fun getRole(u: User?): String {
+    fun getRole(u: FullUser?): String {
         if (u == null) return ""
         if (u.authType == null || u.authType != "local") {
             val g = u.groups.toSet()

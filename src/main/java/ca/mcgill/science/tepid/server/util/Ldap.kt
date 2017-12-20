@@ -1,32 +1,23 @@
 package ca.mcgill.science.tepid.server.util
 
-import ca.mcgill.science.tepid.models.data.User
-import ca.mcgill.science.tepid.models.data.ViewResultSet
-import com.fasterxml.jackson.databind.node.ObjectNode
 import `in`.waffl.q.Promise
 import `in`.waffl.q.PromiseRejectionException
 import `in`.waffl.q.Q
-import org.glassfish.jersey.jackson.JacksonFeature
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import javax.naming.NamingEnumeration
-import javax.naming.NamingException
-import javax.naming.directory.*
-import javax.naming.ldap.InitialLdapContext
-import javax.naming.ldap.LdapContext
-import javax.ws.rs.client.Client
-import javax.ws.rs.client.ClientBuilder
-import javax.ws.rs.client.Entity
-import javax.ws.rs.client.WebTarget
-import javax.ws.rs.core.*
+import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.User
+import ca.mcgill.science.tepid.models.data.ViewResultMap
+import com.fasterxml.jackson.databind.node.ObjectNode
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ExecutionException
-import java.util.regex.Matcher
-import java.util.regex.Pattern
-
 import javax.naming.Context.*
+import javax.naming.NamingException
+import javax.naming.directory.*
+import javax.naming.ldap.InitialLdapContext
+import javax.naming.ldap.LdapContext
+import javax.ws.rs.client.Entity
+import javax.ws.rs.core.MediaType
 
 internal object Ldap : WithLogging() {
 
@@ -39,13 +30,13 @@ internal object Ldap : WithLogging() {
         var dbUser: User? = null
         try {
             if (sam.contains(".")) {
-                val results = couchdb.path("_design").path("main").path("_view").path("byLongUser").queryParam("key", "\"" + sam + "%40mail.mcgill.ca\"").request(MediaType.APPLICATION_JSON).async().get(LdapUserResultSet::class.java).get()
+                val results = couchdbOld.path("_design").path("main").path("_view").path("byLongUser").queryParam("key", "\"" + sam + "%40mail.mcgill.ca\"").request(MediaType.APPLICATION_JSON).async().get(LdapUserResultSet::class.java).get()
                 if (!results.rows.isEmpty()) dbUser = results.rows.get(0).value
             } else if (sam.matches("[0-9]+".toRegex())) {
-                val results = couchdb.path("_design").path("main").path("_view").path("byStudentId").queryParam("key", sam).request(MediaType.APPLICATION_JSON).async().get(LdapUserResultSet::class.java).get()
+                val results = couchdbOld.path("_design").path("main").path("_view").path("byStudentId").queryParam("key", sam).request(MediaType.APPLICATION_JSON).async().get(LdapUserResultSet::class.java).get()
                 if (!results.rows.isEmpty()) dbUser = results.rows.get(0).value
             } else {
-                dbUser = couchdb.path("u" + sam).request(MediaType.APPLICATION_JSON).async().get(User::class.java).get()
+                dbUser = couchdbOld.path("u" + sam).request(MediaType.APPLICATION_JSON).async().get(User::class.java).get()
             }
         } catch (ignored: InterruptedException) {
         } catch (ignored: ExecutionException) {
@@ -66,7 +57,7 @@ internal object Ldap : WithLogging() {
 
     }
 
-    private class LdapUserResultSet : ViewResultSet<String, User>()
+    private class LdapUserResultSet : ViewResultMap<String, User>()
 
     /**
      * Creates a blank user and attempts to retrieve as many attributes
@@ -194,7 +185,7 @@ internal object Ldap : WithLogging() {
                     }
                     if (dbUser == null || dbUser != out) {
                         try { //TODO rewrite to avoid null pointers
-                            val request = couchdb.path("u${out.shortUser}")
+                            val request = couchdbOld.path("u${out.shortUser}")
                             if (dbUser != null) out._rev = dbUser._rev
                             val result = request.request(MediaType.APPLICATION_JSON).put(Entity.entity(out, MediaType.APPLICATION_JSON)).readEntity(ObjectNode::class.java)
                             val newRev = if (result.get("_rev") == null) null else result.get("_rev").asText()
@@ -216,53 +207,6 @@ internal object Ldap : WithLogging() {
             }
         }.start()
         return ldapDeferred.promise
-    }
-
-
-    fun getIdData(upn: String?, pw: String?): Promise<Map<String, String>> {
-        val q = Q.defer<Map<String, String>>()
-        object : Thread("Student Id Fetch") {
-            override fun run() {
-                val client = ClientBuilder.newBuilder().register(JacksonFeature::class.java).build()
-                val session = client.target("https://horizon.mcgill.ca/pban1/twbkwbis.P_GenMenu")
-                val login = client.target("https://horizon.mcgill.ca/pban1/twbkwbis.P_ValLogin")
-                val id = client.target("https://horizon.mcgill.ca/pban1/bzsktran.P_Display_Form")
-                var cookies = session.queryParam("name", "bmenu.P_MainMnu").request().get().cookies
-                var bigIpServerIsr: Cookie? = null
-                var oraWxSession: Cookie? = null
-                var testId: Cookie? = null
-                for (c in cookies.values) {
-                    if (c.name.startsWith("BIGipServer~ISR")) {
-                        bigIpServerIsr = c.toCookie()
-                    } else if (c.name.startsWith("ORA_WX_SESSION")) {
-                        oraWxSession = c.toCookie()
-                    } else if (c.name.startsWith("TESTID")) {
-                        testId = c.toCookie()
-                    }
-                }
-                val postData = MultivaluedHashMap<String, String>()
-                postData.add("sid", upn)
-                postData.add("PIN", pw)
-                cookies = login.request().cookie(bigIpServerIsr).cookie(oraWxSession).cookie(testId).post(Entity.entity<MultivaluedMap<String, String>>(postData, MediaType.APPLICATION_FORM_URLENCODED)).cookies
-                val sessId = cookies["SESSID"]?.toCookie()
-                val response = id.queryParam("user_type", "S").queryParam("tran_type", "V").request().cookie(oraWxSession).cookie(sessId).get(String::class.java)
-                val matcher = Pattern.compile("<TD CLASS=\"delabel\" scope=\"row\" ><SPAN class=\"fieldmediumtextbold\">([^:]+):</SPAN></TD>\\s+<TD CLASS=\"dedefault\"><SPAN class=\"fieldmediumtext\">([^<]+)</SPAN></TD>").matcher(response)
-                val out = HashMap<String, String>()
-                while (matcher.find()) {
-                    var k = matcher.group(1)
-                    var v: String? = matcher.group(2)
-                    if (k.startsWith("Student Name with Preferred")) {
-                        k = "preferredName"
-//                        if (v!!.toString().contains(", ")) v = Arrays.asList(*v.toString().split(", ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray())
-                    }
-                    if (k.startsWith("McGill ID")) k = "id"
-                    //does not record permanent code
-                    if (!k.startsWith("Permanent Code") && v != null) out.put(k, v)
-                }
-                q.resolve(out)
-            }
-        }.start()
-        return q.promise
     }
 
 
@@ -330,7 +274,7 @@ internal object Ldap : WithLogging() {
         return null
     }
 
-    fun authenticate(sam: String, pw: String): User? {
+    fun authenticate(sam: String, pw: String): FullUser? {
         if (!Config.LDAP_ENABLED) return null
         val user = Ldap.queryUser(sam, pw)
         try {
