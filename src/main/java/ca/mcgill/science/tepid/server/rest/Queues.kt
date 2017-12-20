@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
-import ca.mcgill.science.tepid.models.data.ViewResultMap
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer
 import ca.mcgill.science.tepid.server.util.*
 import java.io.InputStream

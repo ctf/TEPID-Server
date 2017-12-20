@@ -3,7 +3,6 @@ package ca.mcgill.science.tepid.server.rest;
 import ca.mcgill.science.tepid.models.data.Session;
 import ca.mcgill.science.tepid.models.data.ViewResultMap;
 import ca.mcgill.science.tepid.models.data.ViewResultMap.Row;
-import ca.mcgill.science.tepid.server.util.CouchDb;
 import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;

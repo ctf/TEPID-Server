@@ -40,6 +40,7 @@ object Config {
      * TEM data
      */
     val TEM_URL: String
+    const val RESOURCE_USER = "***REMOVED***"
     val RESOURCE_CREDENTIALS: String
     /*
      * Boolean to enable ldap authentication

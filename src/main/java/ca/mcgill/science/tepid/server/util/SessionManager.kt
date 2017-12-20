@@ -6,7 +6,6 @@ import ca.mcgill.science.tepid.models.Utils
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
-import ca.mcgill.science.tepid.models.data.ViewResultMap
 import org.mindrot.jbcrypt.BCrypt
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -137,9 +136,9 @@ object SessionManager : WithLogging() {
      * @param limit max list size
      * @return list of matching users
      */
-    fun autoSuggest(like: String, limit: Int): Promise<List<User>> {
+    fun autoSuggest(like: String, limit: Int): Promise<List<FullUser>> {
         if (!Config.LDAP_ENABLED) {
-            val emptyPromise = Q.defer<List<User>>()
+            val emptyPromise = Q.defer<List<FullUser>>()
             emptyPromise.resolve(emptyList())
             return emptyPromise.promise
         }
