@@ -3,7 +3,6 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.data.Destination
 import ca.mcgill.science.tepid.models.data.DestinationTicket
 import ca.mcgill.science.tepid.models.data.Session
-import ca.mcgill.science.tepid.models.data.ViewResultMap
 import ca.mcgill.science.tepid.server.util.*
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
@@ -41,6 +40,8 @@ class Destinations {
         val session = ctx.getProperty("session") as Session
         val rows = CouchDb.path("_design/main/_view", "destinations")
                 .getJson<ViewResultMap<String, Destination>>()
+
+        val destinations = CouchDb.getViewRows<Destination>("destinations")
 
         // todo, figure out why we do this
         fun Destination.update() = apply {

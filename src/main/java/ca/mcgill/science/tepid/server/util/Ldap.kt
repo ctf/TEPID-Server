@@ -7,7 +7,6 @@ import ca.mcgill.science.tepid.ldap.LdapBase
 import ca.mcgill.science.tepid.ldap.LdapHelperContract
 import ca.mcgill.science.tepid.ldap.LdapHelperDelegate
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.ViewResultMap
 import com.fasterxml.jackson.databind.node.ObjectNode
 import java.util.*
 import java.util.concurrent.ExecutionException

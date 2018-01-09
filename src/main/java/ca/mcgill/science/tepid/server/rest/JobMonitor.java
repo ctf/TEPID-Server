@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.rest;
 
 import ca.mcgill.science.tepid.models.data.PrintJob;
-import ca.mcgill.science.tepid.models.data.ViewResultMap;
+import ca.mcgill.science.tepid.server.util.ViewResultMap;
 import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 
 import javax.ws.rs.client.Entity;

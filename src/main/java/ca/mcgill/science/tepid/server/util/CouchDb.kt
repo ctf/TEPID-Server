@@ -1,16 +1,17 @@
 package ca.mcgill.science.tepid.server.util
 
-import ca.mcgill.science.tepid.models.data.ViewResultSet
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.fasterxml.jackson.module.kotlin.convertValue
+import com.fasterxml.jackson.module.kotlin.treeToValue
 import javax.ws.rs.client.WebTarget
 
 object CouchDb : WithLogging() {
 
     const val MAIN_VIEW = "_design/main/_view"
 
-    val logging = false
+    var logging = false
 
     fun debug(message: () -> String) {
         if (CouchDb.logging)
@@ -49,33 +50,33 @@ object CouchDb : WithLogging() {
             getViewRows(MAIN_VIEW, path)
 
     inline fun <reified T : Any> getViewRows(path: String,
-                                             targetConfig: WebTarget.() -> Unit): List<T> =
+                                             targetConfig: WebTarget.() -> WebTarget): List<T> =
             getViewRows(MAIN_VIEW, path, targetConfig)
 
     inline fun <reified T : Any> getViewRows(base: String, path: String): List<T> =
-            getViewRows(base, path, {})
+            getViewRows(base, path, { this })
 
     inline fun <reified T : Any> getViewRows(base: String, path: String,
-                                             targetConfig: WebTarget.() -> Unit) =
-            CouchDb.path(base, path).apply { targetConfig() }
-                    .getJson<ViewResultSet<T>>()
-                    .getValues()
+                                             targetConfig: WebTarget.() -> WebTarget): List<T> =
+            CouchDb.path(base, path).targetConfig().getObject().get("rows").mapNotNull { it?.get("value") }.map {
+                mapper.treeToValue<T>(it)
+            }
 
-    inline fun <reified T> jsonFromId(id: String) = path(id).getJson<T>()
+    inline fun <reified T : Any> jsonFromId(id: String) = path(id).getJson<T>()
 
     /**
      * Helper for getting data at path [id], editing, then putting it back at the same path
      */
-    inline fun <reified T> update(id: String, action: T.() -> Unit): T? {
+    inline fun <reified T : Any> update(id: String, action: T.() -> Unit): T? {
         val target = path(id)
-        val data = target.getJson<T>() ?: return null
+        val data = target.getJson<T>()
         data.action()
         debug { "updated id $id" }
         target.putJson(data)
         return data
     }
 
-    inline fun <reified T> tryUpdate(id: String, action: T.() -> Unit) = try {
+    inline fun <reified T : Any> tryUpdate(id: String, action: T.() -> Unit) = try {
         update(id, action)
         true
     } catch (e: Exception) {

@@ -1,8 +1,7 @@
 package ca.mcgill.science.tepid.server.rest;
 
 import ca.mcgill.science.tepid.models.data.Session;
-import ca.mcgill.science.tepid.models.data.ViewResultMap;
-import ca.mcgill.science.tepid.models.data.ViewResultMap.Row;
+import ca.mcgill.science.tepid.server.util.ViewResultMap;
 import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -27,11 +26,11 @@ public class SessionMonitor implements Runnable {
     public void run() {
         logger.info("Removing expired sessions from database.");
         try {
-            List<Row<String, Session>> rows = couchdb.path("_design/main/_view").path("sessions").request(MediaType.APPLICATION_JSON).get(SessionResultSet.class).getRows();
+            List<ViewResultMap.Row<String, Session>> rows = couchdb.path("_design/main/_view").path("sessions").request(MediaType.APPLICATION_JSON).get(SessionResultSet.class).getRows();
             JsonNodeFactory nf = JsonNodeFactory.instance;
             ObjectNode root = nf.objectNode();
             ArrayNode docs = root.putArray("docs");
-            for (Row<String, Session> r : rows) {
+            for (ViewResultMap.Row<String, Session> r : rows) {
                 Session s = r.getValue();
                 if (s.getExpiration().getTime() < System.currentTimeMillis()) {
                     ObjectNode o = nf.objectNode().put("_id", s.getId()).put("_rev", s.getRev()).put("_deleted", true);

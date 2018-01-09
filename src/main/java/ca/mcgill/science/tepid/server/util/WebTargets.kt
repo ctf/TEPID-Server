@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.util
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature
 import org.glassfish.jersey.jackson.JacksonFeature
 import javax.ws.rs.client.ClientBuilder
@@ -69,30 +70,31 @@ fun WebTarget.deleteRev(): String {
 /**
  * Get json in the format of the supplied class
  */
-inline fun <reified T> WebTarget.getJson(): T {
-    val result = request(MediaType.APPLICATION_JSON).get(T::class.java)
+inline fun <reified T : Any> WebTarget.getJson(): T {
+    val data = getString()
+    val result: T = mapper.readValue(data)
     CouchDb.debug { "getJson: $result" }
     return result
 }
 
 fun WebTarget.getObject() = request().get(ObjectNode::class.java)
 
-fun WebTarget.getString() = request().get(String::class.java)
+fun WebTarget.getString() = request(MediaType.TEXT_PLAIN).get(String::class.java)
 
 
 /**
  * Put [data] as a json to current target
  * TODO check if text_plain is suitable
  */
-inline fun <reified T> WebTarget.putJson(data: T) {
+inline fun <reified T : Any> WebTarget.putJson(data: T) {
     request(MediaType.TEXT_PLAIN).put(Entity.entity(data, MediaType.APPLICATION_JSON))
 }
 
-fun <T> WebTarget.postJson(data: T) =
+fun <T : Any> WebTarget.postJson(data: T) =
         request(MediaType.TEXT_PLAIN).post(Entity.entity(data, MediaType.APPLICATION_JSON))
                 .readEntity(String::class.java)
 
-fun <T> WebTarget.postJsonGetObj(data: T) =
+fun <T : Any> WebTarget.postJsonGetObj(data: T) =
         request(MediaType.APPLICATION_JSON).post(Entity.entity(data, MediaType.APPLICATION_JSON))
                 .readEntity(ObjectNode::class.java)
 

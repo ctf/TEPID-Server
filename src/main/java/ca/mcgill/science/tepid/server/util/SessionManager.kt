@@ -94,18 +94,27 @@ object SessionManager : WithLogging() {
         return if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else queryUserCache(sam)
     }
 
-    private fun getSam(sam: String?): FullUser? {
+    fun sss(sam: String): List<FullUser> {
+        val results = CouchDb.getViewRows<FullUser>("byLongUser") {
+            query("key" to "\"${sam.replace("@", "%40")}\"", "limit" to 1)
+        }
+        return results
+    }
+
+    fun getSam(sam: String?): FullUser? {
         if (sam == null) return null
         try {
             if (sam.contains("@")) {
+                println(sam)
                 val results = CouchDb.getViewRows<FullUser>("byLongUser") {
-                    query("key" to "\"${sam.replace("@", "%40")}\"")
+                    query("key" to "\"${sam.replace("@", "%40")}\"", "limit" to 1)
                 }
                 if (!results.isEmpty()) return results[0]
             } else {
                 return CouchDb.path("u$sam").getJson()
             }
-        } catch (ignored: Exception) {
+        } catch (e: Exception) {
+            System.err.println("Query error for $sam: $e")
         }
 
         return null
