@@ -58,15 +58,6 @@ class CouchTest {
 
         assertEquals(byLongUser, byShortUser)
     }
-
-    @Test
-    fun test() {
-
-        val sam = "***REMOVED***"
-        val results = CouchDb.getViewRows<FullUser>("byLongUser") {
-            query("key" to "\"${sam.replace("@", "%40")}\"", "limit" to 1)
-        }
-        println(results)
-    }
+    
 
 }
