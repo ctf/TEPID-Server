@@ -181,7 +181,7 @@ class Users {
     @Produces(MediaType.APPLICATION_JSON)
     fun ldapAutoSuggest(@PathParam("like") like: String, @QueryParam("limit") limit: Int): List<User>? {
         val resultsPromise = SessionManager.autoSuggest(like, limit)
-        return resultsPromise.getResult(20000).map { it.toUser() } // todo check if we should further simplify to userquery
+        return resultsPromise.getResult(20000).map(FullUser::toUser) // todo check if we should further simplify to userquery
     }
 
     companion object : WithLogging()
