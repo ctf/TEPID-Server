@@ -77,6 +77,10 @@ inline fun <reified T : Any> WebTarget.getJson(): T {
     return result
 }
 
+//inline fun <reified T: Any> WebTarget.getJsonMap(): Map<String, T> {
+//
+//}
+
 fun WebTarget.getObject() = request().get(ObjectNode::class.java)
 
 fun WebTarget.getString() = request(MediaType.TEXT_PLAIN).get(String::class.java)

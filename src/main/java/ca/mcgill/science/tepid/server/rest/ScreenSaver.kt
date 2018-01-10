@@ -1,9 +1,6 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.data.Destination
-import ca.mcgill.science.tepid.models.data.MarqueeData
-import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.models.data.PrintQueue
+import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.util.CouchDb
 import ca.mcgill.science.tepid.server.util.WithLogging
 import ca.mcgill.science.tepid.server.util.query
@@ -71,7 +68,7 @@ class ScreenSaver {
     @Path("queues/status")
     @Produces(MediaType.APPLICATION_JSON)
     fun getStatus(): Map<String, Boolean> {
-        val destinations = CouchDb.getViewRows<Destination>("destinations")
+        val destinations = CouchDb.getViewRows<FullDestination>("destinations")
                 .map { it._id to it }.toMap()
 
         val queues = CouchDb.getViewRows<PrintQueue>("queues")

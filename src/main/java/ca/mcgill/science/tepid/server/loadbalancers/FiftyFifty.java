@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.loadbalancers;
 
 import ca.mcgill.science.tepid.models.data.Destination;
+import ca.mcgill.science.tepid.models.data.FullDestination;
 import ca.mcgill.science.tepid.models.data.PrintJob;
 import ca.mcgill.science.tepid.server.util.QueueManager;
 import ca.mcgill.science.tepid.server.util.WebTargetsKt;
@@ -13,7 +14,7 @@ import java.util.List;
 public class FiftyFifty extends LoadBalancer {
 
     private final WebTarget couchdb = WebTargetsKt.getCouchdbOld();
-    private final List<Destination> destinations;
+    private final List<FullDestination> destinations;
     private int currentDest;
     private boolean allDown = true;
     private QueueManager qM;
@@ -23,7 +24,7 @@ public class FiftyFifty extends LoadBalancer {
         qM = qm;
         this.destinations = new ArrayList<>(qm.queueConfig.getDestinations().size());
         for (String d : qm.queueConfig.getDestinations()) {
-            Destination dest = couchdb.path(d).request(MediaType.APPLICATION_JSON).get(Destination.class);
+            FullDestination dest = couchdb.path(d).request(MediaType.APPLICATION_JSON).get(FullDestination.class);
             destinations.add(dest);
             if (dest.getUp()) this.allDown = false;
         }
@@ -33,7 +34,7 @@ public class FiftyFifty extends LoadBalancer {
     private void refreshDestinationsStatus() {
         destinations.clear(); // clear out the old Destination objects
         for (String d : qM.queueConfig.getDestinations()) {
-            Destination dest = couchdb.path(d).request(MediaType.APPLICATION_JSON).get(Destination.class);
+            FullDestination dest = couchdb.path(d).request(MediaType.APPLICATION_JSON).get(FullDestination.class);
             destinations.add(dest); // replace with shiny new Destination objects
             if (dest.getUp()) this.allDown = false;
         }
@@ -54,7 +55,7 @@ public class FiftyFifty extends LoadBalancer {
         do currentDest = (currentDest + 1) % destinations.size(); while (!destinations.get(currentDest).getUp());
         LoadBalancerResults lbr = new LoadBalancerResults();
         lbr.destination = destinations.get(currentDest).getId();
-        Destination dest = couchdb.path(lbr.destination).request(MediaType.APPLICATION_JSON).get(Destination.class);
+        FullDestination dest = couchdb.path(lbr.destination).request(MediaType.APPLICATION_JSON).get(FullDestination.class);
         lbr.eta = getEta(j, dest);
         return lbr;
     }
@@ -66,7 +67,7 @@ public class FiftyFifty extends LoadBalancer {
      * @param d destination for print
      * @return long for estimation
      */
-    private long getEta(PrintJob j, Destination d) {
+    private long getEta(PrintJob j, FullDestination d) {
         long eta = Math.max(queueManager.getEta(d.getId()), System.currentTimeMillis());
         System.out.println("current max: " + eta);
         eta += Math.round(j.getPages() / (double) d.getPpm() * 60.0 * 1000.0);

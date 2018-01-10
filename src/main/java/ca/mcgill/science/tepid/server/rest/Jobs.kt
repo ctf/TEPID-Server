@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.Destination
+import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.gs.GS
@@ -129,7 +130,7 @@ class Jobs {
                                 //add job to the queue
                                 j2 = QueueManager.assignDestination(id)
                                 //todo check destination field
-                                val dest = CouchDb.path(j2.destination!!).getJson<Destination>()
+                                val dest = CouchDb.path(j2.destination!!).getJson<FullDestination>()
                                 if (sendToSMB(tmp, dest)) {
                                     j2.printed = Date()
                                     CouchDb.path(id).putJson(j2)
@@ -264,7 +265,7 @@ class Jobs {
 
         val processingThreads: MutableMap<String, Thread> = ConcurrentHashMap()
 
-        fun sendToSMB(f: File, destination: Destination): Boolean {
+        fun sendToSMB(f: File, destination: FullDestination): Boolean {
             if (destination.path?.trim { it <= ' ' }?.isNotEmpty() != false) {
                 //this is a dummy destination
                 try {

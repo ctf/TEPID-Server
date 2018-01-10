@@ -28,7 +28,7 @@ object CouchDb : WithLogging() {
         debug { "putting array at $fieldName: ${data.joinToString(" | ")}" }
         return JsonNodeFactory.instance.objectNode()
                 .putArray(fieldName)
-                .addAll(ObjectMapper().convertValue(data, ArrayNode::class.java))
+                .addAll(mapper.convertValue<ArrayNode>(data))
     }
 
     fun path(vararg segment: String): WebTarget {

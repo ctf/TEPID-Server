@@ -35,6 +35,8 @@ open class ViewResultSet2(var rows: List<String>) : TepidJackson
 
 /**
  * Collection of rows containing keys and values
+ *
+ * TODO deprecate. We can write our own parser which doesn't use reflection
  */
 open class ViewResultMap<K : Any, V : Any> : TepidJackson {
     open var rows: List<Row<K, V>> = emptyList()

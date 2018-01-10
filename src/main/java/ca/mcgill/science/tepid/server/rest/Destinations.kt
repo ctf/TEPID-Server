@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.Destination
 import ca.mcgill.science.tepid.models.data.DestinationTicket
+import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.util.*
 import javax.annotation.security.RolesAllowed
@@ -24,7 +25,7 @@ class Destinations {
     @RolesAllowed("elder")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun putDestinations(destinations: Map<String, Destination>) =
+    fun putDestinations(destinations: Map<String, FullDestination>) =
             CouchDb.putArray("docs", destinations.values).postJson("_bulk_docs")
 
     /**
@@ -37,22 +38,17 @@ class Destinations {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("elder", "ctfer", "user")
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
-        val session = ctx.getProperty("session") as Session
-        val rows = CouchDb.path("_design/main/_view", "destinations")
-                .getJson<ViewResultMap<String, Destination>>()
+        val session = ctx.getProperty("session") as? Session
 
-        val destinations = CouchDb.getViewRows<Destination>("destinations")
-
-        // todo, figure out why we do this
-        fun Destination.update() = apply {
-            if (session.role != "elder") {
-                domain = null
-                username = null
-                password = null
-            }
+        if (session == null) {
+            log.error("Requesting destination with null session")
+            return emptyMap()
         }
 
-        return rows.getValues().map(Destination::update).map { it._id to it }.toMap()
+        return CouchDb.getViewRows<FullDestination>("destinations")
+                .map { it.toDestination(session) }
+                .map { it._id to it }
+                .toMap()
     }
 
     @POST
@@ -64,7 +60,7 @@ class Destinations {
         val session = crc.getProperty("session") as Session
         ticket.user = session.user.toUser()
         val successText = "$id marked as ${if (ticket.up) "up" else "down"}"
-        val success = CouchDb.tryUpdate<Destination>(id) {
+        val success = CouchDb.tryUpdate<FullDestination>(id) {
             up = ticket.up
             this.ticket = if (ticket.up) null else ticket
             log.info("Destination $successText.")

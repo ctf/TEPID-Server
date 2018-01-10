@@ -165,6 +165,8 @@ object SessionManager : WithLogging() {
     /**
      * Retrieves user role
      *
+     * TODO return enum instead
+     *
      * @param u user to check
      * @return String for role
      */
