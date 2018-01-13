@@ -58,6 +58,6 @@ class CouchTest {
 
         assertEquals(byLongUser, byShortUser)
     }
-    
+
 
 }
