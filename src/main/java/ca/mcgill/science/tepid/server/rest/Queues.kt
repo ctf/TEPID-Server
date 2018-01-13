@@ -69,18 +69,14 @@ class Queues {
     fun getAttachment(@PathParam("queue") queue: String, @PathParam("id") id: String, @PathParam("file") file: String): Response {
         try {
             val j = CouchDb.path(id).getJson<PrintJob>()
-            //todo check if null ever happens
-            if (j == null || !j.queueName.equals(queue, ignoreCase = true)) {
-                return Response.status(404).entity("Could not find job $id in queue $queue").type(MediaType.TEXT_PLAIN).build()
-            }
+            if (!j.queueName.equals(queue, ignoreCase = true))
+                return Response.Status.NOT_FOUND.text("Could not find job $id in queue $queue")
             val resp = CouchDb.path(id, file).request().get()
-            if (resp.status == 200) {
-                return Response.ok(resp.readEntity(InputStream::class.java), resp.getMediaType()).build()
-            }
-        } catch (e: Exception) {
+            if (resp.status == 200)
+                return Response.ok(resp.readEntity(InputStream::class.java), resp.mediaType).build()
+        } catch (ignored: Exception) {
         }
-
-        return Response.status(404).entity("Could not find $file for job $id").type(MediaType.TEXT_PLAIN).build()
+        return Response.Status.NOT_FOUND.text("Could not find $file for job $id")
     }
 
     @GET

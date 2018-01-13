@@ -1,11 +1,25 @@
 package ca.mcgill.science.tepid.server.util
 
+import ca.mcgill.science.tepid.models.data.Session
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.slf4j.Logger
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.ws.rs.container.ContainerRequestContext
 
 val mapper = jacksonObjectMapper()
+
+/**
+ * Safely attempts to extract a session from a container context
+ * If a session could not be found, it will be logged inside the [logger]
+ */
+fun ContainerRequestContext.getSession(logger: Logger): Session? {
+    val session = getProperty("session") as? Session
+    if (session == null)
+        logger.error("Failed to retrieve session")
+    return null
+}
 
 /**
  * Collection of helper methods

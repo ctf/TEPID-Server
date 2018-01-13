@@ -12,6 +12,9 @@ fun Response.Status.text(message: String) =
 fun unauthorizedResponse(errorMessage: String): Response = Response.status(Response.Status.UNAUTHORIZED)
         .entity("{\"error\":\"$errorMessage\"}").build()
 
+inline val INVALID_SESSION_RESPONSE: Response
+    get() = unauthorizedResponse("Invalid Session")
+
 /**
  * Helper function to wrap a typical tepid response
  * Calls [action] while failing safely

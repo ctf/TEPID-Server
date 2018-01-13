@@ -4,9 +4,7 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
-import ca.mcgill.science.tepid.server.util.SessionManager
-import ca.mcgill.science.tepid.server.util.WithLogging
-import ca.mcgill.science.tepid.server.util.couchdbOld
+import ca.mcgill.science.tepid.server.util.*
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.mindrot.jbcrypt.BCrypt
 import java.net.URI
@@ -109,14 +107,18 @@ class Users {
     @Path("/{sam}/jobExpiration")
     @RolesAllowed("user", "ctfer", "elder")
     @Consumes(MediaType.APPLICATION_JSON)
-    fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context req: ContainerRequestContext): Response {
-        val session = req.getProperty("session") as Session
-        val user = SessionManager.queryUser(sam, null)
-        if (session.role == "user" && session.user.shortUser != user!!.shortUser) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot change this resource").type(MediaType.TEXT_PLAIN).build()
-        }
-        user!!.jobExpiration = jobExpiration
-        val res = couchdbOld.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
+    fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context ctx: ContainerRequestContext): Response {
+        val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
+        val user = SessionManager.queryUser(sam, null) ?: return Response.Status.NOT_FOUND.text("User $sam not found")
+        if (session.role == "user" && session.user.shortUser != user.shortUser)
+            return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
+        user.jobExpiration = jobExpiration
+//        CouchDb.path("u${user.shortUser}").putJson(user)
+        // todo update to use CouchDb utils
+        val res = couchdbOld.path("u${user.shortUser}")
+                .request(MediaType.APPLICATION_JSON)
+                .put(Entity.entity(user, MediaType.APPLICATION_JSON))
+                .readEntity(String::class.java)
         println("Job expiration for ${user.shortUser} set to $jobExpiration")
         return Response.ok(res).build()
     }
@@ -126,12 +128,11 @@ class Users {
     @RolesAllowed("user", "ctfer", "elder")
     @Consumes(MediaType.APPLICATION_JSON)
     fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context req: ContainerRequestContext): Response {
-        val session = req.getProperty("session") as Session
-        val user = SessionManager.queryUser(sam, null)
-        if (session.role == "user" && session.user.shortUser != user!!.shortUser) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot change this resource").type(MediaType.TEXT_PLAIN).build()
-        }
-        user!!.colorPrinting = color
+        val session = req.getSession(log) ?: return INVALID_SESSION_RESPONSE
+        val user = SessionManager.queryUser(sam, null) ?: return Response.Status.NOT_FOUND.text("User $sam not found")
+        if (session.role == "user" && session.user.shortUser != user.shortUser)
+            return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
+        user.colorPrinting = color
         val res = couchdbOld.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
         return Response.ok(res).build()
     }

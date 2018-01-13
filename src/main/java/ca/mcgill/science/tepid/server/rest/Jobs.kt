@@ -1,6 +1,5 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.data.Destination
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.Session
@@ -56,11 +55,12 @@ class Jobs {
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    fun newJob(j: PrintJob, @Context req: ContainerRequestContext): String {
-        j.userIdentification = (req.getProperty("session") as Session).user.shortUser
+    fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): String {
+        val session = ctx.getSession(log) ?: return "Bad session" // todo change output
+        j.userIdentification = (session).user.shortUser
         j.deleteDataOn = System.currentTimeMillis() + SessionManager.queryUserCache(j.userIdentification)!!.jobExpiration
         println(j)
-        log.debug("Starting new print job {} for {}...", j.name, (req.getProperty("session") as Session).user.longUser)
+        log.debug("Starting new print job {} for {}...", j.name, session.user.longUser)
         return CouchDb.target.postJson(j)
     }
 
@@ -193,9 +193,9 @@ class Jobs {
     @Path("/job/{id}/_changes")
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getChanges(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse, @Context req: ContainerRequestContext) {
+    fun getChanges(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse, @Context ctx: ContainerRequestContext) {
+        val session = ctx.getSession(log) ?: return
         val j = CouchDb.jsonFromId<PrintJob>(id)
-        val session = req.getProperty("session") as Session
         if (session.role == "user" && session.user.shortUser != j.userIdentification) {
             ar.resume(Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build())
         }
@@ -217,19 +217,19 @@ class Jobs {
     @Path("/job/{id}")
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getJob(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Context req: ContainerRequestContext): Response {
+    fun getJob(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Context ctx: ContainerRequestContext): Response {
+        val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
         val j = CouchDb.jsonFromId<PrintJob>(id)
-        val session = req.getProperty("session") as Session
-        return if (session.role == "user" && session.user.shortUser != j.userIdentification) {
-            Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build()
-        } else Response.ok(j).build()
+        return if (session.role == "user" && session.user.shortUser != j.userIdentification) unauthorizedResponse("You cannot access this resource")
+        else Response.ok(j).build()
     }
 
     @PUT
     @Path("/job/{id}/refunded")
     @RolesAllowed("ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
-    fun setJobRefunded(@PathParam("id") id: String, @Context req: ContainerRequestContext, refunded: Boolean): Response {
+    fun setJobRefunded(@PathParam("id") id: String, @Context ctx: ContainerRequestContext, refunded: Boolean): Response {
+        ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE // todo check if  validation is necessary
         CouchDb.update<PrintJob>(id) {
             isRefunded = refunded
             log.debug("Refunded job $id")
@@ -241,13 +241,12 @@ class Jobs {
     @Path("/job/{id}/reprint")
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.TEXT_PLAIN)
-    fun reprintJob(@PathParam("id") id: String, @Context req: ContainerRequestContext): Response {
+    fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): Response {
+        val session = ctx.getSession(log) ?: return unauthorizedResponse("Invalid session")
         val j = CouchDb.path(id).getJson<PrintJob>()
         val file = Utils.existingFile(j.file) ?: return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Data for this job no longer exists").type(MediaType.TEXT_PLAIN).build()
-        val session = req.getProperty("session") as Session
-        if (session.role == "user" && session.user.shortUser != j.userIdentification) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot reprint someone else's job").type(MediaType.TEXT_PLAIN).build()
-        }
+        if (session.role == "user" && session.user.shortUser != j.userIdentification)
+            return unauthorizedResponse("You cannot reprint someone else's job")
         val reprint = PrintJob()
         reprint.name = j.name
         reprint.originalHost = "REPRINT"

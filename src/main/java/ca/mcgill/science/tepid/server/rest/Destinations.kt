@@ -38,12 +38,7 @@ class Destinations {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("elder", "ctfer", "user")
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
-        val session = ctx.getProperty("session") as? Session
-
-        if (session == null) {
-            log.error("Requesting destination with null session")
-            return emptyMap()
-        }
+        val session = ctx.getSession(log) ?: return emptyMap()
 
         return CouchDb.getViewRows<FullDestination>("destinations")
                 .map { it.toDestination(session) }
@@ -57,7 +52,7 @@ class Destinations {
     @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.APPLICATION_JSON)
     fun setStatus(@PathParam("dest") id: String, ticket: DestinationTicket, @Context crc: ContainerRequestContext): Response {
-        val session = crc.getProperty("session") as Session
+        val session = crc.getSession(log) ?: return INVALID_SESSION_RESPONSE
         ticket.user = session.user.toUser()
         val successText = "$id marked as ${if (ticket.up) "up" else "down"}"
         val success = CouchDb.tryUpdate<FullDestination>(id) {
