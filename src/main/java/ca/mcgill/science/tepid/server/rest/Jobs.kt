@@ -1,12 +1,11 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.Destination
+import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.Session
-import ca.mcgill.science.tepid.models.data.ViewResultSet
 import ca.mcgill.science.tepid.server.gs.GS
 import ca.mcgill.science.tepid.server.util.*
-import com.fasterxml.jackson.databind.node.ObjectNode
 import org.tukaani.xz.XZInputStream
 import java.io.*
 import java.nio.file.Files
@@ -14,7 +13,6 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
-import javax.ws.rs.client.Entity
 import javax.ws.rs.container.AsyncResponse
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.container.Suspended
@@ -26,8 +24,6 @@ import javax.ws.rs.core.UriInfo
 @Path("/jobs")
 class Jobs {
 
-    private class JobResultSet : ViewResultSet<String, PrintJob>()
-
     @GET
     @Path("/{sam}")
     @RolesAllowed("user", "ctfer", "elder")
@@ -37,8 +33,9 @@ class Jobs {
         if (session.role == "user" && session.user.shortUser != sam) {
             return null
         }
-        val data = couchdb.path("_design/main/_view").path("byUser").queryParam("key", "\"" + sam + "\"")
-                .request(MediaType.APPLICATION_JSON).get(JobResultSet::class.java).getValues()
+        val data = CouchDb.getViewRows<PrintJob>("byUser") {
+            query("key" to "\"$sam\"")
+        }
 
         // todo why are we sorting stuff in java
         val out = TreeSet<PrintJob> { j1, j2 ->
@@ -64,7 +61,7 @@ class Jobs {
         j.deleteDataOn = System.currentTimeMillis() + SessionManager.queryUserCache(j.userIdentification)!!.jobExpiration
         println(j)
         log.debug("Starting new print job {} for {}...", j.name, (req.getProperty("session") as Session).user.longUser)
-        return couchdb.request(MediaType.TEXT_PLAIN).post(Entity.entity(j, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
+        return CouchDb.target.postJson(j)
     }
 
     @PUT
@@ -83,10 +80,10 @@ class Jobs {
             Files.copy(`is`, tmpXz.toPath())
             `is`.close()
             //let db know we have received data
-            val j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob::class.java)
-            j.file = tmpXz.absolutePath
-            j.received = Date()
-            couchdb.path(id).request(MediaType.TEXT_PLAIN).put(Entity.entity<PrintJob>(j, MediaType.APPLICATION_JSON))
+            CouchDb.update<PrintJob>(id) {
+                file = tmpXz.absolutePath
+                received = Date()
+            }
             val processing = object : Thread("Job Processing for " + id) {
                 override fun run() {
                     try {
@@ -115,12 +112,12 @@ class Jobs {
                         val color = if (psMonochrome) 0 else inkCov.filter { !it.monochrome }.size
 
                         //update page count and status in db
-                        var j2 = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob::class.java)
-                        j2.pages = inkCov.size
-                        j2.colorPages = color
-                        j2.processed = Date()
+                        var j2 = CouchDb.update<PrintJob>(id) {
+                            pages = inkCov.size
+                            colorPages = color
+                            processed = Date()
+                        }!!
                         System.err.println(id + " setting stats (" + inkCov.size + " pages, " + color + " color)")
-                        couchdb.path(id).request(MediaType.TEXT_PLAIN).put(Entity.entity<PrintJob>(j2, MediaType.APPLICATION_JSON))
 
                         //check if user has color printing enabled
                         if (color > 0 && (SessionManager.queryUser(j2.userIdentification, null)?.colorPrinting != true)) {
@@ -132,10 +129,11 @@ class Jobs {
                             } else {
                                 //add job to the queue
                                 j2 = QueueManager.assignDestination(id)
-                                val dest = couchdb.path(j2.destination).request(MediaType.APPLICATION_JSON).get(Destination::class.java)
+                                //todo check destination field
+                                val dest = CouchDb.path(j2.destination!!).getJson<FullDestination>()
                                 if (sendToSMB(tmp, dest)) {
                                     j2.printed = Date()
-                                    couchdb.path(id).request(MediaType.TEXT_PLAIN).put(Entity.entity<PrintJob>(j2, MediaType.APPLICATION_JSON))
+                                    CouchDb.path(id).putJson(j2)
                                     System.err.println(j2._id + " sent to destination")
                                 } else {
                                     failJob(id, "Could not send to destination")
@@ -164,9 +162,9 @@ class Jobs {
     }
 
     fun failJob(id: String, error: String) {
-        val j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob::class.java)
-        j.setFailed(Date(), error)
-        couchdb.path(j._id).request(MediaType.TEXT_PLAIN).put(Entity.entity<PrintJob>(j, MediaType.APPLICATION_JSON))
+        CouchDb.update<PrintJob>(id) {
+            setFailed(Date(), error)
+        }
         log.debug("Job {} failed:{}.", id, error)
     }
 
@@ -196,12 +194,15 @@ class Jobs {
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
     fun getChanges(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse, @Context req: ContainerRequestContext) {
-        val j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob::class.java)
+        val j = CouchDb.jsonFromId<PrintJob>(id)
         val session = req.getProperty("session") as Session
         if (session.role == "user" && session.user.shortUser != j.userIdentification) {
             ar.resume(Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build())
         }
-        var target = couchdb.path("_changes").queryParam("filter", "main/byJob").queryParam("job", id)
+
+        var target = CouchDb.path("changes")
+                .query("filter" to "main/byJob",
+                        "job" to id)
         val qp = uriInfo.queryParameters
         if (qp.containsKey("feed")) target = target.queryParam("feed", qp.getFirst("feed"))
         if (qp.containsKey("since")) target = target.queryParam("since", qp.getFirst("since"))
@@ -217,7 +218,7 @@ class Jobs {
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
     fun getJob(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Context req: ContainerRequestContext): Response {
-        val j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob::class.java)
+        val j = CouchDb.jsonFromId<PrintJob>(id)
         val session = req.getProperty("session") as Session
         return if (session.role == "user" && session.user.shortUser != j.userIdentification) {
             Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build()
@@ -229,10 +230,10 @@ class Jobs {
     @RolesAllowed("ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
     fun setJobRefunded(@PathParam("id") id: String, @Context req: ContainerRequestContext, refunded: Boolean): Response {
-        val j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob::class.java)
-        j.isRefunded = refunded
-        couchdb.path(j.getId()).request().put(Entity.entity<PrintJob>(j, MediaType.APPLICATION_JSON))
-        log.debug("Refunded job {}.", id)
+        CouchDb.update<PrintJob>(id) {
+            isRefunded = refunded
+            log.debug("Refunded job $id")
+        }
         return Response.ok().build()
     }
 
@@ -241,7 +242,7 @@ class Jobs {
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.TEXT_PLAIN)
     fun reprintJob(@PathParam("id") id: String, @Context req: ContainerRequestContext): Response {
-        val j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob::class.java)
+        val j = CouchDb.path(id).getJson<PrintJob>()
         val file = Utils.existingFile(j.file) ?: return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Data for this job no longer exists").type(MediaType.TEXT_PLAIN).build()
         val session = req.getProperty("session") as Session
         if (session.role == "user" && session.user.shortUser != j.userIdentification) {
@@ -254,7 +255,7 @@ class Jobs {
         reprint.userIdentification = j.userIdentification
         reprint.deleteDataOn = System.currentTimeMillis() + SessionManager.queryUserCache(j.userIdentification)!!.jobExpiration
         println(reprint)
-        val newId = couchdb.request(MediaType.APPLICATION_JSON).post(Entity.entity(reprint, MediaType.APPLICATION_JSON)).readEntity(ObjectNode::class.java).get("id").asText()
+        val newId = CouchDb.target.postJsonGetObj(reprint).get("id").asText()
         Utils.startCaughtThread("Reprint $id") { addJobData(FileInputStream(file), newId) }
         log.debug("Reprinted job {}, new id {}.", id, newId)
         return Response.ok("Reprinted $id new id $newId").build()
@@ -264,7 +265,7 @@ class Jobs {
 
         val processingThreads: MutableMap<String, Thread> = ConcurrentHashMap()
 
-        fun sendToSMB(f: File, destination: Destination): Boolean {
+        fun sendToSMB(f: File, destination: FullDestination): Boolean {
             if (destination.path?.trim { it <= ' ' }?.isNotEmpty() != false) {
                 //this is a dummy destination
                 try {

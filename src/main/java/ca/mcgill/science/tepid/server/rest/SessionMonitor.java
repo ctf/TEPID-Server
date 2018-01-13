@@ -1,8 +1,7 @@
 package ca.mcgill.science.tepid.server.rest;
 
 import ca.mcgill.science.tepid.models.data.Session;
-import ca.mcgill.science.tepid.models.data.ViewResultSet;
-import ca.mcgill.science.tepid.models.data.ViewResultSet.Row;
+import ca.mcgill.science.tepid.server.util.ViewResultMap;
 import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -17,22 +16,22 @@ import java.util.List;
 
 public class SessionMonitor implements Runnable {
 
-    private static final WebTarget couchdb = WebTargetsKt.getCouchdb();
+    private static final WebTarget couchdb = WebTargetsKt.getCouchdbOld();
     private static final Logger logger = LoggerFactory.getLogger(SessionMonitor.class);
 
-    private static class SessionResultSet extends ViewResultSet<String, Session> {
+    private static class SessionResultSet extends ViewResultMap<String, Session> {
     }
 
     @Override
     public void run() {
         logger.info("Removing expired sessions from database.");
         try {
-            List<Row<String, Session>> rows = couchdb.path("_design/main/_view").path("sessions").request(MediaType.APPLICATION_JSON).get(SessionResultSet.class).rows;
+            List<ViewResultMap.Row<String, Session>> rows = couchdb.path("_design/main/_view").path("sessions").request(MediaType.APPLICATION_JSON).get(SessionResultSet.class).getRows();
             JsonNodeFactory nf = JsonNodeFactory.instance;
             ObjectNode root = nf.objectNode();
             ArrayNode docs = root.putArray("docs");
-            for (Row<String, Session> r : rows) {
-                Session s = r.value;
+            for (ViewResultMap.Row<String, Session> r : rows) {
+                Session s = r.getValue();
                 if (s.getExpiration().getTime() < System.currentTimeMillis()) {
                     ObjectNode o = nf.objectNode().put("_id", s.getId()).put("_rev", s.getRev()).put("_deleted", true);
                     docs.add(o);

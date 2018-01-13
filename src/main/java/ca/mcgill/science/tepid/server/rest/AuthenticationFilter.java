@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.rest;
 
+import ca.mcgill.science.tepid.models.data.FullUser;
 import ca.mcgill.science.tepid.models.data.Session;
-import ca.mcgill.science.tepid.models.data.User;
 import ca.mcgill.science.tepid.server.util.SessionManager;
 import org.glassfish.jersey.internal.util.Base64;
 
@@ -76,7 +76,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 case "Basic":
                     String[] samAndPassword = new String(Base64.decode(credentials.getBytes())).split(":");
                     String username = samAndPassword[0].split("@")[0];
-                    User user = SessionManager.INSTANCE.authenticate(username, samAndPassword[1]);
+                    FullUser user = SessionManager.INSTANCE.authenticate(username, samAndPassword[1]);
                     session = user != null ? SessionManager.INSTANCE.start(user, 24) : null;
                     break;
                 default:
@@ -91,7 +91,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             }
             requestContext.setProperty("session", session);
             String role = SessionManager.INSTANCE.getRole(session.getUser());
-            if (role == null) {
+            if (role.isEmpty()) {
                 //user is not allow to access the system at all
                 requestContext.abortWith(ACCESS_DENIED);
                 return;

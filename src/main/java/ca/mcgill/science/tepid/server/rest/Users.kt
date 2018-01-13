@@ -1,11 +1,12 @@
 package ca.mcgill.science.tepid.server.rest
 
 
+import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.util.SessionManager
 import ca.mcgill.science.tepid.server.util.WithLogging
-import ca.mcgill.science.tepid.server.util.couchdb
+import ca.mcgill.science.tepid.server.util.couchdbOld
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.mindrot.jbcrypt.BCrypt
 import java.net.URI
@@ -26,7 +27,7 @@ class Users {
     @Path("/configured")
     @Produces(MediaType.APPLICATION_JSON)
     fun adminConfigured() = try {
-        val rows = couchdb.path("_design/main/_view").path("localAdmins").request(MediaType.APPLICATION_JSON).get(ObjectNode::class.java).get("rows")
+        val rows = couchdbOld.path("_design/main/_view").path("localAdmins").request(MediaType.APPLICATION_JSON).get(ObjectNode::class.java).get("rows")
         rows.size() > 0
     } catch (e: Exception) {
         e.printStackTrace()
@@ -62,7 +63,7 @@ class Users {
     @PUT
     @Path("/{sam}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun createLocalAdmin(@PathParam("sam") shortUser: String, newAdmin: User, @Context req: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
+    fun createLocalAdmin(@PathParam("sam") shortUser: String, newAdmin: FullUser, @Context req: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         if (this.adminConfigured()) {
             log.warn("Unauthorized attempt to add a local admin by {}.", (req.getProperty("session") as Session).user.longUser)
             return Response.status(Response.Status.UNAUTHORIZED).entity("Local admin already exists").type(MediaType.TEXT_PLAIN).build()
@@ -75,7 +76,7 @@ class Users {
         newAdmin.displayName = "${newAdmin.givenName} ${newAdmin.lastName}"
         newAdmin.salutation = newAdmin.givenName
         newAdmin.longUser = newAdmin.email
-        val res = couchdb.path("u$shortUser").request(MediaType.APPLICATION_JSON).put(Entity.entity(newAdmin, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
+        val res = couchdbOld.path("u$shortUser").request(MediaType.APPLICATION_JSON).put(Entity.entity(newAdmin, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
         log.info("Added local admin {}.", newAdmin.shortUser)
         return Response.ok(res).build()
     }
@@ -99,7 +100,7 @@ class Users {
             return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot change this resource").type(MediaType.TEXT_PLAIN).build()
         }
         user!!.nick = if (nick.isEmpty()) null else nick
-        val res = couchdb.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
+        val res = couchdbOld.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
         println("Nick for ${user.shortUser} set to $nick")
         return Response.ok(res).build()
     }
@@ -115,7 +116,7 @@ class Users {
             return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot change this resource").type(MediaType.TEXT_PLAIN).build()
         }
         user!!.jobExpiration = jobExpiration
-        val res = couchdb.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
+        val res = couchdbOld.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
         println("Job expiration for ${user.shortUser} set to $jobExpiration")
         return Response.ok(res).build()
     }
@@ -131,7 +132,7 @@ class Users {
             return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot change this resource").type(MediaType.TEXT_PLAIN).build()
         }
         user!!.colorPrinting = color
-        val res = couchdb.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
+        val res = couchdbOld.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
         return Response.ok(res).build()
     }
 
@@ -151,7 +152,7 @@ class Users {
         var totalPrinted = 0
         var earliestJob: Date? = null
         try {
-            val rows = couchdb.path("_design/main/_view").path("totalPrinted").queryParam("key", "\"$shortUser\"").request(MediaType.APPLICATION_JSON).get(ObjectNode::class.java).get("rows")
+            val rows = couchdbOld.path("_design/main/_view").path("totalPrinted").queryParam("key", "\"$shortUser\"").request(MediaType.APPLICATION_JSON).get(ObjectNode::class.java).get("rows")
             totalPrinted = rows.get(0).get("value").get("sum").asInt(0)
             val ej = rows.get(0).get("value").get("earliestJob").asLong(0)
             earliestJob = Date(ej)
@@ -160,7 +161,7 @@ class Users {
         }
 
         val user = SessionManager.queryUser(shortUser, null)
-        if (user == null || SessionManager.getRole(user) == null) return 0
+        if (user == null || SessionManager.getRole(user).isEmpty()) return 0
 
         //todo verify
         if (earliestJob == null) return 1000 // init to 1000 for new users
@@ -180,7 +181,7 @@ class Users {
     @Produces(MediaType.APPLICATION_JSON)
     fun ldapAutoSuggest(@PathParam("like") like: String, @QueryParam("limit") limit: Int): List<User>? {
         val resultsPromise = SessionManager.autoSuggest(like, limit)
-        return resultsPromise.getResult(20000)
+        return resultsPromise.getResult(20000).map(FullUser::toUser) // todo check if we should further simplify to userquery
     }
 
     companion object : WithLogging()

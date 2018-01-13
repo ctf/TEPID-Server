@@ -1,11 +1,9 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.server.util.CouchDb
 import ca.mcgill.science.tepid.server.util.WithLogging
-import ca.mcgill.science.tepid.server.util.couchdb
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.annotation.JsonInclude.Include
+import ca.mcgill.science.tepid.server.util.query
 import java.util.*
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
@@ -21,17 +19,7 @@ class ScreenSaver {
     @GET
     @Path("queues")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQueues(): List<PrintQueue> {
-        val rows = couchdb.path("_design/main/_view").path("queues")
-                .request(MediaType.APPLICATION_JSON).get(QueueResultSet::class.java).rows
-        return rows.map { it.value }
-    }
-
-    @JsonInclude(Include.NON_NULL)
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    data class QueueResultSet(var rows: List<Row>) {
-        data class Row(var value: PrintQueue)
-    }
+    fun getQueues(): List<PrintQueue> = CouchDb.getViewRows("queues")
 
     /**
      * @param queue The name of the queue to retrieve from
@@ -42,15 +30,15 @@ class ScreenSaver {
     @Path("queues/{queue}")
     @Produces(MediaType.APPLICATION_JSON)
     fun listJobs(@PathParam("queue") queue: String, @QueryParam("limit") @DefaultValue("13") limit: Int, @QueryParam("from") @DefaultValue("0") from: Long): Collection<PrintJob> {
-        val data = couchdb
-                .path("_design/main/_view").path("jobsByQueueAndTime")
-                .queryParam("startkey", "[\"$queue\",%7B%7D]")
-                .queryParam("endkey", "[\"$queue\",$from]")
-                .queryParam("descending", true)
-                .queryParam("limit", limit)
-                .request(MediaType.APPLICATION_JSON)
-                .get(JobResultSet::class.java)
-                .getValues()
+        val data = CouchDb.getViewRows<PrintJob>("jobsByQueueAndTime") {
+            query(
+                    "descending" to true,
+                    "startkey" to "[\"$queue\",%7B%7D]",
+                    "endkey" to "[\"$queue\",$from]",
+                    "limit" to limit
+            )
+        }
+
         val out = TreeSet(Comparator<PrintJob> { j1, j2 ->
             var p1: Date? = j1.processed
             var p2: Date? = j2.processed
@@ -80,17 +68,10 @@ class ScreenSaver {
     @Path("queues/status")
     @Produces(MediaType.APPLICATION_JSON)
     fun getStatus(): Map<String, Boolean> {
-        val destinations = couchdb    //gets a list of the destinations
-                .path("_design/main/_view").path("destinations")
-                .request(MediaType.APPLICATION_JSON)
-                .get(DestinationResultSet::class.java).getValues()
+        val destinations = CouchDb.getViewRows<FullDestination>("destinations")
                 .map { it._id to it }.toMap()
 
-        val queues = couchdb        //gets a list of the queues
-                .path("_design/main/_view").path("queues")
-                .request(MediaType.APPLICATION_JSON)
-                .get(QueueResultSet::class.java)
-                .rows.map { it.value }
+        val queues = CouchDb.getViewRows<PrintQueue>("queues")
 
         val out = mutableMapOf<String, Boolean>()
 
@@ -114,10 +95,7 @@ class ScreenSaver {
     @Path("marquee")
     @Produces(MediaType.APPLICATION_JSON)
     fun getMarquee(): List<MarqueeData> =
-            couchdb.path("_design/marquee/_view").path("all")
-                    .request(MediaType.APPLICATION_JSON)
-                    .get(MarqueeDataResultSet::class.java)
-                    .getValues()
+            CouchDb.getViewRows("_design/marquee/_view", "all")
 
 
     //TODO broke the screensaver?
@@ -135,13 +113,6 @@ class ScreenSaver {
     fun checkedIn(): List<String> {
         return emptyList()
     }
-
-
-    private class JobResultSet : ViewResultSet<List<String>, PrintJob>()
-
-    private class DestinationResultSet : ViewResultSet<String, Destination>()
-
-    private class MarqueeDataResultSet : ViewResultSet<String, MarqueeData>()
 
     companion object : WithLogging()
 }

@@ -17,7 +17,7 @@ public class QueueManager {
 
     private static final Map<String, QueueManager> instances = new HashMap<>();
     public final PrintQueue queueConfig;
-    private static final WebTarget couchdb = WebTargetsKt.getCouchdb();
+    private static final WebTarget couchdb = WebTargetsKt.getCouchdbOld();
     ;
     private final LoadBalancer loadBalancer;
 
@@ -38,11 +38,11 @@ public class QueueManager {
     private QueueManager(String queueName) {
         System.out.println("Instantiate queue manager for " + queueName);
         this.queueConfig = couchdb.path("q" + queueName).request(MediaType.APPLICATION_JSON).get(PrintQueue.class);
-        Class<? extends LoadBalancer> lb = LoadBalancer.getLoadBalancer(queueConfig.loadBalancer);
+        Class<? extends LoadBalancer> lb = LoadBalancer.getLoadBalancer(queueConfig.getLoadBalancer());
         try {
             this.loadBalancer = lb.getConstructor(QueueManager.class).newInstance(this);
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-            throw new RuntimeException("Could not instantiate load balancer " + this.queueConfig.loadBalancer, e);
+            throw new RuntimeException("Could not instantiate load balancer " + this.queueConfig.getLoadBalancer(), e);
         }
     }
 

@@ -6,8 +6,8 @@ import javax.ws.rs.core.Response
 /**
  * Helper to generate text responses with the given status info
  */
-fun responseStatus(status: Response.Status, message: String) =
-        Response.status(status).entity("${status.statusCode} $message").type(MediaType.TEXT_PLAIN)
+fun Response.Status.text(message: String) =
+        Response.status(this).entity("$statusCode $message").type(MediaType.TEXT_PLAIN).build()
 
 fun unauthorizedResponse(errorMessage: String): Response = Response.status(Response.Status.UNAUTHORIZED)
         .entity("{\"error\":\"$errorMessage\"}").build()
