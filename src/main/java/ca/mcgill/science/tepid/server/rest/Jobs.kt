@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.gs.GS
 import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.utils.WithLogging
 import org.tukaani.xz.XZInputStream
 import java.io.*
 import java.nio.file.Files

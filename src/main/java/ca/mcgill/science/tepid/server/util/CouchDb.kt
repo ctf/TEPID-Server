@@ -1,6 +1,6 @@
 package ca.mcgill.science.tepid.server.util
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.module.kotlin.convertValue

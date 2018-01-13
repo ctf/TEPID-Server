@@ -1,9 +1,12 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.models.data.FullDestination
+import ca.mcgill.science.tepid.models.data.MarqueeData
+import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.server.util.CouchDb
-import ca.mcgill.science.tepid.server.util.WithLogging
 import ca.mcgill.science.tepid.server.util.query
+import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.*
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType

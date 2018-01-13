@@ -94,6 +94,13 @@ inline fun <reified T : Any> WebTarget.putJson(data: T) {
     request(MediaType.TEXT_PLAIN).put(Entity.entity(data, MediaType.APPLICATION_JSON))
 }
 
+/**
+ * Same as [putJson], but will also read the entity as a String
+ */
+inline fun <reified T : Any> WebTarget.putJsonAndRead(data: T): String =
+        request(MediaType.TEXT_PLAIN).put(Entity.entity(data, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
+
+
 fun <T : Any> WebTarget.postJson(data: T) =
         request(MediaType.TEXT_PLAIN).post(Entity.entity(data, MediaType.APPLICATION_JSON))
                 .readEntity(String::class.java)

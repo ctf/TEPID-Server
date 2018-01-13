@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.models.Utils
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
+import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -15,14 +16,14 @@ object SessionManager : WithLogging() {
 
     fun start(user: FullUser, expiration: Int): Session {
         val s = Session(Utils.newSessionId(), user, expiration.toLong())
-        couchdbOld.path(s._id).request().put(Entity.entity(s, MediaType.APPLICATION_JSON))
+        CouchDb.path(s._id).request().put(Entity.entity(s, MediaType.APPLICATION_JSON))
         return s
     }
 
     operator fun get(id: String): Session? {
         var s: Session? = null
         try {
-            s = couchdbOld.path(id).request(MediaType.APPLICATION_JSON).get(Session::class.java)
+            s = CouchDb.path(id).request(MediaType.APPLICATION_JSON).get(Session::class.java)
         } catch (e: Exception) {
         }
         return if (s?.expiration?.time ?: -1 > System.currentTimeMillis()) s else null
@@ -37,9 +38,12 @@ object SessionManager : WithLogging() {
     fun valid(s: String): Boolean = this[s] != null
 
     fun end(s: String) {
-        val over = couchdbOld.path(s).request(MediaType.APPLICATION_JSON).get(Session::class.java)
-        couchdbOld.path(over._id).queryParam("rev", over._rev).request().delete(String::class.java)
-        log.debug("Ending session for {}.", over.user.longUser)
+//       val over = CouchDb.path(s).getJson<Session>()
+//        CouchDb.path(over._id).queryParam("rev", over._rev).request().delete(String::class.java)
+//        log.debug("Ending session for {}.", over.user.longUser)
+        CouchDb.path(s).deleteRev()
+
+        //todo validate. This removes logging but is more efficient
     }
 
     /**
@@ -94,15 +98,8 @@ object SessionManager : WithLogging() {
         return if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else queryUserCache(sam)
     }
 
-    fun sss(sam: String): List<FullUser> {
-        val results = CouchDb.getViewRows<FullUser>("byLongUser") {
-            query("key" to "\"${sam.replace("@", "%40")}\"", "limit" to 1)
-        }
-        return results
-    }
-
     fun getSam(sam: String?): FullUser? {
-        if (sam == null) return null
+        sam ?: return null
         try {
             if (sam.contains("@")) {
                 println(sam)

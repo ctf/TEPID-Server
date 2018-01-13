@@ -1,18 +1,16 @@
 package ca.mcgill.science.tepid.server.rest
 
-
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.util.*
-import com.fasterxml.jackson.databind.node.ObjectNode
+import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
-import javax.ws.rs.client.Entity
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
@@ -25,7 +23,7 @@ class Users {
     @Path("/configured")
     @Produces(MediaType.APPLICATION_JSON)
     fun adminConfigured() = try {
-        val rows = couchdbOld.path("_design/main/_view").path("localAdmins").request(MediaType.APPLICATION_JSON).get(ObjectNode::class.java).get("rows")
+        val rows = CouchDb.path(CouchDb.MAIN_VIEW, "localAdmins").getObject().get("rows")
         rows.size() > 0
     } catch (e: Exception) {
         e.printStackTrace()
@@ -74,7 +72,8 @@ class Users {
         newAdmin.displayName = "${newAdmin.givenName} ${newAdmin.lastName}"
         newAdmin.salutation = newAdmin.givenName
         newAdmin.longUser = newAdmin.email
-        val res = couchdbOld.path("u$shortUser").request(MediaType.APPLICATION_JSON).put(Entity.entity(newAdmin, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
+
+        val res = CouchDb.path("u$shortUser").putJsonAndRead(newAdmin)
         log.info("Added local admin {}.", newAdmin.shortUser)
         return Response.ok(res).build()
     }
@@ -87,65 +86,59 @@ class Users {
         SessionManager.setExchangeStudent(sam, exchange)
     }
 
+    /**
+     * Abstract implementation of modifying user data
+     * Note that this is called from an endpoint where [ctx] holds a session (valid or not),
+     * and where the roles allowed are at least of level "user"
+     */
+    private inline fun putUserData(sam: String, ctx: ContainerRequestContext, action: (user: FullUser) -> Unit): Response {
+        val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
+        val user = SessionManager.queryUser(sam, null) ?: return Response.Status.NOT_FOUND.text("User $sam not found")
+        if (session.role == "user" && session.user.shortUser != user.shortUser)
+            return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
+        action(user)
+        val res = CouchDb.path("u${user.shortUser}").putJsonAndRead(user)
+        return Response.ok(res).build()
+    }
+
+
     @PUT
     @Path("/{sam}/nick")
     @RolesAllowed("user", "ctfer", "elder")
     @Consumes(MediaType.APPLICATION_JSON)
-    fun setNick(@PathParam("sam") sam: String, nick: String, @Context req: ContainerRequestContext): Response {
-        val session = req.getProperty("session") as Session
-        val user = SessionManager.queryUser(sam, null)
-        if (session.role == "user" && session.user.shortUser != user?.shortUser) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot change this resource").type(MediaType.TEXT_PLAIN).build()
-        }
-        user!!.nick = if (nick.isEmpty()) null else nick
-        val res = couchdbOld.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
-        println("Nick for ${user.shortUser} set to $nick")
-        return Response.ok(res).build()
+    fun setNick(@PathParam("sam") sam: String, nick: String, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
+        it.nick = if (nick.isBlank()) null else nick
+        println("Setting nick for ${it.shortUser} to ${it.nick}")
     }
 
     @PUT
     @Path("/{sam}/jobExpiration")
     @RolesAllowed("user", "ctfer", "elder")
     @Consumes(MediaType.APPLICATION_JSON)
-    fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context ctx: ContainerRequestContext): Response {
-        val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
-        val user = SessionManager.queryUser(sam, null) ?: return Response.Status.NOT_FOUND.text("User $sam not found")
-        if (session.role == "user" && session.user.shortUser != user.shortUser)
-            return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
-        user.jobExpiration = jobExpiration
-//        CouchDb.path("u${user.shortUser}").putJson(user)
-        // todo update to use CouchDb utils
-        val res = couchdbOld.path("u${user.shortUser}")
-                .request(MediaType.APPLICATION_JSON)
-                .put(Entity.entity(user, MediaType.APPLICATION_JSON))
-                .readEntity(String::class.java)
-        println("Job expiration for ${user.shortUser} set to $jobExpiration")
-        return Response.ok(res).build()
+    fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
+        it.jobExpiration = jobExpiration
+        println("Job expiration for ${it.shortUser} set to $jobExpiration")
     }
 
     @PUT
     @Path("/{sam}/color")
     @RolesAllowed("user", "ctfer", "elder")
     @Consumes(MediaType.APPLICATION_JSON)
-    fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context req: ContainerRequestContext): Response {
-        val session = req.getSession(log) ?: return INVALID_SESSION_RESPONSE
-        val user = SessionManager.queryUser(sam, null) ?: return Response.Status.NOT_FOUND.text("User $sam not found")
-        if (session.role == "user" && session.user.shortUser != user.shortUser)
-            return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
-        user.colorPrinting = color
-        val res = couchdbOld.path("u${user.shortUser}").request(MediaType.APPLICATION_JSON).put(Entity.entity(user, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
-        return Response.ok(res).build()
+    fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
+        it.colorPrinting = color
+        println("Set color for ${it.shortUser} to ${it.colorPrinting}")
     }
 
     @GET
     @Path("/{sam}/quota")
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQuota(@PathParam("sam") shortUser: String, @Context req: ContainerRequestContext): Int {
-        val session = req.getProperty("session") as Session
-        return if (session.role == "user" && session.user.shortUser != shortUser) {
+    fun getQuota(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): Int {
+        val session = ctx.getSession(log) ?: return -1
+        return if (session.role == "user" && session.user.shortUser != shortUser)
             -1
-        } else getQuota(shortUser)
+        else
+            getQuota(shortUser)
     }
 
     fun getQuota(shortUser: String?): Int {
@@ -153,7 +146,8 @@ class Users {
         var totalPrinted = 0
         var earliestJob: Date? = null
         try {
-            val rows = couchdbOld.path("_design/main/_view").path("totalPrinted").queryParam("key", "\"$shortUser\"").request(MediaType.APPLICATION_JSON).get(ObjectNode::class.java).get("rows")
+            // todo not sure if this is the best implementation. Any node can be null, but I guess we're just catching it and moving forward afterwards
+            val rows = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject().get("rows")
             totalPrinted = rows.get(0).get("value").get("sum").asInt(0)
             val ej = rows.get(0).get("value").get("earliestJob").asLong(0)
             earliestJob = Date(ej)
@@ -180,10 +174,11 @@ class Users {
     @Path("/autosuggest/{like}")
     @RolesAllowed("ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
-    fun ldapAutoSuggest(@PathParam("like") like: String, @QueryParam("limit") limit: Int): List<User>? {
+    fun ldapAutoSuggest(@PathParam("like") like: String, @QueryParam("limit") limit: Int): List<User> {
         val resultsPromise = SessionManager.autoSuggest(like, limit)
         return resultsPromise.getResult(20000).map(FullUser::toUser) // todo check if we should further simplify to userquery
     }
 
     companion object : WithLogging()
+
 }

@@ -3,7 +3,7 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.SessionRequest
 import ca.mcgill.science.tepid.server.util.SessionManager
-import ca.mcgill.science.tepid.server.util.WithLogging
+import ca.mcgill.science.tepid.utils.WithLogging
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response

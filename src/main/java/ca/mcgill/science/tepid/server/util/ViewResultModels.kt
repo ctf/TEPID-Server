@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.bindings.TepidJackson
 import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.core.type.TypeReference
 
 /**
  * Collection of rows containing values

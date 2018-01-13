@@ -3,8 +3,8 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.data.Destination
 import ca.mcgill.science.tepid.models.data.DestinationTicket
 import ca.mcgill.science.tepid.models.data.FullDestination
-import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.utils.WithLogging
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
 import javax.ws.rs.container.ContainerRequestContext
