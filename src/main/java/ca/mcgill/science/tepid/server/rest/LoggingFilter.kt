@@ -19,8 +19,6 @@ class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
         if (!Config.DEBUG) return
         requestContext.apply {
             println("Request for ${uriInfo.path}")
-            println("Headers:")
-            headers.forEach { (s, o) -> println("\t$s - $o") }
         }
     }
 
@@ -28,9 +26,7 @@ class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
     override fun filter(requestContext: ContainerRequestContext, responseContext: ContainerResponseContext) {
         if (!Config.DEBUG) return
         responseContext.apply {
-            println("Response $status for ${location?.path}")
-            println("Headers:")
-            stringHeaders.forEach { (s, o) -> println("\t$s - $o") }
+            println("Response $status")
         }
     }
 }

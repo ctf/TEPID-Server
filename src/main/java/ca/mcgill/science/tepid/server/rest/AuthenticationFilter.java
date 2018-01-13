@@ -34,6 +34,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
+        System.out.println("AuthFilter at " + System.currentTimeMillis());
         final Response ACCESS_DENIED = Response.status(Response.Status.FORBIDDEN).entity("403 You cannot access this resource").type(MediaType.TEXT_PLAIN).build(),
                 AUTH_REQUIRED = Response.status(Response.Status.UNAUTHORIZED).entity("401 Please authenticate to access this resource")
                         .header("WWW-Authenticate", "Basic realm=\"Restricted Resource\"").type(MediaType.TEXT_PLAIN).build(),

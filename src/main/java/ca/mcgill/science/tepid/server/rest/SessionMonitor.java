@@ -37,6 +37,7 @@ public class SessionMonitor implements Runnable {
                     docs.add(o);
                 }
             }
+            logger.info("Removal successful"); // todo delete later?
             if (docs.size() > 0)
                 couchdb.path("_bulk_docs").request().post(Entity.entity(root, MediaType.APPLICATION_JSON));
         } catch (Exception e) {

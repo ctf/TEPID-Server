@@ -11,7 +11,7 @@ public class BackgroundTasks implements ServletContextListener {
     private ScheduledExecutorService scheduler;
 
     static {
-        System.out.println("BackgroundTask started");
+        System.out.println("BackgroundTask started at" + System.currentTimeMillis());
     }
 
     @Override
