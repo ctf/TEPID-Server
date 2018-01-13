@@ -1,8 +1,7 @@
 package ca.mcgill.science.tepid.server.rest;
 
 import ca.mcgill.science.tepid.models.data.PrintJob;
-import ca.mcgill.science.tepid.models.data.ViewResultSet;
-import ca.mcgill.science.tepid.models.data.ViewResultSet.Row;
+import ca.mcgill.science.tepid.server.util.ViewResultMap;
 import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 
 import javax.ws.rs.client.Entity;
@@ -13,9 +12,9 @@ import java.util.List;
 
 public class JobMonitor implements Runnable {
 
-    private static final WebTarget couchdb = WebTargetsKt.getCouchdb();
+    private static final WebTarget couchdb = WebTargetsKt.getCouchdbOld();
 
-    private static class JobResultSet extends ViewResultSet<String, PrintJob> {
+    private static class JobResultSet extends ViewResultMap<String, PrintJob> {
     }
 
     @Override
