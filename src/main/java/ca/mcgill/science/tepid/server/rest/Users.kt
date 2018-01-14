@@ -68,7 +68,7 @@ class Users {
         newAdmin.password = hashedPw
         newAdmin.role = "admin"
         newAdmin.authType = "local"
-        newAdmin.activeSince = Date()
+        newAdmin.activeSince = System.currentTimeMillis()
         newAdmin.displayName = "${newAdmin.givenName} ${newAdmin.lastName}"
         newAdmin.salutation = newAdmin.givenName
         newAdmin.longUser = newAdmin.email

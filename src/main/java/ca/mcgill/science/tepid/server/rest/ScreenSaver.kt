@@ -42,16 +42,7 @@ class ScreenSaver {
             )
         }
 
-        val out = TreeSet(Comparator<PrintJob> { j1, j2 ->
-            var p1: Date? = j1.processed
-            var p2: Date? = j2.processed
-            if (j1.failed != null) p1 = j1.started
-            if (j2.failed != null) p2 = j2.started
-            if (p1 == null && p2 == null) return@Comparator j1.started.compareTo(j2.started)
-            if (p1 == null) return@Comparator -1
-            if (p2 == null) return@Comparator 1
-            if (p2.compareTo(p1) == 0) j2._id.compareTo(j1._id) else p2.compareTo(p1)
-        })
+        val out = TreeSet<PrintJob>()
         return if (limit < 0 || limit >= out.size) {
             data
         } else {

@@ -5,7 +5,6 @@ import ca.mcgill.science.tepid.server.util.CouchDb
 import ca.mcgill.science.tepid.server.util.putJson
 import ca.mcgill.science.tepid.server.util.query
 import ca.mcgill.science.tepid.utils.WithLogging
-import java.util.*
 
 class JobMonitor : Runnable {
 
@@ -16,7 +15,7 @@ class JobMonitor : Runnable {
             }
 
             jobs.forEach { j ->
-                j.setFailed(Date(), "Timed out")
+                j.setFailed("Timed out")
                 val id = j._id
                 CouchDb.path(id).putJson(j)
                 val t = Jobs.processingThreads[id]

@@ -16,7 +16,6 @@ class AuthTokenFilter : ContainerResponseFilter {
 
     override fun filter(req: ContainerRequestContext, res: ContainerResponseContext) {
         val session = req.getSession() ?: return
-        log.debug("Decorating header for ${req.uriInfo.absolutePath}")
         res.headers.add(HEADER_SESSION, session.getId())
         res.headers.add(HEADER_ROLE, session.role)
         if (req.headers.containsKey(HEADER_TIMEOUT)) {
