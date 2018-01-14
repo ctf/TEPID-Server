@@ -65,7 +65,7 @@ object CouchDb : WithLogging() {
     /**
      * Helper for getting data at path [id], editing, then putting it back at the same path
      */
-    inline fun <reified T : Any> update(id: String, action: T.() -> Unit): T? {
+    inline fun <reified T : Any> update(id: String, action: T.() -> Unit): T {
         val target = path(id)
         val data = target.getJson<T>()
         data.action()

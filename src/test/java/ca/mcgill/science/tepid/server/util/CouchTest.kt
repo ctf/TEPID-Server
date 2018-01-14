@@ -14,7 +14,7 @@ import kotlin.test.assertNotNull
 class CouchTest : WithLogging() {
 
     private inline fun <T> List<T>.test(action: List<T>.() -> Unit) {
-        println("\n$this\n")
+        log.debug("\n$this\n")
         action()
     }
 
@@ -38,11 +38,11 @@ class CouchTest : WithLogging() {
 
         val byShortUser = SessionManager.getSam(shortUser)
         assertNotNull(byShortUser, "Query for $shortUser was null")
-        println(byShortUser)
+        log.info(byShortUser)
 
         val byLongUser = SessionManager.getSam(longUser)
         assertNotNull(byLongUser, "Query for $longUser was null")
-        println(byLongUser)
+        log.info(byLongUser)
 
         assertEquals(longUser, byShortUser!!.longUser)
         assertEquals(shortUser, byLongUser!!.shortUser)

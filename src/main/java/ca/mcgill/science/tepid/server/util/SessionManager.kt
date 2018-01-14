@@ -109,7 +109,6 @@ object SessionManager : WithLogging() {
 
         try {
             if (sam.contains("@")) {
-                println(sam)
                 val results = CouchDb.getViewRows<FullUser>("byLongUser") {
                     query("key" to "\"${sam.replace("@", "%40")}\"", "limit" to 1)
                 }
@@ -118,7 +117,7 @@ object SessionManager : WithLogging() {
                 return CouchDb.path("u$sam").getJson()
             }
         } catch (e: Exception) {
-            System.err.println("Query error for $sam: $e")
+            log.error("Query error for $sam", e)
         }
 
         return null

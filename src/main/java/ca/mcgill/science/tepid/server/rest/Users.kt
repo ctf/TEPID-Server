@@ -107,7 +107,7 @@ class Users {
     @Consumes(MediaType.APPLICATION_JSON)
     fun setNick(@PathParam("sam") sam: String, nick: String, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.nick = if (nick.isBlank()) null else nick
-        println("Setting nick for ${it.shortUser} to ${it.nick}")
+        log.debug("Setting nick for ${it.shortUser} to ${it.nick}")
     }
 
     @PUT
@@ -116,7 +116,7 @@ class Users {
     @Consumes(MediaType.APPLICATION_JSON)
     fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.jobExpiration = jobExpiration
-        println("Job expiration for ${it.shortUser} set to $jobExpiration")
+        log.debug("Job expiration for ${it.shortUser} set to $jobExpiration")
     }
 
     @PUT
@@ -125,7 +125,7 @@ class Users {
     @Consumes(MediaType.APPLICATION_JSON)
     fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.colorPrinting = color
-        println("Set color for ${it.shortUser} to ${it.colorPrinting}")
+        log.debug("Set color for ${it.shortUser} to ${it.colorPrinting}")
     }
 
     @GET

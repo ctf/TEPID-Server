@@ -8,7 +8,6 @@ import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.tukaani.xz.XZInputStream
 import java.io.*
-import java.nio.file.Files
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.security.RolesAllowed
@@ -60,8 +59,7 @@ class Jobs {
         val session = ctx.getSession(log) ?: return "Bad session" // todo change output
         j.userIdentification = (session).user.shortUser
         j.deleteDataOn = System.currentTimeMillis() + SessionManager.queryUserCache(j.userIdentification)!!.jobExpiration
-        println(j)
-        log.debug("Starting new print job {} for {}...", j.name, session.user.longUser)
+        log.debug("Starting new print job ${j.name} for ${session.user.longUser}...")
         return CouchDb.target.postJson(j)
     }
 
@@ -69,56 +67,60 @@ class Jobs {
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{id}")
-    fun addJobData(`is`: InputStream, @PathParam("id") id: String): String {
-        println(id + " Receiving job data")
-        val tmpDir = File(if (System.getProperty("os.name").startsWith("Windows")) System.getProperty("java.io.tmpdir") + "\\tepid" else "/tmp/tepid")
-        if (!tmpDir.exists()) {
-            tmpDir.mkdirs()
-        }
+    fun addJobData(input: InputStream, @PathParam("id") id: String): String {
+        log.debug("Receiving job data $id")
+        val tmpPath = if (System.getProperty("os.name").startsWith("Windows"))
+            "${System.getProperty("java.io.tmpdir")}\\tepid"
+        else
+            "/tmp/tepid"
+        val tmpDir = File(tmpPath)
+        if (!tmpDir.exists() && !tmpDir.mkdirs())
+            return "Failed to create tmp path $tmpPath"
         try {
+            // todo test and validate
             //write compressed job to disk
-            val tmpXz = File(tmpDir.absolutePath + "/" + id + ".ps.xz")
-            Files.copy(`is`, tmpXz.toPath())
-            `is`.close()
+            val tmpXz = File("${tmpDir.absolutePath}/$id.ps.xz")
+            tmpXz.copyFrom(input)
             //let db know we have received data
             CouchDb.update<PrintJob>(id) {
                 file = tmpXz.absolutePath
+                log.info("Updating job $id with path $file")
                 received = Date()
             }
-            val processing = object : Thread("Job Processing for " + id) {
+            val processing = object : Thread("Job Processing for $id") {
                 override fun run() {
                     try {
                         //decompress data
                         val tmp = File.createTempFile("tepid", ".ps")
-                        tmp.delete()
                         val decompress = XZInputStream(FileInputStream(tmpXz))
-                        Files.copy(decompress, tmp.toPath())
+                        tmp.copyFrom(decompress)
 
                         // Detect PostScript monochrome instruction
-                        val br = BufferedReader(FileReader(tmp.toPath().toString()))
-                        var psMonochrome = true
+                        val br = BufferedReader(FileReader(tmp))
+                        var psMonochrome = false
                         br.lines().forEach {
                             if (it.contains("/ProcessColorModel /DeviceGray")) {
                                 psMonochrome = true
                                 return@forEach
                             }
                             if (it.contains("/ProcessColorModel /DeviceCMYK")) {
-                                psMonochrome = true
+                                psMonochrome = false
                                 return@forEach
                             }
                         }
 
                         //count pages
                         val inkCov = GS.inkCoverage(tmp)
-                        val color = if (psMonochrome) 0 else inkCov.filter { !it.monochrome }.size
+                        val color = if (psMonochrome) 0
+                        else inkCov.filter { !it.monochrome }.size
 
                         //update page count and status in db
                         var j2 = CouchDb.update<PrintJob>(id) {
                             pages = inkCov.size
                             colorPages = color
                             processed = Date()
-                        }!!
-                        System.err.println(id + " setting stats (" + inkCov.size + " pages, " + color + " color)")
+                            log.info("Setting stats for job $id: $pages pages, $colorPages color")
+                        }
 
                         //check if user has color printing enabled
                         if (color > 0 && (SessionManager.queryUser(j2.userIdentification, null)?.colorPrinting != true)) {
@@ -135,7 +137,7 @@ class Jobs {
                                 if (sendToSMB(tmp, dest)) {
                                     j2.printed = Date()
                                     CouchDb.path(id).putJson(j2)
-                                    System.err.println(j2._id + " sent to destination")
+                                    log.info("${j2._id} sent to destination")
                                 } else {
                                     failJob(id, "Could not send to destination")
                                 }
@@ -155,7 +157,7 @@ class Jobs {
             log.debug("Job data for {} successfully uploaded.", id)
             return "Job data for $id successfully uploaded"
         } catch (e: IOException) {
-            log.error("Failed to upload job $id")
+            log.error("Failed to upload job $id, e")
             failJob(id, " Exception during upload")
         }
 
@@ -166,7 +168,7 @@ class Jobs {
         CouchDb.update<PrintJob>(id) {
             setFailed(Date(), error)
         }
-        log.debug("Job {} failed:{}.", id, error)
+        log.debug("Job $id failed: $error.")
     }
 
     //	public static boolean sendToSMB(File f, Destination destination) {

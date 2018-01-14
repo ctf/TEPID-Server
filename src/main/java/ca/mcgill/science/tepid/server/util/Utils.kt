@@ -4,6 +4,11 @@ import ca.mcgill.science.tepid.models.data.Session
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.logging.log4j.Logger
 import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
+import java.nio.file.CopyOption
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.ws.rs.container.ContainerRequestContext
@@ -19,6 +24,19 @@ fun ContainerRequestContext.getSession(logger: Logger? = null): Session? {
     if (session == null)
         logger?.error("Failed to retrieve session")
     return session
+}
+
+/**
+ * Copies the given [input] to the file, and ensure that
+ * the input stream is closed
+ *
+ * By default, we will clear the current file before the copy
+ */
+fun File.copyFrom(input: InputStream,
+                  vararg options: CopyOption = arrayOf(StandardCopyOption.REPLACE_EXISTING)) {
+    input.use {
+        Files.copy(it, toPath())
+    }
 }
 
 /**
@@ -59,4 +77,16 @@ object Utils {
             }
         }
     }.start()
+
+    fun copyStreams(input: InputStream, output: OutputStream, log: Logger) {
+        try {
+            input.use { `in` ->
+                output.use { out ->
+                    `in`.copyTo(out)
+                }
+            }
+        } catch (e: Exception) {
+            log.error("Copying streams failed", e)
+        }
+    }
 }
