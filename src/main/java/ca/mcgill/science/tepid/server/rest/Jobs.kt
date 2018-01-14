@@ -27,26 +27,17 @@ class Jobs {
     @Path("/{sam}")
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
-    fun listJobs(@PathParam("sam") sam: String, @Context req: ContainerRequestContext): Collection<PrintJob>? {
+    fun listJobs(@PathParam("sam") sam: String, @Context req: ContainerRequestContext): Collection<PrintJob> {
         val session = req.getProperty("session") as Session
         if (session.role == "user" && session.user.shortUser != sam) {
-            return null
+            return emptyList()
         }
         val data = CouchDb.getViewRows<PrintJob>("byUser") {
             query("key" to "\"$sam\"")
         }
 
         // todo why are we sorting stuff in java
-        val out = TreeSet<PrintJob> { j1, j2 ->
-            var p1: Date? = j1.processed
-            var p2: Date? = j2.processed
-            if (j1.failed != null) p1 = j1.started
-            if (j2.failed != null) p2 = j2.started
-            if (p1 == null && p2 == null) return@TreeSet j1.started.compareTo(j2.started)
-            if (p1 == null) return@TreeSet -1
-            if (p2 == null) return@TreeSet 1
-            if (p2.compareTo(p1) == 0) j2._id.compareTo(j1._id) else p2.compareTo(p1)
-        }
+        val out = TreeSet<PrintJob>()
         out.addAll(data)
         return out
     }
@@ -85,7 +76,7 @@ class Jobs {
             CouchDb.update<PrintJob>(id) {
                 file = tmpXz.absolutePath
                 log.info("Updating job $id with path $file")
-                received = Date()
+                received = System.currentTimeMillis()
             }
             val processing = object : Thread("Job Processing for $id") {
                 override fun run() {
@@ -118,7 +109,7 @@ class Jobs {
                         var j2 = CouchDb.update<PrintJob>(id) {
                             pages = inkCov.size
                             colorPages = color
-                            processed = Date()
+                            processed = System.currentTimeMillis()
                             log.info("Setting stats for job $id: $pages pages, $colorPages color")
                         }
 
@@ -135,7 +126,7 @@ class Jobs {
                                 //todo check destination field
                                 val dest = CouchDb.path(j2.destination!!).getJson<FullDestination>()
                                 if (sendToSMB(tmp, dest)) {
-                                    j2.printed = Date()
+                                    j2.printed = System.currentTimeMillis()
                                     CouchDb.path(id).putJson(j2)
                                     log.info("${j2._id} sent to destination")
                                 } else {
@@ -166,7 +157,7 @@ class Jobs {
 
     fun failJob(id: String, error: String) {
         CouchDb.update<PrintJob>(id) {
-            setFailed(Date(), error)
+            setFailed(error)
         }
         log.debug("Job $id failed: $error.")
     }
