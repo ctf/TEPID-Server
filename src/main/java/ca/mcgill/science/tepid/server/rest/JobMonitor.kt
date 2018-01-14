@@ -4,13 +4,10 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.server.util.CouchDb
 import ca.mcgill.science.tepid.server.util.putJson
 import ca.mcgill.science.tepid.server.util.query
+import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.*
 
 class JobMonitor : Runnable {
-
-    init {
-        println("Create JobMonitor")
-    }
 
     override fun run() {
         try {
@@ -30,9 +27,11 @@ class JobMonitor : Runnable {
                 Jobs.processingThreads.remove(j.getId())
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            log.error("General failure", e)
         }
 
     }
+
+    private companion object : WithLogging()
 
 }

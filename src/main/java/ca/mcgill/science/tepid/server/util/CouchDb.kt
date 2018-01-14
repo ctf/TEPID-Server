@@ -58,9 +58,7 @@ object CouchDb : WithLogging() {
 
     inline fun <reified T : Any> getViewRows(base: String, path: String,
                                              targetConfig: WebTarget.() -> WebTarget): List<T> =
-            CouchDb.path(base, path).targetConfig().getObject().get("rows").mapNotNull { it?.get("value") }.map {
-                mapper.treeToValue<T>(it)
-            }
+            CouchDb.path(base, path).targetConfig().getViewRows()
 
     inline fun <reified T : Any> jsonFromId(id: String) = path(id).getJson<T>()
 

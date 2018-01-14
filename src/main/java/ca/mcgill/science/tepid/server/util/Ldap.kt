@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.ldap.LdapBase
 import ca.mcgill.science.tepid.ldap.LdapHelperContract
 import ca.mcgill.science.tepid.ldap.LdapHelperDelegate
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ObjectNode
 import java.util.*
 import java.util.concurrent.ExecutionException
@@ -15,64 +16,59 @@ import javax.naming.directory.*
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
-object Ldap : LdapHelperContract by LdapHelperDelegate() {
+object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
 
     private val ldap = LdapBase()
-
-    private class LdapUserResultSet : ViewResultMap<String, FullUser>()
 
     private val numRegex = Regex("[0-9]+")
 
     private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
 
-    @JvmStatic
+    /**
+     * Query extension that will also check from our database
+     */
     fun queryUser(sam: String?, pw: String?): FullUser? {
-        if (!Config.LDAP_ENABLED || sam == null || pw == null) return null
+        if (!Config.LDAP_ENABLED || sam == null) return null
+        @Suppress("NAME_SHADOWING")
         val sam = if (sam.matches(numRegex) && sam.length > 9) sam.substring(sam.length - 9) else sam
-
+        log.debug("Querying user $sam")
         val dbDeferred = Q.defer<FullUser>()
         val ldapPromise = queryUser(sam, dbDeferred.promise, pw)
         var dbUser: FullUser? = null
         try {
-            val target = if (sam.contains("."))
-                CouchDb.path(CouchDb.MAIN_VIEW, "byLongUser").query("key" to "\"$sam%40mail.mcgill.ca\"")
-            else if (sam.matches(numRegex))
-                CouchDb.path(CouchDb.MAIN_VIEW, "byStudentId").query("key" to sam)
-            else null
-
-
-            //todo check why we use async
-//            val results:List<FullUser> = if (sam.contains("."))
-//                CouchDb.getViewRows("byLongUser") { query("key" to "\"$sam%40mail.mcgill.ca\"") }
-//            else
-//                CouchDb.getViewRows("byStudentId") { query("key" to sam) }
-
-            if (target != null) {
-                val results = target.request(MediaType.APPLICATION_JSON).async().get(LdapUserResultSet::class.java).get()
-                if (!results.rows.isEmpty()) dbUser = results.rows[0].value
+            val dbCandidate = when {
+                sam.contains(".") -> CouchDb.getViewRows<FullUser>("byLongUser") { query("key" to "\"$sam%40mail.mcgill.ca\"") }.firstOrNull()
+                sam.matches(numRegex) ->  CouchDb.getViewRows<FullUser>("byStudentId") { query("key" to sam) }.firstOrNull()
+                else -> CouchDb.path("u$sam").getJson()
             }
-
-            if (dbUser == null)
-                dbUser = CouchDb.path("u$sam").request(MediaType.APPLICATION_JSON).async().get(FullUser::class.java).get()
-
+            if (dbCandidate != null && dbCandidate._id != "")
+                dbUser = dbCandidate
         } catch (ignored: InterruptedException) {
         } catch (ignored: ExecutionException) {
         }
 
         dbDeferred.resolve(dbUser)
+
+        /*
+         * todo rework this part
+         * I don't see why we should return dbUser if the shortUser doesn't match
+         * IMO, we should always attempt an ldap request with a timeout and give it precedence
+         * In most cases, we won't receive a password and the ldap request will be fast,
+         * but if the user supplies a password, we can take it that they may want the data to be refreshed
+         */
         return if (dbUser == null || sam == dbUser.shortUser) {
             try {
                 val ldapUser = if (dbUser == null) ldapPromise.result else ldapPromise.getResult(3000)
                 ldapUser ?: dbUser
             } catch (pre: PromiseRejectionException) {
-                null
+                dbUser
             }
         } else {
             dbUser
         }
     }
 
-    private fun queryUser(sam: String, dbPromise: Promise<FullUser>, pw: String): Promise<FullUser> {
+    private fun queryUser(sam: String, dbPromise: Promise<FullUser>, pw: String?): Promise<FullUser> {
         val ldapDeferred = Q.defer<FullUser>()
         if (!Config.LDAP_ENABLED) {
             ldapDeferred.reject("LDAP disabled in source")
@@ -82,7 +78,6 @@ object Ldap : LdapHelperContract by LdapHelperDelegate() {
         object : Thread("LDAP Query: " + sam) {
             override fun run() {
                 try {
-
                     val term = if (termIsId) {
                         try {
                             dbPromise.getResult(5000)!!.shortUser
@@ -96,7 +91,8 @@ object Ldap : LdapHelperContract by LdapHelperDelegate() {
                         return
                     }
 
-                    val out = ldap.queryUser(term, term to pw) ?: FullUser()
+                    val out = if (pw == null) FullUser()
+                    else ldap.queryUser(term, term to pw) ?: FullUser()
 
                     val dbUser = dbPromise.result
 
@@ -114,11 +110,11 @@ object Ldap : LdapHelperContract by LdapHelperDelegate() {
                         try { //TODO rewrite to avoid null pointers
                             val result = CouchDb.path("u${out.shortUser}").request(MediaType.APPLICATION_JSON)
                                     .put(Entity.entity(out, MediaType.APPLICATION_JSON)).readEntity(ObjectNode::class.java)
-                            val newRev = if (result.get("_rev") == null) null else result.get("_rev").asText()
+                            val newRev = result.get("_rev")?.asText()
                             if (newRev != null && newRev.length > 3)
                                 out._rev = newRev
                             else
-                                System.err.println(result)
+                                log.error("Invalid out data $result")
                         } catch (e1: Exception) {
                             e1.printStackTrace()
                         }
@@ -156,13 +152,16 @@ object Ldap : LdapHelperContract by LdapHelperDelegate() {
 
     fun authenticate(sam: String, pw: String): FullUser? {
         if (!Config.LDAP_ENABLED) return null
-        val user = Ldap.queryUser(sam, pw)
+        log.debug("Authenticating $sam against ldap")
+        val user = queryUser(sam, pw)
+        log.debug("Ldap query result for $sam: $user")
         try {
             val auth = ldap.createAuthMap(user?.shortUser ?: "", pw)
             InitialDirContext(auth).close()
         } catch (e: Exception) {
             return null
         }
+        log.debug("Authentication successful")
         return user
     }
 
@@ -193,9 +192,9 @@ object Ldap : LdapHelperContract by LdapHelperDelegate() {
         mods[0] = ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod)
         try {
             ctx.modifyAttributes(groupDn, mods)
-            ldap.log.info("Added {} to exchange students.", sam)
+            log.info("Added {} to exchange students.", sam)
         } catch (e: NamingException) {
-            ldap.log.info("Error adding {} to exchange students.", sam)
+            log.info("Error adding {} to exchange students.", sam)
             e.printStackTrace()
         }
 

@@ -22,11 +22,11 @@ class Users {
 
     @Path("/configured")
     @Produces(MediaType.APPLICATION_JSON)
-    fun adminConfigured() = try {
+    fun adminConfigured(): Boolean = try {
         val rows = CouchDb.path(CouchDb.MAIN_VIEW, "localAdmins").getObject().get("rows")
         rows.size() > 0
     } catch (e: Exception) {
-        e.printStackTrace()
+        log.error("localAdmin check failed", e)
         false
     }
 
@@ -35,7 +35,7 @@ class Users {
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.APPLICATION_JSON)
     fun queryLdap(@PathParam("sam") shortUser: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
-        val session = crc.getProperty("session") as Session
+        val session = crc.getSession(log) ?: return INVALID_SESSION_RESPONSE
         val user = SessionManager.queryUser(shortUser, pw)
         //TODO security wise, should the second check not happen before the first?
         if (user == null) {
@@ -179,6 +179,6 @@ class Users {
         return resultsPromise.getResult(20000).map(FullUser::toUser) // todo check if we should further simplify to userquery
     }
 
-    companion object : WithLogging()
+    private companion object : WithLogging()
 
 }

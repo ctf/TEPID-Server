@@ -143,7 +143,7 @@ class Jobs {
                         }
                         tmp.delete()
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                        log.error("Failed to process job $id", e)
                         failJob(id, "Exception during processing")
                     }
 
@@ -155,7 +155,7 @@ class Jobs {
             log.debug("Job data for {} successfully uploaded.", id)
             return "Job data for $id successfully uploaded"
         } catch (e: IOException) {
-            e.printStackTrace()
+            log.error("Failed to upload job $id")
             failJob(id, " Exception during upload")
         }
 
@@ -243,7 +243,7 @@ class Jobs {
     @RolesAllowed("user", "ctfer", "elder")
     @Produces(MediaType.TEXT_PLAIN)
     fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): Response {
-        val session = ctx.getSession(log) ?: return unauthorizedResponse("Invalid session")
+        val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
         val j = CouchDb.path(id).getJson<PrintJob>()
         val file = Utils.existingFile(j.file) ?: return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Data for this job no longer exists").type(MediaType.TEXT_PLAIN).build()
         if (session.role == "user" && session.user.shortUser != j.userIdentification)

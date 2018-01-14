@@ -3,6 +3,8 @@ package ca.mcgill.science.tepid.server.util
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.treeToValue
+import org.apache.logging.log4j.LogManager
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature
 import org.glassfish.jersey.jackson.JacksonFeature
 import javax.ws.rs.client.ClientBuilder
@@ -10,19 +12,32 @@ import javax.ws.rs.client.Entity
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
 
-private fun initTarget(username: String, password: String, target: String)
-        = ClientBuilder.newBuilder()
-        .register(JacksonFeature::class.java)
-        .register(HttpAuthenticationFeature.basic(username, password))
-        .build()
-        .target(target)
+private val log = LogManager.getLogger("WebTargets")
 
-private fun initTarget(target: String)
-        = ClientBuilder.newBuilder()
-        .register(JacksonFeature::class.java)
-        .build()
-        .target(target)
+private fun initTarget(username: String, password: String, target: String): WebTarget {
+    if (target.isBlank())
+        log.error("Requested a target with an empty string")
+    else {
+        if (username.isBlank() || password.isBlank())
+            log.error("Requested authenticated target $target with a blank username or password")
+    }
+    return ClientBuilder.newBuilder()
+            .register(JacksonFeature::class.java)
+            .register(HttpAuthenticationFeature.basic(username, password))
+            .build()
+            .target(target)
+}
 
+private fun initTarget(target: String): WebTarget {
+    if (target.isBlank())
+        log.error("Requested a target with an empty string")
+    return ClientBuilder.newBuilder()
+            .register(JacksonFeature::class.java)
+            .build()
+            .target(target)
+}
+
+//todo hide
 val couchdbOld: WebTarget by lazy { initTarget(Config.COUCHDB_USERNAME, Config.COUCHDB_PASSWORD, Config.COUCHDB_URL) }
 val temdb: WebTarget by lazy { initTarget(Config.TEM_URL) }
 val barcodesdb: WebTarget by lazy { initTarget(Config.BARCODES_USERNAME, Config.BARCODES_PASSWORD, Config.BARCODES_URL) }
@@ -33,39 +48,37 @@ val barcodesdb: WebTarget by lazy { initTarget(Config.BARCODES_USERNAME, Config.
  * -----------------------------------------
  */
 
-//fun WebTarget.requestJson() = request(MediaType.APPLICATION_JSON)!!
-//inline fun <reified T> WebTarget.get() = requestJson().get(T::class.java)
-//fun WebTarget.post(data: ObjectNode) = request().post(Entity.entity(data, MediaType.APPLICATION_JSON))
-
-fun JsonNode.postJson(path: String): String {
-    val result = couchdbOld.path(path).request(MediaType.TEXT_PLAIN)
-            .post(Entity.entity(this, MediaType.APPLICATION_JSON))
-            .readEntity(String::class.java)
-    CouchDb.debug { "postJson: $result" }
-    return result
+/**
+ * Alternative to [WebTarget.queryParam], allowing you to pass
+ * everything as pairs directly
+ */
+fun WebTarget.query(vararg segment: Pair<String, Any>): WebTarget {
+    var target = this
+    segment.forEach { (key, value) -> target = target.queryParam(key, value) }
+    return target
 }
 
-//fun WebTarget.requestJson() = request(MediaType.APPLICATION_JSON)!!
-//inline fun <reified T> WebTarget.get() = requestJson().get(T::class.java)!!
+/*
+ * -----------------------------------------
+ * Get
+ * -----------------------------------------
+ */
 
 /**
- * Get json without class restrictions and read it as an [ObjectNode]
+ * Get the current WebTarget without class restrictions and read it as an [ObjectNode]
  */
-fun WebTarget.readJsonObject() =
-        request(MediaType.APPLICATION_JSON).get().readEntity(ObjectNode::class.java)
-
-fun WebTarget.getRev() = readJsonObject().get("_rev").asText()
+fun WebTarget.getObject(): ObjectNode = request().get(ObjectNode::class.java)
 
 /**
- * Deletes revision code at the current web target
+ * Get the current WebTarget without parsing as a [String]
  */
-fun WebTarget.deleteRev(): String {
-    val rev = getRev()
-    val result = queryParam("rev", rev).request(MediaType.TEXT_PLAIN).delete()
-            .readEntity(String::class.java)
-    CouchDb.debug { "deleteRev: $rev, $result" }
-    return result
-}
+fun WebTarget.getString(): String = request(MediaType.TEXT_PLAIN).get(String::class.java)
+
+/**
+ * Attempt to retrieve the "_rev" attribute from the given target
+ * Returns an empty string if nothing is found
+ */
+fun WebTarget.getRev(): String = getObject().get("_rev")?.asText() ?: ""
 
 /**
  * Get json in the format of the supplied class
@@ -77,14 +90,51 @@ inline fun <reified T : Any> WebTarget.getJson(): T {
     return result
 }
 
-//inline fun <reified T: Any> WebTarget.getJsonMap(): Map<String, T> {
-//
-//}
+/**
+ * Retrieve a list of the defined class from the WebTarget.
+ * The layout matches that of a CouchDb row,
+ * with a "rows" attribute containing a map of data to "value"
+ */
+inline fun <reified T : Any> WebTarget.getViewRows(): List<T> =
+        getObject().get("rows").mapNotNull { it?.get("value") }.map {
+            mapper.treeToValue<T>(it)
+        }
 
-fun WebTarget.getObject() = request().get(ObjectNode::class.java)
+/*
+ * -----------------------------------------
+ * Post
+ * -----------------------------------------
+ */
 
-fun WebTarget.getString() = request(MediaType.TEXT_PLAIN).get(String::class.java)
+fun JsonNode.postJson(path: String): String {
+    val result = CouchDb.path(path).request(MediaType.TEXT_PLAIN)
+            .post(Entity.entity(this, MediaType.APPLICATION_JSON))
+            .readEntity(String::class.java)
+    CouchDb.debug { "postJson: $result" }
+    return result
+}
 
+/**
+ * Submit a post request at the current target with the supplied [data]
+ * and retrieve the result as a [String]
+ */
+fun <T : Any> WebTarget.postJson(data: T): String =
+        request(MediaType.TEXT_PLAIN).post(Entity.entity(data, MediaType.APPLICATION_JSON))
+                .readEntity(String::class.java)
+
+/**
+ * Submit a post request at the current target with the supplied [data]
+ * and retrieve the result as an [ObjectNode]
+ */
+fun <T : Any> WebTarget.postJsonGetObj(data: T): ObjectNode =
+        request(MediaType.APPLICATION_JSON).post(Entity.entity(data, MediaType.APPLICATION_JSON))
+                .readEntity(ObjectNode::class.java)
+
+/*
+ * -----------------------------------------
+ * Put
+ * -----------------------------------------
+ */
 
 /**
  * Put [data] as a json to current target
@@ -100,17 +150,20 @@ inline fun <reified T : Any> WebTarget.putJson(data: T) {
 inline fun <reified T : Any> WebTarget.putJsonAndRead(data: T): String =
         request(MediaType.TEXT_PLAIN).put(Entity.entity(data, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
 
+/*
+ * -----------------------------------------
+ * Delete
+ * -----------------------------------------
+ */
 
-fun <T : Any> WebTarget.postJson(data: T) =
-        request(MediaType.TEXT_PLAIN).post(Entity.entity(data, MediaType.APPLICATION_JSON))
-                .readEntity(String::class.java)
-
-fun <T : Any> WebTarget.postJsonGetObj(data: T) =
-        request(MediaType.APPLICATION_JSON).post(Entity.entity(data, MediaType.APPLICATION_JSON))
-                .readEntity(ObjectNode::class.java)
-
-fun WebTarget.query(vararg segment: Pair<String, Any>): WebTarget {
-    var target = this
-    segment.forEach { (key, value) -> target = target.queryParam(key, value) }
-    return target
+/**
+ * Deletes revision code at the current web target
+ */
+fun WebTarget.deleteRev(): String {
+    val rev = getRev()
+    val result = queryParam("rev", rev).request(MediaType.TEXT_PLAIN).delete()
+            .readEntity(String::class.java)
+    CouchDb.debug { "deleteRev: $rev, $result" }
+    return result
 }
+

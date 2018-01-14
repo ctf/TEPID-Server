@@ -117,5 +117,5 @@ class ScreenSaver {
         return emptyList()
     }
 
-    companion object : WithLogging()
+    private companion object : WithLogging()
 }
