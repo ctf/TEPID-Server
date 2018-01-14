@@ -39,11 +39,12 @@ class Destinations {
     @RolesAllowed("elder", "ctfer", "user")
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
         val session = ctx.getSession(log) ?: return emptyMap()
-
-        return CouchDb.getViewRows<FullDestination>("destinations")
+        val data =  CouchDb.getViewRows<FullDestination>("destinations")
                 .map { it.toDestination(session) }
                 .map { it._id to it }
                 .toMap()
+        log.debug("Got destinations $data")
+        return data
     }
 
     @POST
@@ -72,6 +73,6 @@ class Destinations {
     fun deleteQueue(@PathParam("dest") destination: String) =
             CouchDb.path(destination).deleteRev()
 
-    companion object : WithLogging()
+    private companion object : WithLogging()
 
 }

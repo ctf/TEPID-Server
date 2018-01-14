@@ -9,24 +9,29 @@ import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
 import java.util.*
-import javax.ws.rs.client.Entity
-import javax.ws.rs.core.MediaType
 
 object SessionManager : WithLogging() {
 
+    private const val HOUR_IN_MILLIS = 60 * 60 * 1000
+
     fun start(user: FullUser, expiration: Int): Session {
-        val s = Session(Utils.newSessionId(), user, expiration.toLong())
-        CouchDb.path(s._id).request().put(Entity.entity(s, MediaType.APPLICATION_JSON))
-        return s
+        val session = Session(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
+        val id = Utils.newSessionId()
+        session._id = id
+        CouchDb.path(session._id).putJson(session)
+        return session
     }
 
     operator fun get(id: String): Session? {
-        var s: Session? = null
-        try {
-            s = CouchDb.path(id).request(MediaType.APPLICATION_JSON).get(Session::class.java)
+        val session = try {
+            CouchDb.path(id).getJson<Session>()
         } catch (e: Exception) {
+            log.error("Id retrieval failed", e)
+            //todo check why we have a try catch here, and not elsewhere
+            return null
         }
-        return if (s?.expiration?.time ?: -1 > System.currentTimeMillis()) s else null
+        log.info("AAA Session $session")
+        return if (session.expiration > System.currentTimeMillis()) session else null
     }
 
     /**
@@ -55,6 +60,7 @@ object SessionManager : WithLogging() {
      */
     fun authenticate(sam: String, pw: String): FullUser? {
         val dbUser = getSam(sam)
+        log.debug("Db data for $sam")
         return if (dbUser?.authType != null && dbUser.authType == "local") {
             if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
         } else {
@@ -92,7 +98,7 @@ object SessionManager : WithLogging() {
      * @param sam short user
      * @param pw  password
      * @return user if found
-     * @see .queryUserCache
+     * @see [queryUserCache]
      */
     fun queryUser(sam: String?, pw: String?): FullUser? {
         return if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else queryUserCache(sam)

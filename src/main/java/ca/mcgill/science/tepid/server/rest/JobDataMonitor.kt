@@ -8,10 +8,6 @@ import java.io.File
 
 class JobDataMonitor : Runnable {
 
-    init {
-        println("Init JobDataMonitor KT")
-    }
-
     override fun run() {
         log.info("Deleting expired job data.")
         val now = System.currentTimeMillis()
@@ -35,12 +31,12 @@ class JobDataMonitor : Runnable {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            log.error("General failure", e)
         }
 
         log.info("Deleting expired jobs completed in ${System.currentTimeMillis() - now} millis")
     }
 
-    companion object : WithLogging()
+    private companion object : WithLogging()
 
 }

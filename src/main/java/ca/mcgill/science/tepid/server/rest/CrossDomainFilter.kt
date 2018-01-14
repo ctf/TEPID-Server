@@ -11,10 +11,6 @@ import javax.ws.rs.ext.Provider
 @Priority(Priorities.HEADER_DECORATOR)
 class CrossDomainFilter : ContainerResponseFilter {
 
-    init {
-        println("Init CrossDomainFilter KT")
-    }
-
     override fun filter(creq: ContainerRequestContext, cres: ContainerResponseContext) {
         cres.headers.add("Access-Control-Allow-Origin", "*")
         cres.headers.add("Access-Control-Allow-Headers", "origin, content-type, accept, authorization, x-tepid-no-redirect, x-tepid-session, x-tepid-role")

@@ -9,10 +9,6 @@ import javax.ws.rs.core.MediaType
 
 class SessionMonitor : Runnable {
 
-    init {
-        println("Create JobMonitor")
-    }
-
     override fun run() {
         log.info("Removing expired sessions from database.")
         try {
@@ -21,8 +17,7 @@ class SessionMonitor : Runnable {
             val root = nf.objectNode()
             val docs = root.putArray("docs")
             sessions.filter {
-                val expiration = it.expiration?.time
-                expiration != null && expiration < System.currentTimeMillis()
+                it.expiration < System.currentTimeMillis()
             }.forEach {
                 val node = nf.objectNode().put("_id", it._id).put("_rev", it._rev).put("_deleted", true)
                 docs.add(node)
@@ -31,10 +26,10 @@ class SessionMonitor : Runnable {
             if (docs.size() > 0)
                 CouchDb.path("_bulk_docs").request().post(Entity.entity(root, MediaType.APPLICATION_JSON))
         } catch (e: Exception) {
-            e.printStackTrace()
+            log.error("General failure", e)
         }
     }
 
-    companion object : WithLogging()
+    private companion object : WithLogging()
 
 }

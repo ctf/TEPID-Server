@@ -39,8 +39,6 @@ dependencies {
     compile "javax.servlet:javax.servlet-api:4.0.0"
     compile "javax.ws.rs:javax.ws.rs-api:2.1"
     compile "org.apache.commons:commons-email:1.5"
-    compile "org.apache.logging.log4j:log4j-api:$APACHE"
-    compile "org.apache.logging.log4j:log4j-core:$APACHE"
     compile "org.glassfish.hk2.external:aopalliance-repackaged:$GLASSFISH_HK2"
     compile "org.glassfish.hk2:hk2-locator:$GLASSFISH_HK2"
     compile "org.glassfish.jersey.inject:jersey-hk2:$GLASSFISH_JERSEY"
@@ -50,8 +48,6 @@ dependencies {
     compile "org.ow2.asm:asm-debug-all:5.2"
     compile "org.tukaani:xz:1.6"
     compile "com.google.code.findbugs:jsr305:3.0.2"
-    compile 'org.slf4j:slf4j-api:1.7.25'
-    compile "org.apache.logging.log4j:log4j-web:$APACHE"
 
     compile group: 'javax.el', name: 'javax.el-api', version: '3.0.0'
     compile group: 'javax.servlet.jsp', name: 'javax.servlet.jsp-api', version: '2.3.1'

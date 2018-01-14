@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.About
+import ca.mcgill.science.tepid.utils.WithLogging
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
@@ -12,7 +13,7 @@ import java.util.*
  * They are pulled from priv.properties under the root project folder
  * If no file is found, default values will be supplied (usually empty strings)
  */
-object Config {
+object Config : WithLogging() {
 
     private const val COUCHDB_URL_MAIN = "http://tepid.science.mcgill.ca:5984/tepid"
     private const val COUCHDB_URL_TEST = "***REMOVED***"
@@ -51,7 +52,7 @@ object Config {
      * Optional arguments used to run unit tests for ldap
      */
     val TEST_USER: String
-    val TEST_PASS: String
+    val TEST_PASSWORD: String
 
     val HASH: String
 
@@ -68,19 +69,19 @@ object Config {
     private fun privFinder(): File? {
         val paths = listOf(PRIV_PROPERTIES, "webapps/tepid/$PRIV_PROPERTIES", "../webapps/ROOT/$PRIV_PROPERTIES")
         val valid = paths.map(::File).firstOrNull(File::exists) ?: return null
-        println("Found $PRIV_PROPERTIES at ${valid.absolutePath}")
+        log.debug("Found $PRIV_PROPERTIES at ${valid.absolutePath}")
         return valid
     }
 
     init {
-        println("Setting up Configs")
+        log.info("Setting up Configs")
         val props = Properties()
 
         val f = privFinder()
         if (f != null)
             FileInputStream(f).use { props.load(it) }
         else
-            println("Could not find $PRIV_PROPERTIES")
+            log.warn("Could not find $PRIV_PROPERTIES")
 
         fun get(key: String, default: String?) = props.getProperty(key, default)
         fun get(key: String) = get(key, "")
@@ -96,7 +97,7 @@ object Config {
         TEM_URL = get("TEM_URL")
         RESOURCE_CREDENTIALS = get("RESOURCE_CREDENTIALS")
         TEST_USER = get("TEST_USER")
-        TEST_PASS = get("TEST_PASS")
+        TEST_PASSWORD = get("TEST_PASSWORD")
         HASH = get("HASH", LOCAL)
 
         /*
@@ -105,18 +106,18 @@ object Config {
         val warnings = mutableListOf<String>()
         fun warn(msg: String) {
             warnings.add(msg)
-            println("Warning: $msg")
+            log.warn("Warning: $msg")
         }
 
-        println("Debug mode: $DEBUG")
-        println("LDAP mode: $LDAP_ENABLED")
+        log.info("Debug mode: $DEBUG")
+        log.info("LDAP mode: $LDAP_ENABLED")
         if (COUCHDB_URL.isEmpty())
             warn("COUCHDB_URL not set")
         if (COUCHDB_PASSWORD.isEmpty())
             warn("COUCHDB_PASSWORD not set")
         if (RESOURCE_CREDENTIALS.isEmpty())
             warn("RESOURCE_CREDENTIALS not set")
-        println("Build hash: $HASH")
+        log.info("Build hash: $HASH")
 
         PUBLIC = About(DEBUG, LDAP_ENABLED, Utils.now(), HASH, warnings)
     }

@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.SessionRequest
 import ca.mcgill.science.tepid.server.util.SessionManager
+import ca.mcgill.science.tepid.server.util.unauthorizedResponse
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
@@ -22,7 +23,7 @@ class Sessions {
             if (SessionManager.valid(token)) {
                 s = SessionManager.get(token)
                 if (s != null) {
-                    if (s.expiration?.time ?: -1 < System.currentTimeMillis()
+                    if (s.expiration < System.currentTimeMillis()
                             || longUser && s.user.longUser != username
                             || !longUser && s.user.shortUser != username)
                         s = null
@@ -33,7 +34,7 @@ class Sessions {
                 return Response.ok(s).build()
             }
         } catch (e: Exception) {
-            System.err.println("Exception caught: " + e.javaClass.canonicalName)
+            log.error("Session retrieval failed", e)
         }
 
         return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\":\"Session token is no longer valid\"}").build()
@@ -42,6 +43,7 @@ class Sessions {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     fun startSession(req: SessionRequest): Response {
+        log.debug("Received Start request for ${req.username}")
         try {
             val username = req.username.split("@")[0]
             val user = SessionManager.authenticate(username, req.password)
@@ -50,16 +52,14 @@ class Sessions {
             if (s != null) {
                 s.persistent = req.persistent
                 s.role = SessionManager.getRole(user)
-                log.debug("Started session for user {}.", req.username)
+                log.debug("Started session for user ${req.username}: $s.")
                 return Response.ok(s).build()
             }
         } catch (e: Exception) {
-            System.err.println("Exception caught: " + e.javaClass.canonicalName)
-            e.printStackTrace()
+            log.error("Starting session failed", e)
         }
-
-        log.debug("Failed to start session for user {}.", req.username)
-        return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\":\"Username or password incorrect\"}").build()
+        log.debug("Failed to start session for user ${req.username}.")
+        return unauthorizedResponse("Username or password incorrect")
     }
 
     @DELETE
@@ -69,5 +69,5 @@ class Sessions {
         SessionManager.end(id)
     }
 
-    companion object : WithLogging()
+    private companion object : WithLogging()
 }

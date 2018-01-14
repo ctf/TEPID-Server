@@ -14,17 +14,14 @@ import javax.ws.rs.ext.Provider
 @Priority(Priorities.HEADER_DECORATOR)
 class AuthTokenFilter : ContainerResponseFilter {
 
-    init {
-        println("Init AuthTokenFilter KT")
-    }
-
     override fun filter(req: ContainerRequestContext, res: ContainerResponseContext) {
-        val session = req.getSession(log) ?: return
+        val session = req.getSession() ?: return
+        log.debug("Decorating header for ${req.uriInfo.absolutePath}")
         res.headers.add(HEADER_SESSION, session.getId())
         res.headers.add(HEADER_ROLE, session.role)
         if (req.headers.containsKey(HEADER_TIMEOUT)) {
             val hours = req.headers.getFirst(HEADER_TIMEOUT).toInt()
-            session.expiration = Date(System.currentTimeMillis() + hours * HOUR_IN_MILLIS)
+            session.expiration = System.currentTimeMillis() + hours * HOUR_IN_MILLIS
         }
 
         // our default header is persistent, so we will check against the "false" string rather than the "true" string
@@ -33,13 +30,13 @@ class AuthTokenFilter : ContainerResponseFilter {
         }
     }
 
-    companion object : WithLogging() {
+    private companion object : WithLogging() {
 
         private const val HOUR_IN_MILLIS = 60 * 60 * 1000
         private const val HEADER_SESSION = "X-TEPID-Session"
         private const val HEADER_ROLE = "X-TEPID-Role"
         private const val HEADER_TIMEOUT = "X-TEPID-Session-Timeout"
-        private const val HEADER_PERSISTENT = "X-Tepid-Session-Persistent"
+        private const val HEADER_PERSISTENT = "X-TEPID-Session-Persistent"
 
     }
 

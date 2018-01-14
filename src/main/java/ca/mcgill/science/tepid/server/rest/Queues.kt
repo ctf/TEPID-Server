@@ -118,5 +118,5 @@ class Queues {
                 .map { it.simpleName }
     }
 
-    companion object : WithLogging()
+    private companion object : WithLogging()
 }

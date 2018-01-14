@@ -1,8 +1,8 @@
 package ca.mcgill.science.tepid.server.util
 
-import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.enums.Room
+import ca.mcgill.science.tepid.utils.WithLogging
 import org.junit.BeforeClass
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -11,16 +11,7 @@ import kotlin.test.assertNotNull
 /**
  * Created by Allan Wang on 2017-11-18.
  */
-class CouchTest {
-
-    companion object {
-
-        @BeforeClass
-        @JvmStatic
-        fun before() {
-//            CouchDb.logging = true
-        }
-    }
+class CouchTest : WithLogging() {
 
     private inline fun <T> List<T>.test(action: List<T>.() -> Unit) {
         println("\n$this\n")
