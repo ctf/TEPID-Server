@@ -50,5 +50,4 @@ class CouchTest : WithLogging() {
         assertEquals(byLongUser, byShortUser)
     }
 
-
 }

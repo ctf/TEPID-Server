@@ -72,7 +72,6 @@ class Users {
         newAdmin.displayName = "${newAdmin.givenName} ${newAdmin.lastName}"
         newAdmin.salutation = newAdmin.givenName
         newAdmin.longUser = newAdmin.email
-
         val res = CouchDb.path("u$shortUser").putJsonAndRead(newAdmin)
         log.info("Added local admin {}.", newAdmin.shortUser)
         return Response.ok(res).build()

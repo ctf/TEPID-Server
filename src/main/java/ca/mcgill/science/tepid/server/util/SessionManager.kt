@@ -106,6 +106,7 @@ object SessionManager : WithLogging() {
 
     fun getSam(sam: String?): FullUser? {
         sam ?: return null
+
         try {
             if (sam.contains("@")) {
                 println(sam)

@@ -192,9 +192,9 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         mods[0] = ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod)
         try {
             ctx.modifyAttributes(groupDn, mods)
-            log.info("Added {} to exchange students.", sam)
+            ldap.log.info("Added {} to exchange students.", sam)
         } catch (e: NamingException) {
-            log.info("Error adding {} to exchange students.", sam)
+            ldap.log.info("Error adding {} to exchange students.", sam)
             e.printStackTrace()
         }
 

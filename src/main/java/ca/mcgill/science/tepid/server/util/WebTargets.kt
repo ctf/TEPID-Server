@@ -166,4 +166,3 @@ fun WebTarget.deleteRev(): String {
     CouchDb.debug { "deleteRev: $rev, $result" }
     return result
 }
-
