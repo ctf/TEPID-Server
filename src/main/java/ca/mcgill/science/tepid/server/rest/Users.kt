@@ -20,6 +20,7 @@ import javax.ws.rs.core.UriInfo
 @Path("/users")
 class Users {
 
+    @GET
     @Path("/configured")
     @Produces(MediaType.APPLICATION_JSON)
     fun adminConfigured(): Boolean = try {
