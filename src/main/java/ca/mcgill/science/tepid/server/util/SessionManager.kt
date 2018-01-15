@@ -30,7 +30,6 @@ object SessionManager : WithLogging() {
             //todo check why we have a try catch here, and not elsewhere
             return null
         }
-        log.info("AAA Session $session")
         return if (session.expiration > System.currentTimeMillis()) session else null
     }
 
