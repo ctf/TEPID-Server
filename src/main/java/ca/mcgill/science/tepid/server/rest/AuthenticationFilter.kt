@@ -25,7 +25,7 @@ class AuthenticationFilter : ContainerRequestFilter {
     private var resourceInfo: ResourceInfo? = null
 
     override fun filter(requestContext: ContainerRequestContext) {
-        log.trace("AuthFilter at " + System.currentTimeMillis() + " : " + requestContext.uriInfo.path)
+        log.trace("AuthFilter at ${requestContext.uriInfo.path}")
         val method = resourceInfo?.resourceMethod ?: return log.warn("Skipping null method")
         if (method.isAnnotationPresent(DenyAll::class.java)) {
             log.warn("Method annotated with DenyAll")
