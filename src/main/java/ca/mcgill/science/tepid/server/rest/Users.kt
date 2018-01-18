@@ -164,7 +164,7 @@ class Users {
                     when (semester) {
                         in fall(0)..winter(2015) -> 0  // TEPID didn't exist before 2016
                         fall(2016) -> 500                   // the first semester had 500 pages only
-                        else -> 1000                             // to date, every semester will add 1000 pages to the base quota
+                        else -> 1000                              // to date, every semester will add 1000 pages to the base quota
                     }
                 }.sum()
 
