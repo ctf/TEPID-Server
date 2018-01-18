@@ -145,12 +145,14 @@ class Users {
         val user = SessionManager.queryUser(shortUser, null)
         if (user == null || SessionManager.getRole(user).isEmpty()) return 0
 
+        val totalPrinted = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject()
+                .get("rows").get(0).get("value").get("sum").asInt(0)
 
-        val oldQuota = oldQuota(shortUser)
+        val oldMaxQuota = oldMaxQuota(shortUser)
 
         val currentSemester = Semester.current
 
-        val newQuota = user.getSemesters()
+        val newMaxQuota = user.getSemesters()
                 .filter { it.season != Season.SUMMER } // we don't add quota for the summer
                 .filter { it <= currentSemester }      // only add quota for valid semesters
                 .map { semester ->
@@ -168,17 +170,16 @@ class Users {
                     }
                 }.sum()
 
-        log.info("Old quota: $oldQuota, New quota: $newQuota")
-        return Math.max(oldQuota, newQuota)
+        log.info("Old quota: $oldMaxQuota, New quota: $newMaxQuota, Printed $totalPrinted")
+        return Math.max(Math.max(oldMaxQuota, newMaxQuota) - totalPrinted, 0)
     }
 
     private fun fall(year: Int) = Semester(Season.FALL, year)
     private fun winter(year: Int) = Semester(Season.WINTER, year)
 
-    private fun oldQuota(shortUser: String): Int {
+    private fun oldMaxQuota(shortUser: String): Int {
         try {
             val rows = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject().get("rows")
-            val totalPrinted = rows.get(0).get("value").get("sum").asInt(0)
             val ej = rows.get(0).get("value").get("earliestJob").asLong(-1)
             if (ej == -1L) {
                 log.debug("Old quota for new user $shortUser")
@@ -191,7 +192,7 @@ class Users {
             val y1 = d1.get(Calendar.YEAR)
             val m2 = d2.get(Calendar.MONTH) + 1
             val y2 = d2.get(Calendar.YEAR)
-            return (y2 - y1) * 1000 + (if (m2 > 8 && (y1 != y2 || m1 < 8)) 1500 else 1000) - totalPrinted
+            return (y2 - y1) * 1000 + (if (m2 > 8 && (y1 != y2 || m1 < 8)) 1500 else 1000)
         } catch (e: Exception) {
             log.error("Old quota fetch failed", e)
             return 1000
