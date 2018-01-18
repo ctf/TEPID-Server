@@ -1,8 +1,6 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Session
-import ca.mcgill.science.tepid.models.data.User
+import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
@@ -143,31 +141,61 @@ class Users {
 
     fun getQuota(shortUser: String?): Int {
         shortUser ?: return 0
-        var totalPrinted = 0
-        var earliestJob: Date? = null
-        try {
-            // todo not sure if this is the best implementation. Any node can be null, but I guess we're just catching it and moving forward afterwards
-            val rows = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject().get("rows")
-            totalPrinted = rows.get(0).get("value").get("sum").asInt(0)
-            val ej = rows.get(0).get("value").get("earliestJob").asLong(0)
-            earliestJob = Date(ej)
-        } catch (e: Exception) {
-            //			e.printStackTrace();
-        }
 
         val user = SessionManager.queryUser(shortUser, null)
         if (user == null || SessionManager.getRole(user).isEmpty()) return 0
 
-        //todo verify
-        if (earliestJob == null) return 1000 // init to 1000 for new users
-        val d1 = Calendar.getInstance()
-        val d2 = Calendar.getInstance()
-        d1.time = earliestJob
-        val m1 = d1.get(Calendar.MONTH) + 1
-        val y1 = d1.get(Calendar.YEAR)
-        val m2 = d2.get(Calendar.MONTH) + 1
-        val y2 = d2.get(Calendar.YEAR)
-        return (y2 - y1) * 1000 + (if (m2 > 8 && (y1 != y2 || m1 < 8)) 1500 else 1000) - totalPrinted
+
+        val oldQuota = oldQuota(shortUser)
+
+        val currentSemester = Semester.current
+
+        val newQuota = user.getSemesters()
+                .filter { it.season != Season.SUMMER } // we don't add quota for the summer
+                .filter { it <= currentSemester }      // only add quota for valid semesters
+                .map { semester ->
+                    /*
+                     * The following mapper allows you to customize
+                     * The quota/semester
+                     *
+                     * Granted that semesters are comparable,
+                     * you may specify ranges (inclusive) when matching
+                     */
+                    when (semester) {
+                        in fall(0)..winter(2015) -> 0  // TEPID didn't exist before 2016
+                        fall(2016) -> 500                   // the first semester had 500 pages only
+                        else -> 1000                             // to date, every semester will add 1000 pages to the base quota
+                    }
+                }.sum()
+
+        log.info("Old quota: $oldQuota, New quota: $newQuota")
+        return Math.max(oldQuota, newQuota)
+    }
+
+    private fun fall(year: Int) = Semester(Season.FALL, year)
+    private fun winter(year: Int) = Semester(Season.WINTER, year)
+
+    private fun oldQuota(shortUser: String): Int {
+        try {
+            val rows = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject().get("rows")
+            val totalPrinted = rows.get(0).get("value").get("sum").asInt(0)
+            val ej = rows.get(0).get("value").get("earliestJob").asLong(-1)
+            if (ej == -1L) {
+                log.debug("Old quota for new user $shortUser")
+                return 1000
+            }
+            val d1 = Calendar.getInstance()
+            val d2 = Calendar.getInstance()
+            d1.timeInMillis = ej
+            val m1 = d1.get(Calendar.MONTH) + 1
+            val y1 = d1.get(Calendar.YEAR)
+            val m2 = d2.get(Calendar.MONTH) + 1
+            val y2 = d2.get(Calendar.YEAR)
+            return (y2 - y1) * 1000 + (if (m2 > 8 && (y1 != y2 || m1 < 8)) 1500 else 1000) - totalPrinted
+        } catch (e: Exception) {
+            log.error("Old quota fetch failed", e)
+            return 1000
+        }
     }
 
     @GET
