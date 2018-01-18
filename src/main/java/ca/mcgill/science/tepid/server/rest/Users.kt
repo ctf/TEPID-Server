@@ -170,7 +170,7 @@ class Users {
                     }
                 }.sum()
 
-        log.info("Old quota: $oldMaxQuota, New quota: $newMaxQuota, Printed $totalPrinted")
+        log.info("Old max quota: $oldMaxQuota, New max quota: $newMaxQuota, Printed $totalPrinted")
         return Math.max(Math.max(oldMaxQuota, newMaxQuota) - totalPrinted, 0)
     }
 
