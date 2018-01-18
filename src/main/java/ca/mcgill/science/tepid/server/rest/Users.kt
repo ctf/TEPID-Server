@@ -154,6 +154,7 @@ class Users {
 
         val newMaxQuota = user.getSemesters()
                 .filter { it.season != Season.SUMMER } // we don't add quota for the summer
+                .filter { it >= fall(2016) }      // TEPID didn't exist before fall 2016
                 .filter { it <= currentSemester }      // only add quota for valid semesters
                 .map { semester ->
                     /*
@@ -164,9 +165,8 @@ class Users {
                      * you may specify ranges (inclusive) when matching
                      */
                     when (semester) {
-                        in fall(0)..winter(2015) -> 0  // TEPID didn't exist before 2016
-                        fall(2016) -> 500                   // the first semester had 500 pages only
-                        else -> 1000                              // to date, every semester will add 1000 pages to the base quota
+                        fall(2016) -> 500         // the first semester had 500 pages only
+                        else -> 1000                   // to date, every semester will add 1000 pages to the base quota
                     }
                 }.sum()
 

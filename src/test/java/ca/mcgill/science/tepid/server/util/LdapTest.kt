@@ -30,6 +30,21 @@ class LdapTest {
         assertEquals(Config.TEST_USER, shortUser, "Short user mismatch. Perhaps you passed in the long user in your test?")
     }
 
+    private fun FullUser?.assertValidUser() {
+        assertNotNull(this)
+        println(this!!)
+        mapOf(
+                "givenName" to givenName,
+                "lastName" to lastName,
+                "studentId" to studentId,
+                "longUser" to longUser,
+                "email" to email
+        ).forEach {
+            (tag, data) ->
+            assertNotNull(data, "$tag is null for user")
+        }
+    }
+
     @Test
     fun authenticate() {
         SessionManager.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
@@ -47,19 +62,10 @@ class LdapTest {
 
     @Test
     fun queryById() {
-        val id = 260674302
-        val user = Ldap.queryUser(id.toString(), null)
-        assertNotNull(user)
-        println(user!!)
-        assertEquals(id, user.studentId)
-    }
-
-    @Test
-    fun test() {
         val id = ***REMOVED***
         val user = Ldap.queryUser(id.toString(), null)
-        assertNotNull(user)
-        println(user!!)
-        assertEquals(id, user.studentId)
+        user.assertValidUser()
+        println(user!!.getSemesters())
+        assertEquals(id, user!!.studentId)
     }
 }
