@@ -4,7 +4,6 @@ import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.module.kotlin.convertValue
-import com.fasterxml.jackson.module.kotlin.treeToValue
 import javax.ws.rs.client.WebTarget
 
 object CouchDb : WithLogging() {
@@ -58,7 +57,7 @@ object CouchDb : WithLogging() {
 
     inline fun <reified T : Any> getViewRows(base: String, path: String,
                                              targetConfig: WebTarget.() -> WebTarget): List<T> =
-            CouchDb.path(base, path).targetConfig().getViewRows()
+            path(base, path).targetConfig().getViewRows()
 
     inline fun <reified T : Any> jsonFromId(id: String) = path(id).getJson<T>()
 

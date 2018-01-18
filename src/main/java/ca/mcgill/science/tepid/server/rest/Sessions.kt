@@ -43,7 +43,7 @@ class Sessions {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     fun startSession(req: SessionRequest): Response {
-        log.debug("Received Start request for ${req.username}")
+        log.trace("Received Start request for ${req.username}")
         try {
             val username = req.username.split("@")[0]
             val user = SessionManager.authenticate(username, req.password)

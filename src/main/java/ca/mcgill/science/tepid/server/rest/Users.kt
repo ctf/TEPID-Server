@@ -117,7 +117,7 @@ class Users {
     @Consumes(MediaType.APPLICATION_JSON)
     fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.jobExpiration = jobExpiration
-        log.debug("Job expiration for ${it.shortUser} set to $jobExpiration")
+        log.trace("Job expiration for ${it.shortUser} set to $jobExpiration")
     }
 
     @PUT
@@ -126,7 +126,7 @@ class Users {
     @Consumes(MediaType.APPLICATION_JSON)
     fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.colorPrinting = color
-        log.debug("Set color for ${it.shortUser} to ${it.colorPrinting}")
+        log.trace("Set color for ${it.shortUser} to ${it.colorPrinting}")
     }
 
     @GET

@@ -7,7 +7,6 @@ import kotlin.test.assertTrue
 class UserTest : WithLogging() {
 
     val endpoints: Users by lazy {
-        log.error("asdf") // todo remove
         Users()
     }
 

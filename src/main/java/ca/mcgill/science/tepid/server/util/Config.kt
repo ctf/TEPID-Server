@@ -2,9 +2,17 @@ package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.About
 import ca.mcgill.science.tepid.utils.WithLogging
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
+import org.apache.logging.log4j.LogManager.ROOT_LOGGER_NAME
+import org.apache.logging.log4j.core.LoggerContext
+import org.apache.logging.log4j.core.config.LoggerConfig
+import javax.security.auth.login.Configuration.getConfiguration
+
+
 
 /**
  * Created by Allan Wang on 27/01/2017.
@@ -87,7 +95,7 @@ object Config : WithLogging() {
         fun get(key: String) = get(key, "")
 
         DEBUG = get("DEBUG", "true").toBoolean()
-        LDAP_ENABLED = get("LDAP_ENABLED", null)?.toBoolean() ?: !DEBUG
+        LDAP_ENABLED = get("LDAP_ENABLED", null)?.toBoolean() ?: true
         COUCHDB_URL = if (DEBUG) COUCHDB_URL_TEST else COUCHDB_URL_MAIN
         COUCHDB_USERNAME = get("COUCHDB_USERNAME")
         COUCHDB_PASSWORD = get("COUCHDB_PASSWORD")
@@ -99,6 +107,9 @@ object Config : WithLogging() {
         TEST_USER = get("TEST_USER")
         TEST_PASSWORD = get("TEST_PASSWORD")
         HASH = get("HASH", LOCAL)
+
+        if (DEBUG)
+            setLoggingLevel(Level.TRACE)
 
         /*
          * For logging
@@ -122,5 +133,13 @@ object Config : WithLogging() {
         PUBLIC = About(DEBUG, LDAP_ENABLED, Utils.now(), HASH, warnings)
     }
 
+    fun setLoggingLevel(level: Level) {
+        log.info("Updating log level to $level")
+        val ctx = LogManager.getContext(false) as LoggerContext
+        val config = ctx.configuration
+        val loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME)
+        loggerConfig.level = level
+        ctx.updateLoggers()
+}
 
 }
