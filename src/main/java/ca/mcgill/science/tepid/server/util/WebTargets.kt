@@ -150,6 +150,9 @@ inline fun <reified T : Any> WebTarget.putJson(data: T) {
 inline fun <reified T : Any> WebTarget.putJsonAndRead(data: T): String =
         request(MediaType.TEXT_PLAIN).put(Entity.entity(data, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
 
+inline fun <reified T : Any> WebTarget.putJsonAndReadObject(data: T): ObjectNode =
+        request(MediaType.APPLICATION_JSON).put(Entity.entity(data, MediaType.APPLICATION_JSON)).readEntity(ObjectNode::class.java)
+
 /*
  * -----------------------------------------
  * Delete

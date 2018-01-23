@@ -8,13 +8,10 @@ import ca.mcgill.science.tepid.ldap.LdapHelperContract
 import ca.mcgill.science.tepid.ldap.LdapHelperDelegate
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.utils.WithLogging
-import com.fasterxml.jackson.databind.node.ObjectNode
 import java.util.*
 import java.util.concurrent.ExecutionException
 import javax.naming.NamingException
 import javax.naming.directory.*
-import javax.ws.rs.client.Entity
-import javax.ws.rs.core.MediaType
 
 object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
 
@@ -38,7 +35,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         try {
             val dbCandidate = when {
                 sam.contains(".") -> CouchDb.getViewRows<FullUser>("byLongUser") { query("key" to "\"$sam%40mail.mcgill.ca\"") }.firstOrNull()
-                sam.matches(numRegex) ->  CouchDb.getViewRows<FullUser>("byStudentId") { query("key" to sam) }.firstOrNull()
+                sam.matches(numRegex) -> CouchDb.getViewRows<FullUser>("byStudentId") { query("key" to sam) }.firstOrNull()
                 else -> CouchDb.path("u$sam").getJson()
             }
             if (dbCandidate != null && dbCandidate._id != "")
@@ -108,8 +105,8 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
                     }
                     if (dbUser == null || dbUser != out) {
                         try { //TODO rewrite to avoid null pointers
-                            val result = CouchDb.path("u${out.shortUser}").request(MediaType.APPLICATION_JSON)
-                                    .put(Entity.entity(out, MediaType.APPLICATION_JSON)).readEntity(ObjectNode::class.java)
+
+                            val result = CouchDb.path("u${out.shortUser}").putJsonAndReadObject(out)
                             val newRev = result.get("_rev")?.asText()
                             if (newRev != null && newRev.length > 3)
                                 out._rev = newRev
