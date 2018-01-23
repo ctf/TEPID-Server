@@ -12,14 +12,14 @@ import javax.ws.rs.client.Entity
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
 
-private val log = LogManager.getLogger("WebTargets")
+val _log = LogManager.getLogger("WebTargets")
 
 private fun initTarget(username: String, password: String, target: String): WebTarget {
     if (target.isBlank())
-        log.error("Requested a target with an empty string")
+        _log.error("Requested a target with an empty string")
     else {
         if (username.isBlank() || password.isBlank())
-            log.error("Requested authenticated target $target with a blank username or password")
+            _log.error("Requested authenticated target $target with a blank username or password")
     }
     return ClientBuilder.newBuilder()
             .register(JacksonFeature::class.java)
@@ -30,7 +30,7 @@ private fun initTarget(username: String, password: String, target: String): WebT
 
 private fun initTarget(target: String): WebTarget {
     if (target.isBlank())
-        log.error("Requested a target with an empty string")
+        _log.error("Requested a target with an empty string")
     return ClientBuilder.newBuilder()
             .register(JacksonFeature::class.java)
             .build()
@@ -95,10 +95,12 @@ inline fun <reified T : Any> WebTarget.getJson(): T {
  * The layout matches that of a CouchDb row,
  * with a "rows" attribute containing a map of data to "value"
  */
-inline fun <reified T : Any> WebTarget.getViewRows(): List<T> =
-        getObject().get("rows").mapNotNull { it?.get("value") }.map {
-            mapper.treeToValue<T>(it)
-        }
+inline fun <reified T : Any> WebTarget.getViewRows(): List<T> {
+    _log.info("Getting view rows for $uri for type ${T::class.java.simpleName}")
+    val rows = getObject().get("rows") ?: return emptyList()
+//    _log.info("Rows $rows")
+    return rows.mapNotNull { it?.get("value") }.map { mapper.treeToValue<T>(it) }
+}
 
 /*
  * -----------------------------------------

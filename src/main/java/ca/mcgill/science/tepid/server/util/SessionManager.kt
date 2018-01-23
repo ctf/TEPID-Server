@@ -8,6 +8,9 @@ import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
+import retrofit2.http.Url
+import java.net.URL
+import java.net.URLEncoder
 import java.util.*
 
 object SessionManager : WithLogging() {
@@ -59,7 +62,7 @@ object SessionManager : WithLogging() {
      */
     fun authenticate(sam: String, pw: String): FullUser? {
         val dbUser = getSam(sam)
-        log.debug("Db data for $sam")
+        log.trace("Db data for $sam")
         return if (dbUser?.authType != null && dbUser.authType == "local") {
             if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
         } else {
@@ -108,11 +111,13 @@ object SessionManager : WithLogging() {
 
         try {
             if (sam.contains("@")) {
+                log.trace("getSam by long user $sam")
                 val results = CouchDb.getViewRows<FullUser>("byLongUser") {
-                    query("key" to "\"${sam.replace("@", "%40")}\"", "limit" to 1)
+                    query("key" to "\"$sam\"", "limit" to 1)
                 }
                 if (!results.isEmpty()) return results[0]
             } else {
+                log.trace("getSam by short user $sam")
                 return CouchDb.path("u$sam").getJson()
             }
         } catch (e: Exception) {

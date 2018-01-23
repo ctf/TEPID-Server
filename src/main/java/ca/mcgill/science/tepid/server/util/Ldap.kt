@@ -23,12 +23,13 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
 
     /**
      * Query extension that will also check from our database
+     * [sam] may be the short user, long user, or student id
      */
     fun queryUser(sam: String?, pw: String?): FullUser? {
         if (!Config.LDAP_ENABLED || sam == null) return null
         @Suppress("NAME_SHADOWING")
         val sam = if (sam.matches(numRegex) && sam.length > 9) sam.substring(sam.length - 9) else sam
-        log.debug("Querying user $sam")
+        log.trace("Querying user $sam")
         val dbDeferred = Q.defer<FullUser>()
         val ldapPromise = queryUser(sam, dbDeferred.promise, pw)
         var dbUser: FullUser? = null
@@ -45,22 +46,21 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         }
 
         dbDeferred.resolve(dbUser)
-
         /*
          * todo rework this part
-         * I don't see why we should return dbUser if the shortUser doesn't match
-         * IMO, we should always attempt an ldap request with a timeout and give it precedence
-         * In most cases, we won't receive a password and the ldap request will be fast,
-         * but if the user supplies a password, we can take it that they may want the data to be refreshed
+         * Why are we only calling ldap when the short user is supplied?
+         * ldap works fine with long users as well
+         * Why do we return null on a promise rejection? Why not return dbUser?
          */
         return if (dbUser == null || sam == dbUser.shortUser) {
             try {
                 val ldapUser = if (dbUser == null) ldapPromise.result else ldapPromise.getResult(3000)
                 ldapUser ?: dbUser
             } catch (pre: PromiseRejectionException) {
-                dbUser
+                null
             }
         } else {
+            // sam cannot by queried? Return fallback user
             dbUser
         }
     }
@@ -75,53 +75,72 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         object : Thread("LDAP Query: " + sam) {
             override fun run() {
                 try {
-                    val term = if (termIsId) {
+                    // term is either shortUser or longUser
+                    val term = (if (termIsId) {
                         try {
                             dbPromise.getResult(5000)!!.shortUser
                         } catch (e1: Exception) {
                             null
                         }
-                    } else sam
+                    } else sam) ?: return ldapDeferred.reject("Student id $sam not found")
 
-                    if (term == null) {
-                        ldapDeferred.reject("Student id $sam not found")
-                        return
+                    /**
+                     * There are two ways of querying
+                     * 1. By user's supplied credentials, which allows for fetching the studentId
+                     * 2. By our resource credentials, which does not have studentId
+                     * If we have queried by owner, this information is complete and should be regarded that way
+                     */
+                    val (auth, queryByOwner) = if (pw != null) term to pw to true else Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS to false
+                    val out = ldap.queryUser(term, auth)
+                    out?.shortUser ?: return ldapDeferred.reject("Could not locate user; short user not found")
+
+                    val dbUser: FullUser? = dbPromise.result
+
+                    /**
+                     * I've added the shortUser comparison just as a precaution
+                     * so that we don't accidentally overwrite the wrong user data
+                     * A successful ldap query should always return a valid short user,
+                     * and a dbUser without a matching short user cannot be verified
+                     */
+                    if (dbUser != null && out.shortUser == dbUser.shortUser) {
+                        out._id = dbUser._id
+                        out._rev = dbUser._rev
+                        if (!queryByOwner) out.studentId = dbUser.studentId
+                        out.preferredName = dbUser.preferredName
+                        out.nick = dbUser.nick
+                        out.colorPrinting = dbUser.colorPrinting
+                        out.jobExpiration = dbUser.jobExpiration
                     }
 
-                    val out = if (pw == null) FullUser()
-                    else ldap.queryUser(term, term to pw) ?: FullUser()
-
-                    val dbUser = dbPromise.result
-
-                    out.mergeWith(dbUser)
-
-                    out.shortUser ?: return ldapDeferred.reject("Could not locate user")
                     out.salutation = if (out.nick == null)
                         if (!out.preferredName.isEmpty()) out.preferredName[out.preferredName.size - 1]
                         else out.givenName else out.nick
-                    out.realName = out.givenName + " " + out.lastName
-                    if (!out.preferredName.isEmpty()) {
+                    out.realName = "${out.givenName} ${out.lastName}"
+                    if (!out.preferredName.isEmpty())
                         out.realName = out.preferredName.asReversed().joinToString(" ")
-                    }
                     if (dbUser == null || dbUser != out) {
-                        try { //TODO rewrite to avoid null pointers
-
+                        log.trace("Update db instance")
+                        try {
                             val result = CouchDb.path("u${out.shortUser}").putJsonAndReadObject(out)
                             val newRev = result.get("_rev")?.asText()
-                            if (newRev != null && newRev.length > 3)
+                            if (newRev != null && newRev.length > 3) {
                                 out._rev = newRev
-                            else
-                                log.error("Invalid out data $result")
+                                log.trace("New rev for ${out.shortUser}: $newRev")
+                            } else {
+                                log.error("Invalid out data $result; bad rev $newRev")
+                                // todo watch for this. Had some instances of this log but didn't figure out why
+                            }
                         } catch (e1: Exception) {
-                            e1.printStackTrace()
+                            log.error("Could not put ${out.shortUser} into db", e1)
                         }
-
+                    } else {
+                        log.trace("Not updating dbUser; already matches ldap user")
                     }
+                    log.trace("Resolving user $out")
                     ldapDeferred.resolve(out)
                 } catch (e: NamingException) {
                     ldapDeferred.reject("Could not query user", e)
                 }
-
             }
         }.start()
         return ldapDeferred.promise
@@ -151,7 +170,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         if (!Config.LDAP_ENABLED) return null
         log.debug("Authenticating $sam against ldap")
         val user = queryUser(sam, pw)
-        log.debug("Ldap query result for $sam: $user")
+        log.trace("Ldap query result for $sam: $user")
         try {
             val auth = ldap.createAuthMap(user?.shortUser ?: "", pw)
             InitialDirContext(auth).close()

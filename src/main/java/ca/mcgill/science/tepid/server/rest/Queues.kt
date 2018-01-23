@@ -90,7 +90,7 @@ class Queues {
         if (qp.containsKey("since")) target = target.queryParam("since", qp.getFirst("since"))
         val changes = target.request().get(String::class.java)
         if (!ar.isDone && !ar.isCancelled) {
-            log.info("Emitting $changes")
+            log.info("Emitting changes of length ${changes.length}")
             ar.resume(changes)
         }
     }
