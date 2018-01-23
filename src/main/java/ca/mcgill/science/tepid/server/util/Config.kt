@@ -130,7 +130,7 @@ object Config : WithLogging() {
             warn("RESOURCE_CREDENTIALS not set")
         log.info("Build hash: $HASH")
 
-        PUBLIC = About(DEBUG, LDAP_ENABLED, Utils.now(), HASH, warnings)
+        PUBLIC = About(DEBUG, LDAP_ENABLED, System.currentTimeMillis(), Utils.now(), HASH, warnings)
     }
 
     fun setLoggingLevel(level: Level) {
