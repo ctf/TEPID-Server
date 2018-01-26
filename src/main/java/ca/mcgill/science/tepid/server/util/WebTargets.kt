@@ -86,7 +86,7 @@ fun WebTarget.getRev(): String = getObject().get("_rev")?.asText() ?: ""
 inline fun <reified T : Any> WebTarget.getJson(): T {
     val data = getString()
     val result: T = mapper.readValue(data)
-    CouchDb.debug { "getJson: $result" }
+    _log.trace("getJson: $result")
     return result
 }
 
@@ -96,9 +96,8 @@ inline fun <reified T : Any> WebTarget.getJson(): T {
  * with a "rows" attribute containing a map of data to "value"
  */
 inline fun <reified T : Any> WebTarget.getViewRows(): List<T> {
-    _log.info("Getting view rows for $uri for type ${T::class.java.simpleName}")
+//    _log.trace("Getting view rows for $uri for type ${T::class.java.simpleName}")
     val rows = getObject().get("rows") ?: return emptyList()
-//    _log.info("Rows $rows")
     return rows.mapNotNull { it?.get("value") }.map { mapper.treeToValue<T>(it) }
 }
 
@@ -112,7 +111,7 @@ fun JsonNode.postJson(path: String): String {
     val result = CouchDb.path(path).request(MediaType.TEXT_PLAIN)
             .post(Entity.entity(this, MediaType.APPLICATION_JSON))
             .readEntity(String::class.java)
-    CouchDb.debug { "postJson: $result" }
+    _log.trace("postJson: $result")
     return result
 }
 
@@ -168,6 +167,6 @@ fun WebTarget.deleteRev(): String {
     val rev = getRev()
     val result = queryParam("rev", rev).request(MediaType.TEXT_PLAIN).delete()
             .readEntity(String::class.java)
-    CouchDb.debug { "deleteRev: $rev, $result" }
+    _log.trace("deleteRev: $rev, $result")
     return result
 }

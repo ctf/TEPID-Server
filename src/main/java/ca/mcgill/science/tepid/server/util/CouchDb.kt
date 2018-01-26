@@ -10,13 +10,6 @@ object CouchDb : WithLogging() {
 
     const val MAIN_VIEW = "_design/main/_view"
 
-    var logging = false
-
-    fun debug(message: () -> String) {
-        if (CouchDb.logging)
-            CouchDb.log.debug("CouchDb: ${message()}")
-    }
-
     val target
         get() = couchdbOld
 
@@ -24,7 +17,7 @@ object CouchDb : WithLogging() {
      * Create an [ArrayNode] from the given [data] at field [fieldName]
      */
     fun <T> putArray(fieldName: String, data: Collection<T>): ArrayNode {
-        debug { "putting array at $fieldName: ${data.joinToString(" | ")}" }
+        _log.trace("putting array at $fieldName: ${data.joinToString(" | ")}")
         return JsonNodeFactory.instance.objectNode()
                 .putArray(fieldName)
                 .addAll(mapper.convertValue<ArrayNode>(data))
@@ -68,7 +61,7 @@ object CouchDb : WithLogging() {
         val target = path(id)
         val data = target.getJson<T>()
         data.action()
-        debug { "updated id $id" }
+        log.trace("updated id $id")
         target.putJson(data)
         return data
     }
