@@ -50,7 +50,7 @@ class Jobs {
         val session = ctx.getSession(log) ?: return "Bad session" // todo change output
         j.userIdentification = (session).user.shortUser
         j.deleteDataOn = System.currentTimeMillis() + SessionManager.queryUserCache(j.userIdentification)!!.jobExpiration
-        log.debug("Starting new print job ${j.name} for ${session.user.longUser}...")
+        log.debug("Starting new print job ${j._id} ${j.name} for ${session.user.longUser}...")
         return CouchDb.target.postJson(j)
     }
 
