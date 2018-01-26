@@ -3,10 +3,10 @@ package ca.mcgill.science.tepid.server.util
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.enums.Room
 import ca.mcgill.science.tepid.utils.WithLogging
-import org.junit.BeforeClass
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 /**
  * Created by Allan Wang on 2017-11-18.
@@ -48,6 +48,14 @@ class CouchTest : WithLogging() {
         assertEquals(shortUser, byLongUser!!.shortUser)
 
         assertEquals(byLongUser, byShortUser)
+
+        assertNotNull(byShortUser._rev)
+        assertNotNull(byLongUser._rev)
+        assertEquals(byShortUser._rev, byLongUser._rev)
+
+        assertTrue(byShortUser._id.isNotBlank())
+        assertTrue(byLongUser._id.isNotBlank())
+        assertEquals(byShortUser._id, byLongUser._id)
     }
 
 }
