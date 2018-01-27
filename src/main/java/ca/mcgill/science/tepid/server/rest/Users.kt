@@ -1,7 +1,12 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.bindings.CTFER
+import ca.mcgill.science.tepid.models.bindings.ELDER
+import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.util.SessionManager.ADMIN
+import ca.mcgill.science.tepid.server.util.SessionManager.LOCAL
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
 import java.net.URI
@@ -31,7 +36,7 @@ class Users {
 
     @GET
     @Path("/{sam}")
-    @RolesAllowed("user", "ctfer", "elder")
+    @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun queryLdap(@PathParam("sam") shortUser: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getSession(log) ?: return INVALID_SESSION_RESPONSE
@@ -41,7 +46,7 @@ class Users {
             log.warn("Could not find user {}.", shortUser)
             throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
         }
-        if (session.role == "user" && session.user.shortUser != user.shortUser) {
+        if (session.role == USER && session.user.shortUser != user.shortUser) {
             log.warn("Unauthorized attempt to lookup {} by user {}.", shortUser, session.user.longUser)
             return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build()
         }
@@ -65,8 +70,8 @@ class Users {
         }
         val hashedPw = BCrypt.hashpw(newAdmin.password, BCrypt.gensalt())
         newAdmin.password = hashedPw
-        newAdmin.role = "admin"
-        newAdmin.authType = "local"
+        newAdmin.role = ADMIN
+        newAdmin.authType = LOCAL
         newAdmin.activeSince = System.currentTimeMillis()
         newAdmin.displayName = "${newAdmin.givenName} ${newAdmin.lastName}"
         newAdmin.salutation = newAdmin.givenName
@@ -76,7 +81,7 @@ class Users {
 
     @PUT
     @Path("/{sam}/exchange")
-    @RolesAllowed("ctfer", "elder")
+    @RolesAllowed(CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     fun setExchange(@PathParam("sam") sam: String, exchange: Boolean) {
         SessionManager.setExchangeStudent(sam, exchange)
@@ -90,7 +95,7 @@ class Users {
     private inline fun putUserData(sam: String, ctx: ContainerRequestContext, action: (user: FullUser) -> Unit): Response {
         val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
         val user = SessionManager.queryUser(sam, null) ?: return Response.Status.NOT_FOUND.text("User $sam not found")
-        if (session.role == "user" && session.user.shortUser != user.shortUser)
+        if (session.role == USER && session.user.shortUser != user.shortUser)
             return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
         action(user)
         return CouchDb.path("u${user.shortUser}").putJson(user)
@@ -99,7 +104,7 @@ class Users {
 
     @PUT
     @Path("/{sam}/nick")
-    @RolesAllowed("user", "ctfer", "elder")
+    @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     fun setNick(@PathParam("sam") sam: String, nick: String, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.nick = if (nick.isBlank()) null else nick
@@ -108,7 +113,7 @@ class Users {
 
     @PUT
     @Path("/{sam}/jobExpiration")
-    @RolesAllowed("user", "ctfer", "elder")
+    @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.jobExpiration = jobExpiration
@@ -117,7 +122,7 @@ class Users {
 
     @PUT
     @Path("/{sam}/color")
-    @RolesAllowed("user", "ctfer", "elder")
+    @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.colorPrinting = color
@@ -126,11 +131,11 @@ class Users {
 
     @GET
     @Path("/{sam}/quota")
-    @RolesAllowed("user", "ctfer", "elder")
+    @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun getQuota(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): Int {
         val session = ctx.getSession(log) ?: return -1
-        return if (session.role == "user" && session.user.shortUser != shortUser)
+        return if (session.role == USER && session.user.shortUser != shortUser)
             -1
         else
             getQuota(shortUser)
@@ -198,7 +203,7 @@ class Users {
 
     @GET
     @Path("/autosuggest/{like}")
-    @RolesAllowed("ctfer", "elder")
+    @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun ldapAutoSuggest(@PathParam("like") like: String, @QueryParam("limit") limit: Int): List<User> {
         val resultsPromise = SessionManager.autoSuggest(like, limit)

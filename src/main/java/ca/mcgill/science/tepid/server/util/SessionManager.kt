@@ -3,6 +3,10 @@ package ca.mcgill.science.tepid.server.util
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.Utils
+import ca.mcgill.science.tepid.models.bindings.CTFER
+import ca.mcgill.science.tepid.models.bindings.ELDER
+import ca.mcgill.science.tepid.models.bindings.NONE
+import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
@@ -13,6 +17,8 @@ import java.util.*
 object SessionManager : WithLogging() {
 
     private const val HOUR_IN_MILLIS = 60 * 60 * 1000
+    const val ADMIN = "admin"
+    const val LOCAL = "local"
 
     fun start(user: FullUser, expiration: Int): Session {
         val session = Session(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
@@ -61,7 +67,7 @@ object SessionManager : WithLogging() {
     fun authenticate(sam: String, pw: String): FullUser? {
         val dbUser = getSam(sam)
         log.trace("Db data for $sam")
-        return if (dbUser?.authType != null && dbUser.authType == "local") {
+        return if (dbUser?.authType == LOCAL) {
             if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
         } else {
             Ldap.authenticate(sam, pw)
@@ -183,14 +189,14 @@ object SessionManager : WithLogging() {
      */
     fun getRole(u: FullUser?): String {
         if (u == null) return ""
-        if (u.authType == null || u.authType != "local") {
+        if (u.authType == null || u.authType != LOCAL) {
             val g = u.groups.toSet()
-            if (elderGroups.any(g::contains)) return "elder"
-            if (ctferGroups.any(g::contains)) return "ctfer"
-            if (userGroups.any(g::contains)) return "user"
+            if (elderGroups.any(g::contains)) return ELDER
+            if (ctferGroups.any(g::contains)) return CTFER
+            if (userGroups.any(g::contains)) return USER
             return ""
         } else {
-            return if (u.role == "admin") "elder" else "user"
+            return if (u.role == ADMIN) ELDER else USER
         }
     }
 

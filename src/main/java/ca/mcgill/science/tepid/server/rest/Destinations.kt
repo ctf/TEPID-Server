@@ -1,5 +1,8 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.bindings.CTFER
+import ca.mcgill.science.tepid.models.bindings.ELDER
+import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.Destination
 import ca.mcgill.science.tepid.models.data.DestinationTicket
 import ca.mcgill.science.tepid.models.data.FullDestination
@@ -22,7 +25,7 @@ class Destinations {
      * @return post result
      */
     @PUT
-    @RolesAllowed("elder")
+    @RolesAllowed(ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun putDestinations(destinations: Map<String, FullDestination>) =
@@ -36,7 +39,7 @@ class Destinations {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("elder", "ctfer", "user")
+    @RolesAllowed(USER, CTFER, ELDER)
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
         val session = ctx.getSession(log) ?: return emptyMap()
         val data = CouchDb.getViewRows<FullDestination>("destinations")
@@ -52,7 +55,7 @@ class Destinations {
 
     @POST
     @Path("/{dest}")
-    @RolesAllowed("ctfer", "elder")
+    @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.APPLICATION_JSON)
     fun setStatus(@PathParam("dest") id: String, ticket: DestinationTicket, @Context crc: ContainerRequestContext): Response {
@@ -71,7 +74,7 @@ class Destinations {
 
     @DELETE
     @Path("/{dest}")
-    @RolesAllowed("elder")
+    @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun deleteQueue(@PathParam("dest") destination: String) =
             CouchDb.path(destination).deleteRev()

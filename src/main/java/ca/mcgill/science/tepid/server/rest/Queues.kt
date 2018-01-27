@@ -23,7 +23,7 @@ class Queues {
         get() = CouchDb.path("_changes").query("filter" to "main/byQueue")
 
     @PUT
-    @RolesAllowed("elder")
+    @RolesAllowed(ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun putQueues(queues: List<PrintQueue>): String {
@@ -60,7 +60,7 @@ class Queues {
 
     @DELETE
     @Path("/{queue}")
-    @RolesAllowed("elder")
+    @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun deleteQueue(@PathParam("queue") queue: String) =
             CouchDb.path(queue).deleteRev()

@@ -1,5 +1,8 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.bindings.CTFER
+import ca.mcgill.science.tepid.models.bindings.ELDER
+import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.Session
@@ -25,11 +28,11 @@ class Jobs {
 
     @GET
     @Path("/{sam}")
-    @RolesAllowed("user", "ctfer", "elder")
+    @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun listJobs(@PathParam("sam") sam: String, @Context req: ContainerRequestContext): Collection<PrintJob> {
         val session = req.getProperty("session") as Session
-        if (session.role == "user" && session.user.shortUser != sam) {
+        if (session.role == USER && session.user.shortUser != sam) {
             return emptyList()
         }
         val data = CouchDb.getViewRows<PrintJob>("byUser") {
@@ -43,7 +46,7 @@ class Jobs {
     }
 
     @POST
-    @RolesAllowed("user", "ctfer", "elder")
+    @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): String {
@@ -57,7 +60,7 @@ class Jobs {
     }
 
     @PUT
-    @RolesAllowed("user", "ctfer", "elder")
+    @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{id}")
     fun addJobData(input: InputStream, @PathParam("id") id: String): String {
@@ -193,12 +196,12 @@ class Jobs {
 
     @GET
     @Path("/job/{id}/_changes")
-    @RolesAllowed("user", "ctfer", "elder")
+    @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun getChanges(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse, @Context ctx: ContainerRequestContext) {
         val session = ctx.getSession(log) ?: return
         val j = CouchDb.jsonFromId<PrintJob>(id)
-        if (session.role == "user" && session.user.shortUser != j.userIdentification) {
+        if (session.role == USER && session.user.shortUser != j.userIdentification) {
             ar.resume(Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build())
         }
 
@@ -217,18 +220,18 @@ class Jobs {
 
     @GET
     @Path("/job/{id}")
-    @RolesAllowed("user", "ctfer", "elder")
+    @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun getJob(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Context ctx: ContainerRequestContext): Response {
         val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
         val j = CouchDb.jsonFromId<PrintJob>(id)
-        return if (session.role == "user" && session.user.shortUser != j.userIdentification) unauthorizedResponse("You cannot access this resource")
+        return if (session.role == USER && session.user.shortUser != j.userIdentification) unauthorizedResponse("You cannot access this resource")
         else Response.ok(j).build()
     }
 
     @PUT
     @Path("/job/{id}/refunded")
-    @RolesAllowed("ctfer", "elder")
+    @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun setJobRefunded(@PathParam("id") id: String, @Context ctx: ContainerRequestContext, refunded: Boolean): Response {
         ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE // todo check if  validation is necessary
@@ -241,14 +244,14 @@ class Jobs {
 
     @POST
     @Path("/job/{id}/reprint")
-    @RolesAllowed("user", "ctfer", "elder")
+    @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.TEXT_PLAIN)
     fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): Response {
         val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
         val j = CouchDb.path(id).getJson<PrintJob>()
         val file = Utils.existingFile(j.file)
                 ?: return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Data for this job no longer exists").type(MediaType.TEXT_PLAIN).build()
-        if (session.role == "user" && session.user.shortUser != j.userIdentification)
+        if (session.role == USER && session.user.shortUser != j.userIdentification)
             return unauthorizedResponse("You cannot reprint someone else's job")
         val reprint = PrintJob()
         reprint.name = j.name

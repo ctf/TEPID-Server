@@ -4,14 +4,10 @@ import ca.mcgill.science.tepid.models.data.About
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.core.LoggerContext
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
-import org.apache.logging.log4j.LogManager.ROOT_LOGGER_NAME
-import org.apache.logging.log4j.core.LoggerContext
-import org.apache.logging.log4j.core.config.LoggerConfig
-import javax.security.auth.login.Configuration.getConfiguration
-
 
 
 /**
@@ -27,7 +23,6 @@ object Config : WithLogging() {
     private const val COUCHDB_URL_TEST = "***REMOVED***"
     private const val BARCODES_URL_MAIN = "http://tepid.science.mcgill.ca:5984/barcodes"
     private const val PRIV_PROPERTIES = "priv.properties"
-    private const val LOCAL = "local"
 
     /**
      * Global definition for whether a the build is in debug mode or not
@@ -108,7 +103,7 @@ object Config : WithLogging() {
         RESOURCE_CREDENTIALS = get("RESOURCE_CREDENTIALS")
         TEST_USER = get("TEST_USER")
         TEST_PASSWORD = get("TEST_PASSWORD")
-        HASH = get("HASH", LOCAL)
+        HASH = get("HASH", "local")
 
         if (DEBUG)
             setLoggingLevel(Level.TRACE)
@@ -142,6 +137,6 @@ object Config : WithLogging() {
         val loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME)
         loggerConfig.level = level
         ctx.updateLoggers()
-}
+    }
 
 }
