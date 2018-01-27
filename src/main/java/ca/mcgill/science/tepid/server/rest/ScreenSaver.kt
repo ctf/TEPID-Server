@@ -96,9 +96,9 @@ class ScreenSaver {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("office-hours/on-duty/{timeSlot}")
-    fun onDuty(@PathParam("timeSlot") timeSlot: String): List<*> {
+    fun onDuty(@PathParam("timeSlot") timeSlot: String): List<Any> {
         //return new OfficeHours().onDuty(timeSlot);
-        return emptyList<Any>()
+        return emptyList()
     }
 
     @GET
