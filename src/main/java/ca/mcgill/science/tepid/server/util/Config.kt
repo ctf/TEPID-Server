@@ -82,7 +82,9 @@ object Config : WithLogging() {
     }
 
     init {
-        log.info("Setting up Configs")
+        log.info("**********************************")
+        log.info("*       Setting up Configs       *")
+        log.info("**********************************")
         val props = Properties()
 
         val f = privFinder()

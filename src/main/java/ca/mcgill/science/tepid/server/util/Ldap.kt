@@ -136,7 +136,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
                     } else {
                         log.trace("Not updating dbUser; already matches ldap user")
                     }
-                    log.trace("Resolving user $out")
+                    log.trace("Resolving user (${out._id}) ${out.displayName}")
                     ldapDeferred.resolve(out)
                 } catch (e: NamingException) {
                     ldapDeferred.reject("Could not query user", e)
