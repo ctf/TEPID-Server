@@ -19,7 +19,7 @@ object SessionManager : WithLogging() {
         val id = Utils.newSessionId()
         session._id = id
         log.trace("Creating session $session")
-        val out = CouchDb.path(session._id).putJsonAndRead(session)
+        val out = CouchDb.path(session.token).putJsonAndRead(session)
         println(out)
         return session
     }
@@ -28,7 +28,7 @@ object SessionManager : WithLogging() {
         val session = try {
             CouchDb.path(id).getJson<Session>()
         } catch (e: Exception) {
-            log.error("Id retrieval failed", e)
+            log.error("Id retrieval failed: ${e.message}")
             //todo check why we have a try catch here, and not elsewhere
             return null
         }
