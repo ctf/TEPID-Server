@@ -6,8 +6,10 @@ import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.ldap.LdapBase
 import ca.mcgill.science.tepid.ldap.LdapHelperContract
 import ca.mcgill.science.tepid.ldap.LdapHelperDelegate
+import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.utils.WithLogging
+import com.fasterxml.jackson.databind.node.ObjectNode
 import java.util.*
 import java.util.concurrent.ExecutionException
 import javax.naming.NamingException
@@ -39,7 +41,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
                 sam.matches(numRegex) -> CouchDb.getViewRows<FullUser>("byStudentId") { query("key" to sam) }.firstOrNull()
                 else -> CouchDb.path("u$sam").getJson()
             }
-            if (dbCandidate != null && dbCandidate._id != "")
+            if (dbCandidate?._id != null)
                 dbUser = dbCandidate
         } catch (ignored: InterruptedException) {
         } catch (ignored: ExecutionException) {
@@ -112,8 +114,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
                      * and a dbUser without a matching short user cannot be verified
                      */
                     if (dbUser != null && out.shortUser == dbUser.shortUser) {
-                        out._id = dbUser._id
-                        out._rev = dbUser._rev
+                        out.withDbData(dbUser)
                         if (!queryByOwner) out.studentId = dbUser.studentId
                         out.preferredName = dbUser.preferredName
                         out.nick = dbUser.nick
@@ -130,14 +131,14 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
                     if (dbUser == null || dbUser != out) {
                         log.trace("Update db instance")
                         try {
-                            val result = CouchDb.path("u${out.shortUser}").putJsonAndReadObject(out)
-                            val newRev = result.get("_rev")?.asText()
+                            val response = CouchDb.path("u${out.shortUser}").putJson(out)
+                            val responseObj = response.readEntity(ObjectNode::class.java)
+                            val newRev = responseObj.get("_rev")?.asText()
                             if (newRev != null && newRev.length > 3) {
-                                out._rev = newRev
+                                out.rev = newRev
                                 log.trace("New rev for ${out.shortUser}: $newRev")
                             } else {
-                                log.error("Invalid out data $result; bad rev $newRev")
-                                // todo watch for this. Had some instances of this log but didn't figure out why
+                                log.error("Invalid out data $response")
                             }
                         } catch (e1: Exception) {
                             log.error("Could not put ${out.shortUser} into db", e1)

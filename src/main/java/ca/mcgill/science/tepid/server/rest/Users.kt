@@ -71,9 +71,7 @@ class Users {
         newAdmin.displayName = "${newAdmin.givenName} ${newAdmin.lastName}"
         newAdmin.salutation = newAdmin.givenName
         newAdmin.longUser = newAdmin.email
-        val res = CouchDb.path("u$shortUser").putJsonAndRead(newAdmin)
-        log.info("Added local admin {}.", newAdmin.shortUser)
-        return Response.ok(res).build()
+        return CouchDb.path("u$shortUser").putJson(newAdmin)
     }
 
     @PUT
@@ -95,8 +93,7 @@ class Users {
         if (session.role == "user" && session.user.shortUser != user.shortUser)
             return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
         action(user)
-        val res = CouchDb.path("u${user.shortUser}").putJsonAndRead(user)
-        return Response.ok(res).build()
+        return CouchDb.path("u${user.shortUser}").putJson(user)
     }
 
 

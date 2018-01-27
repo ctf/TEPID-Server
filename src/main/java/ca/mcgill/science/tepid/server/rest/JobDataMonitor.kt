@@ -25,7 +25,7 @@ class JobDataMonitor : Runnable {
 
                         j.file = null
                     }
-                    CouchDb.path(j._id).putJson(j)
+                    CouchDb.path(j.getId()).putJson(j)
                 }
             }
         } catch (e: Exception) {

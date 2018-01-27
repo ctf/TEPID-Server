@@ -11,6 +11,7 @@ import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 val _log = LogManager.getLogger("WebTargets")
 
@@ -139,20 +140,10 @@ fun <T : Any> WebTarget.postJsonGetObj(data: T): ObjectNode =
 
 /**
  * Put [data] as a json to current target
- * TODO check if text_plain is suitable
+ * Returns the response sent back from couch
  */
-inline fun <reified T : Any> WebTarget.putJson(data: T) {
-    request(MediaType.TEXT_PLAIN).put(Entity.entity(data, MediaType.APPLICATION_JSON))
-}
-
-/**
- * Same as [putJson], but will also read the entity as a String
- */
-inline fun <reified T : Any> WebTarget.putJsonAndRead(data: T): String =
-        request(MediaType.TEXT_PLAIN).put(Entity.entity(data, MediaType.APPLICATION_JSON)).readEntity(String::class.java)
-
-inline fun <reified T : Any> WebTarget.putJsonAndReadObject(data: T): ObjectNode =
-        request(MediaType.APPLICATION_JSON).put(Entity.entity(data, MediaType.APPLICATION_JSON)).readEntity(ObjectNode::class.java)
+inline fun <reified T : Any> WebTarget.putJson(data: T): Response =
+        request(MediaType.APPLICATION_JSON).put(Entity.entity(data, MediaType.APPLICATION_JSON))
 
 /*
  * -----------------------------------------
@@ -170,3 +161,6 @@ fun WebTarget.deleteRev(): String {
     _log.trace("deleteRev: $rev, $result")
     return result
 }
+
+val Response.isSuccessful: Boolean
+    get() = status in 200 until 300

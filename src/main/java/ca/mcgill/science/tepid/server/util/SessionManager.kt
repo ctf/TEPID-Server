@@ -19,7 +19,7 @@ object SessionManager : WithLogging() {
         val id = Utils.newSessionId()
         session._id = id
         log.trace("Creating session $session")
-        val out = CouchDb.path(session._id).putJsonAndRead(session)
+        val out = CouchDb.path(id).putJson(session)
         println(out)
         return session
     }

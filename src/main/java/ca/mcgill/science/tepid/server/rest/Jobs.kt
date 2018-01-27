@@ -75,7 +75,7 @@ class Jobs {
             val tmpXz = File("${tmpDir.absolutePath}/$id.ps.xz")
             tmpXz.copyFrom(input)
             //let db know we have received data
-            CouchDb.update<PrintJob>(id) {
+            CouchDb.updateWithResponse<PrintJob>(id) {
                 file = tmpXz.absolutePath
                 log.info("Updating job $id with path $file")
                 received = System.currentTimeMillis()
@@ -115,6 +115,12 @@ class Jobs {
                             log.info("Setting stats for job $id: $pages pages, $colorPages color")
                         }
 
+                        if (j2 == null) {
+                            failJob(id, "Could not update")
+                            processingThreads.remove(id)
+                            return
+                        }
+
                         //check if user has color printing enabled
                         if (color > 0 && (SessionManager.queryUser(j2.userIdentification, null)?.colorPrinting != true)) {
                             failJob(id, "Color disabled")
@@ -140,9 +146,9 @@ class Jobs {
                     } catch (e: Exception) {
                         log.error("Failed to process job $id", e)
                         failJob(id, "Exception during processing")
+                    } finally {
+                        processingThreads.remove(id)
                     }
-
-                    processingThreads.remove(id)
                 }
             }
             processingThreads.put(id, processing)
@@ -158,7 +164,7 @@ class Jobs {
     }
 
     fun failJob(id: String, error: String) {
-        CouchDb.update<PrintJob>(id) {
+        CouchDb.updateWithResponse<PrintJob>(id) {
             setFailed(error)
         }
         log.debug("Job $id failed: $error.")
@@ -240,7 +246,8 @@ class Jobs {
     fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): Response {
         val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
         val j = CouchDb.path(id).getJson<PrintJob>()
-        val file = Utils.existingFile(j.file) ?: return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Data for this job no longer exists").type(MediaType.TEXT_PLAIN).build()
+        val file = Utils.existingFile(j.file)
+                ?: return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Data for this job no longer exists").type(MediaType.TEXT_PLAIN).build()
         if (session.role == "user" && session.user.shortUser != j.userIdentification)
             return unauthorizedResponse("You cannot reprint someone else's job")
         val reprint = PrintJob()

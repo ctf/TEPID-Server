@@ -16,14 +16,14 @@ class JobMonitor : Runnable {
 
             jobs.forEach { j ->
                 j.setFailed("Timed out")
-                val id = j._id
+                val id = j.getId()
                 CouchDb.path(id).putJson(j)
                 val t = Jobs.processingThreads[id]
                 try {
                     t?.interrupt()
                 } catch (ignored: Exception) {
                 }
-                Jobs.processingThreads.remove(j.getId())
+                Jobs.processingThreads.remove(id)
             }
         } catch (e: Exception) {
             log.error("General failure", e)

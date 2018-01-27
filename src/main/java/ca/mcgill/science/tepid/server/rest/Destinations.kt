@@ -39,9 +39,12 @@ class Destinations {
     @RolesAllowed("elder", "ctfer", "user")
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
         val session = ctx.getSession(log) ?: return emptyMap()
-        val data =  CouchDb.getViewRows<FullDestination>("destinations")
+        val data = CouchDb.getViewRows<FullDestination>("destinations")
                 .map { it.toDestination(session) }
-                .map { it._id to it }
+                .mapNotNull {
+                    val id = it._id ?: return@mapNotNull null
+                    id to it
+                }
                 .toMap()
         log.debug("Got destinations $data")
         return data
@@ -56,12 +59,12 @@ class Destinations {
         val session = crc.getSession(log) ?: return INVALID_SESSION_RESPONSE
         ticket.user = session.user.toUser()
         val successText = "$id marked as ${if (ticket.up) "up" else "down"}"
-        val success = CouchDb.tryUpdate<FullDestination>(id) {
+        val response = CouchDb.updateWithResponse<FullDestination>(id) {
             up = ticket.up
             this.ticket = if (ticket.up) null else ticket
             log.info("Destination $successText.")
         }
-        return if (!success) Response.Status.NOT_FOUND.text("Could not find destination $id")
+        return if (!response.isSuccessful) Response.Status.NOT_FOUND.text("Could not find destination $id")
         else Response.ok(successText).build()
     }
 

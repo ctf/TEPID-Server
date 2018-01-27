@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.enums.Room
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -49,12 +50,12 @@ class CouchTest : WithLogging() {
 
         assertEquals(byLongUser, byShortUser)
 
-        assertNotNull(byShortUser._rev)
-        assertNotNull(byLongUser._rev)
-        assertEquals(byShortUser._rev, byLongUser._rev)
+        assertNotNull(byShortUser.rev)
+        assertNotNull(byLongUser.rev)
+        assertEquals(byShortUser.rev, byLongUser.rev)
 
-        assertTrue(byShortUser._id.isNotBlank())
-        assertTrue(byLongUser._id.isNotBlank())
+        assertFalse(byShortUser._id.isNullOrEmpty())
+        assertFalse(byLongUser._id.isNullOrEmpty())
         assertEquals(byShortUser._id, byLongUser._id)
     }
 

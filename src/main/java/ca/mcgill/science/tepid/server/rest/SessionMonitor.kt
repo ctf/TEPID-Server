@@ -19,7 +19,7 @@ class SessionMonitor : Runnable {
             sessions.filter {
                 !it.isValid()
             }.forEach {
-                val node = nf.objectNode().put("_id", it._id).put("_rev", it._rev).put("_deleted", true)
+                val node = nf.objectNode().put("_id", it._id).put("_rev", it.rev).put("_deleted", true)
                 docs.add(node)
             }
             log.info("Removal successful") // todo delete later?
