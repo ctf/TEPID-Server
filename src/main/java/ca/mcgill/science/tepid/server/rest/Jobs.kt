@@ -39,9 +39,6 @@ class Jobs {
         // todo why are we sorting stuff in java
         val out = TreeSet<PrintJob>()
         out.addAll(data)
-
-        log.debug("Data $out")
-
         return out
     }
 

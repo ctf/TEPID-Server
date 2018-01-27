@@ -46,6 +46,11 @@ class LdapTest {
 
     @Test
     fun authenticate() {
+        Ldap.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
+    }
+
+    @Test
+    fun authenticateWithCache() {
         SessionManager.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
     }
 

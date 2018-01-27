@@ -52,17 +52,20 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
          * ldap works fine with long users as well
          * Why do we return null on a promise rejection? Why not return dbUser?
          */
-        return if (dbUser == null || sam == dbUser.shortUser) {
+        val result = if (dbUser == null || sam == dbUser.shortUser) {
             try {
                 val ldapUser = if (dbUser == null) ldapPromise.result else ldapPromise.getResult(3000)
                 ldapUser ?: dbUser
             } catch (pre: PromiseRejectionException) {
+                log.error("Promise rejected", pre)
                 null
             }
         } else {
             // sam cannot by queried? Return fallback user
             dbUser
         }
+        println("Queried user $sam: ${if (result != null) "nonnull" else "null"}")
+        return result
     }
 
     private fun queryUser(sam: String, dbPromise: Promise<FullUser>, pw: String?): Promise<FullUser> {
@@ -90,7 +93,13 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
                      * 2. By our resource credentials, which does not have studentId
                      * If we have queried by owner, this information is complete and should be regarded that way
                      */
-                    val (auth, queryByOwner) = if (pw != null) term to pw to true else Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS to false
+                    val (auth, queryByOwner) = if (pw != null) {
+                        log.trace("Querying by owner $term")
+                        term to pw to true
+                    } else {
+                        log.trace("Querying by resource")
+                        Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS to false
+                    }
                     val out = ldap.queryUser(term, auth)
                     out?.shortUser ?: return ldapDeferred.reject("Could not locate user; short user not found")
 
