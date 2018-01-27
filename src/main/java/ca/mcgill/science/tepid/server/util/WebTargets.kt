@@ -86,7 +86,7 @@ fun WebTarget.getRev(): String = getObject().get("_rev")?.asText() ?: ""
 inline fun <reified T : Any> WebTarget.getJson(): T {
     val data = getString()
     val result: T = mapper.readValue(data)
-    _log.trace("getJson: $result")
+//    _log.trace("getJson: $result")
     return result
 }
 
@@ -111,7 +111,7 @@ fun JsonNode.postJson(path: String): String {
     val result = CouchDb.path(path).request(MediaType.TEXT_PLAIN)
             .post(Entity.entity(this, MediaType.APPLICATION_JSON))
             .readEntity(String::class.java)
-    _log.trace("postJson: $result")
+//    _log.trace("postJson: $result")
     return result
 }
 

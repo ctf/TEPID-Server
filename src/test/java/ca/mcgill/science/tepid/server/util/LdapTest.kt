@@ -60,6 +60,13 @@ class LdapTest {
     }
 
     @Test
+    fun queryCacheLong() {
+        val user = SessionManager.queryUserCache("***REMOVED***")
+        assertNotNull(user)
+        println(user!!)
+    }
+
+    @Test
     fun queryWithoutPass() {
         Ldap.queryUser(Config.TEST_USER, null).assertEqualsTestUser()
     }

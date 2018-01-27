@@ -144,7 +144,7 @@ object SessionManager : WithLogging() {
                 dbUser.givenName
         else
             dbUser.nick
-        log.trace("Found db user $dbUser for $sam")
+        log.trace("Found db user (${dbUser._id}) ${dbUser.displayName} for $sam")
         return dbUser
     }
 
