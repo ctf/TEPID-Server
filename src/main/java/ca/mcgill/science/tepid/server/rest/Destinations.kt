@@ -76,7 +76,7 @@ class Destinations {
     @Path("/{dest}")
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun deleteQueue(@PathParam("dest") destination: String) =
+    fun deleteQueue(@PathParam("dest") destination: String): String =
             CouchDb.path(destination).deleteRev()
 
     private companion object : WithLogging()

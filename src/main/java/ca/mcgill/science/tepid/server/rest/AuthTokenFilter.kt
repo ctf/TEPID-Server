@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.utils.WithLogging
-import java.util.*
 import javax.annotation.Priority
 import javax.ws.rs.Priorities
 import javax.ws.rs.container.ContainerRequestContext

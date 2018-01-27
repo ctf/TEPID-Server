@@ -16,7 +16,7 @@ class JobMonitor : Runnable {
 
             jobs.forEach { j ->
                 j.setFailed("Timed out")
-                val id = j.getId()
+                val id = j._id ?: return@forEach
                 CouchDb.path(id).putJson(j)
                 val t = Jobs.processingThreads[id]
                 try {

@@ -5,7 +5,6 @@ import ca.mcgill.science.tepid.models.data.FullDestination;
 import ca.mcgill.science.tepid.models.data.PrintJob;
 import ca.mcgill.science.tepid.server.util.CouchDb;
 import ca.mcgill.science.tepid.server.util.QueueManager;
-import ca.mcgill.science.tepid.server.util.WebTargetsKt;
 
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;

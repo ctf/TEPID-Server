@@ -85,7 +85,7 @@ fun WebTarget.getRev(): String = getObject().get("_rev")?.asText() ?: ""
  * Get json in the format of the supplied class
  */
 inline fun <reified T : Any> WebTarget.getJson(): T =
-    mapper.readValue(getString())
+        mapper.readValue(getString())
 
 /**
  * Retrieve a list of the defined class from the WebTarget.
@@ -104,10 +104,10 @@ inline fun <reified T : Any> WebTarget.getViewRows(): List<T> {
  */
 
 fun JsonNode.postJson(path: String): String =
-    CouchDb.path(path)
-            .request(MediaType.TEXT_PLAIN)
-            .post(Entity.entity(this, MediaType.APPLICATION_JSON))
-            .readEntity(String::class.java)
+        CouchDb.path(path)
+                .request(MediaType.TEXT_PLAIN)
+                .post(Entity.entity(this, MediaType.APPLICATION_JSON))
+                .readEntity(String::class.java)
 
 /**
  * Submit a post request at the current target with the supplied [data]

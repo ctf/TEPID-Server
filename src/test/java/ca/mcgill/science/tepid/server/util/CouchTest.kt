@@ -8,7 +8,6 @@ import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 /**
  * Created by Allan Wang on 2017-11-18.
@@ -25,7 +24,7 @@ class CouchTest : WithLogging() {
         val response = CouchDb.updateWithResponse<FullUser>("u***REMOVED***") {
             nick = "a${System.currentTimeMillis()}"
         }
-        log.debug("response " + response)
+        log.debug("response $response")
     }
 
     @Test
@@ -48,11 +47,9 @@ class CouchTest : WithLogging() {
 
         val byShortUser = SessionManager.getSam(shortUser)
         assertNotNull(byShortUser, "Query for $shortUser was null")
-        log.info(byShortUser)
 
         val byLongUser = SessionManager.getSam(longUser)
         assertNotNull(byLongUser, "Query for $longUser was null")
-        log.info(byLongUser)
 
         assertEquals(longUser, byShortUser!!.longUser)
         assertEquals(shortUser, byLongUser!!.shortUser)

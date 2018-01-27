@@ -61,6 +61,10 @@ object CouchDb : WithLogging() {
      * If anything went wrong, null will be returned
      */
     inline fun <reified T : Any> update(id: String, action: T.() -> Unit): T? {
+        if (id.isBlank()) {
+            log.error("Requested update for blank path for ${T::class.java.simpleName}")
+            return null
+        }
         try {
             val target = path(id)
             val data = target.getJson<T>()
@@ -78,15 +82,21 @@ object CouchDb : WithLogging() {
     /**
      * Attempts to update the given target, and returns the response
      */
-    inline fun <reified T : Any> updateWithResponse(id: String, action: T.() -> Unit): Response =
-            try {
-                val target = path(id)
-                val data = target.getJson<T>()
-                data.action()
-                log.trace("Updating data at $id")
-                target.putJson(data)
-            } catch (e: Exception) {
-                Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")
-            }
+    inline fun <reified T : Any> updateWithResponse(id: String, action: T.() -> Unit): Response {
+        if (id.isBlank()) {
+            log.error("Requested update for blank path for ${T::class.java.simpleName}")
+            return Response.Status.BAD_REQUEST.text("Empty path")
+        }
+        return try {
+            val target = path(id)
+            val data = target.getJson<T>()
+            data.action()
+            log.trace("Updating data at $id")
+            target.putJson(data)
+        } catch (e: Exception) {
+            log.error("Update with response failed for ${T::class.java.simpleName}", e)
+            Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")
+        }
+    }
 
 }

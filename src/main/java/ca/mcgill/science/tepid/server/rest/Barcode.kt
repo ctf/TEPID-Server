@@ -26,7 +26,6 @@ class Barcode {
                 "include_docs" to "true"
         ).request(MediaType.APPLICATION_JSON)
                 .get(ObjectNode::class.java)
-        println(change.get("results").get(0).get("doc").asText())
         return change.get("results").get(0).get("doc")
     }
 }

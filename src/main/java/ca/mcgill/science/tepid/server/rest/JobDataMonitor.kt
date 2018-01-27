@@ -25,7 +25,8 @@ class JobDataMonitor : Runnable {
 
                         j.file = null
                     }
-                    CouchDb.path(j.getId()).putJson(j)
+                    val id = j._id ?: return
+                    CouchDb.path(id).putJson(j)
                 }
             }
         } catch (e: Exception) {

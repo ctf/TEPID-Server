@@ -65,7 +65,7 @@ class Users {
     @Produces(MediaType.APPLICATION_JSON)
     fun createLocalAdmin(@PathParam("sam") shortUser: String, newAdmin: FullUser, @Context req: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         if (this.adminConfigured()) {
-            log.warn("Unauthorized attempt to add a local admin by {}.", (req.getProperty("session") as Session).user.longUser)
+            log.warn("Unauthorized attempt to add a local admin by {}.", req.getSession()?.user?.longUser)
             return Response.status(Response.Status.UNAUTHORIZED).entity("Local admin already exists").type(MediaType.TEXT_PLAIN).build()
         }
         val hashedPw = BCrypt.hashpw(newAdmin.password, BCrypt.gensalt())

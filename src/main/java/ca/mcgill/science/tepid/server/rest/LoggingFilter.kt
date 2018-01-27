@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.server.util.Config
+import ca.mcgill.science.tepid.utils.WithLogging
 import java.io.IOException
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.container.ContainerRequestFilter
@@ -18,7 +19,7 @@ class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
     override fun filter(requestContext: ContainerRequestContext) {
         if (!Config.DEBUG) return
         requestContext.apply {
-            println("Request for ${uriInfo.path}")
+            log.trace("Request for ${uriInfo.path}")
         }
     }
 
@@ -26,7 +27,9 @@ class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
     override fun filter(requestContext: ContainerRequestContext, responseContext: ContainerResponseContext) {
         if (!Config.DEBUG) return
         responseContext.apply {
-            println("Response $status")
+            log.trace("Response $status")
         }
     }
+
+    companion object : WithLogging()
 }

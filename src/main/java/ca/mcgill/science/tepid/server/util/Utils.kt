@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.Session
+import ca.mcgill.science.tepid.server.rest.AuthenticationFilter
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.logging.log4j.Logger
 import java.io.File
@@ -13,14 +14,23 @@ import java.text.SimpleDateFormat
 import java.util.*
 import javax.ws.rs.container.ContainerRequestContext
 
+/**
+ * Where the magic happens
+ * Provides class bindings for
+ * serialization & deserialization
+ */
 val mapper = jacksonObjectMapper()
 
 /**
  * Safely attempts to extract a session from a container context
  * If a session could not be found, it will be logged inside the [logger]
+ *
+ * Note that in most cases, the session should be nonnull,
+ * as the session should by supplied by the [AuthenticationFilter]
+ *
  */
 fun ContainerRequestContext.getSession(logger: Logger? = null): Session? {
-    val session = getProperty("session") as? Session
+    val session = getProperty(AuthenticationFilter.SESSION) as? Session
     if (session == null)
         logger?.error("Failed to retrieve session")
     return session
@@ -35,7 +45,7 @@ fun ContainerRequestContext.getSession(logger: Logger? = null): Session? {
 fun File.copyFrom(input: InputStream,
                   vararg options: CopyOption = arrayOf(StandardCopyOption.REPLACE_EXISTING)) {
     input.use {
-        Files.copy(it, toPath())
+        Files.copy(it, toPath(), *options)
     }
 }
 

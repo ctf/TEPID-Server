@@ -5,8 +5,6 @@ import ca.mcgill.science.tepid.server.util.CouchDb
 import ca.mcgill.science.tepid.server.util.postJson
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import javax.ws.rs.client.Entity
-import javax.ws.rs.core.MediaType
 
 class SessionMonitor : Runnable {
 
@@ -20,12 +18,12 @@ class SessionMonitor : Runnable {
             sessions.filter {
                 !it.isValid()
             }.forEach {
-                val node = nf.objectNode()
-                        .put("_id", it._id)
-                        .put("_rev", it._rev)
-                        .put("_deleted", true)
-                docs.add(node)
-            }
+                        val node = nf.objectNode()
+                                .put("_id", it._id)
+                                .put("_rev", it._rev)
+                                .put("_deleted", true)
+                        docs.add(node)
+                    }
             log.info("Removal successful") // todo delete later?
             if (docs.size() > 0)
                 CouchDb.path("_bulk_docs").postJson(root)

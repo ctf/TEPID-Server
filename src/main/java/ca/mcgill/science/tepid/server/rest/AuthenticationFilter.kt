@@ -24,6 +24,12 @@ class AuthenticationFilter : ContainerRequestFilter {
     @Context
     private var resourceInfo: ResourceInfo? = null
 
+    /**
+     * Validates the request and rejects immediately if roles or other conditions are not met
+     * Note that in cases of finding the sam, token, password, etc,
+     * A null value may either indicate that none was passed, or that
+     * the value passed was not properly encoded
+     */
     override fun filter(requestContext: ContainerRequestContext) {
         log.trace("AuthFilter at ${requestContext.uriInfo.path}")
         val method = resourceInfo?.resourceMethod ?: return log.warn("Skipping null method")
@@ -53,13 +59,13 @@ class AuthenticationFilter : ContainerRequestFilter {
             val credentials = parts[1]
             val session: Session?
             when (authScheme) {
-                "Token" -> {
+                TOKEN -> {
                     val samAndToken = String(Base64.decode(credentials.toByteArray())).split(":")
                     val sam = samAndToken.getOrNull(0)?.split("@")?.getOrNull(0)
                     val token = samAndToken.getOrNull(1)
                     if (sam == null || token == null) {
-                        sam ?: log.warn("Null sam passed")
-                        token ?: log.warn("Null token passed")
+                        sam ?: log.warn("Bad sam passed")
+                        token ?: log.warn("Bad token passed")
                         requestContext.abortWith(AUTH_REQUIRED)
                         return
                     }
@@ -68,13 +74,13 @@ class AuthenticationFilter : ContainerRequestFilter {
                         s = null
                     session = s
                 }
-                "Basic" -> {
+                BASIC -> {
                     val samAndPassword = String(Base64.decode(credentials.toByteArray())).split(":")
                     val username = samAndPassword.getOrNull(0)?.split("@")?.getOrNull(0)
                     val password = samAndPassword.getOrNull(1)
                     if (username == null || password == null) {
-                        username ?: log.warn("Null username passed")
-                        password ?: log.warn("Null password passed")
+                        username ?: log.warn("Bad username passed")
+                        password ?: log.warn("Bad password passed")
                         requestContext.abortWith(AUTH_REQUIRED)
                         return
                     }
@@ -99,21 +105,24 @@ class AuthenticationFilter : ContainerRequestFilter {
                 return
             }
             session.role = role
-            requestContext.setProperty("session", session)
+            requestContext.setProperty(SESSION, session)
         }
     }
 
-    private companion object : WithLogging() {
+    companion object : WithLogging() {
         private const val AUTHORIZATION_PROPERTY = "Authorization"
+        private const val BASIC = "Basic"
+        private const val TOKEN = "Token"
+        const val SESSION = "session"
 
         private val WHITESPACE_REGEX = Regex("\\s")
 
-        private val ACCESS_DENIED: Response
+        private inline val ACCESS_DENIED: Response
             get() = Response.Status.FORBIDDEN.text("403 You cannot access this resource")
-        private val AUTH_REQUIRED: Response
+        private inline val AUTH_REQUIRED: Response
             get() = Response.status(Response.Status.UNAUTHORIZED).entity("401 Please authenticate to access this resource")
                     .header("WWW-Authenticate", "Basic realm=\"Restricted Resource\"").type(MediaType.TEXT_PLAIN).build()
-        private val ACCESS_FORBIDDEN: Response
+        private inline val ACCESS_FORBIDDEN: Response
             get() = Response.Status.FORBIDDEN.text("403 No access to this resource")
     }
 }

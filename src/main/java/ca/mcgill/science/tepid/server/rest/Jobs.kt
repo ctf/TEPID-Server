@@ -5,7 +5,6 @@ import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.gs.GS
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -31,7 +30,7 @@ class Jobs {
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun listJobs(@PathParam("sam") sam: String, @Context req: ContainerRequestContext): Collection<PrintJob> {
-        val session = req.getProperty("session") as Session
+        val session = req.getSession(log) ?: return emptyList()
         if (session.role == USER && session.user.shortUser != sam) {
             return emptyList()
         }

@@ -5,7 +5,6 @@ import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.Utils
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
-import ca.mcgill.science.tepid.models.bindings.NONE
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
@@ -49,12 +48,8 @@ object SessionManager : WithLogging() {
     fun valid(s: String): Boolean = this[s] != null
 
     fun end(s: String) {
-//       val over = CouchDb.path(s).getJson<Session>()
-//        CouchDb.path(over._id).queryParam("rev", over._rev).request().delete(String::class.java)
-//        log.debug("Ending session for {}.", over.user.longUser)
+        //todo test
         CouchDb.path(s).deleteRev()
-
-        //todo validate. This removes logging but is more efficient
     }
 
     /**
@@ -73,30 +68,6 @@ object SessionManager : WithLogging() {
             Ldap.authenticate(sam, pw)
         }
     }
-
-    /*
-     * TODO compare method above against method below (from the old repo)
-    public User authenticate(String sam, String pw) {
-        User dbUser = null;
-        try {
-            if (sam.contains("@")) {
-                UserResultSet results = couchdbOld.path("_design").path("main").path("_view").path("byLongUser").queryParam("key", "\""+sam.replace("@", "%40")+"\"").request(MediaType.APPLICATION_JSON).get(UserResultSet.class);
-                if (!results.rows.isEmpty()) dbUser = results.rows.get(0).value;
-            } else {
-                dbUser = couchdbOld.path("u" + sam).request(MediaType.APPLICATION_JSON).get(User.class);
-            }
-        } catch (Exception e) {}
-        if (dbUser != null && dbUser.authType != null && dbUser.authType.equals("local")) {
-            if (BCrypt.checkpw(pw, dbUser.password)) {
-                return dbUser;
-            } else {
-                return null;
-            }
-        } else {
-            return Ldap.authenticate(sam, pw);
-        }
-    }
-    */
 
     /**
      * Retrieve user from Ldap if available, otherwise retrieves from cache
