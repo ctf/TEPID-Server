@@ -39,8 +39,7 @@ class LdapTest {
                 "studentId" to studentId,
                 "longUser" to longUser,
                 "email" to email
-        ).forEach {
-            (tag, data) ->
+        ).forEach { (tag, data) ->
             assertNotNull(data, "$tag is null for user")
         }
     }
@@ -53,6 +52,11 @@ class LdapTest {
     @Test
     fun query() {
         SessionManager.queryUser(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
+    }
+
+    @Test
+    fun queryCache() {
+        SessionManager.queryUserCache(Config.TEST_USER).assertEqualsTestUser()
     }
 
     @Test

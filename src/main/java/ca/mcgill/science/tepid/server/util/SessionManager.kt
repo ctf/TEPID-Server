@@ -8,9 +8,6 @@ import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
-import retrofit2.http.Url
-import java.net.URL
-import java.net.URLEncoder
 import java.util.*
 
 object SessionManager : WithLogging() {
@@ -134,7 +131,12 @@ object SessionManager : WithLogging() {
      * @return user if exists
      */
     fun queryUserCache(sam: String?): FullUser? {
-        val dbUser = getSam(sam) ?: return null
+        log.trace("Query user cache for $sam")
+        val dbUser = getSam(sam)
+        if (dbUser == null) {
+            log.debug("User $sam does not exist in cache")
+            return null
+        }
         dbUser.salutation = if (dbUser.nick == null)
             if (!dbUser.preferredName.isEmpty())
                 dbUser.preferredName[dbUser.preferredName.size - 1]
@@ -142,6 +144,7 @@ object SessionManager : WithLogging() {
                 dbUser.givenName
         else
             dbUser.nick
+        log.trace("Found db user $dbUser for $sam")
         return dbUser
     }
 
