@@ -25,8 +25,6 @@ class JobDataMonitor : Runnable {
 
                         j.file = null
                     }
-
-                    j.additionalProperties.remove("_attachments")
                     CouchDb.path(j._id).putJson(j)
                 }
             }
