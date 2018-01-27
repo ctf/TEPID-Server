@@ -72,6 +72,11 @@ class LdapTest {
     }
 
     @Test
+    fun queryWithPass() {
+        Ldap.queryUser(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
+    }
+
+    @Test
     fun queryWithoutPass() {
         Ldap.queryUser(Config.TEST_USER, null).assertEqualsTestUser()
     }
@@ -82,6 +87,6 @@ class LdapTest {
         val user = Ldap.queryUser(id.toString(), null)
         user.assertValidUser()
         println(user!!.getSemesters())
-        assertEquals(id, user!!.studentId)
+        assertEquals(id, user.studentId)
     }
 }
