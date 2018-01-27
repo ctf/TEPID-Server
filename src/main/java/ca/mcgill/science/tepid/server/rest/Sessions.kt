@@ -23,7 +23,7 @@ class Sessions {
             if (SessionManager.valid(token)) {
                 s = SessionManager[token]
                 if (s != null) {
-                    if ((s.expiration != -1L && s.expiration < System.currentTimeMillis())
+                    if (!s.isValid()
                             || longUser && s.user.longUser != username
                             || !longUser && s.user.shortUser != username)
                         s = null

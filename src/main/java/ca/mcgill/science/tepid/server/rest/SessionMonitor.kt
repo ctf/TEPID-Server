@@ -17,7 +17,7 @@ class SessionMonitor : Runnable {
             val root = nf.objectNode()
             val docs = root.putArray("docs")
             sessions.filter {
-                it.expiration < System.currentTimeMillis()
+                !it.isValid()
             }.forEach {
                 val node = nf.objectNode().put("_id", it._id).put("_rev", it._rev).put("_deleted", true)
                 docs.add(node)

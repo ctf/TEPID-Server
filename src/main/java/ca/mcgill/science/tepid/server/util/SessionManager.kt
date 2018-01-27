@@ -30,7 +30,7 @@ object SessionManager : WithLogging() {
             //todo check why we have a try catch here, and not elsewhere
             return null
         }
-        return if (session.expiration > System.currentTimeMillis()) session else null
+        return if (session.isValid()) session else null
     }
 
     /**
