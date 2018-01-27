@@ -18,7 +18,9 @@ object SessionManager : WithLogging() {
         val session = Session(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
         val id = Utils.newSessionId()
         session._id = id
-        CouchDb.path(session._id).putJson(session)
+        log.trace("Creating session $session")
+        val out = CouchDb.path(session._id).putJsonAndRead(session)
+        println(out)
         return session
     }
 
