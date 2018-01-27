@@ -21,9 +21,9 @@ class Sessions {
             val longUser = username.contains(".")
             var s: Session? = null
             if (SessionManager.valid(token)) {
-                s = SessionManager.get(token)
+                s = SessionManager[token]
                 if (s != null) {
-                    if (s.expiration < System.currentTimeMillis()
+                    if ((s.expiration != -1L && s.expiration < System.currentTimeMillis())
                             || longUser && s.user.longUser != username
                             || !longUser && s.user.shortUser != username)
                         s = null
