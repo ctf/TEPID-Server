@@ -84,12 +84,8 @@ fun WebTarget.getRev(): String = getObject().get("_rev")?.asText() ?: ""
 /**
  * Get json in the format of the supplied class
  */
-inline fun <reified T : Any> WebTarget.getJson(): T {
-    val data = getString()
-    val result: T = mapper.readValue(data)
-//    _log.trace("getJson: $result")
-    return result
-}
+inline fun <reified T : Any> WebTarget.getJson(): T =
+    mapper.readValue(getString())
 
 /**
  * Retrieve a list of the defined class from the WebTarget.
@@ -97,7 +93,6 @@ inline fun <reified T : Any> WebTarget.getJson(): T {
  * with a "rows" attribute containing a map of data to "value"
  */
 inline fun <reified T : Any> WebTarget.getViewRows(): List<T> {
-//    _log.trace("Getting view rows for $uri for type ${T::class.java.simpleName}")
     val rows = getObject().get("rows") ?: return emptyList()
     return rows.mapNotNull { it?.get("value") }.map { mapper.treeToValue<T>(it) }
 }
@@ -108,20 +103,19 @@ inline fun <reified T : Any> WebTarget.getViewRows(): List<T> {
  * -----------------------------------------
  */
 
-fun JsonNode.postJson(path: String): String {
-    val result = CouchDb.path(path).request(MediaType.TEXT_PLAIN)
+fun JsonNode.postJson(path: String): String =
+    CouchDb.path(path)
+            .request(MediaType.TEXT_PLAIN)
             .post(Entity.entity(this, MediaType.APPLICATION_JSON))
             .readEntity(String::class.java)
-//    _log.trace("postJson: $result")
-    return result
-}
 
 /**
  * Submit a post request at the current target with the supplied [data]
  * and retrieve the result as a [String]
  */
 fun <T : Any> WebTarget.postJson(data: T): String =
-        request(MediaType.TEXT_PLAIN).post(Entity.entity(data, MediaType.APPLICATION_JSON))
+        request(MediaType.TEXT_PLAIN)
+                .post(Entity.entity(data, MediaType.APPLICATION_JSON))
                 .readEntity(String::class.java)
 
 /**
@@ -129,7 +123,8 @@ fun <T : Any> WebTarget.postJson(data: T): String =
  * and retrieve the result as an [ObjectNode]
  */
 fun <T : Any> WebTarget.postJsonGetObj(data: T): ObjectNode =
-        request(MediaType.APPLICATION_JSON).post(Entity.entity(data, MediaType.APPLICATION_JSON))
+        request(MediaType.APPLICATION_JSON)
+                .post(Entity.entity(data, MediaType.APPLICATION_JSON))
                 .readEntity(ObjectNode::class.java)
 
 /*
@@ -143,7 +138,8 @@ fun <T : Any> WebTarget.postJsonGetObj(data: T): ObjectNode =
  * Returns the response sent back from couch
  */
 inline fun <reified T : Any> WebTarget.putJson(data: T): Response =
-        request(MediaType.APPLICATION_JSON).put(Entity.entity(data, MediaType.APPLICATION_JSON))
+        request(MediaType.APPLICATION_JSON)
+                .put(Entity.entity(data, MediaType.APPLICATION_JSON))
 
 /*
  * -----------------------------------------
@@ -156,7 +152,8 @@ inline fun <reified T : Any> WebTarget.putJson(data: T): Response =
  */
 fun WebTarget.deleteRev(): String {
     val rev = getRev()
-    val result = queryParam("rev", rev).request(MediaType.TEXT_PLAIN).delete()
+    val result = queryParam("rev", rev)
+            .request(MediaType.TEXT_PLAIN).delete()
             .readEntity(String::class.java)
     _log.trace("deleteRev: $rev, $result")
     return result

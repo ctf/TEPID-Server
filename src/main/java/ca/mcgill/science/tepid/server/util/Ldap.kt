@@ -135,7 +135,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
                             val responseObj = response.readEntity(ObjectNode::class.java)
                             val newRev = responseObj.get("_rev")?.asText()
                             if (newRev != null && newRev.length > 3) {
-                                out.rev = newRev
+                                out._rev = newRev
                                 log.trace("New rev for ${out.shortUser}: $newRev")
                             } else {
                                 log.error("Invalid out data $response")

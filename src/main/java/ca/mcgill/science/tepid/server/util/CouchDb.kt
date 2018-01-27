@@ -65,9 +65,9 @@ object CouchDb : WithLogging() {
             val target = path(id)
             val data = target.getJson<T>()
             data.action()
+            log.trace("Updating data at $id")
             val response = target.putJson(data)
             if (response.isSuccessful) {
-                log.trace("updated id $id")
                 return data
             }
         } catch (e: Exception) {
@@ -79,13 +79,14 @@ object CouchDb : WithLogging() {
      * Attempts to update the given target, and returns the response
      */
     inline fun <reified T : Any> updateWithResponse(id: String, action: T.() -> Unit): Response =
-         try {
-            val target = path(id)
-            val data = target.getJson<T>()
-            data.action()
-            target.putJson(data)
-        } catch (e: Exception) {
-            Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")
-        }
+            try {
+                val target = path(id)
+                val data = target.getJson<T>()
+                data.action()
+                log.trace("Updating data at $id")
+                target.putJson(data)
+            } catch (e: Exception) {
+                Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")
+            }
 
 }

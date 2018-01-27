@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.util
 
+import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.enums.Room
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -17,6 +18,14 @@ class CouchTest : WithLogging() {
     private inline fun <T> List<T>.test(action: List<T>.() -> Unit) {
         log.debug("\n$this\n")
         action()
+    }
+
+    @Test
+    fun putUser() {
+        val response = CouchDb.updateWithResponse<FullUser>("u***REMOVED***") {
+            nick = "a${System.currentTimeMillis()}"
+        }
+        log.debug("response " + response)
     }
 
     @Test
@@ -50,9 +59,9 @@ class CouchTest : WithLogging() {
 
         assertEquals(byLongUser, byShortUser)
 
-        assertNotNull(byShortUser.rev)
-        assertNotNull(byLongUser.rev)
-        assertEquals(byShortUser.rev, byLongUser.rev)
+        assertNotNull(byShortUser._rev)
+        assertNotNull(byLongUser._rev)
+        assertEquals(byShortUser._rev, byLongUser._rev)
 
         assertFalse(byShortUser._id.isNullOrEmpty())
         assertFalse(byLongUser._id.isNullOrEmpty())
