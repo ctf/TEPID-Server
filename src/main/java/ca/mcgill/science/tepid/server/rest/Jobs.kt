@@ -208,7 +208,8 @@ class Jobs {
     @Produces(MediaType.APPLICATION_JSON)
     fun getChanges(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse, @Context ctx: ContainerRequestContext) {
         val session = ctx.getSession(log) ?: return
-        val j = CouchDb.jsonFromId<PrintJob>(id)
+        log.trace("Logging job change for $id")
+        val j = CouchDb.path(id).getJson<PrintJob>()
         if (session.role == USER && session.user.shortUser != j.userIdentification) {
             ar.resume(Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build())
         }
@@ -232,7 +233,8 @@ class Jobs {
     @Produces(MediaType.APPLICATION_JSON)
     fun getJob(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Context ctx: ContainerRequestContext): Response {
         val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
-        val j = CouchDb.jsonFromId<PrintJob>(id)
+        log.trace("Queried job $id")
+        val j = CouchDb.path(id).getJson<PrintJob>()
         return if (session.role == USER && session.user.shortUser != j.userIdentification) unauthorizedResponse("You cannot access this resource")
         else Response.ok(j).build()
     }

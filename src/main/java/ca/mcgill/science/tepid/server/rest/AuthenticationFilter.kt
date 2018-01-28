@@ -31,7 +31,6 @@ class AuthenticationFilter : ContainerRequestFilter {
      * the value passed was not properly encoded
      */
     override fun filter(requestContext: ContainerRequestContext) {
-//        log.trace("AuthFilter at ${requestContext.uriInfo.path}")
         val method = resourceInfo?.resourceMethod ?: return log.warn("Skipping null method")
         if (method.isAnnotationPresent(DenyAll::class.java)) {
             log.warn("Method annotated with DenyAll")
@@ -43,7 +42,6 @@ class AuthenticationFilter : ContainerRequestFilter {
             val roles = method.getAnnotation(RolesAllowed::class.java).value.toSet()
             val headers = requestContext.headers
             val authorization = headers[AUTHORIZATION_PROPERTY]
-            log.info("Auth $authorization")
             if (authorization == null || authorization.isEmpty()) {
                 log.warn("Empty or null authorization")
                 requestContext.abortWith(AUTH_REQUIRED)

@@ -53,8 +53,6 @@ object CouchDb : WithLogging() {
                                              targetConfig: WebTarget.() -> WebTarget): List<T> =
             path(base, path).targetConfig().getViewRows()
 
-    inline fun <reified T : Any> jsonFromId(id: String) = path(id).getJson<T>()
-
     /**
      * Helper for getting data at path [id], editing, then putting it back at the same path
      * If the put request is successful, the updated data will be returned
