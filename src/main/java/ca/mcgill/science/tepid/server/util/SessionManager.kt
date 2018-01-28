@@ -96,7 +96,7 @@ object SessionManager : WithLogging() {
                 return CouchDb.path("u$sam").getJson()
             }
         } catch (e: Exception) {
-            log.error("Query error for $sam", e)
+            log.error("Query error for $sam: ${e.message}")
         }
 
         return null

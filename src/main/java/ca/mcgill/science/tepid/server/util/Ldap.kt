@@ -132,14 +132,17 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
                         log.trace("Update db instance")
                         try {
                             val response = CouchDb.path("u${out.shortUser}").putJson(out)
-                            val responseObj = response.readEntity(ObjectNode::class.java)
-                            val newRev = responseObj.get("_rev")?.asText()
-                            if (newRev != null && newRev.length > 3) {
-                                out._rev = newRev
-                                log.trace("New rev for ${out.shortUser}: $newRev")
+                            if (response.isSuccessful) {
+                                val responseObj = response.readEntity(ObjectNode::class.java)
+                                val newRev = responseObj.get("_rev")?.asText()
+                                if (newRev != null && newRev.length > 3) {
+                                    out._rev = newRev
+                                    log.trace("New rev for ${out.shortUser}: $newRev")
+                                }
                             } else {
-                                log.error("Invalid out data $response")
+                                log.error("Response failed: $response")
                             }
+
                         } catch (e1: Exception) {
                             log.error("Could not put ${out.shortUser} into db", e1)
                         }
@@ -180,7 +183,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         if (!Config.LDAP_ENABLED) return null
         log.debug("Authenticating $sam against ldap")
         val user = queryUser(sam, pw)
-        log.trace("Ldap query result for $sam: $user")
+        log.trace("Ldap query result for $sam: ${user?.longUser}")
         try {
             val auth = ldap.createAuthMap(user?.shortUser ?: "", pw)
             InitialDirContext(auth).close()

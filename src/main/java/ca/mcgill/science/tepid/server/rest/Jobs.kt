@@ -22,6 +22,7 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
 
+
 @Path("/jobs")
 class Jobs {
 
@@ -58,6 +59,21 @@ class Jobs {
         return response
     }
 
+    /**
+     * Returns true if monochrome was detected,
+     * or false if color was detected
+     * Defaults to monochrome
+     */
+    private fun BufferedReader.isMonochrome(): Boolean {
+        for (line in lines()) {
+            if (line.contains("/ProcessColorModel /DeviceGray"))
+                return true
+            if (line.contains("/ProcessColorModel /DeviceCMYK"))
+                return false
+        }
+        return true
+    }
+
     @PUT
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.TEXT_PLAIN)
@@ -90,20 +106,13 @@ class Jobs {
                         val decompress = XZInputStream(FileInputStream(tmpXz))
                         tmp.copyFrom(decompress)
 
+                        log.debug("AAA Preparing job")
+
                         // Detect PostScript monochrome instruction
                         val br = BufferedReader(FileReader(tmp))
-                        var psMonochrome = false
-                        br.lines().forEach {
-                            if (it.contains("/ProcessColorModel /DeviceGray")) {
-                                psMonochrome = true
-                                return@forEach
-                            }
-                            if (it.contains("/ProcessColorModel /DeviceCMYK")) {
-                                psMonochrome = false
-                                return@forEach
-                            }
-                        }
-
+                        val now = System.currentTimeMillis()
+                        val psMonochrome = br.isMonochrome()
+                        log.trace("Detected ${if (psMonochrome) "monochrome" else "colour"} for job $id in ${System.currentTimeMillis() - now} ms")
                         //count pages
                         val inkCov = GS.inkCoverage(tmp)
                         val color = if (psMonochrome) 0
@@ -169,7 +178,7 @@ class Jobs {
         CouchDb.updateWithResponse<PrintJob>(id) {
             setFailed(error)
         }
-        log.debug("Job $id failed: $error.")
+        log.error("Job $id failed: $error.")
     }
 
     //	public static boolean sendToSMB(File f, Destination destination) {

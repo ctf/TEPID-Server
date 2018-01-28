@@ -17,18 +17,18 @@ class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
 
     @Throws(IOException::class)
     override fun filter(requestContext: ContainerRequestContext) {
-        if (!Config.DEBUG) return
-        requestContext.apply {
-            log.trace("Request for ${uriInfo.path}")
-        }
+//        if (!Config.DEBUG) return
+//        requestContext.apply {
+//            log.trace("Request for ${uriInfo.path}")
+//        }
     }
 
     @Throws(IOException::class)
     override fun filter(requestContext: ContainerRequestContext, responseContext: ContainerResponseContext) {
-        if (!Config.DEBUG) return
-        responseContext.apply {
-            log.trace("Response $status")
-        }
+//        if (!Config.DEBUG) return
+//        responseContext.apply {
+//            log.trace("Response $status")
+//        }
     }
 
     companion object : WithLogging()
