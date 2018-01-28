@@ -106,7 +106,7 @@ class Jobs {
                         val decompress = XZInputStream(FileInputStream(tmpXz))
                         tmp.copyFrom(decompress)
 
-                        log.debug("AAA Preparing job")
+                        log.debug("AAA Preparing job ${tmp.isFile}")
 
                         // Detect PostScript monochrome instruction
                         val br = BufferedReader(FileReader(tmp))
@@ -208,7 +208,6 @@ class Jobs {
     @Produces(MediaType.APPLICATION_JSON)
     fun getChanges(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse, @Context ctx: ContainerRequestContext) {
         val session = ctx.getSession(log) ?: return
-        log.trace("Logging job change for $id")
         val j = CouchDb.path(id).getJson<PrintJob>()
         if (session.role == USER && session.user.shortUser != j.userIdentification) {
             ar.resume(Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build())
@@ -285,27 +284,33 @@ class Jobs {
         val processingThreads: MutableMap<String, Thread> = ConcurrentHashMap()
 
         fun sendToSMB(f: File, destination: FullDestination): Boolean {
-            log.trace("Sending file to ${destination.name}")
-            if (destination.path?.trim { it <= ' ' }?.isNotEmpty() != false) {
+            if (!f.isFile) {
+                log.error("File does not exist at ${f.absolutePath}")
+                return false
+            }
+
+            log.trace("Sending file ${f.name} ${f.length()} to ${destination.name}")
+            if (destination.path?.isBlank() != false) {
                 //this is a dummy destination
                 try {
                     Thread.sleep(4000)
                 } catch (e: InterruptedException) {
                 }
-
+                log.info("Sent ${f.name} to ${destination.name}")
                 return true
             }
-            System.setProperty("jcifs.smb.client.useNTSmbs", "false")
             try {
                 val p = ProcessBuilder("smbclient", "//" + destination.path, destination.password, "-c",
                         "print " + f.absolutePath, "-U", destination.domain + "\\" + destination.username, "-mSMB3").start()
                 p.waitFor()
             } catch (e: IOException) {
+                log.error("File ${f.name} failed with ${e.message}")
                 return false
             } catch (e: InterruptedException) {
+                log.error("File ${f.name} interrupted ${e.message}")
                 return false
             }
-
+            log.trace("File ${f.name} sent to ${destination.name}")
             return true
         }
     }

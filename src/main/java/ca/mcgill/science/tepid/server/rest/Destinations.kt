@@ -49,7 +49,6 @@ class Destinations {
                     id to it
                 }
                 .toMap()
-        log.debug("Got destinations $data")
         return data
     }
 
