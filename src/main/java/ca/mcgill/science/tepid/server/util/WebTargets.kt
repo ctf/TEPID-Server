@@ -88,6 +88,17 @@ inline fun <reified T : Any> WebTarget.getJson(): T =
         mapper.readValue(getString())
 
 /**
+ * Call [getJson] but with an exception check
+ * Note that this is expensive, and should only be used if the target
+ * is expected to be potentially invalid
+ */
+inline fun <reified T : Any> WebTarget.getJsonOrNull(): T? = try {
+    getJson()
+} catch (e: Exception) {
+    null
+}
+
+/**
  * Retrieve a list of the defined class from the WebTarget.
  * The layout matches that of a CouchDb row,
  * with a "rows" attribute containing a map of data to "value"

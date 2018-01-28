@@ -30,12 +30,7 @@ object SessionManager : WithLogging() {
     }
 
     operator fun get(token: String): Session? {
-        val session = try {
-            CouchDb.path(token).getJson<Session>()
-        } catch (e: Exception) {
-            log.error("Session retrieval failed: ${e.message}")
-            return null
-        }
+        val session = CouchDb.path(token).getJsonOrNull<Session>() ?: return null
         return if (session.isValid()) session else null
     }
 
