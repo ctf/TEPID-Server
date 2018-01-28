@@ -204,7 +204,7 @@ class Jobs {
             ar.resume(Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build())
         }
 
-        var target = CouchDb.path("changes")
+        var target = CouchDb.path("_changes")
                 .query("filter" to "main/byJob",
                         "job" to id)
         val qp = uriInfo.queryParameters
