@@ -176,7 +176,7 @@ class Jobs {
 
     fun failJob(id: String, error: String) {
         CouchDb.updateWithResponse<PrintJob>(id) {
-            setFailed(error)
+            fail(error)
         }
         log.error("Job $id failed: $error.")
     }
