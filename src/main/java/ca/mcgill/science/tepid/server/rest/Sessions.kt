@@ -52,7 +52,7 @@ class Sessions {
             if (s != null) {
                 s.persistent = req.persistent
                 s.role = SessionManager.getRole(user)
-                log.debug("Started session for user ${req.username}: $s.")
+                log.debug("Started session for user ${req.username}: $s. ${s.isValid()}")
                 return Response.ok(s).build()
             }
         } catch (e: Exception) {
