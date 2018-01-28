@@ -73,6 +73,7 @@ object SessionManager : WithLogging() {
      * @see [queryUserCache]
      */
     fun queryUser(sam: String?, pw: String?): FullUser? {
+        log.trace("Query session for $sam pw null: ${pw == null}")
         return if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else queryUserCache(sam)
     }
 

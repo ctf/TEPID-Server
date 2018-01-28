@@ -53,7 +53,7 @@ class Jobs {
         val session = ctx.getSession(log) ?: return "Bad session" // todo change output
         j.userIdentification = (session).user.shortUser
         j.deleteDataOn = System.currentTimeMillis() + SessionManager.queryUserCache(j.userIdentification)!!.jobExpiration
-        log.debug("Starting new print job (${j._id}) ${j.name} for ${session.user.longUser}...")
+        log.debug("Starting new print job ${j.name} for ${session.user.longUser}...")
         val response = CouchDb.target.postJson(j)
         log.trace("Resulted in new job $response")
         return response
@@ -281,6 +281,7 @@ class Jobs {
         val processingThreads: MutableMap<String, Thread> = ConcurrentHashMap()
 
         fun sendToSMB(f: File, destination: FullDestination): Boolean {
+            log.trace("Sending file to ${destination.name}")
             if (destination.path?.trim { it <= ' ' }?.isNotEmpty() != false) {
                 //this is a dummy destination
                 try {
@@ -293,7 +294,7 @@ class Jobs {
             System.setProperty("jcifs.smb.client.useNTSmbs", "false")
             try {
                 val p = ProcessBuilder("smbclient", "//" + destination.path, destination.password, "-c",
-                        "print " + f.absolutePath, "-U", destination.domain + "\\" + destination.username).start()
+                        "print " + f.absolutePath, "-U", destination.domain + "\\" + destination.username, "-mSMB3").start()
                 p.waitFor()
             } catch (e: IOException) {
                 return false
