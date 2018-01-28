@@ -27,7 +27,7 @@ class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
     override fun filter(requestContext: ContainerRequestContext, responseContext: ContainerResponseContext) {
         if (!Config.DEBUG) return
         responseContext.apply {
-            log.trace("Response for ${requestContext.uriInfo.path}: $status")
+            log.trace("Response for ${requestContext.uriInfo.path}: status $status")
         }
     }
 

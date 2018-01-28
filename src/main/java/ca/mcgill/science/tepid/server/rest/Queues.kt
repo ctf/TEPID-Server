@@ -92,7 +92,11 @@ class Queues {
         val changes = target.request().get(String::class.java)
         if (!ar.isDone && !ar.isCancelled) {
             log.info("Emitting changes of length ${changes.length}")
-            ar.resume(changes)
+            try {
+                ar.resume(changes)
+            } catch (e: Exception) {
+                log.error("Failed to emit queue _changes ${e.message}")
+            }
         }
     }
 

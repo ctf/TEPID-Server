@@ -223,7 +223,11 @@ class Jobs {
         //TODO find a way to make this truly asynchronous
         val changes = target.request().get(String::class.java)
         if (!ar.isDone && !ar.isCancelled) {
-            ar.resume(changes)
+            try {
+                ar.resume(changes)
+            } catch (e: Exception) {
+                log.error("Failed to emit job _changes for $id: ${e.message}")
+            }
         }
     }
 
