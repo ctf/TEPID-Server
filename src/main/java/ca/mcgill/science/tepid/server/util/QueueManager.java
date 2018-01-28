@@ -37,6 +37,8 @@ public class QueueManager {
 
     private QueueManager(String queueName) {
         System.out.println("Instantiate queue manager for " + queueName);
+        if (queueName == null)
+            throw new RuntimeException("Could not instantiate null queue manager");
         this.queueConfig = couchdb.path("q" + queueName).request(MediaType.APPLICATION_JSON).get(PrintQueue.class);
         Class<? extends LoadBalancer> lb = LoadBalancer.getLoadBalancer(queueConfig.getLoadBalancer());
         try {
