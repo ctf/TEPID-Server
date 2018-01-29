@@ -1,15 +1,22 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.data.FullDestination
-import ca.mcgill.science.tepid.models.data.MarqueeData
-import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.models.data.PrintQueue
+import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.util.CouchDb
+import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.server.util.query
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.*
 import javax.ws.rs.*
+import javax.ws.rs.container.ContainerRequestContext
+import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
+import ca.mcgill.science.tepid.models.data.User
+import java.util.HashMap
+import ca.mcgill.science.tepid.server.util.SessionManager
+import javax.ws.rs.PathParam
+import javax.ws.rs.Produces
+import javax.ws.rs.core.Response
+
 
 @Path("/screensaver")
 class ScreenSaver {
@@ -32,7 +39,9 @@ class ScreenSaver {
     @GET
     @Path("queues/{queue}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun listJobs(@PathParam("queue") queue: String, @QueryParam("limit") @DefaultValue("13") limit: Int, @QueryParam("from") @DefaultValue("0") from: Long): Collection<PrintJob> {
+    fun listJobs(@PathParam("queue") queue: String,
+                 @QueryParam("limit") @DefaultValue("13") limit: Int,
+                 @QueryParam("from") @DefaultValue("0") from: Long): Collection<PrintJob> {
         val data = CouchDb.getViewRows<PrintJob>("jobsByQueueAndTime") {
             query(
                     "descending" to true,
@@ -91,21 +100,32 @@ class ScreenSaver {
     fun getMarquee(): List<MarqueeData> =
             CouchDb.getViewRows("_design/marquee/_view", "all")
 
-
-    //TODO broke the screensaver?
+    /**
+     * Note that this is an exact replica of [Destinations.getDestinations]
+     * but with no authorization necessary
+     *
+     * Why we have this, I don't know
+     */
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("office-hours/on-duty/{timeSlot}")
-    fun onDuty(@PathParam("timeSlot") timeSlot: String): List<Any> {
-        //return new OfficeHours().onDuty(timeSlot);
-        return emptyList()
+    @Path("destinations")
+    fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
+        val session = ctx.getSession()
+        return CouchDb.getViewRows<FullDestination>("destinations")
+                .map { it.toDestination(session) }
+                .mapNotNull {
+                    val id = it._id ?: return@mapNotNull null
+                    id to it
+                }
+                .toMap()
     }
 
     @GET
+    @Path("/user/{username}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("office-hours/checked-in")
-    fun checkedIn(): List<String> {
-        return emptyList()
+    fun getUserInfo(@PathParam("username") username: String): NameUser {
+        val user = SessionManager.queryUser(username, null)
+                ?: throw NotFoundException(Response.status(404).entity("Could not find user " + username).type(MediaType.TEXT_PLAIN).build())
+        return user.toNameUser()
     }
 
     private companion object : WithLogging()

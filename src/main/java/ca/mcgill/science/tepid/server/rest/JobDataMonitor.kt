@@ -9,7 +9,7 @@ import java.io.File
 class JobDataMonitor : Runnable {
 
     override fun run() {
-        log.info("Deleting expired job data.")
+        log.trace("Deleting expired job data.")
         val now = System.currentTimeMillis()
         try {
             CouchDb.getViewRows<PrintJob>("storedJobs").forEach { j ->

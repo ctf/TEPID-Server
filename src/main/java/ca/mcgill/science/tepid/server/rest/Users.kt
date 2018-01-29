@@ -39,7 +39,7 @@ class Users {
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun queryLdap(@PathParam("sam") shortUser: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
-        val session = crc.getSession(log) ?: return INVALID_SESSION_RESPONSE
+        val session = crc.getSession()
         val user = SessionManager.queryUser(shortUser, pw)
         //TODO security wise, should the second check not happen before the first?
         if (user == null) {
@@ -48,7 +48,7 @@ class Users {
         }
         if (session.role == USER && session.user.shortUser != user.shortUser) {
             log.warn("Unauthorized attempt to lookup {} by user {}.", shortUser, session.user.longUser)
-            return Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build()
+            return Response.Status.UNAUTHORIZED.text("You cannot access this resource")
         }
         try {
             if (user.shortUser != shortUser && !uriInfo.queryParameters.containsKey("noRedirect")) {
@@ -56,7 +56,6 @@ class Users {
             }
         } catch (ignored: URISyntaxException) {
         }
-
         return Response.ok(user).build()
     }
 
@@ -65,8 +64,9 @@ class Users {
     @Produces(MediaType.APPLICATION_JSON)
     fun createLocalAdmin(@PathParam("sam") shortUser: String, newAdmin: FullUser, @Context req: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         if (this.adminConfigured()) {
-            log.warn("Unauthorized attempt to add a local admin by {}.", req.getSession()?.user?.longUser)
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Local admin already exists").type(MediaType.TEXT_PLAIN).build()
+            val session = req.getSession()
+            log.warn("Unauthorized attempt to add a local admin by {}.", session.user.longUser)
+            return Response.Status.UNAUTHORIZED.text("Local admin already exists")
         }
         val hashedPw = BCrypt.hashpw(newAdmin.password, BCrypt.gensalt())
         newAdmin.password = hashedPw
@@ -93,7 +93,7 @@ class Users {
      * and where the roles allowed are at least of level "user"
      */
     private inline fun putUserData(sam: String, ctx: ContainerRequestContext, action: (user: FullUser) -> Unit): Response {
-        val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
+        val session = ctx.getSession()
         val user = SessionManager.queryUser(sam, null) ?: return Response.Status.NOT_FOUND.text("User $sam not found")
         if (session.role == USER && session.user.shortUser != user.shortUser)
             return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
@@ -134,7 +134,7 @@ class Users {
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun getQuota(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): Int {
-        val session = ctx.getSession(log) ?: return -1
+        val session = ctx.getSession()
         return if (session.role == USER && session.user.shortUser != shortUser)
             -1
         else
@@ -172,7 +172,8 @@ class Users {
                     }
                 }.sum()
 
-        log.info("Old max quota: $oldMaxQuota, New max quota: $newMaxQuota, Printed $totalPrinted")
+        if (oldMaxQuota > newMaxQuota)
+            log.warn("Old quota $oldMaxQuota > new quota $newMaxQuota for $shortUser")
         return Math.max(Math.max(oldMaxQuota, newMaxQuota) - totalPrinted, 0)
     }
 

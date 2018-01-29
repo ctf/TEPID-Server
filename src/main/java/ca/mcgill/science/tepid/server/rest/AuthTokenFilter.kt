@@ -1,9 +1,11 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.server.util.getSession
+import ca.mcgill.science.tepid.server.util.getSessionSafely
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.annotation.Priority
 import javax.ws.rs.Priorities
+import javax.ws.rs.WebApplicationException
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.container.ContainerResponseContext
 import javax.ws.rs.container.ContainerResponseFilter
@@ -14,7 +16,7 @@ import javax.ws.rs.ext.Provider
 class AuthTokenFilter : ContainerResponseFilter {
 
     override fun filter(req: ContainerRequestContext, res: ContainerResponseContext) {
-        val session = req.getSession() ?: return
+        val session = req.getSessionSafely() ?: return
         res.headers.add(HEADER_SESSION, session.getId())
         res.headers.add(HEADER_ROLE, session.role)
         if (req.headers.containsKey(HEADER_TIMEOUT)) {

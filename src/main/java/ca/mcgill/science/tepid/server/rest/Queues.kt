@@ -27,7 +27,7 @@ class Queues {
     @RolesAllowed(ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun putQueues(queues: List<PrintQueue>): String {
+    fun putQueues(queues: List<PrintQueue>): Response {
         val root = CouchDb.putArray("docs", queues)
         queues.forEach { log.info("Added new queue {}.", it.name) }
         return CouchDb.path("_bulk_docs").postJson(root)
@@ -54,31 +54,33 @@ class Queues {
     @GET
     @Path("/{queue}/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getJob(@PathParam("queue") queue: String, @PathParam("id") id: String): PrintJob? {
+    fun getJob(@PathParam("queue") queue: String, @PathParam("id") id: String): PrintJob {
         val j = CouchDb.path(id).getJson<PrintJob>()
-        return if (!j.queueName.equals(queue, ignoreCase = true)) null else j
+        if (!j.queueName.equals(queue, ignoreCase = true))
+            failBadRequest("Job queue does not match $queue")
+        return j
     }
 
     @DELETE
     @Path("/{queue}")
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun deleteQueue(@PathParam("queue") queue: String) =
+    fun deleteQueue(@PathParam("queue") queue: String): String =
             CouchDb.path(queue).deleteRev()
 
     @GET
     @Path("/{queue}/{id}/{file}")
-    fun getAttachment(@PathParam("queue") queue: String, @PathParam("id") id: String, @PathParam("file") file: String): Response {
+    fun getAttachment(@PathParam("queue") queue: String, @PathParam("id") id: String, @PathParam("file") file: String): InputStream {
         try {
             val j = CouchDb.path(id).getJson<PrintJob>()
             if (!j.queueName.equals(queue, ignoreCase = true))
-                return Response.Status.NOT_FOUND.text("Could not find job $id in queue $queue")
+                failNotFound("Could not find job $id in queue $queue")
             val resp = CouchDb.path(id, file).request().get()
-            if (resp.status == 200)
-                return Response.ok(resp.readEntity(InputStream::class.java), resp.mediaType).build()
+            if (resp.isSuccessful)
+                return resp.readEntity(InputStream::class.java)
         } catch (ignored: Exception) {
         }
-        return Response.Status.NOT_FOUND.text("Could not find $file for job $id")
+        failNotFound("Could not find $file for job $id")
     }
 
     @GET

@@ -12,6 +12,7 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.ws.rs.WebApplicationException
 import javax.ws.rs.container.ContainerRequestContext
 
 /**
@@ -29,12 +30,15 @@ val mapper = jacksonObjectMapper()
  * as the session should by supplied by the [AuthenticationFilter]
  *
  */
-fun ContainerRequestContext.getSession(logger: Logger? = null): Session? {
-    val session = getProperty(AuthenticationFilter.SESSION) as? Session
-    if (session == null)
-        logger?.error("Failed to retrieve session")
-    return session
-}
+@Throws(WebApplicationException::class)
+fun ContainerRequestContext.getSession(): Session =
+        getSessionSafely() ?: failUnauthorized("Invalid Session")
+
+/**
+ * Returns a session or null if none was found
+ */
+fun ContainerRequestContext.getSessionSafely(): Session? =
+        getProperty(AuthenticationFilter.SESSION) as? Session
 
 /**
  * Copies the given [input] to the file, and ensure that

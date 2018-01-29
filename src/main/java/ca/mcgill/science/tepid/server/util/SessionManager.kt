@@ -72,14 +72,11 @@ object SessionManager : WithLogging() {
      * @return user if found
      * @see [queryUserCache]
      */
-    fun queryUser(sam: String?, pw: String?): FullUser? {
-        log.trace("Query session for $sam pw null: ${pw == null}")
-        return if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else queryUserCache(sam)
-    }
+    fun queryUser(sam: String?, pw: String?): FullUser? =
+            if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else queryUserCache(sam)
 
     fun getSam(sam: String?): FullUser? {
         sam ?: return null
-
         try {
             if (sam.contains("@")) {
                 log.trace("getSam by long user $sam")
@@ -94,7 +91,6 @@ object SessionManager : WithLogging() {
         } catch (e: Exception) {
             log.error("Query error for $sam: ${e.message}")
         }
-
         return null
     }
 

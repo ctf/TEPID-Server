@@ -78,7 +78,7 @@ The method must then take in some variable labelled with `@PathParam("data")`, w
 | | Optional method header parameters |
 |---|---|
 | | Additional data provided by tomcat during the request
-`@Context ctx: ContainerRequestContext` | Used for all methods dealing with sessions. This allows us to easily get the session and reject it using <br> `val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE` 
+`@Context ctx: ContainerRequestContext` | Used for all methods dealing with sessions. This allows us to easily get the session and reject it using <br> `val session = ctx.getSession()
 | `@Suspended ar: AsyncResponse` | Used to handle long running responses. Instead of returning data once, an `ar` may consume data until it is done or cancelled
 | `@Context uriInfo: UriInfo` | For uri info. (<b>TODO remove as we don't seem to use it</b>)
 

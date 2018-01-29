@@ -3,11 +3,10 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.SessionRequest
 import ca.mcgill.science.tepid.server.util.SessionManager
-import ca.mcgill.science.tepid.server.util.unauthorizedResponse
+import ca.mcgill.science.tepid.server.util.failUnauthorized
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 
 @Path("/sessions")
 class Sessions {
@@ -15,7 +14,7 @@ class Sessions {
     @GET
     @Path("/{user}/{token}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getSession(@PathParam("user") user: String, @PathParam("token") token: String): Response {
+    fun getSession(@PathParam("user") user: String, @PathParam("token") token: String): Session {
         try {
             val username = user.split("@")[0]
             val longUser = username.contains(".")
@@ -31,18 +30,17 @@ class Sessions {
             }
             if (s != null) {
                 s.role = SessionManager.getRole(s.user)
-                return Response.ok(s).build()
+                return s
             }
         } catch (e: Exception) {
             log.error("Session retrieval failed", e)
         }
-
-        return Response.status(Response.Status.UNAUTHORIZED).entity("{\"error\":\"Session token is no longer valid\"}").build()
+        failUnauthorized("Session token is no longer valid")
     }
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    fun startSession(req: SessionRequest): Response {
+    fun startSession(req: SessionRequest): Session {
         log.trace("Received Start request for ${req.username}")
         try {
             val username = req.username.split("@")[0]
@@ -53,13 +51,12 @@ class Sessions {
                 s.persistent = req.persistent
                 s.role = SessionManager.getRole(user)
                 log.debug("Started session for user ${req.username}: $s. ${s.isValid()}")
-                return Response.ok(s).build()
+                return s
             }
         } catch (e: Exception) {
             log.error("Starting session failed", e)
         }
-        log.debug("Failed to start session for user ${req.username}.")
-        return unauthorizedResponse("Username or password incorrect")
+        failUnauthorized("Failed to start session for user ${req.username}")
     }
 
     @DELETE

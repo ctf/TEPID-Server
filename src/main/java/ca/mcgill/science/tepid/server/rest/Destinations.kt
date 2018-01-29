@@ -13,7 +13,6 @@ import javax.ws.rs.*
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 
 @Path("/destinations")
 class Destinations {
@@ -28,7 +27,7 @@ class Destinations {
     @RolesAllowed(ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun putDestinations(destinations: Map<String, FullDestination>) =
+    fun putDestinations(destinations: Map<String, FullDestination>): String =
             CouchDb.putArray("docs", destinations.values).postJson("_bulk_docs")
 
     /**
@@ -41,15 +40,14 @@ class Destinations {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(USER, CTFER, ELDER)
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
-        val session = ctx.getSession(log) ?: return emptyMap()
-        val data = CouchDb.getViewRows<FullDestination>("destinations")
+        val session = ctx.getSession()
+        return CouchDb.getViewRows<FullDestination>("destinations")
                 .map { it.toDestination(session) }
                 .mapNotNull {
                     val id = it._id ?: return@mapNotNull null
                     id to it
                 }
                 .toMap()
-        return data
     }
 
     @POST
@@ -57,8 +55,8 @@ class Destinations {
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.TEXT_PLAIN)
     @Consumes(MediaType.APPLICATION_JSON)
-    fun setStatus(@PathParam("dest") id: String, ticket: DestinationTicket, @Context crc: ContainerRequestContext): Response {
-        val session = crc.getSession(log) ?: return INVALID_SESSION_RESPONSE
+    fun setStatus(@PathParam("dest") id: String, ticket: DestinationTicket, @Context crc: ContainerRequestContext): String {
+        val session = crc.getSession()
         ticket.user = session.user.toUser()
         val successText = "$id marked as ${if (ticket.up) "up" else "down"}"
         val response = CouchDb.updateWithResponse<FullDestination>(id) {
@@ -66,8 +64,9 @@ class Destinations {
             this.ticket = if (ticket.up) null else ticket
             log.info("Destination $successText.")
         }
-        return if (!response.isSuccessful) Response.Status.NOT_FOUND.text("Could not find destination $id")
-        else Response.ok(successText).build()
+        if (!response.isSuccessful)
+            failNotFound("Could not find destination $id")
+        return successText
     }
 
 
