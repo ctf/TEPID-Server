@@ -1,4 +1,9 @@
+priv.properties
+src/main/java/shared/Config.kt
+
 .idea/
+
+.directory
 
 .metadata
 .gradle

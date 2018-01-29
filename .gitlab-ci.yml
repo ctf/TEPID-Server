@@ -1,0 +1,6 @@
+deploy_job:
+  script:
+  - chmod 550 gitlab-testpid.sh
+  - ./gitlab-testpid.sh
+  except:
+  - /^(wip|test).*$/
