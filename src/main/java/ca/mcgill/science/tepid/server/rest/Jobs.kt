@@ -8,6 +8,7 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.server.gs.GS
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
+import com.fasterxml.jackson.databind.node.ObjectNode
 import org.tukaani.xz.XZInputStream
 import java.io.*
 import java.util.*
@@ -31,7 +32,7 @@ class Jobs {
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun listJobs(@PathParam("sam") sam: String, @Context req: ContainerRequestContext): Collection<PrintJob> {
-        val session = req.getSession(log) ?: return emptyList()
+        val session = req.getSession()
         if (session.role == USER && session.user.shortUser != sam) {
             return emptyList()
         }
@@ -49,14 +50,12 @@ class Jobs {
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): String {
-        val session = ctx.getSession(log) ?: return "Bad session" // todo change output
-        j.userIdentification = (session).user.shortUser
+    fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): Response {
+        val session = ctx.getSession()
+        j.userIdentification = session.user.shortUser
         j.deleteDataOn = System.currentTimeMillis() + SessionManager.queryUserCache(j.userIdentification)!!.jobExpiration
         log.debug("Starting new print job ${j.name} for ${session.user.longUser}...")
-        val response = CouchDb.target.postJson(j)
-        log.trace("Resulted in new job $response")
-        return response
+        return CouchDb.target.postJson(j)
     }
 
     /**
@@ -106,10 +105,8 @@ class Jobs {
                         val decompress = XZInputStream(FileInputStream(tmpXz))
                         tmp.copyFrom(decompress)
 
-                        log.debug("AAA Preparing job ${tmp.isFile}")
-
                         // Detect PostScript monochrome instruction
-                        val br = BufferedReader(FileReader(tmp))
+                        val br = BufferedReader(FileReader(tmp.absolutePath))
                         val now = System.currentTimeMillis()
                         val psMonochrome = br.isMonochrome()
                         log.trace("Detected ${if (psMonochrome) "monochrome" else "colour"} for job $id in ${System.currentTimeMillis() - now} ms")
@@ -123,7 +120,6 @@ class Jobs {
                             pages = inkCov.size
                             colorPages = color
                             processed = System.currentTimeMillis()
-                            log.info("Setting stats for job $id: $pages pages, $colorPages color")
                         }
 
                         if (j2 == null) {
@@ -207,7 +203,7 @@ class Jobs {
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun getChanges(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse, @Context ctx: ContainerRequestContext) {
-        val session = ctx.getSession(log) ?: return
+        val session = ctx.getSession()
         val j = CouchDb.path(id).getJson<PrintJob>()
         if (session.role == USER && session.user.shortUser != j.userIdentification) {
             ar.resume(Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build())
@@ -234,49 +230,53 @@ class Jobs {
     @Path("/job/{id}")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun getJob(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Context ctx: ContainerRequestContext): Response {
-        val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
+    fun getJob(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Context ctx: ContainerRequestContext): PrintJob {
+        val session = ctx.getSession()
         log.trace("Queried job $id")
         val j = CouchDb.path(id).getJson<PrintJob>()
-        return if (session.role == USER && session.user.shortUser != j.userIdentification) unauthorizedResponse("You cannot access this resource")
-        else Response.ok(j).build()
+        if (session.role == USER && session.user.shortUser != j.userIdentification)
+            failUnauthorized("You cannot access this resource")
+        return j
     }
 
     @PUT
     @Path("/job/{id}/refunded")
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setJobRefunded(@PathParam("id") id: String, @Context ctx: ContainerRequestContext, refunded: Boolean): Response {
-        ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE // todo check if  validation is necessary
-        CouchDb.update<PrintJob>(id) {
+    fun setJobRefunded(@PathParam("id") id: String, @Context ctx: ContainerRequestContext, refunded: Boolean): Boolean {
+        val result = CouchDb.update<PrintJob>(id) {
             isRefunded = refunded
             log.debug("Refunded job $id")
         }
-        return Response.ok().build()
+        return result != null
     }
 
     @POST
     @Path("/job/{id}/reprint")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.TEXT_PLAIN)
-    fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): Response {
-        val session = ctx.getSession(log) ?: return INVALID_SESSION_RESPONSE
+    fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): String {
+        val session = ctx.getSession()
         val j = CouchDb.path(id).getJson<PrintJob>()
-        val file = Utils.existingFile(j.file)
-                ?: return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Data for this job no longer exists").type(MediaType.TEXT_PLAIN).build()
+        val file = Utils.existingFile(j.file) ?: failInternal("Data for this job no longer exists")
         if (session.role == USER && session.user.shortUser != j.userIdentification)
-            return unauthorizedResponse("You cannot reprint someone else's job")
+            failUnauthorized("You cannot reprint someone else's job")
         val reprint = PrintJob()
         reprint.name = j.name
         reprint.originalHost = "REPRINT"
         reprint.queueName = j.queueName
         reprint.userIdentification = j.userIdentification
-        reprint.deleteDataOn = System.currentTimeMillis() + SessionManager.queryUserCache(j.userIdentification)!!.jobExpiration
-        println(reprint)
-        val newId = CouchDb.target.postJsonGetObj(reprint).get("id").asText()
+        reprint.deleteDataOn = System.currentTimeMillis() + (SessionManager.queryUserCache(j.userIdentification)?.jobExpiration
+                ?: 20000)
+        log.debug("Reprinted ${reprint.name}")
+        val response = CouchDb.target.postJson(reprint)
+        if (!response.isSuccessful)
+            throw WebApplicationException(response)
+        val content = response.readEntity(ObjectNode::class.java)
+        val newId = content.get("id")?.asText() ?: failInternal("Failed to retrieve new id")
         Utils.startCaughtThread("Reprint $id") { addJobData(FileInputStream(file), newId) }
-        log.debug("Reprinted job {}, new id {}.", id, newId)
-        return Response.ok("Reprinted $id new id $newId").build()
+        log.debug("Reprinted job $id, new id $newId.")
+        return "Reprinted $id new id $newId"
     }
 
     companion object : WithLogging() {

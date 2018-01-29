@@ -124,19 +124,10 @@ fun JsonNode.postJson(path: String): String =
  * Submit a post request at the current target with the supplied [data]
  * and retrieve the result as a [String]
  */
-fun <T : Any> WebTarget.postJson(data: T): String =
+fun <T : Any> WebTarget.postJson(data: T): Response =
         request(MediaType.TEXT_PLAIN)
                 .post(Entity.entity(data, MediaType.APPLICATION_JSON))
-                .readEntity(String::class.java)
 
-/**
- * Submit a post request at the current target with the supplied [data]
- * and retrieve the result as an [ObjectNode]
- */
-fun <T : Any> WebTarget.postJsonGetObj(data: T): ObjectNode =
-        request(MediaType.APPLICATION_JSON)
-                .post(Entity.entity(data, MediaType.APPLICATION_JSON))
-                .readEntity(ObjectNode::class.java)
 
 /*
  * -----------------------------------------

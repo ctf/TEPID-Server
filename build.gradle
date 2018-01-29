@@ -28,7 +28,7 @@ dependencies {
     testCompile "junit:junit:$JUNIT"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$KOTLIN"
 
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$KOTLIN"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN"
     compile "org.jetbrains.kotlin:kotlin-reflect:$KOTLIN"
 
     compile "ca.mcgill:tepid-commons:$TEPID_COMMONS"
