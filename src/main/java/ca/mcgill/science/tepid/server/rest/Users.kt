@@ -148,7 +148,7 @@ class Users {
         if (user == null || SessionManager.getRole(user).isEmpty()) return 0
 
         val totalPrinted = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject()
-                .get("rows").get(0).get("value").get("sum").asInt(0)
+                .get("rows")?.get(0)?.get("value")?.get("sum")?.asInt(0) ?: 0
 
         val oldMaxQuota = oldMaxQuota(shortUser)
 
