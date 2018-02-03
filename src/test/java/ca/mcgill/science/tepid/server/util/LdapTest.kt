@@ -6,6 +6,7 @@ import org.junit.BeforeClass
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 /**
  * Created by Allan Wang on 2017-10-31.
@@ -28,6 +29,8 @@ class LdapTest {
         assertNotNull(this)
         println(this!!)
         assertEquals(Config.TEST_USER, shortUser, "Short user mismatch. Perhaps you passed in the long user in your test?")
+        val user = toUser()
+        assertTrue(user.role.isNotEmpty(), "Role may not have propagated")
     }
 
     private fun FullUser?.assertValidUser() {

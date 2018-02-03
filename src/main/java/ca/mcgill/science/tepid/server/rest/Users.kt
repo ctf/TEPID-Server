@@ -1,12 +1,8 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.bindings.CTFER
-import ca.mcgill.science.tepid.models.bindings.ELDER
-import ca.mcgill.science.tepid.models.bindings.USER
+import ca.mcgill.science.tepid.models.bindings.*
 import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.util.*
-import ca.mcgill.science.tepid.server.util.SessionManager.ADMIN
-import ca.mcgill.science.tepid.server.util.SessionManager.LOCAL
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
 import java.net.URI
@@ -145,7 +141,7 @@ class Users {
         shortUser ?: return 0
 
         val user = SessionManager.queryUser(shortUser, null)
-        if (user == null || SessionManager.getRole(user).isEmpty()) return 0
+        if (user == null || user.getCtfRole().isEmpty()) return 0
 
         val totalPrinted = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject()
                 .get("rows")?.get(0)?.get("value")?.get("sum")?.asInt(0) ?: 0

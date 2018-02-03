@@ -243,7 +243,7 @@ class Jobs {
     @Path("/job/{id}/refunded")
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setJobRefunded(@PathParam("id") id: String, @Context ctx: ContainerRequestContext, refunded: Boolean): Boolean {
+    fun setJobRefunded(@PathParam("id") id: String, refunded: Boolean): Boolean {
         val result = CouchDb.update<PrintJob>(id) {
             isRefunded = refunded
             log.debug("Refunded job $id")

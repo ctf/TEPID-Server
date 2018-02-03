@@ -4,7 +4,6 @@ import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.util.SessionManager
 import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.WithLogging
-import org.glassfish.jersey.internal.util.Base64
 import javax.annotation.Priority
 import javax.annotation.security.DenyAll
 import javax.annotation.security.RolesAllowed
@@ -58,9 +57,9 @@ class AuthenticationFilter : ContainerRequestFilter {
             val session: Session?
             when (authScheme) {
                 TOKEN -> {
-                    val samAndToken = String(Base64.decode(credentials.toByteArray())).split(":")
-                    val sam = samAndToken.getOrNull(0)?.split("@")?.getOrNull(0)
-                    val token = samAndToken.getOrNull(1)
+                    val samAndToken = Session.decodeHeader(credentials)?.split(":")
+                    val sam = samAndToken?.getOrNull(0)?.split("@")?.getOrNull(0)
+                    val token = samAndToken?.getOrNull(1)
                     if (sam == null || token == null) {
                         sam ?: log.warn("Bad sam passed")
                         token ?: log.warn("Bad token passed")
@@ -68,14 +67,16 @@ class AuthenticationFilter : ContainerRequestFilter {
                         return
                     }
                     var s: Session? = SessionManager[token]
-                    if (s != null && !s.user.isMatch(sam))
+                    if (s != null && !s.user.isMatch(sam)) {
+                        log.warn("Session retrieved does not match $sam")
                         s = null
+                    }
                     session = s
                 }
                 BASIC -> {
-                    val samAndPassword = String(Base64.decode(credentials.toByteArray())).split(":")
-                    val username = samAndPassword.getOrNull(0)?.split("@")?.getOrNull(0)
-                    val password = samAndPassword.getOrNull(1)
+                    val samAndPassword = Session.decodeHeader(credentials)?.split(":")
+                    val username = samAndPassword?.getOrNull(0)?.split("@")?.getOrNull(0)
+                    val password = samAndPassword?.getOrNull(1)
                     if (username == null || password == null) {
                         username ?: log.warn("Bad username passed")
                         password ?: log.warn("Bad password passed")
@@ -96,8 +97,8 @@ class AuthenticationFilter : ContainerRequestFilter {
                 requestContext.abortWith(AUTH_REQUIRED)
                 return
             }
-            val role = SessionManager.getRole(session.user)
-            if (role.isBlank() || !roles.contains(role)) {
+            val role = session.user.getCtfRole()
+            if (role.isEmpty() || !roles.contains(role)) {
                 log.warn("User does not have enough privileges")
                 requestContext.abortWith(ACCESS_DENIED)
                 return

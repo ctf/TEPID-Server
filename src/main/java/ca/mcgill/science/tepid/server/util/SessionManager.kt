@@ -3,21 +3,16 @@ package ca.mcgill.science.tepid.server.util
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.Utils
-import ca.mcgill.science.tepid.models.bindings.CTFER
-import ca.mcgill.science.tepid.models.bindings.ELDER
-import ca.mcgill.science.tepid.models.bindings.USER
+import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
-import java.util.*
 
 object SessionManager : WithLogging() {
 
     private const val HOUR_IN_MILLIS = 60 * 60 * 1000
-    const val ADMIN = "admin"
-    const val LOCAL = "local"
 
     fun start(user: FullUser, expiration: Int): Session {
         val session = Session(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
@@ -30,6 +25,7 @@ object SessionManager : WithLogging() {
     }
 
     operator fun get(token: String): Session? {
+        log.info("Get session $token")
         val session = CouchDb.path(token).getJsonOrNull<Session>() ?: return null
         return if (session.isValid()) session else null
     }
@@ -132,35 +128,6 @@ object SessionManager : WithLogging() {
             return emptyPromise.promise
         }
         return Ldap.autoSuggest(like, limit)
-    }
-
-    private val elderGroups = arrayOf("***REMOVED***")
-    private val userGroups: Array<String>
-        get() {
-            val cal = Calendar.getInstance()
-            return arrayOf("***REMOVED***", "***REMOVED***" + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F")
-        }
-    private val ctferGroups = arrayOf("***REMOVED***", "***REMOVED***")
-
-    /**
-     * Retrieves user role
-     *
-     * TODO return enum instead
-     *
-     * @param u user to check
-     * @return String for role
-     */
-    fun getRole(u: FullUser?): String {
-        if (u == null) return ""
-        if (u.authType == null || u.authType != LOCAL) {
-            val g = u.groups.toSet()
-            if (elderGroups.any(g::contains)) return ELDER
-            if (ctferGroups.any(g::contains)) return CTFER
-            if (userGroups.any(g::contains)) return USER
-            return ""
-        } else {
-            return if (u.role == ADMIN) ELDER else USER
-        }
     }
 
     /**
