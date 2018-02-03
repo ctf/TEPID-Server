@@ -16,7 +16,7 @@ apply plugin: 'kotlin'
 apply plugin: 'war'
 apply plugin: 'ca.mcgill.science.tepid.commons'
 
-sourceCompatibility = tepid.jvmTarget
+sourceCompatibility = JVM_TARGET
 war.baseName = 'tepid'
 
 repositories {
@@ -57,10 +57,10 @@ dependencies {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = tepid.jvmTarget
+    kotlinOptions.jvmTarget = JVM_TARGET
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = tepid.jvmTarget
+    kotlinOptions.jvmTarget = JVM_TARGET
 }
 
 test {

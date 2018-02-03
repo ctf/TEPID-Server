@@ -186,9 +186,9 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
             val auth = ldap.createAuthMap(user?.shortUser ?: "", pw)
             InitialDirContext(auth).close()
         } catch (e: Exception) {
+            log.warn("Failed to authenticate $sam")
             return null
         }
-        log.debug("Authentication successful")
         return user
     }
 
