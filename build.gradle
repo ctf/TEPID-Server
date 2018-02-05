@@ -31,7 +31,10 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN"
     compile "org.jetbrains.kotlin:kotlin-reflect:$KOTLIN"
 
-    compile "ca.mcgill:tepid-commons:$TEPID_COMMONS"
+    compile "ca.mcgill.tepid-commons:core:$TEPID_COMMONS"
+    compile "ca.mcgill.tepid-commons:models:$TEPID_COMMONS"
+    compile "ca.mcgill.tepid-commons:ldap:$TEPID_COMMONS"
+    compile "ca.mcgill.tepid-commons:utils:$TEPID_COMMONS"
 
     compile "com.fasterxml.jackson.core:jackson-annotations:${tepid.jackson}"
     compile "com.fasterxml.jackson.core:jackson-databind:${tepid.jackson}"
