@@ -59,6 +59,11 @@ object Config : WithLogging() {
 
     val HASH: String
 
+    val TAG: String
+
+    val CREATION_TIMESTAMP: Long
+    val CREATION_TIME: String
+
     /**
      * Encapsulates config data that can be made public
      */
@@ -104,6 +109,9 @@ object Config : WithLogging() {
         TEST_USER = get("TEST_USER")
         TEST_PASSWORD = get("TEST_PASSWORD")
         HASH = get("HASH", "local")
+        TAG = get("TAG", "")
+        CREATION_TIMESTAMP = get("CREATION_TIMESTAMP")?.toLongOrNull() ?: -1
+        CREATION_TIME = get("CREATION_TIME", "")
 
         if (DEBUG)
             setLoggingLevel(Level.TRACE)
@@ -127,7 +135,15 @@ object Config : WithLogging() {
             warn("RESOURCE_CREDENTIALS not set")
         log.info("Build hash: $HASH")
 
-        PUBLIC = About(DEBUG, LDAP_ENABLED, System.currentTimeMillis(), Utils.now(), HASH, warnings)
+        PUBLIC = About(debug = DEBUG,
+                ldapEnabled = LDAP_ENABLED,
+                startTimestamp = System.currentTimeMillis(),
+                startTime = Utils.now(),
+                hash = HASH,
+                warnings = warnings,
+                tag = TAG,
+                creationTime = CREATION_TIME,
+                creationTimestamp = CREATION_TIMESTAMP)
     }
 
     fun setLoggingLevel(level: Level) {
