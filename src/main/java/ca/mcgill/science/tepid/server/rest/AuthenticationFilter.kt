@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.util.SessionManager
 import ca.mcgill.science.tepid.server.util.text
@@ -54,7 +55,7 @@ class AuthenticationFilter : ContainerRequestFilter {
             }
             val authScheme = parts[0]
             val credentials = parts[1]
-            val session: Session?
+            val session: FullSession?
             when (authScheme) {
                 TOKEN -> {
                     val samAndToken = Session.decodeHeader(credentials)?.split(":")
@@ -66,7 +67,7 @@ class AuthenticationFilter : ContainerRequestFilter {
                         requestContext.abortWith(AUTH_REQUIRED)
                         return
                     }
-                    var s: Session? = SessionManager[token]
+                    var s: FullSession? = SessionManager[token]
                     if (s != null && !s.user.isMatch(sam)) {
                         log.warn("Session retrieved does not match $sam")
                         s = null

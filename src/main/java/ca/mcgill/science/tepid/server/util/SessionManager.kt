@@ -4,6 +4,7 @@ import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.Utils
 import ca.mcgill.science.tepid.models.bindings.LOCAL
+import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
@@ -14,8 +15,8 @@ object SessionManager : WithLogging() {
 
     private const val HOUR_IN_MILLIS = 60 * 60 * 1000
 
-    fun start(user: FullUser, expiration: Int): Session {
-        val session = Session(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
+    fun start(user: FullUser, expiration: Int): FullSession {
+        val session = FullSession(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
         val id = Utils.newSessionId()
         session._id = id
         log.trace("Creating session $session")
@@ -24,9 +25,9 @@ object SessionManager : WithLogging() {
         return session
     }
 
-    operator fun get(token: String): Session? {
+    operator fun get(token: String): FullSession? {
         log.info("Get session $token")
-        val session = CouchDb.path(token).getJsonOrNull<Session>() ?: return null
+        val session = CouchDb.path(token).getJsonOrNull<FullSession>() ?: return null
         return if (session.isValid()) session else null
     }
 

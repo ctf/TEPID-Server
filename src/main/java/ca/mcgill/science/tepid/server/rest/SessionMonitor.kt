@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.util.CouchDb
 import ca.mcgill.science.tepid.server.util.postJson
@@ -11,7 +12,7 @@ class SessionMonitor : Runnable {
     override fun run() {
         log.info("Removing expired sessions from database.")
         try {
-            val sessions = CouchDb.getViewRows<Session>("sessions")
+            val sessions = CouchDb.getViewRows<FullSession>("sessions")
             val nf = JsonNodeFactory.instance
             val root = nf.objectNode()
             val docs = root.putArray("docs")

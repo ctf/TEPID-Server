@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.util
 
+import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.rest.AuthenticationFilter
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -31,14 +32,14 @@ val mapper = jacksonObjectMapper()
  *
  */
 @Throws(WebApplicationException::class)
-fun ContainerRequestContext.getSession(): Session =
+fun ContainerRequestContext.getSession(): FullSession =
         getSessionSafely() ?: failUnauthorized("Invalid Session")
 
 /**
  * Returns a session or null if none was found
  */
-fun ContainerRequestContext.getSessionSafely(): Session? =
-        getProperty(AuthenticationFilter.SESSION) as? Session
+fun ContainerRequestContext.getSessionSafely(): FullSession? =
+        getProperty(AuthenticationFilter.SESSION) as? FullSession
 
 /**
  * Copies the given [input] to the file, and ensure that

@@ -1,6 +1,6 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.data.PublicSession
+import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.SessionRequest
 import ca.mcgill.science.tepid.server.util.SessionManager
@@ -15,11 +15,11 @@ class Sessions {
     @GET
     @Path("/{user}/{token}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getSession(@PathParam("user") user: String, @PathParam("token") token: String): PublicSession {
+    fun getSession(@PathParam("user") user: String, @PathParam("token") token: String): Session {
         try {
             val username = user.split("@")[0]
             val longUser = username.contains(".")
-            var s: Session? = null
+            var s: FullSession? = null
             if (SessionManager.valid(token)) {
                 s = SessionManager[token]
                 if (s != null) {
@@ -30,7 +30,7 @@ class Sessions {
                 }
             }
             if (s != null)
-                return s.toPublicSession()
+                return s.toSession()
         } catch (e: Exception) {
             log.error("Session retrieval failed", e)
         }
@@ -39,7 +39,7 @@ class Sessions {
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    fun startSession(req: SessionRequest): PublicSession {
+    fun startSession(req: SessionRequest): Session {
         log.trace("Received Start request for ${req.username}")
         try {
             val username = req.username.split("@")[0]
@@ -48,7 +48,7 @@ class Sessions {
             val s = if (user != null) SessionManager.start(user, if (req.permanent) 35040 else if (req.persistent) 768 else 24) else null
             if (s != null) {
                 s.persistent = req.persistent
-                return s.toPublicSession()
+                return s.toSession()
             }
         } catch (e: Exception) {
             log.error("Starting session failed", e)
