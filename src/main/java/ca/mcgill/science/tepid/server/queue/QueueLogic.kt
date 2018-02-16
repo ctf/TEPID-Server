@@ -48,13 +48,13 @@ private class FiftyFifty : QueueLogicBase(QueueLogic.FIFTY_FIFTY) {
 
     override fun getDestination(job: PrintJob, destinations: List<FullDestination>): FullDestination? {
         /*
-         * We will start 1 after out last visited position,
+         * We will start 1 after our last visited position,
          * and continue going up until the entire list count
          * We will stop once the destination and the given index is up
          */
         val index = (1..destinations.size)
                 .map { (it + lastVisited) % destinations.size }
-                .first { destinations[it].up }
+                .firstOrNull { destinations[it].up } ?: return null
 
         lastVisited = index
 

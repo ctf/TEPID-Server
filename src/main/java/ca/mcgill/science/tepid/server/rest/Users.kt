@@ -72,6 +72,8 @@ class Users {
         newAdmin.displayName = "${newAdmin.givenName} ${newAdmin.lastName}"
         newAdmin.salutation = newAdmin.givenName
         newAdmin.longUser = newAdmin.email
+
+
         return CouchDb.path("u$shortUser").putJson(newAdmin)
     }
 
