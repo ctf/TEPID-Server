@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.util
 
+import ca.mcgill.science.tepid.models.data.ErrorResponse
 import org.apache.logging.log4j.Logger
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.MediaType
@@ -22,34 +23,16 @@ fun Response.Status.text(content: Any?): Response =
  * Note that Nothing is returned, as the method will always fail
  */
 @Throws(WebApplicationException::class)
+fun fail(status: Response.Status, data: ErrorResponse): Nothing =
+        throw TepidException(mapper.writeValueAsString(data), status)
+
 fun fail(status: Response.Status, message: String): Nothing =
-        throw TepidException(message, status)
-
-fun unauthorizedResponse(errorMessage: String): Response =
-        Response.Status.UNAUTHORIZED.text("{\"error\":\"$errorMessage\"}")
-
-inline val INVALID_SESSION_RESPONSE: Response
-    get() = unauthorizedResponse("Invalid Session")
-
-/**
- * Helper function to wrap a typical tepid response
- * Calls [action] while failing safely
- * If any error occurs, emit [Response.Status.UNAUTHORIZED]
- * else wrap the action result with [Response.ok]
- */
-inline fun tepidResponse(errorMessage: String, action: () -> Any?): Response {
-    try {
-        val result: Any = action() ?: return unauthorizedResponse(errorMessage)
-        return Response.ok(result).build()
-    } catch (e: Exception) {
-        e.tepidLog()
-        return unauthorizedResponse(errorMessage)
-    }
-}
+        fail(status, ErrorResponse(status.statusCode, message))
 
 /*
  * Binders for facilitated failures
  */
+
 fun failBadRequest(message: String): Nothing = fail(Response.Status.BAD_REQUEST, message)
 fun failUnauthorized(message: String): Nothing = fail(Response.Status.UNAUTHORIZED, message)
 fun failForbidden(message: String): Nothing = fail(Response.Status.FORBIDDEN, message)
