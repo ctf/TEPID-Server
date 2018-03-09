@@ -52,7 +52,7 @@ class Jobs {
     fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): Response {
         val session = ctx.getSession()
         j.userIdentification = session.user.shortUser
-        j.deleteDataOn = System.currentTimeMillis() + SessionManager.queryUserCache(j.userIdentification)!!.jobExpiration
+        j.deleteDataOn = System.currentTimeMillis() + Ldap.queryUserDb(j.userIdentification)!!.jobExpiration
         log.debug("Starting new print job ${j.name} for ${session.user.longUser}...")
         return CouchDb.target.postJson(j)
     }
@@ -152,7 +152,7 @@ class Jobs {
         reprint.originalHost = "REPRINT"
         reprint.queueName = j.queueName
         reprint.userIdentification = j.userIdentification
-        reprint.deleteDataOn = System.currentTimeMillis() + (SessionManager.queryUserCache(j.userIdentification)?.jobExpiration
+        reprint.deleteDataOn = System.currentTimeMillis() + (Ldap.queryUserDb(j.userIdentification)?.jobExpiration
                 ?: 20000)
         log.debug("Reprinted ${reprint.name}")
         val response = CouchDb.target.postJson(reprint)

@@ -45,14 +45,14 @@ object SessionManager : WithLogging() {
     }
 
     /**
-     * Authenticate user is necessary
+     * Authenticate user if necessary
      *
      * @param sam short user
      * @param pw  password
      * @return authenticated user
      */
     fun authenticate(sam: String, pw: String): FullUser? {
-        val dbUser = getSam(sam)
+        val dbUser = Ldap.queryUserDb(sam)
         log.trace("Db data for $sam")
         return if (dbUser?.authType == LOCAL) {
             if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
@@ -62,58 +62,15 @@ object SessionManager : WithLogging() {
     }
 
     /**
-     * Retrieve user from Ldap if available, otherwise retrieves from cache
+     * Retrieve user from Ldap if available, otherwise retrieves from db
      *
      * @param sam short user
      * @param pw  password
      * @return user if found
-     * @see [queryUserCache]
+     * @see [Ldap.queryUserDb]
      */
     fun queryUser(sam: String?, pw: String?): FullUser? =
-            if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else queryUserCache(sam)
-
-    fun getSam(sam: String?): FullUser? {
-        sam ?: return null
-        try {
-            if (sam.contains("@")) {
-                log.trace("getSam by long user $sam")
-                val results = CouchDb.getViewRows<FullUser>("byLongUser") {
-                    query("key" to "\"$sam\"", "limit" to 1)
-                }
-                if (!results.isEmpty()) return results[0]
-            } else {
-                log.trace("getSam by short user $sam")
-                return CouchDb.path("u$sam").getJson()
-            }
-        } catch (e: Exception) {
-            log.error("Query error for $sam: ${e.message}")
-        }
-        return null
-    }
-
-    /**
-     * Get user if exists and sets salutation
-     *
-     * @param sam shortId
-     * @return user if exists
-     */
-    fun queryUserCache(sam: String?): FullUser? {
-        log.trace("Query user cache for $sam")
-        val dbUser = getSam(sam)
-        if (dbUser == null) {
-            log.debug("User $sam does not exist in cache")
-            return null
-        }
-        dbUser.salutation = if (dbUser.nick == null)
-            if (!dbUser.preferredName.isEmpty())
-                dbUser.preferredName[dbUser.preferredName.size - 1]
-            else
-                dbUser.givenName
-        else
-            dbUser.nick
-        log.trace("Found db user (${dbUser._id}) ${dbUser.displayName} for $sam")
-        return dbUser
-    }
+            if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else Ldap.queryUserDb(sam)
 
     /**
      * Sends list of matching [User]s based on current query

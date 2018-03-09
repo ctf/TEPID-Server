@@ -45,10 +45,10 @@ class CouchTest : WithLogging() {
         val shortUser = "***REMOVED***"
         val longUser = "***REMOVED***"
 
-        val byShortUser = SessionManager.getSam(shortUser)
+        val byShortUser = Ldap.queryUserDb(shortUser)
         assertNotNull(byShortUser, "Query for $shortUser was null")
 
-        val byLongUser = SessionManager.getSam(longUser)
+        val byLongUser = Ldap.queryUserDb(longUser)
         assertNotNull(byLongUser, "Query for $longUser was null")
 
         assertEquals(longUser, byShortUser!!.longUser)
