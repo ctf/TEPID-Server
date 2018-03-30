@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.printer
 
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.server.gs.GS
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -102,7 +101,7 @@ object Printer : WithLogging() {
                     val psMonochrome = br.isMonochrome()
                     log.trace("Detected ${if (psMonochrome) "monochrome" else "colour"} for job $id in ${System.currentTimeMillis() - now} ms")
                     //count pages
-                    val inkCov = GS.inkCoverage(tmp)
+                    val inkCov = Gs.inkCoverage(tmp) ?: throw PrintError("Internal Error")
                     val color = if (psMonochrome) 0
                     else inkCov.filter { !it.monochrome }.size
 
