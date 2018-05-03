@@ -6,7 +6,6 @@ import ca.mcgill.science.tepid.models.Utils
 import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
@@ -26,7 +25,7 @@ object SessionManager : WithLogging() {
     }
 
     operator fun get(token: String): FullSession? {
-        log.info("Get session $token")
+        log.trace("Get session $token")
         val session = CouchDb.path(token).getJsonOrNull<FullSession>() ?: return null
         return if (session.isValid()) session else null
     }

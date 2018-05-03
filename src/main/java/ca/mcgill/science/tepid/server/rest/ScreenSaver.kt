@@ -1,20 +1,13 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.*
-import ca.mcgill.science.tepid.server.util.CouchDb
-import ca.mcgill.science.tepid.server.util.getSession
-import ca.mcgill.science.tepid.server.util.query
+import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.*
 import javax.ws.rs.*
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
-import ca.mcgill.science.tepid.models.data.User
-import java.util.HashMap
-import ca.mcgill.science.tepid.server.util.SessionManager
-import javax.ws.rs.PathParam
-import javax.ws.rs.Produces
 import javax.ws.rs.core.Response
 
 
@@ -41,23 +34,15 @@ class ScreenSaver {
     @Produces(MediaType.APPLICATION_JSON)
     fun listJobs(@PathParam("queue") queue: String,
                  @QueryParam("limit") @DefaultValue("13") limit: Int,
-                 @QueryParam("from") @DefaultValue("0") from: Long): Collection<PrintJob> {
-        val data = CouchDb.getViewRows<PrintJob>("jobsByQueueAndTime") {
+                 @QueryParam("from") @DefaultValue("0") from: Long): Collection<PrintJob> =
+        CouchDb.getViewRows<PrintJob>("jobsByQueueAndTime") {
             query(
                     "descending" to true,
                     "startkey" to "[\"$queue\",%7B%7D]",
                     "endkey" to "[\"$queue\",$from]",
                     "limit" to limit
             )
-        }
-
-        val out = TreeSet<PrintJob>()
-        return if (limit < 0 || limit >= out.size) {
-            data
-        } else {
-            ArrayList(out).subList(0, limit)
-        }
-    }
+        }.sorted()
 
     /**
      * Gets the Up status for each Queue.
@@ -82,7 +67,7 @@ class ScreenSaver {
             val name = q.name ?: return@forQueue
             q.destinations.forEach forDest@ {
                 val isUp = destinations[it]?.up ?: return@forDest
-                out.put(name, isUp || out[name] ?: false)
+                out[name] = isUp || out[name] ?: false
             }
         }
 
@@ -109,9 +94,8 @@ class ScreenSaver {
     @GET
     @Path("destinations")
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
-        val session = ctx.getSession()
         return CouchDb.getViewRows<FullDestination>("destinations")
-                .map { it.toDestination(session) }
+                .map{ it.toDestination() }
                 .mapNotNull {
                     val id = it._id ?: return@mapNotNull null
                     id to it
@@ -124,7 +108,7 @@ class ScreenSaver {
     @Produces(MediaType.APPLICATION_JSON)
     fun getUserInfo(@PathParam("username") username: String): NameUser {
         val user = SessionManager.queryUser(username, null)
-                ?: throw NotFoundException(Response.status(404).entity("Could not find user " + username).type(MediaType.TEXT_PLAIN).build())
+                ?: failNotFound("Could not find user $username")
         return user.toNameUser()
     }
 

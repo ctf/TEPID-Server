@@ -3,7 +3,10 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
+import ca.mcgill.science.tepid.models.data.ChangeDelta
 import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.PutResponse
+import ca.mcgill.science.tepid.models.enums.Room
 import ca.mcgill.science.tepid.server.printer.Printer
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -11,7 +14,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import java.io.BufferedReader
 import java.io.FileInputStream
 import java.io.InputStream
-import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
 import javax.ws.rs.container.AsyncResponse
@@ -35,15 +38,14 @@ class Jobs {
         if (session.role == USER && session.user.shortUser != sam) {
             return emptyList()
         }
-        val data = CouchDb.getViewRows<PrintJob>("byUser") {
+        return CouchDb.getViewRows<PrintJob>("byUser") {
             query("key" to "\"$sam\"")
-        }
-
-        // todo why are we sorting stuff in java
-        val out = TreeSet<PrintJob>()
-        out.addAll(data)
-        return out
+        }.sorted()
     }
+
+    private fun PrintJob.getJobExpiration() =
+            System.currentTimeMillis() + (Ldap.queryUserDb(userIdentification)?.jobExpiration
+                    ?: TimeUnit.DAYS.toMillis(7))
 
     @POST
     @RolesAllowed(USER, CTFER, ELDER)
@@ -51,8 +53,10 @@ class Jobs {
     @Consumes(MediaType.APPLICATION_JSON)
     fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): Response {
         val session = ctx.getSession()
+        if (!Room.names.contains(j.queueName))
+            failBadRequest("Invalid queue name ${j.queueName}")
         j.userIdentification = session.user.shortUser
-        j.deleteDataOn = System.currentTimeMillis() + Ldap.queryUserDb(j.userIdentification)!!.jobExpiration
+        j.deleteDataOn = j.getJobExpiration()
         log.debug("Starting new print job ${j.name} for ${session.user.longUser}...")
         return CouchDb.target.postJson(j)
     }
@@ -76,12 +80,12 @@ class Jobs {
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{id}")
-    fun addJobData(input: InputStream, @PathParam("id") id: String): String {
+    fun addJobData(input: InputStream, @PathParam("id") id: String): PutResponse {
         log.debug("Receiving job data $id")
         val (success, message) = Printer.print(id, input)
         if (!success)
             failBadRequest(message)
-        return message
+        return PutResponse(true, id, "")
     }
 
     @GET
@@ -90,22 +94,23 @@ class Jobs {
     @Produces(MediaType.APPLICATION_JSON)
     fun getChanges(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse, @Context ctx: ContainerRequestContext) {
         val session = ctx.getSession()
+        ar.setTimeoutHandler { ar.resume(emptyList<ChangeDelta>()) }
         val j = CouchDb.path(id).getJson<PrintJob>()
         if (session.role == USER && session.user.shortUser != j.userIdentification) {
-            ar.resume(Response.status(Response.Status.UNAUTHORIZED).entity("You cannot access this resource").type(MediaType.TEXT_PLAIN).build())
+            ar.resume(Response.Status.UNAUTHORIZED.text("You cannot access this resource"))
+            return
         }
+        val changes = CouchDb.path("_changes")
+                .query("filter" to "main/byJob", "job" to id)
+                .query(uriInfo, "feed", "since")
+                .getObject().get("results").get(0)
 
-        var target = CouchDb.path("_changes")
-                .query("filter" to "main/byJob",
-                        "job" to id)
-        val qp = uriInfo.queryParameters
-        if (qp.containsKey("feed")) target = target.queryParam("feed", qp.getFirst("feed"))
-        if (qp.containsKey("since")) target = target.queryParam("since", qp.getFirst("since"))
-        //TODO find a way to make this truly asynchronous
-        val changes = target.request().get(String::class.java)
+        val delta = ChangeDelta(changes.get("id").asText(), changes.get("changes").get(0).get("rev").asText())
+        log.debug("Changes: $changes\ndelta: $delta")
+
         if (!ar.isDone && !ar.isCancelled) {
             try {
-                ar.resume(changes)
+                ar.resume(listOf(delta))
             } catch (e: Exception) {
                 log.error("Failed to emit job _changes for $id: ${e.message}")
             }
@@ -129,12 +134,12 @@ class Jobs {
     @Path("/job/{id}/refunded")
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setJobRefunded(@PathParam("id") id: String, refunded: Boolean): Boolean {
+    fun setJobRefunded(@PathParam("id") id: String, refunded: Boolean): PutResponse {
         val result = CouchDb.update<PrintJob>(id) {
             isRefunded = refunded
             log.debug("Refunded job $id")
-        }
-        return result != null
+        } ?: failInternal("Could not modify refund status")
+        return PutResponse(result.isRefunded == refunded, result.getId(), result.getRev())
     }
 
     @POST
@@ -147,22 +152,26 @@ class Jobs {
         val file = Utils.existingFile(j.file) ?: failInternal("Data for this job no longer exists")
         if (session.role == USER && session.user.shortUser != j.userIdentification)
             failUnauthorized("You cannot reprint someone else's job")
-        val reprint = PrintJob()
-        reprint.name = j.name
-        reprint.originalHost = "REPRINT"
-        reprint.queueName = j.queueName
-        reprint.userIdentification = j.userIdentification
-        reprint.deleteDataOn = System.currentTimeMillis() + (Ldap.queryUserDb(j.userIdentification)?.jobExpiration
-                ?: 20000)
+        val reprint = PrintJob(
+                name = j.name,
+                originalHost = "REPRINT",
+                queueName = j.queueName,
+                userIdentification = j.userIdentification,
+                deleteDataOn = j.getJobExpiration()
+        )
         log.debug("Reprinted ${reprint.name}")
         val response = CouchDb.target.postJson(reprint)
         if (!response.isSuccessful)
             throw WebApplicationException(response)
         val content = response.readEntity(ObjectNode::class.java)
         val newId = content.get("id")?.asText() ?: failInternal("Failed to retrieve new id")
-        Utils.startCaughtThread("Reprint $id") { addJobData(FileInputStream(file), newId) }
+        Utils.startCaughtThread("Reprint $id", log) {
+            val (success, message) = Printer.print(newId, FileInputStream(file))
+            if (!success)
+                log.error("Failed to reprint job: $message")
+        }
         log.debug("Reprinted job $id, new id $newId.")
-        return "Reprinted $id new id $newId"
+        return "Reprinted $id, new id $newId"
     }
 
     private companion object : WithLogging()
