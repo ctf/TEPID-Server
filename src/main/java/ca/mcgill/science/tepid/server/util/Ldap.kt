@@ -159,7 +159,12 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
 
     fun authenticate(sam: String, pw: String): FullUser? {
         if (!Config.LDAP_ENABLED) return null
+        if (sam == "tepidtest") {
+            log.debug("Tepid test received with password $pw")
+            return null
+        }
         log.debug("Authenticating $sam against ldap")
+
         val user = queryUser(sam, pw)
         val shortUser = user?.shortUser
         if (shortUser == null) {

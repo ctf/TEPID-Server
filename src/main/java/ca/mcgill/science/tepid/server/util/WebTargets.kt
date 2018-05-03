@@ -12,6 +12,7 @@ import javax.ws.rs.client.Entity
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import javax.ws.rs.core.UriInfo
 
 val _log = LogManager.getLogger("WebTargets")
 
@@ -163,3 +164,13 @@ fun WebTarget.deleteRev(): String {
 
 val Response.isSuccessful: Boolean
     get() = status in 200 until 300
+
+fun WebTarget.query(uriInfo: UriInfo, vararg queries: String): WebTarget {
+    val params = uriInfo.queryParameters
+    if (params.isEmpty() || queries.isEmpty()) return this
+    var target = this
+    queries.filter { params.contains(it) }.forEach {
+        target = target.queryParam(it, params.getFirst(it))
+    }
+    return target
+}

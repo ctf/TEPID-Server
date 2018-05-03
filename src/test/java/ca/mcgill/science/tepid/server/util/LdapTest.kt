@@ -68,8 +68,15 @@ class LdapTest {
     }
 
     @Test
-    fun queryCacheLong() {
+    fun queryCacheShort() {
         val user = Ldap.queryUserDb("***REMOVED***")
+        assertNotNull(user)
+        println(user!!)
+    }
+
+    @Test
+    fun queryCacheLong() {
+        val user = Ldap.queryUserDb("allan.wang")
         assertNotNull(user)
         println(user!!)
     }
