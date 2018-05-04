@@ -19,7 +19,7 @@ import javax.ws.rs.ext.Provider
 class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
 
     override fun filter(requestContext: ContainerRequestContext) {
-        log.trace("Request ${requestContext.uriInfo.path}")
+//        log.trace("Request ${requestContext.uriInfo.path}")
     }
 
     override fun filter(requestContext: ContainerRequestContext, responseContext: ContainerResponseContext) {

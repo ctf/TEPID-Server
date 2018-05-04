@@ -7,7 +7,7 @@ import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.tukaani.xz.XZInputStream
 import java.io.*
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.*
 
 /**
  * Handler that manages all job requests
@@ -16,23 +16,34 @@ object Printer : WithLogging() {
 
     class PrintError(message: String) : RuntimeException(message)
 
-    /**
-     * Thread map
-     * For most interactions, adding and removing requests should be done through
-     * [process] and [cancel]
-     */
-    private val _processingThreads: MutableMap<String, Thread> = ConcurrentHashMap()
+    private val executor: ExecutorService = ThreadPoolExecutor(5, 30, 10, TimeUnit.MINUTES,
+            ArrayBlockingQueue<Runnable>(300, true))
+    private val runningTasks: MutableMap<String, Future<*>> = ConcurrentHashMap()
     private val lock: Any = Any()
 
-    private fun process(id: String, thread: Thread) {
-        _processingThreads.put(id, thread)
-        thread.start()
+    /**
+     * Run an task in the service
+     * Upon completion, it will remove itself from [runningTasks]
+     */
+    private fun submit(id: String, action: () -> Unit) {
+        log.info("Submitting task $id")
+        val future = executor.submit {
+            try {
+                action()
+            } finally {
+                cancel(id)
+            }
+        }
+        runningTasks[id] = future
     }
 
     private fun cancel(id: String) {
         try {
-            _processingThreads.remove(id)?.interrupt()
-        } catch (ignored: Exception) {
+            val future = runningTasks.remove(id)
+            if (future?.isDone == false)
+                future.cancel(true)
+        } catch (e: Exception) {
+            log.error("Failed to cancel job $id", e)
         }
     }
 
@@ -88,7 +99,7 @@ object Printer : WithLogging() {
                 received = System.currentTimeMillis()
             }
 
-            val request = Thread({
+            submit(id) {
                 val tmp = File.createTempFile("tepid", ".ps")
                 try {
                     //decompress data
@@ -117,14 +128,15 @@ object Printer : WithLogging() {
                         throw PrintError("Color disabled")
 
                     //check if user has sufficient quota to print this job
-                    // TODO avoid creating new rest endpoint instance per job
-                    if (Users().getQuota(j2.userIdentification) < inkCov.size + color * 2)
+                    if (Users.getQuota(j2.userIdentification) < inkCov.size + color * 2)
                         throw PrintError("Insufficient quota")
 
                     //add job to the queue
                     j2 = QueueManager.assignDestination(id)
                     //todo check destination field
-                    val dest = CouchDb.path(j2.destination!!).getJson<FullDestination>()
+                    val destination = j2.destination ?: throw PrintError("Invalid destination")
+
+                    val dest = CouchDb.path(destination).getJson<FullDestination>()
                     if (sendToSMB(tmp, dest, debug)) {
                         j2.printed = System.currentTimeMillis()
                         CouchDb.path(id).putJson(j2)
@@ -135,11 +147,9 @@ object Printer : WithLogging() {
                 } catch (e: Exception) {
                     log.error("Job $id failed: ${e.message}")
                 } finally {
-                    cancel(id)
                     tmp.delete()
                 }
-            }, "Job Processing for $id")
-            process(id, request)
+            }
             return true to "Successfully created request $id"
         } catch (e: IOException) {
             log.error("Job $id failed", e)

@@ -142,66 +142,6 @@ class Users {
             getQuota(shortUser)
     }
 
-    fun getQuota(shortUser: String?): Int {
-        shortUser ?: return 0
-
-        val user = SessionManager.queryUser(shortUser, null)
-        if (user == null || user.getCtfRole().isEmpty()) return 0
-
-        val totalPrinted = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject()
-                .get("rows")?.get(0)?.get("value")?.get("sum")?.asInt(0) ?: 0
-
-        val oldMaxQuota = oldMaxQuota(shortUser)
-
-        val currentSemester = Semester.current
-
-        val newMaxQuota = user.getSemesters()
-                .filter { it.season != Season.SUMMER } // we don't add quota for the summer
-                .filter { it >= fall(2016) }      // TEPID didn't exist before fall 2016
-                .filter { it <= currentSemester }      // only add quota for valid semesters
-                .map { semester ->
-                    /*
-                     * The following mapper allows you to customize
-                     * The quota/semester
-                     *
-                     * Granted that semesters are comparable,
-                     * you may specify ranges (inclusive) when matching
-                     */
-                    when (semester) {
-                        fall(2016) -> 500         // the first semester had 500 pages only
-                        else -> 1000                   // to date, every semester will add 1000 pages to the base quota
-                    }
-                }.sum()
-
-        if (oldMaxQuota > newMaxQuota)
-            log.warn("Old quota $oldMaxQuota > new quota $newMaxQuota for $shortUser")
-        return Math.max(Math.max(oldMaxQuota, newMaxQuota) - totalPrinted, 0)
-    }
-
-    private fun fall(year: Int) = Semester(Season.FALL, year)
-    private fun winter(year: Int) = Semester(Season.WINTER, year)
-
-    private fun oldMaxQuota(shortUser: String): Int {
-        try {
-            val rows = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject().get("rows")
-            val ej = rows.get(0).get("value").get("earliestJob").asLong(-1)
-            if (ej == -1L) {
-                log.debug("Old quota for new user $shortUser")
-                return 1000
-            }
-            val d1 = Calendar.getInstance()
-            val d2 = Calendar.getInstance()
-            d1.timeInMillis = ej
-            val m1 = d1.get(Calendar.MONTH) + 1
-            val y1 = d1.get(Calendar.YEAR)
-            val m2 = d2.get(Calendar.MONTH) + 1
-            val y2 = d2.get(Calendar.YEAR)
-            return (y2 - y1) * 1000 + (if (m2 > 8 && (y1 != y2 || m1 < 8)) 1500 else 1000)
-        } catch (e: Exception) {
-            log.error("Old quota fetch failed", e)
-            return 1000
-        }
-    }
 
     @GET
     @Path("/autosuggest/{like}")
@@ -212,6 +152,71 @@ class Users {
         return resultsPromise.getResult(20000).map(FullUser::toUser) // todo check if we should further simplify to userquery
     }
 
-    private companion object : WithLogging()
+    companion object : WithLogging() {
+
+        /**
+         * Given a shortUser, query for the number of pages remaining
+         */
+        fun getQuota(shortUser: String?): Int {
+            shortUser ?: return 0
+
+            val user = SessionManager.queryUser(shortUser, null)
+            if (user == null || user.getCtfRole().isEmpty()) return 0
+
+            val totalPrinted = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject()
+                    .get("rows")?.get(0)?.get("value")?.get("sum")?.asInt(0) ?: 0
+
+            val oldMaxQuota = oldMaxQuota(shortUser)
+
+            val currentSemester = Semester.current
+
+            val newMaxQuota = user.getSemesters()
+                    .filter { it.season != Season.SUMMER } // we don't add quota for the summer
+                    .filter { it >= fall(2016) }      // TEPID didn't exist before fall 2016
+                    .filter { it <= currentSemester }      // only add quota for valid semesters
+                    .map { semester ->
+                        /*
+                         * The following mapper allows you to customize
+                         * The quota/semester
+                         *
+                         * Granted that semesters are comparable,
+                         * you may specify ranges (inclusive) when matching
+                         */
+                        when (semester) {
+                            fall(2016) -> 500         // the first semester had 500 pages only
+                            else -> 1000                   // to date, every semester will add 1000 pages to the base quota
+                        }
+                    }.sum()
+
+            if (oldMaxQuota > newMaxQuota)
+                log.warn("Old quota $oldMaxQuota > new quota $newMaxQuota for $shortUser")
+            return Math.max(Math.max(oldMaxQuota, newMaxQuota) - totalPrinted, 0)
+        }
+
+        private fun fall(year: Int) = Semester(Season.FALL, year)
+        private fun winter(year: Int) = Semester(Season.WINTER, year)
+
+        private fun oldMaxQuota(shortUser: String): Int {
+            try {
+                val rows = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject().get("rows")
+                val ej = rows.get(0).get("value").get("earliestJob").asLong(-1)
+                if (ej == -1L) {
+                    log.debug("Old quota for new user $shortUser")
+                    return 1000
+                }
+                val d1 = Calendar.getInstance()
+                val d2 = Calendar.getInstance()
+                d1.timeInMillis = ej
+                val m1 = d1.get(Calendar.MONTH) + 1
+                val y1 = d1.get(Calendar.YEAR)
+                val m2 = d2.get(Calendar.MONTH) + 1
+                val y2 = d2.get(Calendar.YEAR)
+                return (y2 - y1) * 1000 + (if (m2 > 8 && (y1 != y2 || m1 < 8)) 1500 else 1000)
+            } catch (e: Exception) {
+                log.error("Old quota fetch failed", e)
+                return 1000
+            }
+        }
+    }
 
 }
