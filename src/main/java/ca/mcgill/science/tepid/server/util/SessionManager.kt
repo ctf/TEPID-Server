@@ -8,15 +8,18 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
-import java.util.*
+import java.math.BigInteger
+import java.security.SecureRandom
 
 object SessionManager : WithLogging() {
 
     private const val HOUR_IN_MILLIS = 60 * 60 * 1000
 
+    private val random = SecureRandom()
+
     fun start(user: FullUser, expiration: Int): FullSession {
         val session = FullSession(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
-        val id = UUID.randomUUID().toString().replace("-", "")
+        val id = BigInteger(130, random).toString(32)
         session._id = id
         log.trace("Creating session $session")
         val out = CouchDb.path(id).putJson(session)
