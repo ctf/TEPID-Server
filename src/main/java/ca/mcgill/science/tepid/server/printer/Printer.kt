@@ -115,6 +115,7 @@ object Printer : WithLogging() {
                     val inkCov = Gs.inkCoverage(tmp) ?: throw PrintError("Internal Error")
                     val color = if (psMonochrome) 0
                     else inkCov.filter { !it.monochrome }.size
+                    log.trace("Job $id has ${inkCov.size} pages, $color in color")
 
                     //update page count and status in db
                     var j2: PrintJob = CouchDb.update(id) {
