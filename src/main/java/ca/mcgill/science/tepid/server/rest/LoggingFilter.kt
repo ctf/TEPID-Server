@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.util.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.ws.rs.container.ContainerRequestContext
@@ -28,10 +29,10 @@ class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
         val content: String = when (entity) {
             null -> "null"
             is String -> if (entity.length < 50) entity else "${entity.substring(0, 49)}\u2026"
-            is Number, is Boolean -> entity.toString()
+            is Number, is Boolean, is PutResponse -> entity.toString()
             is Collection<*> -> "[${entity::class.java.simpleName} (${entity.size})]"
             is Map<*, *> -> "{${entity::class.simpleName} (${entity.size}}"
-            else -> "?${responseContext.entityType.typeName}?"
+            else -> responseContext.entityType.typeName
         }
         val msg = "Response for ${requestContext.uriInfo.path}: ${responseContext.status}: $content"
         if (isSuccessful) log.trace(msg)

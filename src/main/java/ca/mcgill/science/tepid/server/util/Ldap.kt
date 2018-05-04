@@ -33,10 +33,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
 
         val dbUser = queryUserDb(sam)
 
-        if (dbUser != null) {
-            log.trace("Found user from db $sam: ${dbUser.shortUser}")
-            return dbUser
-        }
+        if (dbUser != null) return dbUser
         if (!sam.matches(shortUserRegex)) return null // cannot query without short user
         val ldapUser = queryUserLdap(sam, pw) ?: return null
         mergeUsers(ldapUser, dbUser, pw != null)
