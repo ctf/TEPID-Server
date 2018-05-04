@@ -26,10 +26,9 @@ internal class GsDelegate : WithLogging(), GsContract {
     private val gsBin = if (System.getProperty("os.name").startsWith("Windows"))
         "C:/Program Files/gs/gs9.20/bin/gswin64c.exe" else "gs"
 
-    fun run(vararg args: String): Process? {
+    private fun run(vararg args: String): Process? {
         val pb = ProcessBuilder(listOf(gsBin, *args))
         return try {
-            pb.command("")
             pb.start()
         } catch (e: IOException) {
             log.error("Could not launch gs", e)
