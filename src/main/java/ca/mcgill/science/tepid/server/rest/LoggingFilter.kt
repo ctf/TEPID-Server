@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.server.util.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.ws.rs.container.ContainerRequestContext
+import javax.ws.rs.container.ContainerRequestFilter
 import javax.ws.rs.container.ContainerResponseContext
 import javax.ws.rs.container.ContainerResponseFilter
 import javax.ws.rs.core.Response
@@ -15,7 +16,11 @@ import javax.ws.rs.ext.Provider
  * ContainerRequestFilter
  */
 @Provider
-class LoggingFilter : ContainerResponseFilter {
+class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
+
+    override fun filter(requestContext: ContainerRequestContext) {
+        log.trace("Request ${requestContext.uriInfo.path}")
+    }
 
     override fun filter(requestContext: ContainerRequestContext, responseContext: ContainerResponseContext) {
         val isSuccessful = responseContext.status in 200 until 300
