@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.utils.WithLogging
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.container.ContainerResponseContext
 import javax.ws.rs.container.ContainerResponseFilter
+import javax.ws.rs.core.Response
 import javax.ws.rs.ext.Provider
 
 /**
@@ -25,7 +26,8 @@ class LoggingFilter : ContainerResponseFilter {
             is String -> if (entity.length < 50) entity else "${entity.substring(0, 49)}\u2026"
             is Number, is Boolean -> entity.toString()
             is Collection<*> -> "[${entity::class.java.simpleName} (${entity.size})]"
-            else -> "[${entity::class.java.simpleName}]"
+            is Response -> "Response"
+            else -> "?${entity::class.java.simpleName}?"
         }
         val msg = "Response for ${requestContext.uriInfo.path}: ${responseContext.status}: $content"
         if (isSuccessful) log.trace(msg)
