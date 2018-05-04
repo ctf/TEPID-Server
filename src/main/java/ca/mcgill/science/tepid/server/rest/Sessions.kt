@@ -15,13 +15,12 @@ class Sessions {
     @Path("/{user}/{token}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getSession(@PathParam("user") user: String, @PathParam("token") token: String): Session {
-        log.trace("Getting session $token")
         val username = user.split("@")[0]
+        log.trace("Getting session $username $token")
         val session = SessionManager[token] ?: failUnauthorized("No session found")
-        if (!session.isValid())
-            failUnauthorized("Session token is no longer valid")
         if (session.user.longUser == username || session.user.shortUser == username)
             return session.toSession()
+        log.info("Username mismatch")
         failUnauthorized("No session found")
     }
 

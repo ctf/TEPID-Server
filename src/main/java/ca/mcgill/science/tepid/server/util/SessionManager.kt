@@ -21,14 +21,13 @@ object SessionManager : WithLogging() {
         val session = FullSession(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
         val id = BigInteger(130, random).toString(32)
         session._id = id
-        log.trace("Creating session $session")
+        log.trace("Creating session $id")
         val out = CouchDb.path(id).putJson(session)
         println(out)
         return session
     }
 
     operator fun get(token: String): FullSession? {
-        log.trace("Get session $token")
         val session = CouchDb.path(token).getJsonOrNull<FullSession>() ?: return null
         if (session.isValid()) return session
         log.trace("Session $token is invalid; now ${System.currentTimeMillis()} expiration ${session.expiration}; deleting")

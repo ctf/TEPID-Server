@@ -6,7 +6,6 @@ import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.container.ContainerRequestFilter
 import javax.ws.rs.container.ContainerResponseContext
 import javax.ws.rs.container.ContainerResponseFilter
-import javax.ws.rs.core.Response
 import javax.ws.rs.ext.Provider
 
 /**
@@ -32,8 +31,7 @@ class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
             is Number, is Boolean -> entity.toString()
             is Collection<*> -> "[${entity::class.java.simpleName} (${entity.size})]"
             is Map<*, *> -> "{${entity::class.simpleName} (${entity.size}}"
-            is Response -> "Response"
-            else -> "?${entity::class.java.simpleName}?"
+            else -> "?${responseContext.entityType.typeName}?"
         }
         val msg = "Response for ${requestContext.uriInfo.path}: ${responseContext.status}: $content"
         if (isSuccessful) log.trace(msg)
