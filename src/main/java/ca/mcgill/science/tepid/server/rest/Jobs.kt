@@ -78,7 +78,7 @@ class Jobs {
 
     @PUT
     @RolesAllowed(USER, CTFER, ELDER)
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("/{id}")
     fun addJobData(input: InputStream, @PathParam("id") id: String): PutResponse {
         log.debug("Receiving job data $id")

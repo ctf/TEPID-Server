@@ -100,6 +100,7 @@ object Printer : WithLogging() {
             }
 
             submit(id) {
+                // Generates a random file name with our prefix and suffix
                 val tmp = File.createTempFile("tepid", ".ps")
                 try {
                     //decompress data
