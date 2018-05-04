@@ -18,37 +18,30 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
     private val ldap = LdapBase()
 
     private val numRegex = Regex("[0-9]+")
+    private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
 
     private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
 
     /**
      * Query extension that will also check from our database
      * [sam] may be the short user, long user, or student id
+     * If a user is found in the db, it may not necessarily go through ldap
      */
     fun queryUser(sam: String?, pw: String?): FullUser? {
-        if (!Config.LDAP_ENABLED || sam == null) return null
+        if (sam == null) return null
         log.trace("Querying user $sam")
 
-        val termIsId = sam.matches(numRegex)
+        val dbUser = queryUserDb(sam)
 
-        if (termIsId) {
-            // need to fetch short user from db first
-            val dbUser = queryUserDb(sam)
-            val shortUser = dbUser?.shortUser ?: return null
-            val ldapUser = queryUserLdap(shortUser, pw) ?: return null
-            mergeUsers(ldapUser, dbUser, pw != null)
-            log.trace("Found user from id $sam: ${ldapUser.shortUser}")
-            return ldapUser
-        } else {
-            // fetch concurrently
-            val user = Rx.zipMaybe({ queryUserLdap(sam, pw) }, { queryUserDb(sam) }, { ldapUser, dbUser ->
-                ldapUser ?: return@zipMaybe null
-                mergeUsers(ldapUser, dbUser, pw != null)
-                return@zipMaybe ldapUser
-            }).blockingGet()
-            log.trace("Found user from $sam: ${user.shortUser}")
-            return user
+        if (dbUser != null) {
+            log.trace("Found user from db $sam: ${dbUser.shortUser}")
+            return dbUser
         }
+        if (!sam.matches(shortUserRegex)) return null // cannot query without short user
+        val ldapUser = queryUserLdap(sam, pw) ?: return null
+        mergeUsers(ldapUser, dbUser, pw != null)
+        log.trace("Found user from ldap $sam: ${ldapUser.longUser}")
+        return ldapUser
     }
 
     private fun updateUser(user: FullUser?) {
@@ -107,7 +100,8 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
      * The resource account will be used as auth if [pw] is null
      */
     private fun queryUserLdap(sam: String, pw: String?): FullUser? {
-        val auth = if (pw != null) {
+        if (!Config.LDAP_ENABLED) return null
+        val auth = if (pw != null && shortUserRegex.matches(sam)) {
             log.trace("Querying by owner $sam")
             sam to pw
         } else {
@@ -157,6 +151,9 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         return q.promise
     }
 
+    /**
+     * Returns user data, but guarantees a pass through ldap
+     */
     fun authenticate(sam: String, pw: String): FullUser? {
         if (!Config.LDAP_ENABLED) return null
         if (sam == "tepidtest") {
@@ -165,21 +162,11 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         }
         log.debug("Authenticating $sam against ldap")
 
-        val user = queryUser(sam, pw)
-        val shortUser = user?.shortUser
-        if (shortUser == null) {
-            log.debug("$sam not found")
-            return null
-        }
-        log.trace("Ldap query result for $sam: ${user.longUser}")
-        try {
-            val auth = ldap.createAuthMap(shortUser, pw)
-            InitialDirContext(auth).close()
-        } catch (e: Exception) {
-            log.warn("Failed to authenticate $sam")
-            return null
-        }
-        return user
+        val shortUser = if (sam.matches(shortUserRegex)) sam else queryUserDb(sam)?.shortUser ?: return null
+
+        log.info("Authenticating $shortUser")
+
+        return ldap.queryUser(shortUser, shortUser to pw)
     }
 
 

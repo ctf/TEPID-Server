@@ -2,13 +2,13 @@ package ca.mcgill.science.tepid.server.util
 
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
-import ca.mcgill.science.tepid.models.Utils
 import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
+import java.util.*
 
 object SessionManager : WithLogging() {
 
@@ -16,7 +16,7 @@ object SessionManager : WithLogging() {
 
     fun start(user: FullUser, expiration: Int): FullSession {
         val session = FullSession(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
-        val id = Utils.newSessionId()
+        val id = UUID.randomUUID().toString().replace("-", "")
         session._id = id
         log.trace("Creating session $session")
         val out = CouchDb.path(id).putJson(session)
