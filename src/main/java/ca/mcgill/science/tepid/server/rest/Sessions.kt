@@ -1,6 +1,5 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.SessionRequest
 import ca.mcgill.science.tepid.server.util.SessionManager
@@ -16,25 +15,18 @@ class Sessions {
     @Path("/{user}/{token}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getSession(@PathParam("user") user: String, @PathParam("token") token: String): Session {
+        log.trace("Getting session $token")
         try {
             val username = user.split("@")[0]
-            val longUser = username.contains(".")
-            var s: FullSession? = null
-            if (SessionManager.valid(token)) {
-                s = SessionManager[token]
-                if (s != null) {
-                    if (!s.isValid()
-                            || longUser && s.user.longUser != username
-                            || !longUser && s.user.shortUser != username)
-                        s = null
-                }
-            }
-            if (s != null)
-                return s.toSession()
+            val session = SessionManager[token] ?: failUnauthorized("No session found")
+            if (!session.isValid())
+                failUnauthorized("Session token is no longer valid")
+            if (session.user.longUser == username || session.user.shortUser == username)
+                return session.toSession()
         } catch (e: Exception) {
             log.error("Session retrieval failed", e)
         }
-        failUnauthorized("Session token is no longer valid")
+        failUnauthorized("No session found")
     }
 
     @POST
