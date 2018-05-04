@@ -26,6 +26,7 @@ class LoggingFilter : ContainerResponseFilter {
             is String -> if (entity.length < 50) entity else "${entity.substring(0, 49)}\u2026"
             is Number, is Boolean -> entity.toString()
             is Collection<*> -> "[${entity::class.java.simpleName} (${entity.size})]"
+            is Map<*, *> -> "{${entity::class.simpleName} (${entity.size}}"
             is Response -> "Response"
             else -> "?${entity::class.java.simpleName}?"
         }

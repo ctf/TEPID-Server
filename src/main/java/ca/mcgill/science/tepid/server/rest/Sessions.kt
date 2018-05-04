@@ -16,16 +16,12 @@ class Sessions {
     @Produces(MediaType.APPLICATION_JSON)
     fun getSession(@PathParam("user") user: String, @PathParam("token") token: String): Session {
         log.trace("Getting session $token")
-        try {
-            val username = user.split("@")[0]
-            val session = SessionManager[token] ?: failUnauthorized("No session found")
-            if (!session.isValid())
-                failUnauthorized("Session token is no longer valid")
-            if (session.user.longUser == username || session.user.shortUser == username)
-                return session.toSession()
-        } catch (e: Exception) {
-            log.error("Session retrieval failed", e)
-        }
+        val username = user.split("@")[0]
+        val session = SessionManager[token] ?: failUnauthorized("No session found")
+        if (!session.isValid())
+            failUnauthorized("Session token is no longer valid")
+        if (session.user.longUser == username || session.user.shortUser == username)
+            return session.toSession()
         failUnauthorized("No session found")
     }
 

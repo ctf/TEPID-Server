@@ -30,7 +30,9 @@ object SessionManager : WithLogging() {
     operator fun get(token: String): FullSession? {
         log.trace("Get session $token")
         val session = CouchDb.path(token).getJsonOrNull<FullSession>() ?: return null
-        return if (session.isValid()) session else null
+        if (session.isValid()) return session
+        CouchDb.path(token).deleteRev()
+        return null
     }
 
     /**
