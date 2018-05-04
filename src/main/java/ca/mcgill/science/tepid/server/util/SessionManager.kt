@@ -31,6 +31,7 @@ object SessionManager : WithLogging() {
         log.trace("Get session $token")
         val session = CouchDb.path(token).getJsonOrNull<FullSession>() ?: return null
         if (session.isValid()) return session
+        log.trace("Session $token is invalid; now ${System.currentTimeMillis()} expiration ${session.expiration}; deleting")
         CouchDb.path(token).deleteRev()
         return null
     }
