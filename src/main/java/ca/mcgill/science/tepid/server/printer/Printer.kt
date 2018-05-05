@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.printer
 
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.enums.PrintError
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -14,7 +15,9 @@ import java.util.concurrent.*
  */
 object Printer : WithLogging() {
 
-    class PrintError(message: String) : RuntimeException(message)
+    class PrintException(message: String) : RuntimeException(message) {
+        constructor(printError: PrintError) : this(printError.msg)
+    }
 
     private val executor: ExecutorService = ThreadPoolExecutor(5, 30, 10, TimeUnit.MINUTES,
             ArrayBlockingQueue<Runnable>(300, true))
@@ -113,7 +116,7 @@ object Printer : WithLogging() {
                     val psMonochrome = br.isMonochrome()
                     log.trace("Detected ${if (psMonochrome) "monochrome" else "colour"} for job $id in ${System.currentTimeMillis() - now} ms")
                     //count pages
-                    val inkCov = Gs.inkCoverage(tmp) ?: throw PrintError("Internal Error")
+                    val inkCov = Gs.inkCoverage(tmp) ?: throw PrintException("Internal Error")
                     val color = if (psMonochrome) 0
                     else inkCov.filter { !it.monochrome }.size
                     log.trace("Job $id has ${inkCov.size} pages, $color in color")
@@ -123,20 +126,20 @@ object Printer : WithLogging() {
                         pages = inkCov.size
                         colorPages = color
                         processed = System.currentTimeMillis()
-                    } ?: throw PrintError("Could not update")
+                    } ?: throw PrintException("Could not update")
 
                     //check if user has color printing enabled
                     if (color > 0 && SessionManager.queryUser(j2.userIdentification, null)?.colorPrinting != true)
-                        throw PrintError("Color disabled")
+                        throw PrintException(PrintError.COLOR_DISABLED)
 
                     //check if user has sufficient quota to print this job
                     if (Users.getQuota(j2.userIdentification) < inkCov.size + color * 2)
-                        throw PrintError("Insufficient quota")
+                        throw PrintException(PrintError.INSUFFICIENT_QUOTA)
 
                     //add job to the queue
                     j2 = QueueManager.assignDestination(id)
                     //todo check destination field
-                    val destination = j2.destination ?: throw PrintError("Invalid destination")
+                    val destination = j2.destination ?: throw PrintException(PrintError.INVALID_DESTINATION)
 
                     val dest = CouchDb.path(destination).getJson<FullDestination>()
                     if (sendToSMB(tmp, dest, debug)) {
@@ -144,18 +147,18 @@ object Printer : WithLogging() {
                         CouchDb.path(id).putJson(j2)
                         log.info("${j2._id} sent to destination")
                     } else {
-                        throw PrintError("Could not send to destination")
+                        throw PrintException("Could not send to destination")
                     }
-                } catch (e: Exception) {
-                    log.error("Job $id failed: ${e.message}")
                 } finally {
                     tmp.delete()
                 }
             }
             return true to "Successfully created request $id"
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             log.error("Job $id failed", e)
-            return false to "Failed to process job $id"
+            val msg = (e as? PrintException)?.message ?: "Failed to process"
+            failJob(id, msg)
+            return false to msg
         }
     }
 
@@ -191,19 +194,12 @@ object Printer : WithLogging() {
     }
 
     /**
-     * Calls [failJob] and also throws the error
-     * as a bad request response
+     * Update job db and cancel executor
      */
-    fun failJobBadRequest(id: String, error: String): Nothing {
-        failJob(id, error)
-        failBadRequest(error)
-    }
-
-    fun failJob(id: String, error: String) {
+    private fun failJob(id: String, error: String) {
         CouchDb.updateWithResponse<PrintJob>(id) {
             fail(error)
         }
-        log.error("Job $id failed: $error.")
         cancel(id)
     }
 
