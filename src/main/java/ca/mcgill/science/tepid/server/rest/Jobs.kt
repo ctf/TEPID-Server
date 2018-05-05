@@ -2,11 +2,11 @@ package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
+import ca.mcgill.science.tepid.models.bindings.PrintError
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.ChangeDelta
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PutResponse
-import ca.mcgill.science.tepid.models.enums.PrintError
 import ca.mcgill.science.tepid.models.enums.Room
 import ca.mcgill.science.tepid.server.printer.Printer
 import ca.mcgill.science.tepid.server.util.*
@@ -95,7 +95,11 @@ class Jobs {
     @Path("/{id}")
     fun addJobData(input: InputStream, @PathParam("id") id: String): PutResponse {
         log.debug("Receiving test job data $id")
-        failBadRequest(PrintError.INVALID_DESTINATION.msg)
+        CouchDb.update<PrintJob>(id) {
+            failed = System.currentTimeMillis()
+            error = PrintError.INSUFFICIENT_QUOTA
+        }
+        failBadRequest(PrintError.INSUFFICIENT_QUOTA)
     }
 
     @GET

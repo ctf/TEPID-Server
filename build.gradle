@@ -35,9 +35,6 @@ dependencies {
     compile "ca.mcgill.tepid-commons:models:$TEPID_COMMONS"
     compile "ca.mcgill.tepid-commons:utils:$TEPID_COMMONS"
 
-    // snapshot
-    compile "ca.mcgill.tepid-commons:ldap:eaec06b4"
-
 //    compile 'ca.allanwang.mcgill-data:ldap:949a32e'
 
     compile "com.fasterxml.jackson.core:jackson-annotations:${tepid.jackson}"
