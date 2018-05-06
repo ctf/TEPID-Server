@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
-import ca.mcgill.science.tepid.models.bindings.PrintError
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.ChangeDelta
 import ca.mcgill.science.tepid.models.data.PrintJob
@@ -77,29 +76,16 @@ class Jobs {
         return true
     }
 
-//    @PUT
-//    @RolesAllowed(USER, CTFER, ELDER)
-//    @Produces(MediaType.APPLICATION_JSON)
-//    @Path("/{id}")
-//    fun addJobData(input: InputStream, @PathParam("id") id: String): PutResponse {
-//        log.debug("Receiving job data $id")
-//        val (success, message) = Printer.print(id, input)
-//        if (!success)
-//            failBadRequest(message)
-//        return PutResponse(true, id, "")
-//    }
-
     @PUT
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{id}")
     fun addJobData(input: InputStream, @PathParam("id") id: String): PutResponse {
-        log.debug("Receiving test job data $id")
-        CouchDb.update<PrintJob>(id) {
-            failed = System.currentTimeMillis()
-            error = PrintError.INSUFFICIENT_QUOTA
-        }
-        failBadRequest(PrintError.INSUFFICIENT_QUOTA)
+        log.debug("Receiving job data $id")
+        val (success, message) = Printer.print(id, input)
+        if (!success)
+            failBadRequest(message)
+        return PutResponse(true, id, "")
     }
 
     @GET
