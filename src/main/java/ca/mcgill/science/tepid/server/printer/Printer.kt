@@ -1,8 +1,8 @@
 package ca.mcgill.science.tepid.server.printer
 
+import ca.mcgill.science.tepid.models.bindings.PrintError
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.models.bindings.PrintError
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -180,11 +180,8 @@ object Printer : WithLogging() {
             val p = ProcessBuilder("smbclient", "//${destination.path}", destination.password, "-c",
                     "print ${f.absolutePath}", "-U", destination.domain + "\\${destination.username}", "-mSMB3").start()
             p.waitFor()
-        } catch (e: IOException) {
-            log.error("File ${f.name} failed with ${e.message}")
-            return false
-        } catch (e: InterruptedException) {
-            log.error("File ${f.name} interrupted ${e.message}")
+        } catch (e: Exception) {
+            log.error("File ${f.name} failed", e)
             return false
         }
         log.trace("File ${f.name} sent to ${destination.name}")
