@@ -119,7 +119,7 @@ class Jobs {
                 .query(uriInfo, "feed", "since")
                 .getObject().get("results").get(0)
 
-        val delta = ChangeDelta(changes.get("id").asText(), changes.get("changes").get(0).get("rev").asText())
+        val delta = ChangeDelta(changes.get("id").asText())
         log.debug("Changes: $changes\ndelta: $delta")
 
         if (!ar.isDone && !ar.isCancelled) {
