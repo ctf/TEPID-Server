@@ -5,6 +5,8 @@ import ca.mcgill.science.tepid.models.data.PrintQueue;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer.LoadBalancerResults;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -14,6 +16,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class QueueManager {
+
+    private final Logger log;
 
     private static final Map<String, QueueManager> instances = new HashMap<>();
     public final PrintQueue queueConfig;
@@ -36,7 +40,8 @@ public class QueueManager {
     }
 
     private QueueManager(String queueName) {
-        System.out.println("Instantiate queue manager for " + queueName);
+        log = LogManager.getLogger("Queue - " + queueName);
+        log.trace("Instantiate queue manager '{'\'queueName\':\'{}\''}'", queueName);
         if (queueName == null)
             throw new RuntimeException("Could not instantiate null queue manager");
         this.queueConfig = couchdb.path("q" + queueName).request(MediaType.APPLICATION_JSON).get(PrintQueue.class);
