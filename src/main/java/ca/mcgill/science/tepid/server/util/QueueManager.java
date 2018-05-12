@@ -55,9 +55,15 @@ public class QueueManager {
 
     public PrintJob assignDestination(PrintJob j) {
         LoadBalancerResults results = this.loadBalancer.processJob(j);
-        j.setDestination(results.destination);
-        j.setEta(results.eta);
-        System.err.println(j.getId() + " setting destination (" + results.destination + ")");
+        if (results == null) {
+            j.fail("LoadBalancer did not assign a destination");
+            log.info("LoadBalancer did not assign a destination '{'\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\''}'", j.getId(), this.queueConfig.getName());
+        }
+        else {
+            j.setDestination(results.destination);
+            j.setEta(results.eta);
+            log.info(j.getId() + " setting destination (" + results.destination + ")");
+        }
         couchdb.path(j.getId()).request(MediaType.TEXT_PLAIN).put(Entity.entity(j, MediaType.APPLICATION_JSON));
         return couchdb.path(j.getId()).request(MediaType.APPLICATION_JSON).get(PrintJob.class);
     }
