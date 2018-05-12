@@ -42,7 +42,7 @@ public class QueueManager {
 
     private QueueManager(String queueName) {
         log = LogManager.getLogger("Queue - " + queueName);
-        log.trace("Instantiate queue manager '{'\'queueName\':\'{}\''}'", queueName);
+        log.trace("Instantiate queue manager {\'queueName\':\'{}\'}", queueName);
         if (queueName == null)
             throw new RuntimeException("Could not instantiate null queue manager");
         this.queueConfig = couchdb.path("q" + queueName).request(MediaType.APPLICATION_JSON).get(PrintQueue.class);
@@ -57,8 +57,8 @@ public class QueueManager {
     public PrintJob assignDestination(PrintJob j) {
         LoadBalancerResults results = this.loadBalancer.processJob(j);
         if (results == null) {
-            log.info("LoadBalancer did not assign a destination '{'\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\''}'", j.getId(), this.queueConfig.getName());
             j.fail(PrintError.INVALID_DESTINATION);
+            log.info("LoadBalancer did not assign a destination {\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\'}", j.getId(), this.queueConfig.getName());
         }
         else {
             j.setDestination(results.destination);

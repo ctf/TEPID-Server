@@ -45,7 +45,7 @@ public class FiftyFifty extends LoadBalancer {
 
             boolean up = dest.getUp();
             if (up) this.allDown = false;
-            log.trace("Checking status '{'dest:{}, getUp:{}'}'", dest.getName(), up);
+            log.trace("Checking status {\'dest\':\'{}\', \'getUp\':\'{}\'}", dest.getName(), up);
 
         }
         // maybe we should be concerned about the efficiency of a db query for every dest in the queue on every print job...
