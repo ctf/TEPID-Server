@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.util;
 
+import ca.mcgill.science.tepid.models.bindings.PrintError;
 import ca.mcgill.science.tepid.models.data.PrintJob;
 import ca.mcgill.science.tepid.models.data.PrintQueue;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer;
@@ -56,8 +57,8 @@ public class QueueManager {
     public PrintJob assignDestination(PrintJob j) {
         LoadBalancerResults results = this.loadBalancer.processJob(j);
         if (results == null) {
-            j.fail("LoadBalancer did not assign a destination");
             log.info("LoadBalancer did not assign a destination '{'\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\''}'", j.getId(), this.queueConfig.getName());
+            j.fail(PrintError.INVALID_DESTINATION);
         }
         else {
             j.setDestination(results.destination);
