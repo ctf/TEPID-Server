@@ -70,7 +70,7 @@ public class FiftyFifty extends LoadBalancer {
         lbr.destination = destinations.get(currentDest).getId();
         FullDestination dest = couchdb.path(lbr.destination).request(MediaType.APPLICATION_JSON).get(FullDestination.class);
         lbr.eta = getEta(j, dest);
-        log.trace("Load balancer sending job to destination '{'LoadBalancer:{}, job:{}, destination:{}'}' ", qM.queueConfig.getName(), j.get_id(), dest.getName());
+        log.trace("Load balancer sending job to destination {\'LoadBalancer\':\'{}\', \'job\':\'{}\', \'destination\':\'{}\'} ", qM.queueConfig.getName(), j.get_id(), dest.getName());
         return lbr;
     }
 
