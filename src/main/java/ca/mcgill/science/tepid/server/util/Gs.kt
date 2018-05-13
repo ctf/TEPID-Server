@@ -40,13 +40,14 @@ internal class GsDelegate : WithLogging(), GsContract {
         val gsOutput = run("-sOutputFile=%stdout%",
                 "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
                 "-sDEVICE=inkcov", f.absolutePath)
-        log.trace("Running Ghostscript, returned:***\n {}\n***", gsOutput?.inputStream?.read())
-        return gsOutput
+        log.trace("Running Ghostscript, lines:")
+        val lineToInkCovList = gsOutput
                 ?.inputStream
                 ?.bufferedReader()
                 ?.useLines {
                     it.mapNotNull(this::lineToInkCov).toList()
                 }
+        return lineToInkCovList
     }
 
     private val cmykRegex: Regex by lazy { Regex("(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+CMYK OK") }
@@ -59,6 +60,7 @@ internal class GsDelegate : WithLogging(), GsContract {
     fun lineToInkCov(line: String): InkCoverage? {
         val match = cmykRegex.matchEntire(line) ?: return null
         val (_, c, y, m, k) = match.groupValues
+        log.trace("evaluating GS line {'line':'{}','match':'{}'}", line, match)
         return InkCoverage(c.toFloat(), y.toFloat(), m.toFloat(), k.toFloat())
     }
 
