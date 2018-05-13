@@ -114,14 +114,13 @@ object Printer : WithLogging() {
                     val psMonochrome = br.isMonochrome()
                     log.trace("Detected ${if (psMonochrome) "monochrome" else "colour"} for job $id in ${System.currentTimeMillis() - now} ms")
                     //count pages
-                    val inkCov = Gs.inkCoverage(tmp) ?: throw PrintException("Internal Error")
-                    val color = if (psMonochrome) 0
-                    else inkCov.filter { !it.monochrome }.size
-                    log.trace("Job $id has ${inkCov.size} pages, $color in color")
+                    val psInfo = Gs.psInfo(tmp) ?: throw PrintException("Internal Error")
+                    val color = if (psMonochrome) 0 else psInfo.colourPages
+                    log.trace("Job $id has ${psInfo.pages} pages, $color in color")
 
                     //update page count and status in db
                     var j2: PrintJob = CouchDb.update(id) {
-                        pages = inkCov.size
+                        pages = psInfo.pages
                         colorPages = color
                         processed = System.currentTimeMillis()
                     } ?: throw PrintException("Could not update")
@@ -131,7 +130,7 @@ object Printer : WithLogging() {
                         throw PrintException(PrintError.COLOR_DISABLED)
 
                     //check if user has sufficient quota to print this job
-                    if (Users.getQuota(j2.userIdentification) < inkCov.size + color * 2)
+                    if (Users.getQuota(j2.userIdentification) < psInfo.pages + color * 2)
                         throw PrintException(PrintError.INSUFFICIENT_QUOTA)
 
                     //add job to the queue
