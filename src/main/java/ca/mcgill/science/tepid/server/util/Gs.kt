@@ -28,6 +28,8 @@ internal class GsDelegate : WithLogging(), GsContract {
 
     private fun run(vararg args: String): Process? {
         val pb = ProcessBuilder(listOf(gsBin, *args))
+                .redirectOutput(ProcessBuilder.Redirect.PIPE)
+                .redirectError(ProcessBuilder.Redirect.PIPE)
         return try {
             pb.start()
         } catch (e: IOException) {
@@ -37,11 +39,11 @@ internal class GsDelegate : WithLogging(), GsContract {
     }
 
     override fun inkCoverage(f: File): List<InkCoverage>? {
-        val gsOutput = run("-sOutputFile=%stdout%",
+        val gsProcess = run("-sOutputFile=%stdout%",
                 "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
                 "-sDEVICE=inkcov", f.absolutePath)
         log.trace("Running Ghostscript, lines:")
-        val lineToInkCovList = gsOutput
+        val lineToInkCovList = gsProcess
                 ?.inputStream
                 ?.bufferedReader()
                 ?.useLines {
