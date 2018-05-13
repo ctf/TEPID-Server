@@ -11,12 +11,23 @@ object Gs : GsContract by GsDelegate()
 
 interface GsContract {
     /**
-     * Given a postscript file, output the an inkcoverage for each page
+     * Given a postscript file, output the ink coverage for each page
      * Returns null if the process fails to launch
      * If the process does launch, then any output not matching our expected format
      * will be ignored
      */
     fun inkCoverage(f: File): List<InkCoverage>?
+
+    /**
+     * Given a postscript file, output the info for the entire file
+     * Returns null if the process fails to launch
+     */
+    fun psInfo(f: File): PsData?
+
+    /**
+     * Extract info from page coverage
+     */
+    fun coverageToInfo(coverage: List<InkCoverage>): PsData
 }
 
 /**
@@ -28,8 +39,6 @@ internal class GsDelegate : WithLogging(), GsContract {
 
     private fun run(vararg args: String): Process? {
         val pb = ProcessBuilder(listOf(gsBin, *args))
-                .redirectOutput(ProcessBuilder.Redirect.PIPE)
-                .redirectError(ProcessBuilder.Redirect.PIPE)
         return try {
             pb.start()
         } catch (e: IOException) {
@@ -41,18 +50,24 @@ internal class GsDelegate : WithLogging(), GsContract {
     override fun inkCoverage(f: File): List<InkCoverage>? {
         val gsProcess = run("-sOutputFile=%stdout%",
                 "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
-                "-sDEVICE=inkcov", f.absolutePath)
-        log.trace("Running Ghostscript, lines:")
-        val lineToInkCovList = gsProcess
-                ?.inputStream
-                ?.bufferedReader()
-                ?.useLines {
-                    it.mapNotNull(this::lineToInkCov).toList()
-                }
-        return lineToInkCovList
+                "-sDEVICE=inkcov", f.absolutePath) ?: return null
+        return gsProcess.inputStream.bufferedReader().useLines {
+            it.mapNotNull(this::lineToInkCov).toList()
+        }
     }
 
-    private val cmykRegex: Regex by lazy { Regex("(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+CMYK OK") }
+    override fun psInfo(f: File): PsData? {
+        val coverage = inkCoverage(f) ?: return null
+        return coverageToInfo(coverage)
+    }
+
+    override fun coverageToInfo(coverage: List<InkCoverage>): PsData {
+        val pages = coverage.size
+        val colour = coverage.filter { !it.monochrome }.size
+        return PsData(pages, colour)
+    }
+
+    private val cmykRegex: Regex by lazy { Regex("\\s*(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+CMYK OK\\s*") }
 
     /**
      * Expected input format:
@@ -62,7 +77,6 @@ internal class GsDelegate : WithLogging(), GsContract {
     fun lineToInkCov(line: String): InkCoverage? {
         val match = cmykRegex.matchEntire(line) ?: return null
         val (_, c, y, m, k) = match.groupValues
-        log.trace("evaluating GS line {'line':'{}','match':'{}'}", line, match)
         return InkCoverage(c.toFloat(), y.toFloat(), m.toFloat(), k.toFloat())
     }
 
@@ -78,3 +92,8 @@ data class InkCoverage(val c: Float, val m: Float, val y: Float, val k: Float) {
     val monochrome = c == m && c == y
 
 }
+
+/**
+ * Holds info for ps files
+ */
+data class PsData(val pages: Int, val colourPages: Int)
