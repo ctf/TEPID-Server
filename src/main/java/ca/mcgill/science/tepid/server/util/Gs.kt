@@ -36,13 +36,18 @@ internal class GsDelegate : WithLogging(), GsContract {
         }
     }
 
-    override fun inkCoverage(f: File): List<InkCoverage>? =
-            run("-sOutputFile=%stdout%",
-                    "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
-                    "-sDEVICE=inkcov", f.absolutePath)
-                    ?.inputStream?.bufferedReader()?.useLines {
-                it.mapNotNull(this::lineToInkCov).toList()
-            }
+    override fun inkCoverage(f: File): List<InkCoverage>? {
+        val gsOutput = run("-sOutputFile=%stdout%",
+                "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
+                "-sDEVICE=inkcov", f.absolutePath)
+        log.trace("Running Ghostscript, returned:***\n {}\n***", gsOutput.toString())
+        return gsOutput
+                ?.inputStream
+                ?.bufferedReader()
+                ?.useLines {
+                    it.mapNotNull(this::lineToInkCov).toList()
+                }
+    }
 
     private val cmykRegex: Regex by lazy { Regex("(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+CMYK OK") }
 
