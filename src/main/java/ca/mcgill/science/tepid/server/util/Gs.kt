@@ -40,7 +40,7 @@ internal class GsDelegate : WithLogging(), GsContract {
         val gsOutput = run("-sOutputFile=%stdout%",
                 "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
                 "-sDEVICE=inkcov", f.absolutePath)
-        log.trace("Running Ghostscript, returned:***\n {}\n***", gsOutput.toString())
+        log.trace("Running Ghostscript, returned:***\n {}\n***", gsOutput?.inputStream?.read())
         return gsOutput
                 ?.inputStream
                 ?.bufferedReader()
