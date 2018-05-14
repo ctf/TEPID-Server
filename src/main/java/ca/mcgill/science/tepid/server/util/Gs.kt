@@ -11,12 +11,19 @@ object Gs : GsContract by GsDelegate()
 
 interface GsContract {
     /**
-     * Given a postscript file, output the an inkcoverage for each page
+     * Given a postscript file, output the ink coverage for each page
      * Returns null if the process fails to launch
      * If the process does launch, then any output not matching our expected format
      * will be ignored
      */
     fun inkCoverage(f: File): List<InkCoverage>?
+
+    /**
+     * Given a postscript file, output the info for the entire file
+     * Returns null if the process fails to launch
+     */
+    fun psInfo(f: File): PsData?
+
 }
 
 /**
@@ -36,27 +43,48 @@ internal class GsDelegate : WithLogging(), GsContract {
         }
     }
 
-    override fun inkCoverage(f: File): List<InkCoverage>? =
-            run("-sOutputFile=%stdout%",
-                    "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
-                    "-sDEVICE=inkcov", f.absolutePath)
-                    ?.inputStream?.bufferedReader()?.useLines {
-                it.mapNotNull(this::lineToInkCov).toList()
-            }
+    fun gs(f: File): List<String>? {
+        val gsProcess = run("-sOutputFile=%stdout%",
+                "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
+                "-sDEVICE=inkcov", f.absolutePath) ?: return null
+        return gsProcess.inputStream.bufferedReader().useLines { it.toList() }
+    }
 
+    /**
+     * Matcher for the snippet relevant to ink coverage
+     * Note that this may not necessarily match a full line, as not all outputs are separated by new lines
+     */
     private val cmykRegex: Regex by lazy { Regex("(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+CMYK OK") }
 
     /**
      * Expected input format:
      * 0.06841  0.41734  0.17687  0.04558 CMYK OK
      * See [cmykRegex] for matching regex
+     *
+     * The lines are joined and then all regex matches are extracted because of a bug in GhostScript
+     * see for more details: https://bugs.ghostscript.com/show_bug.cgi?id=699342
      */
-    fun lineToInkCov(line: String): InkCoverage? {
-        val match = cmykRegex.matchEntire(line) ?: return null
-        val (_, c, y, m, k) = match.groupValues
-        return InkCoverage(c.toFloat(), y.toFloat(), m.toFloat(), k.toFloat())
+    fun inkCoverage(lines: List<String>): List<InkCoverage> = cmykRegex.findAll(lines.joinToString(" "))
+            .map {
+                val (_, c, y, m, k) = it.groupValues
+                InkCoverage(c.toFloat(), y.toFloat(), m.toFloat(), k.toFloat())
+            }.toList()
+
+    override fun inkCoverage(f: File): List<InkCoverage>? {
+        return inkCoverage(gs(f) ?: return null)
     }
 
+    override fun psInfo(f: File): PsData? {
+        val coverage = inkCoverage(f) ?: return null
+        return coverageToInfo(coverage)
+    }
+
+    fun coverageToInfo(coverage: List<InkCoverage>): PsData {
+        val pages = coverage.size
+        val colour = coverage.filter { !it.monochrome }.size
+        return PsData(pages, colour)
+    }
+    
 }
 
 /**
@@ -69,3 +97,8 @@ data class InkCoverage(val c: Float, val m: Float, val y: Float, val k: Float) {
     val monochrome = c == m && c == y
 
 }
+
+/**
+ * Holds info for ps files
+ */
+data class PsData(val pages: Int, val colourPages: Int)
