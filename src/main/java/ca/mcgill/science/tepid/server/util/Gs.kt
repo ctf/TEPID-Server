@@ -43,6 +43,15 @@ internal class GsDelegate : WithLogging(), GsContract {
         }
     }
 
+    /*
+    * The ink_cov device differs from the inkcov device
+    * ink_cov tries to get a more accurate representation of the actual colours which will be used by the page.
+    * it tries to deal with conversions from RGB space to CMYK space.
+    * For example, it will try to crush all monochrome to K, rather than some CMY combination or a "rich black" MYK
+    * It is also able to deal with pages with a small patch of colour.
+    * For example, a page might have a small color logo which is too small to count for more than 1% of 1% of the page (a square roughly 7mm on a side). With inkcov, there are not enough decimals printed for this to show up. But ink_cov will make the difference greater, and so more color pages will be detected as color
+    * This is undocumented in GhostScript, but they have basically the same inputs
+    */
     fun gs(f: File): List<String>? {
         val gsProcess = run("-sOutputFile=%stdout%",
                 "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
