@@ -24,10 +24,6 @@ interface GsContract {
      */
     fun psInfo(f: File): PsData?
 
-    /**
-     * Extract info from page coverage
-     */
-    fun coverageToInfo(coverage: List<InkCoverage>): PsData
 }
 
 /**
@@ -47,13 +43,32 @@ internal class GsDelegate : WithLogging(), GsContract {
         }
     }
 
-    override fun inkCoverage(f: File): List<InkCoverage>? {
+    fun gs(f: File): List<String>? {
         val gsProcess = run("-sOutputFile=%stdout%",
                 "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
                 "-sDEVICE=inkcov", f.absolutePath) ?: return null
-        return gsProcess.inputStream.bufferedReader().useLines {
-            it.mapNotNull(this::lineToInkCov).toList()
-        }
+        return gsProcess.inputStream.bufferedReader().useLines { it.toList() }
+    }
+
+    /**
+     * Matcher for the snippet relevant to ink coverage
+     * Note that this may not necessarily match a full line, as not all outputs are separated by new lines
+     */
+    private val cmykRegex: Regex by lazy { Regex("(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+CMYK OK") }
+
+    /**
+     * Expected input format:
+     * 0.06841  0.41734  0.17687  0.04558 CMYK OK
+     * See [cmykRegex] for matching regex
+     */
+    fun inkCoverage(lines: List<String>): List<InkCoverage> = cmykRegex.findAll(lines.joinToString(" "))
+            .map {
+                val (_, c, y, m, k) = it.groupValues
+                InkCoverage(c.toFloat(), y.toFloat(), m.toFloat(), k.toFloat())
+            }.toList()
+
+    override fun inkCoverage(f: File): List<InkCoverage>? {
+        return inkCoverage(gs(f) ?: return null)
     }
 
     override fun psInfo(f: File): PsData? {
@@ -61,25 +76,12 @@ internal class GsDelegate : WithLogging(), GsContract {
         return coverageToInfo(coverage)
     }
 
-    override fun coverageToInfo(coverage: List<InkCoverage>): PsData {
+    fun coverageToInfo(coverage: List<InkCoverage>): PsData {
         val pages = coverage.size
         val colour = coverage.filter { !it.monochrome }.size
         return PsData(pages, colour)
     }
-
-    private val cmykRegex: Regex by lazy { Regex("\\s*(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+(\\d+\\.\\d+)\\s+CMYK OK\\s*") }
-
-    /**
-     * Expected input format:
-     * 0.06841  0.41734  0.17687  0.04558 CMYK OK
-     * See [cmykRegex] for matching regex
-     */
-    fun lineToInkCov(line: String): InkCoverage? {
-        val match = cmykRegex.matchEntire(line) ?: return null
-        val (_, c, y, m, k) = match.groupValues
-        return InkCoverage(c.toFloat(), y.toFloat(), m.toFloat(), k.toFloat())
-    }
-
+    
 }
 
 /**

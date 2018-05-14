@@ -36,9 +36,10 @@ class GsTest {
         }
 
         gsDir.listFiles { _, name -> name.endsWith(".ps") }.forEach {
-            val coverage = Gs.inkCoverage(it) ?: fail("Failed to get gs info for ${it.absolutePath}")
-            println("\nTested ${it.name}: coverage\n$coverage")
-            val psInfo = Gs.coverageToInfo(coverage)
+            val lines = gs.gs(it) ?: fail("Failed to get gs info for ${it.absolutePath}")
+            println("\nTested ${it.name}: lines\n${lines.joinToString("\n")}")
+            val coverage = gs.inkCoverage(lines)
+            val psInfo = gs.coverageToInfo(coverage)
             val fileInfo = it.gsInfo ?: return@forEach println("Resulting info: $psInfo")
             assertEquals(fileInfo, psInfo, "GS info mismatch for ${it.absolutePath}")
             println("Matches supplied info: $fileInfo")
@@ -51,7 +52,7 @@ class GsTest {
         val m = 0.41734f
         val y = 0.17687f
         val k = 0.04558f
-        val inkCov = gs.lineToInkCov("$c $m $y $k CMYK OK")
+        val inkCov = gs.inkCoverage(listOf("$c $m $y $k CMYK OK")).firstOrNull()
         assertNotNull(inkCov)
         assertEquals(c, inkCov!!.c)
         assertEquals(m, inkCov.m)
