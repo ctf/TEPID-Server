@@ -55,7 +55,7 @@ internal class GsDelegate : WithLogging(), GsContract {
     fun gs(f: File): List<String>? {
         val gsProcess = run("-sOutputFile=%stdout%",
                 "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
-                "-sDEVICE=inkcov", f.absolutePath) ?: return null
+                "-sDEVICE=ink_cov", f.absolutePath) ?: return null
         return gsProcess.inputStream.bufferedReader().useLines { it.toList() }
     }
 
