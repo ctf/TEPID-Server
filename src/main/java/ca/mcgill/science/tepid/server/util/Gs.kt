@@ -60,6 +60,9 @@ internal class GsDelegate : WithLogging(), GsContract {
      * Expected input format:
      * 0.06841  0.41734  0.17687  0.04558 CMYK OK
      * See [cmykRegex] for matching regex
+     *
+     * The lines are joined and then all regex matches are extracted because of a bug in GhostScript
+     * see for more details: https://bugs.ghostscript.com/show_bug.cgi?id=699342
      */
     fun inkCoverage(lines: List<String>): List<InkCoverage> = cmykRegex.findAll(lines.joinToString(" "))
             .map {
