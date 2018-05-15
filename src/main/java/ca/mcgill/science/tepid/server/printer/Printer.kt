@@ -101,6 +101,12 @@ object Printer : WithLogging() {
             }
 
             submit(id) {
+
+                /*
+                 * Note that this is a runnable that will be submitted to the executor service
+                 * This block does not run in the same thread!
+                 */
+
                 // Generates a random file name with our prefix and suffix
                 val tmp = File.createTempFile("tepid", ".ps")
                 try {
@@ -146,16 +152,20 @@ object Printer : WithLogging() {
                     } else {
                         throw PrintException("Could not send to destination")
                     }
+                } catch (e: Exception) {
+                    log.error("Job $id failed", e)
+                    val msg = (e as? PrintException)?.message ?: "Failed to process"
+                    failJob(id, msg)
                 } finally {
                     tmp.delete()
                 }
             }
             return true to "Successfully created request $id"
         } catch (e: Exception) {
+            // todo check if this is necessary, given that the submit code is handled separately
             log.error("Job $id failed", e)
-            val msg = (e as? PrintException)?.message ?: "Failed to process"
-            failJob(id, msg)
-            return false to msg
+            failJob(id, "Failed to process")
+            return false to "Failed to process"
         }
     }
 
