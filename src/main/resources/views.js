@@ -1,5 +1,6 @@
 {
   "_id": "_design/main",
+  "_rev": "32-8430058110502c8460bc9f27efc89cb2",
   "language": "javascript",
   "views": {
     "byQueue": {
@@ -81,7 +82,7 @@
       "map": "function(doc) {\n  if (doc.type==='emailReasons') {\n    emit(doc._id, doc);\n  }\n};"
     },
     "totalPrinted": {
-      "map": "function(doc) {\n  if (doc.userIdentification && doc.pages && !doc.refunded) {\nvar pages = doc.pages;\nif (doc.colorPages) pages = doc.pages - doc.colorPages + doc.colorPages * 3;\n    if (doc.printed) emit(doc.userIdentification, [pages, doc.started]);\n  }\n};",
+      "map": "function(doc) {\n  if (doc.userIdentification && doc.pages && !doc.refunded) {\nvar pages = doc.pages;\nif (doc.colorPages) pages = doc.pages - doc.colorPages + doc.colorPages * 3;\n    if (doc.printed && doc.printed!=-1) emit(doc.userIdentification, [pages, doc.started]);\n  }\n};",
       "reduce": "function(keys, values, rereduce) {\n\tif (!rereduce) {\n\t\tvar sum = 0, earliestJob;\n\t\tfor (var i = 0; i < values.length; i++) {\n\t\t\tsum += values[i][0] || 0;\n\t\t\tif (!earliestJob || values[i][1] < earliestJob) {\n\t\t\t\tearliestJob = values[i][1];\n\t\t\t}\n\t\t}\n\t\treturn {sum: sum, earliestJob: earliestJob};\n\t} else {\n\t\tvar sum = 0, earliestJob;\n\t\tfor (var i = 0; i < values.length; i++) {\n\t\t\tsum += values[i].sum || 0;\n\t\t\tif (!earliestJob || values[i].earliestJob < earliestJob) {\n\t\t\t\tearliestJob = values[i].earliestJob;\n\t\t\t}\n\t\t}\n\t\treturn {sum: sum, earliestJob: earliestJob};\n\t}\n}"
     },
     "totalPrintedWithRefunds": {
