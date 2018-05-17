@@ -43,7 +43,7 @@ class ScreenSaver {
                         "endkey" to "[\"$queue\",$from]",
                         "limit" to limit
                 )
-            }.sorted()
+            }.sortedDescending()
 
     /**
      * Gets the Up status for each Queue.
