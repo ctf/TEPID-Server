@@ -39,6 +39,7 @@ object Printer : WithLogging() {
     }
 
     private fun cancel(id: String) {
+        log.warn("Cancelling task $id")
         try {
             val future = runningTasks.remove(id)
             if (future?.isDone == false)
@@ -132,14 +133,17 @@ object Printer : WithLogging() {
                     } ?: throw PrintException("Could not update")
 
                     //check if user has color printing enabled
+                    log.trace("Testing for color {'job':'{}'}", j2.getId())
                     if (color > 0 && SessionManager.queryUser(j2.userIdentification, null)?.colorPrinting != true)
                         throw PrintException(PrintError.COLOR_DISABLED)
 
                     //check if user has sufficient quota to print this job
+                    log.trace("Testing for quota {'job':'{}'}", j2.getId())
                     if (Users.getQuota(j2.userIdentification) < psInfo.pages + color * 2)
                         throw PrintException(PrintError.INSUFFICIENT_QUOTA)
 
                     //add job to the queue
+                    log.trace("Trying to assign destination {'job':'{}'}", j2.getId())
                     j2 = QueueManager.assignDestination(id)
                     //todo check destination field
                     val destination = j2.destination ?: throw PrintException(PrintError.INVALID_DESTINATION)
@@ -158,8 +162,10 @@ object Printer : WithLogging() {
                     failJob(id, msg)
                 } finally {
                     tmp.delete()
+                    log.trace("Successfully deleted tmp {'file':{}}", tmp.absoluteFile)
                 }
             }
+            log.trace("Returning true for {'job':'{}'}", id)
             return true to "Successfully created request $id"
         } catch (e: Exception) {
             // todo check if this is necessary, given that the submit code is handled separately
