@@ -40,7 +40,7 @@ class Jobs {
         }
         return CouchDb.getViewRows<PrintJob>("byUser") {
             query("key" to "\"$sam\"")
-        }.sorted()
+        }.sortedDescending()
     }
 
     private fun PrintJob.getJobExpiration() =
