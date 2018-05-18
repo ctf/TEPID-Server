@@ -27,7 +27,14 @@ object Config : WithLogging() {
     /**
      * Global definition for whether a the build is in debug mode or not
      */
-    val DEBUG: Boolean;
+    val DEBUG: Boolean
+
+    /*
+     * Server
+     */
+    val TEPID_URL_PRODUCTION: String
+    val TEPID_URL_TESTING: String
+
     /*
      * Couchdb data
      */
@@ -44,13 +51,27 @@ object Config : WithLogging() {
      * TEM data
      */
     val TEM_URL: String
-    const val RESOURCE_USER = "***REMOVED***"
-    val RESOURCE_CREDENTIALS: String
+
     /*
      * Boolean to enable ldap authentication
      * Defaults to !DEBUG
      */
     val LDAP_ENABLED: Boolean
+
+    val LDAP_SEARCH_BASE : String
+    val ACCOUNT_DOMAIN : String
+    val PROVIDER_URL : String
+    val SECURITY_PRINCIPAL_PREFIX : String
+
+    val RESOURCE_USER : String
+    val RESOURCE_CREDENTIALS: String
+
+    val EXCHANGE_STUDENTS_GROUP_BASE : String
+    val EXCANGE_STUDENTS_GROUP_LOCATION : String
+    val ELDERS_GROUP : String
+    val CTFERS_GROUP : String
+    val USERS_GROUP : String
+
     /*
      * Optional arguments used to run unit tests for ldap
      */
@@ -97,17 +118,37 @@ object Config : WithLogging() {
         fun get(key: String) = get(key, "")
 
         DEBUG = get("DEBUG", "true").toBoolean()
-        LDAP_ENABLED = get("LDAP_ENABLED", null)?.toBoolean() ?: true
-        COUCHDB_URL = if (DEBUG) COUCHDB_URL_TEST else COUCHDB_URL_MAIN
+
+        TEPID_URL_PRODUCTION = get ("TEPID_URL_PRODUCTION")
+        TEPID_URL_TESTING = get ("TEPID_URL_TESTING")
+
+        COUCHDB_URL = get("COUCHDB_URL")
         COUCHDB_USERNAME = get("COUCHDB_USERNAME")
         COUCHDB_PASSWORD = get("COUCHDB_PASSWORD")
+
         BARCODES_URL = get("BARCODES_URL", BARCODES_URL_MAIN)
         BARCODES_USERNAME = get("BARCODES_USERNAME")
         BARCODES_PASSWORD = get("BARCODES_PASSWORD")
-        TEM_URL = get("TEM_URL")
+
+        LDAP_ENABLED = get("LDAP_ENABLED", null)?.toBoolean() ?: true
+        LDAP_SEARCH_BASE = get("LDAP_SEARCH_BASE")
+        ACCOUNT_DOMAIN = get("ACCOUNT_DOMAIN")
+        PROVIDER_URL = get("PROVIDER_URL")
+        SECURITY_PRINCIPAL_PREFIX = get("SECURITY_PRINCIPAL_PREFIX")
+        RESOURCE_USER = get("RESOURCE_USER")
         RESOURCE_CREDENTIALS = get("RESOURCE_CREDENTIALS")
+
+        EXCHANGE_STUDENTS_GROUP_BASE = get("EXCHANGE_STUDENTS_GROUP_BASE")
+        EXCANGE_STUDENTS_GROUP_LOCATION = get("EXCANGE_STUDENTS_GROUP_LOCATION")
+        ELDERS_GROUP = get("ELDERS_GROUP")
+        CTFERS_GROUP = get("CTFERS_GROUP")
+        USERS_GROUP = get("USERS_GROUP")
+
+        TEM_URL = get("TEM_URL")
+        
         TEST_USER = get("TEST_USER")
         TEST_PASSWORD = get("TEST_PASSWORD")
+
         HASH = get("HASH", "local")
         TAG = get("TAG", "")
         CREATION_TIMESTAMP = get("CREATION_TIMESTAMP")?.toLongOrNull() ?: -1
