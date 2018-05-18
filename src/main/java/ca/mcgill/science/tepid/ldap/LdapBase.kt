@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.server.util.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -46,8 +47,8 @@ open class LdapBase : LdapContract, LdapHelperContract by LdapHelperDelegate() {
      */
     override fun queryUser(username: String?, auth: Pair<String, String>): FullUser? {
         if (username == null) return null
-        val ldapSearchBase = ***REMOVED***
-        val searchName = if (username.contains(".")) "userPrincipalName=$username@mail.mcgill.ca" else "sAMAccountName=$username"
+        val ldapSearchBase = Config.LDAP_SEARCH_BASE
+        val searchName = if (username.contains(".")) "userPrincipalName=$username${Config.ACCOUNT_DOMAIN}" else "sAMAccountName=$username"
         val searchFilter = "(&(objectClass=user)($searchName))"
         val ctx = bindLdap(auth) ?: return null
         val searchControls = SearchControls()
@@ -119,8 +120,8 @@ open class LdapBase : LdapContract, LdapHelperContract by LdapHelperDelegate() {
     fun createAuthMap(user: String, password: String) = Hashtable<String, String>().apply {
         put(SECURITY_AUTHENTICATION, "simple")
         put(INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-        put(PROVIDER_URL, ***REMOVED***)
-        put(SECURITY_PRINCIPAL, "***REMOVED***\\$user")
+        put(PROVIDER_URL, Config.PROVIDER_URL)
+        put(SECURITY_PRINCIPAL, Config.SECURITY_PRINCIPAL_PREFIX+"$user")
         put(SECURITY_CREDENTIALS, password)
         put("com.sun.jndi.ldap.read.timeout", "5000")
         put("com.sun.jndi.ldap.connect.timeout", "500")
@@ -143,7 +144,7 @@ open class LdapBase : LdapContract, LdapHelperContract by LdapHelperDelegate() {
 
     override fun autoSuggest(like: String, auth: Pair<String, String>, limit: Int): List<FullUser> {
         try {
-            val ldapSearchBase = ***REMOVED***
+            val ldapSearchBase = Config.LDAP_SEARCH_BASE
             val searchFilter = "(&(objectClass=user)(|(userPrincipalName=$like*)(samaccountname=$like*)))"
             val ctx = bindLdap(auth) ?: return emptyList()
             val searchControls = SearchControls()
