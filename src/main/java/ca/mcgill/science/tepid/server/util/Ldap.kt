@@ -195,7 +195,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
             ctx.modifyAttributes(groupDn, mods)
             log.info("Added {} to exchange students.", sam)
         } catch (e: NamingException) {
-            log.info("Error adding {} to exchange students.", sam)
+            log.warn("Error adding {} to exchange students.", sam)
             e.printStackTrace()
         }
 
