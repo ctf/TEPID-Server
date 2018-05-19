@@ -69,8 +69,8 @@ object Config : WithLogging() {
     val EXCHANGE_STUDENTS_GROUP_BASE : String
     val EXCANGE_STUDENTS_GROUP_LOCATION : String
     val ELDERS_GROUP : String
-    val CTFERS_GROUP : String
-    val USERS_GROUP : String
+    val CTFERS_GROUP : arrayOf<String>
+    val USERS_GROUP : arrayOf<String>
 
     /*
      * Optional arguments used to run unit tests for ldap
@@ -142,7 +142,7 @@ object Config : WithLogging() {
         EXCANGE_STUDENTS_GROUP_LOCATION = get("EXCANGE_STUDENTS_GROUP_LOCATION")
         ELDERS_GROUP = get("ELDERS_GROUP")
         CTFERS_GROUP = get("CTFERS_GROUP")
-        USERS_GROUP = get("USERS_GROUP")
+        USERS_GROUP = arrayOf(get("USERS_GROUP"), EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F")
 
         TEM_URL = get("TEM_URL")
         
