@@ -69,8 +69,8 @@ object Config : WithLogging() {
     val EXCHANGE_STUDENTS_GROUP_BASE : String
     val EXCANGE_STUDENTS_GROUP_LOCATION : String
     val ELDERS_GROUP : String
-    val CTFERS_GROUP : arrayOf<String>
-    val USERS_GROUP : arrayOf<String>
+    val CTFERS_GROUP : List<String>
+    val USERS_GROUP : List<String>
 
     /*
      * Optional arguments used to run unit tests for ldap
@@ -116,6 +116,7 @@ object Config : WithLogging() {
 
         fun get(key: String, default: String?) = props.getProperty(key, default)
         fun get(key: String) = get(key, "")
+        fun getListOfString(key: String) = props.getProperty(key).split("\\")
 
         DEBUG = get("DEBUG", "true").toBoolean()
 
