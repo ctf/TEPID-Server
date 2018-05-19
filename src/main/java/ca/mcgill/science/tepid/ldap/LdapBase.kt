@@ -132,7 +132,9 @@ open class LdapBase : LdapContract, LdapHelperContract by LdapHelperDelegate() {
     /**
      * Create [LdapContext] for given credentials
      */
+
     fun bindLdap(user: String, password: String): LdapContext? {
+        log.trace("Attempting bind to LDAP: {'PROVIDER_URL':'{}', 'SECURITY_PRINCIPAL':'{}'}",Config.PROVIDER_URL, Config.SECURITY_PRINCIPAL_PREFIX+"$user")
         try {
             val auth = createAuthMap(user, password)
             return InitialLdapContext(auth, null)
