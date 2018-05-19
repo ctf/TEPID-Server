@@ -142,11 +142,17 @@ object Config : WithLogging() {
         EXCHANGE_STUDENTS_GROUP_BASE = get("EXCHANGE_STUDENTS_GROUP_BASE")
         EXCANGE_STUDENTS_GROUP_LOCATION = get("EXCANGE_STUDENTS_GROUP_LOCATION")
         ELDERS_GROUP = get("ELDERS_GROUP")
-        CTFERS_GROUP = get("CTFERS_GROUP")
-        USERS_GROUP = arrayOf(get("USERS_GROUP"), EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F")
+        CTFERS_GROUP = getListOfString("CTFERS_GROUP")
+        
+//        USERS_GROUP
+        fun getCurrentExchangeGroup(): String {
+            val cal = Calendar.getInstance()
+            return EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
+        }
+        USERS_GROUP = getListOfString("USERS_GROUP").plus(getCurrentExchangeGroup())
 
         TEM_URL = get("TEM_URL")
-        
+
         TEST_USER = get("TEST_USER")
         TEST_PASSWORD = get("TEST_PASSWORD")
 
