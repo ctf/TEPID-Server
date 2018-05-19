@@ -170,7 +170,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
     fun setExchangeStudent(sam: String, exchange: Boolean) {
         val longUser = sam.contains(".")
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
-        val searchFilter = "(&(objectClass=user)(" + (if (longUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (longUser) Config.ACCOUNT_DOMAIN else "") + "))"
+        val searchFilter = "(&(objectClass=user)(" + (if (longUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (longUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
         val ctx = ldap.bindLdap(auth) ?: return
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
