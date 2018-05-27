@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.util
 
+import ca.allanwang.kit.props.PropHolder
 import ca.mcgill.science.tepid.models.data.About
 import ca.mcgill.science.tepid.utils.*
 import org.apache.logging.log4j.Level
@@ -94,7 +95,9 @@ object Config : WithLogging() {
         log.info("*       Setting up Configs       *")
         log.info("**********************************")
 
-        basedir = "webapps/tepid/"
+        log.info("basedir is $basedir")
+        basedir = "/etc/tepid"
+        log.info("basedir changed to $basedir")
 
         DEBUG = PropsURL.TESTING.toBoolean()
 
