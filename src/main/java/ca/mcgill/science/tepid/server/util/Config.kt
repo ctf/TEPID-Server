@@ -155,8 +155,8 @@ object Config : WithLogging() {
 
         TEM_URL = PropsTEM.TEM_URL
 
-        TEST_USER = get("TEST_USER")
-        TEST_PASSWORD = get("TEST_PASSWORD")
+        TEST_USER = PropsLDAPTestUser.TEST_USER
+        TEST_PASSWORD = PropsLDAPTestUser.TEST_PASSWORD
 
         HASH = get("HASH", "local")
         TAG = get("TAG", "")
