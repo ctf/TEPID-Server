@@ -158,10 +158,10 @@ object Config : WithLogging() {
         TEST_USER = PropsLDAPTestUser.TEST_USER
         TEST_PASSWORD = PropsLDAPTestUser.TEST_PASSWORD
 
-        HASH = get("HASH", "local")
-        TAG = get("TAG", "")
-        CREATION_TIMESTAMP = get("CREATION_TIMESTAMP")?.toLongOrNull() ?: -1
-        CREATION_TIME = get("CREATION_TIME", "")
+        HASH = PropsCreationInfo.HASH
+        TAG = PropsCreationInfo.TAG
+        CREATION_TIMESTAMP = PropsCreationInfo.CREATION_TIMESTAMP?.toLongOrNull() ?: -1
+        CREATION_TIME = PropsCreationInfo.CREATION_TIME
 
         if (DEBUG)
             setLoggingLevel(Level.TRACE)
