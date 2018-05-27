@@ -128,9 +128,10 @@ object Config : WithLogging() {
         COUCHDB_USERNAME = PropsDB.COUCHDB_USERNAME
         COUCHDB_PASSWORD = PropsDB.COUCHDB_PASSWORD
 
-        BARCODES_URL = get("BARCODES_URL", BARCODES_URL_MAIN)
-        BARCODES_USERNAME = get("BARCODES_USERNAME")
-        BARCODES_PASSWORD = get("BARCODES_PASSWORD")
+        BARCODES_URL = PropsBarcode.BARCODES_URL
+        BARCODES_USERNAME = PropsBarcode.BARCODES_DB_USERNAME
+        BARCODES_PASSWORD = PropsBarcode.BARCODES_DB_PASSWORD
+
         LDAP_ENABLED = PropsLDAP.LDAP_ENABLED.toBoolean() ?: true
         LDAP_SEARCH_BASE = PropsLDAP.LDAP_SEARCH_BASE
         ACCOUNT_DOMAIN = PropsLDAP.ACCOUNT_DOMAIN
@@ -152,7 +153,7 @@ object Config : WithLogging() {
         }
         USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS.split(illegalLDAPCharacters)).plus(getCurrentExchangeGroup())
 
-        TEM_URL = get("TEM_URL")
+        TEM_URL = PropsTEM.TEM_URL
 
         TEST_USER = get("TEST_USER")
         TEST_PASSWORD = get("TEST_PASSWORD")
