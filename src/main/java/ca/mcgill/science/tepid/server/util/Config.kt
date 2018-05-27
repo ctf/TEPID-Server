@@ -178,11 +178,11 @@ object Config : WithLogging() {
         log.info("Debug mode: $DEBUG")
         log.info("LDAP mode: $LDAP_ENABLED")
         if (COUCHDB_URL.isEmpty())
-            warn("COUCHDB_URL not set")
+            log.fatal("COUCHDB_URL not set")
         if (COUCHDB_PASSWORD.isEmpty())
-            warn("COUCHDB_PASSWORD not set")
+            log.fatal("COUCHDB_PASSWORD not set")
         if (RESOURCE_CREDENTIALS.isEmpty())
-            warn("RESOURCE_CREDENTIALS not set")
+            log.error("RESOURCE_CREDENTIALS not set")
         log.info("Build hash: $HASH")
 
         PUBLIC = About(debug = DEBUG,
