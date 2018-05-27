@@ -19,11 +19,6 @@ object Config : WithLogging() {
 
     private val illegalLDAPCharacters = ",\\+\"\\\\<>;=".toRegex()
 
-    private const val COUCHDB_URL_MAIN = "http://tepid.science.mcgill.ca:5984/tepid"
-    private const val COUCHDB_URL_TEST = "***REMOVED***"
-    private const val BARCODES_URL_MAIN = "http://tepid.science.mcgill.ca:5984/barcodes"
-    private const val PRIV_PROPERTIES = "priv.properties"
-
     /**
      * Global definition for whether a the build is in debug mode or not
      */
@@ -95,9 +90,7 @@ object Config : WithLogging() {
         log.info("*       Setting up Configs       *")
         log.info("**********************************")
 
-        log.info("basedir is $basedir")
         basedir = "/etc/tepid/"
-        log.info("basedir changed to $basedir")
 
         DEBUG = PropsURL.TESTING.toBoolean()
 
@@ -155,6 +148,8 @@ object Config : WithLogging() {
             log.warn("Warning: $msg")
         }
 
+        log.trace("Validating configs settings")
+
         log.info("Debug mode: $DEBUG")
         log.info("LDAP mode: $LDAP_ENABLED")
         if (COUCHDB_URL.isEmpty())
@@ -174,6 +169,8 @@ object Config : WithLogging() {
                 tag = TAG,
                 creationTime = CREATION_TIME,
                 creationTimestamp = CREATION_TIMESTAMP)
+
+        log.trace("Completed setting configs")
     }
 
     fun setLoggingLevel(level: Level) {
