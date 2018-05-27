@@ -1,16 +1,13 @@
 package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.About
-import ca.mcgill.science.tepid.utils.PropsDB
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.utils.*
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.LoggerContext
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
-
-import ca.mcgill.science.tepid.utils.PropsURL
 
 /**
  * Created by Allan Wang on 27/01/2017.
@@ -20,6 +17,8 @@ import ca.mcgill.science.tepid.utils.PropsURL
  * If no file is found, default values will be supplied (usually empty strings)
  */
 object Config : WithLogging() {
+
+    private val illegalLDAPCharacters = ",\\+\"\\\\<>;=".toRegex()
 
     private const val COUCHDB_URL_MAIN = "http://tepid.science.mcgill.ca:5984/tepid"
     private const val COUCHDB_URL_TEST = "***REMOVED***"
@@ -70,7 +69,7 @@ object Config : WithLogging() {
 
     val EXCHANGE_STUDENTS_GROUP_BASE : String
     val EXCANGE_STUDENTS_GROUP_LOCATION : String
-    val ELDERS_GROUP : String
+    val ELDERS_GROUP : List<String>
     val CTFERS_GROUP : List<String>
     val USERS_GROUP : List<String>
 
@@ -141,17 +140,17 @@ object Config : WithLogging() {
         RESOURCE_USER = get("RESOURCE_USER")
         RESOURCE_CREDENTIALS = get("RESOURCE_CREDENTIALS")
 
-        EXCHANGE_STUDENTS_GROUP_BASE = get("EXCHANGE_STUDENTS_GROUP_BASE")
-        EXCANGE_STUDENTS_GROUP_LOCATION = get("EXCANGE_STUDENTS_GROUP_LOCATION")
-        ELDERS_GROUP = get("ELDERS_GROUP")
-        CTFERS_GROUP = getListOfString("CTFERS_GROUP")
+        EXCHANGE_STUDENTS_GROUP_BASE = PropsLDAPGroups.EXCHANGE_STUDENTS_GROUP_BASE
+        EXCANGE_STUDENTS_GROUP_LOCATION = PropsLDAPGroups.EXCHANGE_STUDENTS_GROUP_LOCATION
+        ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS.split(illegalLDAPCharacters)
+        CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS.split(illegalLDAPCharacters)
         
 //        USERS_GROUP
         fun getCurrentExchangeGroup(): String {
             val cal = Calendar.getInstance()
             return EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
         }
-        USERS_GROUP = getListOfString("USERS_GROUP").plus(getCurrentExchangeGroup())
+        USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS.split(illegalLDAPCharacters)).plus(getCurrentExchangeGroup())
 
         TEM_URL = get("TEM_URL")
 
