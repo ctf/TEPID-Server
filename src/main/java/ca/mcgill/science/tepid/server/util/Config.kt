@@ -91,18 +91,6 @@ object Config : WithLogging() {
      */
     val PUBLIC: About
 
-    /**
-     * Unfortunately, due to the nature of bundled and exploded wars,
-     * it isn't easy to locate the priv.properties file.
-     * The workaround is to check multiple common locations, which should hopefully cover most situations
-     */
-    private fun privFinder(): File? {
-        val paths = listOf(PRIV_PROPERTIES, "webapps/tepid/$PRIV_PROPERTIES", "../webapps/ROOT/$PRIV_PROPERTIES")
-        val valid = paths.map(::File).firstOrNull(File::exists) ?: return null
-        log.debug("Found $PRIV_PROPERTIES at ${valid.absolutePath}")
-        return valid
-    }
-
     init {
         log.info("**********************************")
         log.info("*       Setting up Configs       *")
