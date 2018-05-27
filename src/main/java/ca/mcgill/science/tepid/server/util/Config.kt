@@ -96,7 +96,7 @@ object Config : WithLogging() {
         log.info("**********************************")
 
         log.info("basedir is $basedir")
-        basedir = "/etc/tepid"
+        basedir = "/etc/tepid/"
         log.info("basedir changed to $basedir")
 
         DEBUG = PropsURL.TESTING.toBoolean()
