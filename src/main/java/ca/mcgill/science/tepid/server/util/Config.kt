@@ -107,17 +107,6 @@ object Config : WithLogging() {
         log.info("**********************************")
         log.info("*       Setting up Configs       *")
         log.info("**********************************")
-        val props = Properties()
-
-        val f = privFinder()
-        if (f != null)
-            FileInputStream(f).use { props.load(it) }
-        else
-            log.warn("Could not find $PRIV_PROPERTIES")
-
-        fun get(key: String, default: String?) = props.getProperty(key, default)
-        fun get(key: String) = get(key, "")
-        fun getListOfString(key: String) = props.getProperty(key).split("\\")
 
         DEBUG = PropsURL.TESTING.toBoolean()
 
