@@ -9,6 +9,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.util.*
 
+import ca.mcgill.science.tepid.utils.PropsURL
 
 /**
  * Created by Allan Wang on 27/01/2017.
@@ -118,10 +119,10 @@ object Config : WithLogging() {
         fun get(key: String) = get(key, "")
         fun getListOfString(key: String) = props.getProperty(key).split("\\")
 
-        DEBUG = get("DEBUG", "true").toBoolean()
+        DEBUG = PropsURL.TESTING.toBoolean()
 
-        TEPID_URL_PRODUCTION = get ("TEPID_URL_PRODUCTION")
-        TEPID_URL_TESTING = get ("TEPID_URL_TESTING")
+        TEPID_URL_PRODUCTION = PropsURL.SERVER_URL_PRODUCTION
+        TEPID_URL_TESTING = PropsURL.WEB_URL_TESTING
 
         COUCHDB_URL = get("COUCHDB_URL")
         COUCHDB_USERNAME = get("COUCHDB_USERNAME")
