@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.About
+import ca.mcgill.science.tepid.utils.PropsDB
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
@@ -124,9 +125,9 @@ object Config : WithLogging() {
         TEPID_URL_PRODUCTION = PropsURL.SERVER_URL_PRODUCTION
         TEPID_URL_TESTING = PropsURL.WEB_URL_TESTING
 
-        COUCHDB_URL = get("COUCHDB_URL")
-        COUCHDB_USERNAME = get("COUCHDB_USERNAME")
-        COUCHDB_PASSWORD = get("COUCHDB_PASSWORD")
+        COUCHDB_URL = PropsDB.COUCHDB_URL
+        COUCHDB_USERNAME = PropsDB.COUCHDB_USERNAME
+        COUCHDB_PASSWORD = PropsDB.COUCHDB_PASSWORD
 
         BARCODES_URL = get("BARCODES_URL", BARCODES_URL_MAIN)
         BARCODES_USERNAME = get("BARCODES_USERNAME")
