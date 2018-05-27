@@ -94,6 +94,8 @@ object Config : WithLogging() {
         log.info("*       Setting up Configs       *")
         log.info("**********************************")
 
+        basedir = "webapps/tepid/"
+
         DEBUG = PropsURL.TESTING.toBoolean()
 
         TEPID_URL_PRODUCTION = PropsURL.SERVER_URL_PRODUCTION
