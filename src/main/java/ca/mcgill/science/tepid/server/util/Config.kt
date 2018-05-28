@@ -90,7 +90,8 @@ object Config : WithLogging() {
         log.info("*       Setting up Configs       *")
         log.info("**********************************")
 
-        basedir = "/etc/tepid/"
+        configLocations.add("/etc/tepid/")
+        configLocations.add("webapps/tepid/config/")
 
         DEBUG = PropsURL.TESTING.toBoolean()
 
