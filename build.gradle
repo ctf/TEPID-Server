@@ -1,3 +1,5 @@
+import org.codehaus.groovy.runtime.GStringImpl
+
 group 'ca.mcgill.science.ctf'
 
 buildscript {
@@ -18,6 +20,16 @@ apply plugin: 'ca.mcgill.science.tepid.commons'
 
 sourceCompatibility = JVM_TARGET
 war.baseName = 'tepid'
+
+ext {
+    // can be passed with -Ptepid_config_dir=CONFIG_DIR, or set in an environment variable "tepid_config_dir
+    if (! project.hasProperty('tepid_config_dir')){
+        tepid_config_dir = "$System.env.tepid_config_dir" as GStringImpl
+    }
+    if (! project.hasProperty('tepid_config_dir')){
+        println('WARN tepid_config_dir not found')
+    }
+}
 
 repositories {
     mavenCentral()
