@@ -88,8 +88,22 @@ test {
     testLogging.showStandardStreams = true
 }
 
+task copyConfigs(type: Copy) {
+    println(tepid_config_dir)
+    from "$tepid_config_dir/barcode.properties",
+            "$tepid_config_dir/DB.properties",
+            "$tepid_config_dir/LDAP.properties",
+            "$tepid_config_dir/LDAPGroups.properties",
+            "$tepid_config_dir/LDAPResource.properties",
+            "$tepid_config_dir/LDAPTestUser.properties",
+            "$tepid_config_dir/TEM.properties",
+            "$tepid_config_dir/URL.properties"
+    into "./config"
+}
+
 war {
-    from('./') {
-        include 'priv.properties'
+
+    from('./config/') {
+        include '*.properties'
     }
 }
