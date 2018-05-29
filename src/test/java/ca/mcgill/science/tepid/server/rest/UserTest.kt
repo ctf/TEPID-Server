@@ -147,14 +147,25 @@ class TestUserGetQuota : WithLogging () {
 
 }
 
-class getUserBySameTest : WithLogging() {
+class getUserBySamTest : WithLogging() {
 
     val endpoints: Users by lazy {
         Users()
     }
 
+    var querryingUser: FullUser = FullUser()
+
+    @Before
+    fun initTest() {
+        querryingUser = FullUser(shortUser = "Real")
+    }
+
+
     @Test
-    fun getUserBySamElderAndValidUser(){
+    fun getUserBySamElderAndValidUser() {
+
+        var rc: ContainerRequestContext = mock()
+        whenever(rc.getSession()).thenReturn(FullSession("ELDER", querryingUser))
 
     }
 
