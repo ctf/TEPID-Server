@@ -116,7 +116,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         sam ?: return null
         val dbUser = when {
             sam.contains(".") -> CouchDb.getViewRows<FullUser>("byLongUser") {
-                query("key" to "\"${sam.substringBefore("@")}%40mail.mcgill.ca\"")
+                query("key" to "\"${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}\"")
             }.firstOrNull()
             sam.matches(numRegex) -> CouchDb.getViewRows<FullUser>("byStudentId") {
                 query("key" to sam)
@@ -169,8 +169,8 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
 
     fun setExchangeStudent(sam: String, exchange: Boolean) {
         val longUser = sam.contains(".")
-        val ldapSearchBase = ***REMOVED***
-        val searchFilter = "(&(objectClass=user)(" + (if (longUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (longUser) "@mail.mcgill.ca" else "") + "))"
+        val ldapSearchBase = Config.LDAP_SEARCH_BASE
+        val searchFilter = "(&(objectClass=user)(" + (if (longUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (longUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
         val ctx = ldap.bindLdap(auth) ?: return
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
@@ -187,7 +187,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         val userDn = searchResult.nameInNamespace
         val year = cal.get(Calendar.YEAR)
         val season = if (cal.get(Calendar.MONTH) < 8) "W" else "F"
-        val groupDn = "CN=***REMOVED***$year$season,***REMOVED***,***REMOVED***,OU=***REMOVED***,***REMOVED***,***REMOVED***,***REMOVED***"
+        val groupDn = "CN=" + Config.EXCHANGE_STUDENTS_GROUP_BASE + "$year$season,"+ Config.GROUPS_LOCATION
         val mods = arrayOfNulls<ModificationItem>(1)
         val mod = BasicAttribute("member", userDn)
         mods[0] = ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod)
@@ -195,7 +195,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
             ctx.modifyAttributes(groupDn, mods)
             log.info("Added {} to exchange students.", sam)
         } catch (e: NamingException) {
-            log.info("Error adding {} to exchange students.", sam)
+            log.warn("Error adding {} to exchange students.", sam)
             e.printStackTrace()
         }
 

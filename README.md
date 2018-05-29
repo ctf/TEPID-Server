@@ -35,6 +35,20 @@ That's it!
 
 For the most part, you won't need to build the war file. Much of testing involves simply running the unit tests or making use of integration. Whenever a commit is pushed to a non test branch (starting with `test-` or `wip-`), the files will be rebuild and deployed at `http://testpid.science.mcgill.ca/`. There is a public endpoint located at `http://testpid.science.mcgill.ca:8080/tepid/about` to see the status of the deployment.
 
+## Configuration
+
+Configuration is spelled out fully in the tepid-commons repository's readme. 
+
+Configuration files can be bundled with the WAR at compile time, in the same way that they are for the other TEPID project. Configurations are defined in the common config files. The configs use the TEPID standard configuration system. This allows them to be defined once, outside of the project's file tree, and used across all TEPID programs. The Gradle task copyConfigs will copy the configs from the project property "tepid_config_dir", which can be set in a number of ways:
+- As a standard project property
+- As a project property passed by command line ("-Ptepid_config_dir=CONFIG_DIR")
+- As an environment variable "tepid_config_dir"
+A lookup for the environment variable only occurs if the project property is not defined in one of the other two ways.
+
+Configuration files can also be modified on the server, similarly to other applications one could install. Config files can be placed in /etc/tepid/ . These files will supersede those bundled in the WAR. This allows you to better care for their configuration using a configuration management tool, without having to rebuild the WAR.
+
+The TEPID server depends on DB, LDAP, LDAPGroups, LDAPResource, LDAPTest, TEM, and URL property files. 
+
 ## Endpoints
 
 All of our REST endpoints are located under `src/main/java/ca/mcgill/science/tepid/server/rest`, and you will notice that there are quite a few annotations per method. They are used to help specify the types of data sent/received, the permission levels required, etc.
