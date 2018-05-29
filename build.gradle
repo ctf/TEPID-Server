@@ -98,13 +98,12 @@ task copyConfigs(type: Copy) {
             "$tepid_config_dir/LDAPTestUser.properties",
             "$tepid_config_dir/TEM.properties",
             "$tepid_config_dir/URL.properties"
-    into "./config"
+    into "config"
 }
 
 war {
 
-    from('./config/') {
+    from('config') {
         include '*.properties'
     }
-    into "./config/"
 }
