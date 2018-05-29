@@ -187,7 +187,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         val userDn = searchResult.nameInNamespace
         val year = cal.get(Calendar.YEAR)
         val season = if (cal.get(Calendar.MONTH) < 8) "W" else "F"
-        val groupDn = "CN=" + Config.EXCHANGE_STUDENTS_GROUP_BASE + "$year$season,"+ Config.EXCANGE_STUDENTS_GROUP_LOCATION
+        val groupDn = "CN=" + Config.EXCHANGE_STUDENTS_GROUP_BASE + "$year$season,"+ Config.GROUPS_LOCATION
         val mods = arrayOfNulls<ModificationItem>(1)
         val mod = BasicAttribute("member", userDn)
         mods[0] = ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod)

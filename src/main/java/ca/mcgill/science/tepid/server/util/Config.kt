@@ -1,6 +1,5 @@
 package ca.mcgill.science.tepid.server.util
 
-import ca.allanwang.kit.props.PropHolder
 import ca.mcgill.science.tepid.models.data.About
 import ca.mcgill.science.tepid.utils.*
 import org.apache.logging.log4j.Level
@@ -62,7 +61,7 @@ object Config : WithLogging() {
     val RESOURCE_CREDENTIALS: String
 
     val EXCHANGE_STUDENTS_GROUP_BASE : String
-    val EXCANGE_STUDENTS_GROUP_LOCATION : String
+    val GROUPS_LOCATION : String
     val ELDERS_GROUP : List<String>
     val CTFERS_GROUP : List<String>
     val USERS_GROUP : List<String>
@@ -116,7 +115,7 @@ object Config : WithLogging() {
         RESOURCE_CREDENTIALS = PropsLDAPResource.LDAP_RESOURCE_CREDENTIALS
 
         EXCHANGE_STUDENTS_GROUP_BASE = PropsLDAPGroups.EXCHANGE_STUDENTS_GROUP_BASE
-        EXCANGE_STUDENTS_GROUP_LOCATION = PropsLDAPGroups.EXCHANGE_STUDENTS_GROUP_LOCATION
+        GROUPS_LOCATION = PropsLDAPGroups.GROUPS_LOCATION
         ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS.split(illegalLDAPCharacters)
         CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS.split(illegalLDAPCharacters)
         
