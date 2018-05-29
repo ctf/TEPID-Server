@@ -144,4 +144,29 @@ class TestUserGetQuota : WithLogging () {
         userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018w0, c2018w)), USER, 1000,"multiple courses in same semester counted as other semesters")
     }
 
+
+}
+
+class getUserBySameTest : WithLogging() {
+
+    val endpoints: Users by lazy {
+        Users()
+    }
+
+    @Test
+    fun getUserBySamElderAndValidUser(){
+
+    }
+
+    @Test
+    fun getUserBySamElderAndInvalidUser(){}
+
+    @Test
+    fun getUserBySamUserAndInvalidUser(){}
+
+    @Test
+    fun getUserBySamUserAndOtherUSer(){}
+
+    @Test
+    fun getUserBySamUserAndSelfUser(){}
 }
