@@ -154,19 +154,43 @@ class getUserBySamTest : WithLogging() {
     }
 
     var querryingUser: FullUser = FullUser()
+    var uriInfo: UriInfo = mock()
 
     @Before
     fun initTest() {
         querryingUser = FullUser(shortUser = "Real")
     }
 
-
     @Test
     fun getUserBySamElderAndValidUser() {
 
-        var rc: ContainerRequestContext = mock()
-        whenever(rc.getSession()).thenReturn(FullSession("ELDER", querryingUser))
+        val elderSession = FullSession("ELDER", querryingUser)
 
+        val rc = mockk<ContainerRequestContext>()
+        staticMockk("ca.mcgill.science.tepid.server.util.UtilsKt").use {
+            every {
+                rc.getSession()
+            } returns elderSession
+            every {
+                rc.getSessionSafely()
+            } returns elderSession
+            every {
+                rc.getProperty("session")
+            } returns elderSession
+
+
+
+            objectMockk(SessionManager).use {
+                every {
+                    SessionManager.queryUser("Real", null)
+                } returns (querryingUser)
+
+
+                var result = endpoints.queryLdap("Real", null, rc, uriInfo)
+                println(result)
+
+            }
+        }
     }
 
     @Test
