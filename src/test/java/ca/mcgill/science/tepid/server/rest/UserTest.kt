@@ -153,45 +153,48 @@ class getUserBySamTest : WithLogging() {
         Users()
     }
 
-    var querryingUser: FullUser = FullUser()
-    var uriInfo: UriInfo = mock()
+    lateinit var querryingUser: FullUser
+    var targetUser: FullUser = FullUser("targetUser", shortUser = "tarUser")
+
+
 
     @Before
     fun initTest() {
-        querryingUser = FullUser(shortUser = "Real")
+
+
     }
+    @After
+    fun tearTest() {
+        objectMockk(SessionManager).unmock()
+        staticMockk("ca.mcgill.science.tepid.server.util.UtilsKt").unmock()
+    }
+
 
     @Test
     fun getUserBySamElderAndValidUser() {
+        var uriInfo = mockk<UriInfo>()
+        every {uriInfo.getQueryParameters().containsKey("noRedirect")} returns true
 
+        querryingUser = FullUser(shortUser = "qerUser", longUser = "queryingUser")
         val elderSession = FullSession("ELDER", querryingUser)
 
         val rc = mockk<ContainerRequestContext>()
-        staticMockk("ca.mcgill.science.tepid.server.util.UtilsKt").use {
-            every {
-                rc.getSession()
-            } returns elderSession
-            every {
-                rc.getSessionSafely()
-            } returns elderSession
-            every {
-                rc.getProperty("session")
-            } returns elderSession
+        staticMockk("ca.mcgill.science.tepid.server.util.UtilsKt").mock()
+        every {
+            rc.getSession()
+        } returns elderSession
 
+        objectMockk(SessionManager).mock()
+        every {
+            SessionManager.queryUser("targetUser", null)
+        } returns (querryingUser)
 
+        var result = endpoints.queryLdap("targetUser", null, rc, uriInfo)
+        println(result)
+        fail("not implemented")
 
-            objectMockk(SessionManager).use {
-                every {
-                    SessionManager.queryUser("Real", null)
-                } returns (querryingUser)
-
-
-                var result = endpoints.queryLdap("Real", null, rc, uriInfo)
-                println(result)
-
-            }
-        }
     }
+
 
     @Test
     fun getUserBySamElderAndInvalidUser(){}
