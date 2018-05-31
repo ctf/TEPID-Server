@@ -161,7 +161,7 @@ class Users {
             shortUser ?: return 0
 
             val user = SessionManager.queryUser(shortUser, null)
-            if (user == null || user.getCtfRole().isEmpty()) return 0
+            if (user == null || AuthenticationFilter.getCtfRole(user).isEmpty()) return 0
 
             val totalPrinted = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject()
                     .get("rows")?.get(0)?.get("value")?.get("sum")?.asInt(0) ?: 0

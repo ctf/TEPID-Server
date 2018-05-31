@@ -112,19 +112,7 @@ class AuthenticationFilter : ContainerRequestFilter {
         }
     }
 
-    fun getCtfRole(user: FullUser) : String {
-        if (user.groups.isEmpty())
-            return ""
-        if (user.authType == null || user.authType != LOCAL) {
-            val g = user.groups.toSet()
-            if (Config.ELDERS_GROUP.any(g::contains)) return ELDER
-            if (Config.CTFERS_GROUP.any(g::contains)) return CTFER
-            if (Config.USERS_GROUP.any(g::contains)) return USER
-            return ""
-        } else {
-            return if (user.role == ADMIN) ELDER else USER
-        }
-    }
+
 
     companion object : WithLogging() {
         private const val AUTHORIZATION_PROPERTY = "Authorization"
@@ -141,5 +129,26 @@ class AuthenticationFilter : ContainerRequestFilter {
                     .header("WWW-Authenticate", "Basic realm=\"Restricted Resource\"").type(MediaType.TEXT_PLAIN).build()
         private inline val ACCESS_FORBIDDEN: Response
             get() = Response.Status.FORBIDDEN.text("403 No access to this resource")
+
+        /**
+         * Returns either an empty role, or one of
+         * [USER], [CTFER], or [ELDER]
+         *
+         * Note that this differs from the full user role,
+         * which may include being a local admin
+         */
+        fun getCtfRole(user: FullUser) : String {
+            if (user.groups.isEmpty())
+                return ""
+            if (user.authType == null || user.authType != LOCAL) {
+                val g = user.groups.toSet()
+                if (Config.ELDERS_GROUP.any(g::contains)) return ELDER
+                if (Config.CTFERS_GROUP.any(g::contains)) return CTFER
+                if (Config.USERS_GROUP.any(g::contains)) return USER
+                return ""
+            } else {
+                return if (user.role == ADMIN) ELDER else USER
+            }
+        }
     }
 }
