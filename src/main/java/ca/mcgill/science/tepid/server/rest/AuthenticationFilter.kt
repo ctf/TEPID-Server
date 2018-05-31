@@ -101,7 +101,7 @@ class AuthenticationFilter : ContainerRequestFilter {
                 requestContext.abortWith(AUTH_REQUIRED)
                 return
             }
-            val role = session.user.getCtfRole()
+            val role = getCtfRole(session.user)
             if (role.isEmpty() || !roles.contains(role)) {
                 log.warn("User does not have enough privileges")
                 requestContext.abortWith(ACCESS_DENIED)
