@@ -1,7 +1,10 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.bindings.*
 import ca.mcgill.science.tepid.models.data.FullSession
+import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
+import ca.mcgill.science.tepid.server.util.Config
 import ca.mcgill.science.tepid.server.util.SessionManager
 import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -106,6 +109,20 @@ class AuthenticationFilter : ContainerRequestFilter {
             }
             session.role = role
             requestContext.setProperty(SESSION, session)
+        }
+    }
+
+    fun getCtfRole(user: FullUser) : String {
+        if (user.groups.isEmpty())
+            return ""
+        if (user.authType == null || user.authType != LOCAL) {
+            val g = user.groups.toSet()
+            if (Config.ELDERS_GROUP.any(g::contains)) return ELDER
+            if (Config.CTFERS_GROUP.any(g::contains)) return CTFER
+            if (Config.USERS_GROUP.any(g::contains)) return USER
+            return ""
+        } else {
+            return if (user.role == ADMIN) ELDER else USER
         }
     }
 
