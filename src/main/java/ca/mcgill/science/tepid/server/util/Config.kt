@@ -138,6 +138,9 @@ object Config : WithLogging() {
 
         if (DEBUG)
             setLoggingLevel(Level.TRACE)
+            log.trace(ELDERS_GROUP)
+            log.trace(CTFERS_GROUP)
+            log.trace(USERS_GROUP)
 
         /*
          * For logging
