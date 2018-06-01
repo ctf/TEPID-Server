@@ -16,7 +16,7 @@ import java.util.Calendar
  */
 object Config : WithLogging() {
 
-    private val illegalLDAPCharacters = ",\\+\"\\\\<>;=".toRegex()
+    private val illegalLDAPCharacters = "[,+\"\\\\<>;=]".toRegex()
 
     /**
      * Global definition for whether a the build is in debug mode or not
