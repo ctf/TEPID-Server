@@ -1,5 +1,3 @@
-import org.codehaus.groovy.runtime.GStringImpl
-
 group 'ca.mcgill.science.ctf'
 
 buildscript {
@@ -24,7 +22,7 @@ war.baseName = 'tepid'
 ext {
     // can be passed with -Ptepid_config_dir=CONFIG_DIR, or set in an environment variable "tepid_config_dir
     if (! project.hasProperty('tepid_config_dir')){
-        tepid_config_dir = "$System.env.tepid_config_dir" as GStringImpl
+        tepid_config_dir = "$System.env.tepid_config_dir"
     }
     if (! project.hasProperty('tepid_config_dir')){
         println('WARN tepid_config_dir not found')
@@ -39,6 +37,7 @@ repositories {
 dependencies {
     testCompile "junit:junit:$JUNIT"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$KOTLIN"
+    testCompile "io.mockk:mockk:1.8"
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN"
     compile "org.jetbrains.kotlin:kotlin-reflect:$KOTLIN"
