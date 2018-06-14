@@ -26,7 +26,7 @@ interface LdapContract {
     fun autoSuggest(like: String, auth: Pair<String, String>, limit: Int): List<FullUser>
 }
 
-open class LdapBase : LdapContract, LdapHelperContract by LdapHelperDelegate() {
+open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate() {
 
     private companion object : WithLogging() {
 
@@ -87,7 +87,7 @@ open class LdapBase : LdapContract, LdapHelperContract by LdapHelperDelegate() {
 
         }
 
-        val members = get("memberOf")?.toList()?.mapNotNull {
+        val LdapGroups = get("memberOf")?.toList()?.mapNotNull {
             try {
                 val cn = ctx.getAttributes(it, arrayOf("CN"))?.get("CN")?.get()?.toString()
                 val groupValues = semesterRegex.find(it.toLowerCase(Locale.CANADA))?.groupValues
@@ -103,7 +103,7 @@ open class LdapBase : LdapContract, LdapHelperContract by LdapHelperDelegate() {
 
         val courses = mutableListOf<Course>()
 
-        members?.forEach { (name, semester) ->
+        LdapGroups?.forEach { (name, semester) ->
             if (name == null) return@forEach
             if (semester == null) groups.add(name)
             else courses.add(Course(name, semester.season, semester.year))

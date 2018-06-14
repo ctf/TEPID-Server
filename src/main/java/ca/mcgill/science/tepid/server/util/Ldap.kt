@@ -2,7 +2,7 @@ package ca.mcgill.science.tepid.server.util
 
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
-import ca.mcgill.science.tepid.ldap.LdapBase
+import ca.mcgill.science.tepid.ldap.LdapManager
 import ca.mcgill.science.tepid.ldap.LdapHelperContract
 import ca.mcgill.science.tepid.ldap.LdapHelperDelegate
 import ca.mcgill.science.tepid.models.bindings.withDbData
@@ -15,7 +15,7 @@ import javax.naming.directory.*
 
 object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
 
-    private val ldap = LdapBase()
+    private val ldap = LdapManager()
 
     private val numRegex = Regex("[0-9]+")
     private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
