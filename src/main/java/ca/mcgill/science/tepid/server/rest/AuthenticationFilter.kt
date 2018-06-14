@@ -138,8 +138,9 @@ class AuthenticationFilter : ContainerRequestFilter {
          * which may include being a local admin
          */
         fun getCtfRole(user: FullUser) : String {
-            if (user.groups.isEmpty())
-                return ""
+            if (user.authType == LOCAL){
+                return if (user.role == ADMIN) ELDER else USER
+            }
             if (user.authType == null || user.authType != LOCAL) {
                 val g = user.groups.toSet()
                 if (Config.ELDERS_GROUP.any(g::contains)) return ELDER
@@ -147,7 +148,7 @@ class AuthenticationFilter : ContainerRequestFilter {
                 if (Config.USERS_GROUP.any(g::contains)) return USER
                 return ""
             } else {
-                return if (user.role == ADMIN) ELDER else USER
+                return ""
             }
         }
     }
