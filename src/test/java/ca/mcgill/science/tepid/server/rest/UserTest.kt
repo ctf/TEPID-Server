@@ -1,7 +1,14 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.server.util.SessionManager
 import ca.mcgill.science.tepid.utils.WithLogging
+import io.mockk.every
+import io.mockk.objectMockk
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
@@ -19,14 +26,37 @@ class UserTest : WithLogging() {
 }
 
 class TestUserGetQuota : WithLogging () {
+
+    /**
+     * Runs a test of Users.getQuota, Mockking [tailoredUser] as the user returned by SessionManager
+     */
+    private fun userGetQuotaTest (tailoredUser: FullUser?, expected: Int, message: String){
+        every {
+            SessionManager.queryUser("targetUser", null)
+        } returns (tailoredUser)
+        val actual = Users.getQuota("targetUser")
+        assertEquals(expected, actual, message)
+    }
+
+
+    @Before
+    fun initTest() {
+        objectMockk(SessionManager).mock()
+    }
+    @After
+    fun tearTest(){
+        objectMockk(SessionManager).unmock()
+    }
+
+
     @Test
     fun testGetQuotaQueriedUserNull(){
-        fail("Test is not implemented")
+        userGetQuotaTest(null, 0, "Null user is not assigned 0 quota")
     }
 
     @Test
     fun testGetQuotaQueriedUserNoRole(){
-        fail("Test is not implemented")
+        userGetQuotaTest(FullUser(role = ""), 0, "Null user is not assigned 0 quota")
     }
 
     @Test
