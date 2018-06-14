@@ -41,7 +41,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         return ldapUser
     }
 
-    private fun updateUser(user: FullUser?) {
+    private fun updateUserNameInformation(user: FullUser?) {
         user ?: return
         user.salutation = if (user.nick == null)
             if (!user.preferredName.isEmpty()) user.preferredName[user.preferredName.size - 1]
@@ -57,7 +57,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
      * [queryAsOwner] should be true if [ldapUser] was retrieved by the owner rather than a resource account
      */
     private fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?, queryAsOwner: Boolean) {
-        updateUser(ldapUser)
+        updateUserNameInformation(ldapUser)
         // ensure that short users actually match before attempting any merge
         val ldapShortUser = ldapUser.shortUser ?: return
         if (ldapShortUser != dbUser?.shortUser) return
