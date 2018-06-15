@@ -11,6 +11,14 @@ import org.mindrot.jbcrypt.BCrypt
 import java.math.BigInteger
 import java.security.SecureRandom
 
+/**
+ * SessionManager is responsible for managing the lifetime of sessions
+ * To that end, it can start, resume, and end sessions.
+ * It is an interface for the underlying authentication class
+ * Also, it provides autosuggestion for usernames and can set students as exchange
+ * TODO: evaluate why these two are here instead of elsewhere
+ */
+
 object SessionManager : WithLogging() {
 
     private const val HOUR_IN_MILLIS = 60 * 60 * 1000
