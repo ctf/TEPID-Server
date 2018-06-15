@@ -41,6 +41,9 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         return ldapUser
     }
 
+    /**
+     * Adds information relating to the name of a student to a FullUser [user]
+     */
     private fun updateUserNameInformation(user: FullUser?) {
         user ?: return
         user.salutation = if (user.nick == null)
@@ -76,22 +79,26 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         }
     }
 
-    private fun updateDbWithUser(ldapUser: FullUser) {
+    /**
+     * Uploads a [user] to the DB,
+     * with logging for failures
+     */
+    private fun updateDbWithUser(user: FullUser) {
         log.trace("Update db instance")
         try {
-            val response = CouchDb.path("u${ldapUser.shortUser}").putJson(ldapUser)
+            val response = CouchDb.path("u${user.shortUser}").putJson(user)
             if (response.isSuccessful) {
                 val responseObj = response.readEntity(ObjectNode::class.java)
                 val newRev = responseObj.get("_rev")?.asText()
                 if (newRev != null && newRev.length > 3) {
-                    ldapUser._rev = newRev
-                    log.trace("New rev for ${ldapUser.shortUser}: $newRev")
+                    user._rev = newRev
+                    log.trace("New rev for ${user.shortUser}: $newRev")
                 }
             } else {
                 log.error("Response failed: $response")
             }
         } catch (e1: Exception) {
-            log.error("Could not put ${ldapUser.shortUser} into db", e1)
+            log.error("Could not put ${user.shortUser} into db", e1)
         }
     }
 
