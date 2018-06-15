@@ -37,6 +37,13 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         if (!sam.matches(shortUserRegex)) return null // cannot query without short user
         val ldapUser = queryUserLdap(sam, pw) ?: return null
         mergeUsers(ldapUser, dbUser, pw != null)
+
+        if (dbUser != ldapUser) {
+            updateDbWithUser(ldapUser)
+        } else {
+            log.trace("Not updating dbUser; already matches ldap user")
+        }
+
         log.trace("Found user from ldap $sam: ${ldapUser.longUser}")
         return ldapUser
     }
@@ -71,12 +78,6 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         ldapUser.nick = dbUser.nick
         ldapUser.colorPrinting = dbUser.colorPrinting
         ldapUser.jobExpiration = dbUser.jobExpiration
-
-        if (dbUser != ldapUser) {
-            updateDbWithUser(ldapUser)
-        } else {
-            log.trace("Not updating dbUser; already matches ldap user")
-        }
     }
 
     /**
