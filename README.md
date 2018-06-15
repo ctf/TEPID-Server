@@ -36,7 +36,7 @@ Firstly, have access to the following:
 
 Procedure:
 
-1. Download the repo: `git clone https://gitlab.science.mcgill.ca/TEPID/tepid-server.git or `git clone git@gitlab.science.mcgill.ca:TEPID/tepid-server.git` if you have SSH.
+1. Download the repo
 1. Open the project in your IDE (`import project > select folder`)
 1. Add your `priv.properties`. See the `priv.sample.properties` file for more info.
 1. Build the war file: `gradle war`. For IntelliJ, open `Gradle` on the right side, click the green gradle button, type `war`, and press enter. This builds the file holding all the Tepid data, which is used for deployment.

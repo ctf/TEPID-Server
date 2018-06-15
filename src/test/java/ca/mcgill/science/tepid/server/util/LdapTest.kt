@@ -67,16 +67,18 @@ class LdapTest {
         Ldap.queryUserDb(Config.TEST_USER).assertEqualsTestUser()
     }
 
+    //TODO: parametrise for test user, not real data
     @Test
     fun queryCacheShort() {
-        val user = Ldap.queryUserDb("***REMOVED***")
+        val user = Ldap.queryUserDb("")
         assertNotNull(user)
         println(user!!)
     }
 
+    //TODO: parametrise for test user, not real data
     @Test
     fun queryCacheLong() {
-        val user = Ldap.queryUserDb("allan.wang")
+        val user = Ldap.queryUserDb("")
         assertNotNull(user)
         println(user!!)
     }
@@ -91,9 +93,10 @@ class LdapTest {
         Ldap.queryUser(Config.TEST_USER, null).assertEqualsTestUser()
     }
 
+    //TODO: parametrise for test user, not real data
     @Test
     fun queryById() {
-        val id = ***REMOVED***
+        val id = 0
         val user = Ldap.queryUser(id.toString(), null)
         user.assertValidUser()
         println(user!!.getSemesters())

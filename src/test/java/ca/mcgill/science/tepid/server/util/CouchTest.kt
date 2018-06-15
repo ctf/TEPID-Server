@@ -19,9 +19,10 @@ class CouchTest : WithLogging() {
         action()
     }
 
+    //TODO: parametrise for test user, not real data
     @Test
     fun putUser() {
-        val response = CouchDb.updateWithResponse<FullUser>("u***REMOVED***") {
+        val response = CouchDb.updateWithResponse<FullUser>("") {
             nick = "a${System.currentTimeMillis()}"
         }
         log.debug("response $response")
@@ -40,10 +41,11 @@ class CouchTest : WithLogging() {
         }
     }
 
+    //TODO: parametrise for test user, not real data
     @Test
     fun user() {
-        val shortUser = "***REMOVED***"
-        val longUser = "***REMOVED***"
+        val shortUser = ""
+        val longUser = ""
 
         val byShortUser = Ldap.queryUserDb(shortUser)
         assertNotNull(byShortUser, "Query for $shortUser was null")
