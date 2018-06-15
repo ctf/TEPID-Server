@@ -19,6 +19,16 @@ apply plugin: 'ca.mcgill.science.tepid.commons'
 sourceCompatibility = JVM_TARGET
 war.baseName = 'tepid'
 
+ext {
+    // can be passed with -Ptepid_config_dir=CONFIG_DIR, or set in an environment variable "tepid_config_dir
+    if (! project.hasProperty('tepid_config_dir')){
+        tepid_config_dir = "$System.env.tepid_config_dir"
+    }
+    if (! project.hasProperty('tepid_config_dir')){
+        println('WARN tepid_config_dir not found')
+    }
+}
+
 repositories {
     mavenCentral()
     maven { url "https://jitpack.io" }
@@ -27,14 +37,16 @@ repositories {
 dependencies {
     testCompile "junit:junit:$JUNIT"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$KOTLIN"
+    testCompile "io.mockk:mockk:1.8"
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN"
     compile "org.jetbrains.kotlin:kotlin-reflect:$KOTLIN"
 
     compile "ca.mcgill.tepid-commons:core:$TEPID_COMMONS"
     compile "ca.mcgill.tepid-commons:models:$TEPID_COMMONS"
-    compile "ca.mcgill.tepid-commons:ldap:$TEPID_COMMONS"
     compile "ca.mcgill.tepid-commons:utils:$TEPID_COMMONS"
+
+//    compile 'ca.allanwang.mcgill-data:ldap:949a32e'
 
     compile "com.fasterxml.jackson.core:jackson-annotations:${tepid.jackson}"
     compile "com.fasterxml.jackson.core:jackson-databind:${tepid.jackson}"
@@ -55,6 +67,10 @@ dependencies {
     compile "org.tukaani:xz:1.6"
     compile "com.google.code.findbugs:jsr305:3.0.2"
 
+//    compile "org.apache.tomcat:tomcat-websocket:8.5.13"
+
+    compile "io.reactivex.rxjava2:rxkotlin:$RX_KOTLIN"
+
     compile group: 'javax.el', name: 'javax.el-api', version: '3.0.0'
     compile group: 'javax.servlet.jsp', name: 'javax.servlet.jsp-api', version: '2.3.1'
 }
@@ -71,8 +87,22 @@ test {
     testLogging.showStandardStreams = true
 }
 
+task copyConfigs(type: Copy) {
+    println(tepid_config_dir)
+    from "$tepid_config_dir/barcode.properties",
+            "$tepid_config_dir/DB.properties",
+            "$tepid_config_dir/LDAP.properties",
+            "$tepid_config_dir/LDAPGroups.properties",
+            "$tepid_config_dir/LDAPResource.properties",
+            "$tepid_config_dir/LDAPTestUser.properties",
+            "$tepid_config_dir/TEM.properties",
+            "$tepid_config_dir/URL.properties"
+    into "config"
+}
+
 war {
-    from('./') {
-        include 'priv.properties'
+
+    from('config') {
+        include '*.properties'
     }
 }

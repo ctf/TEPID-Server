@@ -1,7 +1,6 @@
 package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.FullSession
-import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.rest.AuthenticationFilter
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.logging.log4j.Logger
@@ -24,12 +23,11 @@ import javax.ws.rs.container.ContainerRequestContext
 val mapper = jacksonObjectMapper()
 
 /**
- * Safely attempts to extract a session from a container context
- * If a session could not be found, it will be logged inside the [logger]
+ * Attempts to retrieve a session from a container context,
+ * failing as unauthorized if none was found.
  *
- * Note that in most cases, the session should be nonnull,
- * as the session should by supplied by the [AuthenticationFilter]
- *
+ * This should only be used within REST endpoints that are annotated with a
+ * role requirement. Typically, the session will be supplied by the [AuthenticationFilter]
  */
 @Throws(WebApplicationException::class)
 fun ContainerRequestContext.getSession(): FullSession =
@@ -82,13 +80,12 @@ object Utils {
     /**
      * Create and run a thread with try catch
      */
-    inline fun startCaughtThread(name: String, logErrors: Boolean = false, crossinline action: () -> Unit) = object : Thread(name) {
+    inline fun startCaughtThread(name: String, log: Logger? = null, crossinline action: () -> Unit) = object : Thread(name) {
         override fun run() {
             try {
                 action()
             } catch (e: Exception) {
-                if (logErrors)
-                    System.err.println("Caught exception from thread: ${e.message}")
+                log?.error("Caught exception from thread $name: ${e.message}")
             }
         }
     }.start()

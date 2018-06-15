@@ -1,10 +1,13 @@
 package ca.mcgill.science.tepid.server.util;
 
+import ca.mcgill.science.tepid.models.bindings.PrintError;
 import ca.mcgill.science.tepid.models.data.PrintJob;
 import ca.mcgill.science.tepid.models.data.PrintQueue;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer;
 import ca.mcgill.science.tepid.server.loadbalancers.LoadBalancer.LoadBalancerResults;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -14,6 +17,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class QueueManager {
+
+    private final Logger log;
 
     private static final Map<String, QueueManager> instances = new HashMap<>();
     public final PrintQueue queueConfig;
@@ -36,7 +41,8 @@ public class QueueManager {
     }
 
     private QueueManager(String queueName) {
-        System.out.println("Instantiate queue manager for " + queueName);
+        log = LogManager.getLogger("Queue - " + queueName);
+        log.trace("Instantiate queue manager {\'queueName\':\'{}\'}", queueName);
         if (queueName == null)
             throw new RuntimeException("Could not instantiate null queue manager");
         this.queueConfig = couchdb.path("q" + queueName).request(MediaType.APPLICATION_JSON).get(PrintQueue.class);
@@ -50,9 +56,14 @@ public class QueueManager {
 
     public PrintJob assignDestination(PrintJob j) {
         LoadBalancerResults results = this.loadBalancer.processJob(j);
-        j.setDestination(results.destination);
-        j.setEta(results.eta);
-        System.err.println(j.getId() + " setting destination (" + results.destination + ")");
+        if (results == null) {
+            j.fail(PrintError.INVALID_DESTINATION);
+            log.info("LoadBalancer did not assign a destination {\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\'}", j.getId(), this.queueConfig.getName());
+        } else {
+            j.setDestination(results.destination);
+            j.setEta(results.eta);
+            log.info(j.getId() + " setting destination (" + results.destination + ")");
+        }
         couchdb.path(j.getId()).request(MediaType.TEXT_PLAIN).put(Entity.entity(j, MediaType.APPLICATION_JSON));
         return couchdb.path(j.getId()).request(MediaType.APPLICATION_JSON).get(PrintJob.class);
     }

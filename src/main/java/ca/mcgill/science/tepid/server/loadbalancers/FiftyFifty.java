@@ -42,7 +42,11 @@ public class FiftyFifty extends LoadBalancer {
         for (String d : qM.queueConfig.getDestinations()) {
             FullDestination dest = couchdb.path(d).request(MediaType.APPLICATION_JSON).get(FullDestination.class);
             destinations.add(dest); // replace with shiny new Destination objects
-            if (dest.getUp()) this.allDown = false;
+
+            boolean up = dest.getUp();
+            if (up) this.allDown = false;
+            log.trace("Checking status {\'dest\':\'{}\', \'getUp\':\'{}\'}", dest.getName(), up);
+
         }
         // maybe we should be concerned about the efficiency of a db query for every dest in the queue on every print job...
     }
@@ -58,7 +62,7 @@ public class FiftyFifty extends LoadBalancer {
     public LoadBalancerResults processJob(PrintJob j) {
         refreshDestinationsStatus();
         if (allDown) {
-            log.warn("Rejecting job {} as all printers are down", j.getId());
+            log.warn("Rejecting job {} as all {} printers are down", j.getId(), destinations.size());
             return null;
         }
         do currentDest = (currentDest + 1) % destinations.size(); while (!destinations.get(currentDest).getUp());
@@ -66,6 +70,7 @@ public class FiftyFifty extends LoadBalancer {
         lbr.destination = destinations.get(currentDest).getId();
         FullDestination dest = couchdb.path(lbr.destination).request(MediaType.APPLICATION_JSON).get(FullDestination.class);
         lbr.eta = getEta(j, dest);
+        log.trace("Load balancer sending job to destination {\'LoadBalancer\':\'{}\', \'job\':\'{}\', \'destination\':\'{}\'} ", qM.queueConfig.getName(), j.get_id(), dest.getName());
         return lbr;
     }
 

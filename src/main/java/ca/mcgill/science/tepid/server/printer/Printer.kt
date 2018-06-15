@@ -1,39 +1,51 @@
 package ca.mcgill.science.tepid.server.printer
 
+import ca.mcgill.science.tepid.models.bindings.PrintError
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.server.gs.GS
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.tukaani.xz.XZInputStream
 import java.io.*
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.*
 
 /**
  * Handler that manages all job requests
  */
 object Printer : WithLogging() {
 
-    class PrintError(message: String) : RuntimeException(message)
+    class PrintException(message: String) : RuntimeException(message)
 
-    /**
-     * Thread map
-     * For most interactions, adding and removing requests should be done through
-     * [process] and [cancel]
-     */
-    private val _processingThreads: MutableMap<String, Thread> = ConcurrentHashMap()
+    private val executor: ExecutorService = ThreadPoolExecutor(5, 30, 10, TimeUnit.MINUTES,
+            ArrayBlockingQueue<Runnable>(300, true))
+    private val runningTasks: MutableMap<String, Future<*>> = ConcurrentHashMap()
     private val lock: Any = Any()
 
-    private fun process(id: String, thread: Thread) {
-        _processingThreads.put(id, thread)
-        thread.start()
+    /**
+     * Run an task in the service
+     * Upon completion, it will remove itself from [runningTasks]
+     */
+    private fun submit(id: String, action: () -> Unit) {
+        log.info("Submitting task $id")
+        val future = executor.submit {
+            try {
+                action()
+            } finally {
+                cancel(id)
+            }
+        }
+        runningTasks[id] = future
     }
 
     private fun cancel(id: String) {
+        log.warn("Cancelling task $id")
         try {
-            _processingThreads.remove(id)?.interrupt()
-        } catch (ignored: Exception) {
+            val future = runningTasks.remove(id)
+            if (future?.isDone == false)
+                future.cancel(true)
+        } catch (e: Exception) {
+            log.error("Failed to cancel job $id", e)
         }
     }
 
@@ -89,7 +101,14 @@ object Printer : WithLogging() {
                 received = System.currentTimeMillis()
             }
 
-            val request = Thread({
+            submit(id) {
+
+                /*
+                 * Note that this is a runnable that will be submitted to the executor service
+                 * This block does not run in the same thread!
+                 */
+
+                // Generates a random file name with our prefix and suffix
                 val tmp = File.createTempFile("tepid", ".ps")
                 try {
                     //decompress data
@@ -102,49 +121,57 @@ object Printer : WithLogging() {
                     val psMonochrome = br.isMonochrome()
                     log.trace("Detected ${if (psMonochrome) "monochrome" else "colour"} for job $id in ${System.currentTimeMillis() - now} ms")
                     //count pages
-                    val inkCov = GS.inkCoverage(tmp)
-                    val color = if (psMonochrome) 0
-                    else inkCov.filter { !it.monochrome }.size
+                    val psInfo = Gs.psInfo(tmp) ?: throw PrintException("Internal Error")
+                    val color = if (psMonochrome) 0 else psInfo.colourPages
+                    log.trace("Job $id has ${psInfo.pages} pages, $color in color")
 
                     //update page count and status in db
                     var j2: PrintJob = CouchDb.update(id) {
-                        pages = inkCov.size
+                        pages = psInfo.pages
                         colorPages = color
                         processed = System.currentTimeMillis()
-                    } ?: throw PrintError("Could not update")
+                    } ?: throw PrintException("Could not update")
 
                     //check if user has color printing enabled
+                    log.trace("Testing for color {'job':'{}'}", j2.getId())
                     if (color > 0 && SessionManager.queryUser(j2.userIdentification, null)?.colorPrinting != true)
-                        throw PrintError("Color disabled")
+                        throw PrintException(PrintError.COLOR_DISABLED)
 
                     //check if user has sufficient quota to print this job
-                    // TODO avoid creating new rest endpoint instance per job
-                    if (Users().getQuota(j2.userIdentification) < inkCov.size + color * 2)
-                        throw PrintError("Insufficient quota")
+                    log.trace("Testing for quota {'job':'{}'}", j2.getId())
+                    if (Users.getQuota(j2.userIdentification) < psInfo.pages + color * 2)
+                        throw PrintException(PrintError.INSUFFICIENT_QUOTA)
 
                     //add job to the queue
+                    log.trace("Trying to assign destination {'job':'{}'}", j2.getId())
                     j2 = QueueManager.assignDestination(id)
                     //todo check destination field
-                    val dest = CouchDb.path(j2.destination!!).getJson<FullDestination>()
+                    val destination = j2.destination ?: throw PrintException(PrintError.INVALID_DESTINATION)
+
+                    val dest = CouchDb.path(destination).getJson<FullDestination>()
                     if (sendToSMB(tmp, dest, debug)) {
                         j2.printed = System.currentTimeMillis()
                         CouchDb.path(id).putJson(j2)
                         log.info("${j2._id} sent to destination")
                     } else {
-                        throw PrintError("Could not send to destination")
+                        throw PrintException("Could not send to destination")
                     }
                 } catch (e: Exception) {
-                    log.error("Job $id failed: ${e.message}")
+                    log.error("Job $id failed", e)
+                    val msg = (e as? PrintException)?.message ?: "Failed to process"
+                    failJob(id, msg)
                 } finally {
-                    cancel(id)
                     tmp.delete()
+                    log.trace("Successfully deleted tmp {'file':{}}", tmp.absoluteFile)
                 }
-            }, "Job Processing for $id")
-            process(id, request)
+            }
+            log.trace("Returning true for {'job':'{}'}", id)
             return true to "Successfully created request $id"
-        } catch (e: IOException) {
+        } catch (e: Exception) {
+            // todo check if this is necessary, given that the submit code is handled separately
             log.error("Job $id failed", e)
-            return false to "Failed to process job $id"
+            failJob(id, "Failed to process")
+            return false to "Failed to process"
         }
     }
 
@@ -168,11 +195,8 @@ object Printer : WithLogging() {
             val p = ProcessBuilder("smbclient", "//${destination.path}", destination.password, "-c",
                     "print ${f.absolutePath}", "-U", destination.domain + "\\${destination.username}", "-mSMB3").start()
             p.waitFor()
-        } catch (e: IOException) {
-            log.error("File ${f.name} failed with ${e.message}")
-            return false
-        } catch (e: InterruptedException) {
-            log.error("File ${f.name} interrupted ${e.message}")
+        } catch (e: Exception) {
+            log.error("File ${f.name} failed", e)
             return false
         }
         log.trace("File ${f.name} sent to ${destination.name}")
@@ -180,19 +204,12 @@ object Printer : WithLogging() {
     }
 
     /**
-     * Calls [failJob] and also throws the error
-     * as a bad request response
+     * Update job db and cancel executor
      */
-    fun failJobBadRequest(id: String, error: String): Nothing {
-        failJob(id, error)
-        failBadRequest(error)
-    }
-
-    fun failJob(id: String, error: String) {
+    private fun failJob(id: String, error: String) {
         CouchDb.updateWithResponse<PrintJob>(id) {
             fail(error)
         }
-        log.error("Job $id failed: $error.")
         cancel(id)
     }
 

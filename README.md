@@ -12,6 +12,16 @@ Relevant Repositories:
 
 ## Intro
 
+TEPID is a print server. Your users send their print jobs to TEPID, and TEPID sends them to a printer. This is how print servers do.
+TEPID has several advantages over other print servers:
+* __Automatically mounts printers:__ This means that your end-users don't have to mount the printers manually. The default printer for hosts can also be configured serverside with a regex match. This allows you to automatically assign sane defaults without your users having to thing about it. It also could allow you to reroute prints in case of a downed printer, although this seems risky.
+* __Load-balanced Queues:__ It can form a queue and load balance between printers. For example, one could have 2 printers in a printing room. Users can see a single printer labeled "Print Room" and can simply send print jobs to it. The server will load balance between the printers automatically. A notification will inform the user which printer a print job went to.
+* __Printers can be marked "Down" independently:__ Printer status can be configured through the web interface or through the API. This allows you to mark printers as "Down" when they are in need of maintenance. TEPID will not send jobs to that printer. Printers in a Queue can also be independently marked down; a queue will only be marked down (from the users point of view) if all printers in a queue are marked down. 
+* __Resource Usage Tracking:__ Track how many pages your users are printing. Also tracks colour pages, and counts them for 3 pages. The resource-tracking algorithm also only counts individual colour pages; for example, a 10-page greyscale document with a single colour cover page will count for 1 colour page and 10 greyscale pages, which is generally how one would be charged for such things.
+* __Clean Web Interface:__ An easy-to-use web interface allows easy management of all the things Tier 1 techs or people operating a print pool would need to do, including changing the status of printers and refunding failed print jobs. Additional rights can be delegated to configure the queues themselves.
+* __Easily Deployed Client:__ The TEPID client builds to a JAR, which can be deployed easily enough, but it also uses WIX to build an MSI for easy deployment on Windows systems with Active Directory.
+* __Extra Informational Screensaver:__ The TEPID screensaver displays the time and room of people's print jobs, so if they forgot where it was sent they can look and find out. It also displays the statuses of the print queues themselves. Check it out! 
+
 Tepid Server acts as Tepid's REST API to fulfill various requests for the printing service.
 In most cases, this simply means transferring data to and from our [database](#couchdb), but there are other instances (such as login and printing files) where some more extensive processes occur.
 
@@ -34,6 +44,20 @@ Procedure:
 That's it!
 
 For the most part, you won't need to build the war file. Much of testing involves simply running the unit tests or making use of integration. Whenever a commit is pushed to a non test branch (starting with `test-` or `wip-`), the files will be rebuild and deployed at `http://testpid.science.mcgill.ca/`. There is a public endpoint located at `http://testpid.science.mcgill.ca:8080/tepid/about` to see the status of the deployment.
+
+## Configuration
+
+Configuration is spelled out fully in the tepid-commons repository's readme. 
+
+Configuration files can be bundled with the WAR at compile time, in the same way that they are for the other TEPID project. Configurations are defined in the common config files. The configs use the TEPID standard configuration system. This allows them to be defined once, outside of the project's file tree, and used across all TEPID programs. The Gradle task copyConfigs will copy the configs from the project property "tepid_config_dir", which can be set in a number of ways:
+- As a standard project property
+- As a project property passed by command line ("-Ptepid_config_dir=CONFIG_DIR")
+- As an environment variable "tepid_config_dir"
+A lookup for the environment variable only occurs if the project property is not defined in one of the other two ways.
+
+Configuration files can also be modified on the server, similarly to other applications one could install. Config files can be placed in /etc/tepid/ . These files will supersede those bundled in the WAR. This allows you to better care for their configuration using a configuration management tool, without having to rebuild the WAR.
+
+The TEPID server depends on DB, LDAP, LDAPGroups, LDAPResource, LDAPTest, TEM, and URL property files. 
 
 ## Endpoints
 

@@ -1,8 +1,10 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.util.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.ws.rs.container.ContainerRequestContext
+import javax.ws.rs.container.ContainerRequestFilter
 import javax.ws.rs.container.ContainerResponseContext
 import javax.ws.rs.container.ContainerResponseFilter
 import javax.ws.rs.ext.Provider
@@ -14,7 +16,11 @@ import javax.ws.rs.ext.Provider
  * ContainerRequestFilter
  */
 @Provider
-class LoggingFilter : ContainerResponseFilter {
+class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
+
+    override fun filter(requestContext: ContainerRequestContext) {
+//        log.trace("Request ${requestContext.uriInfo.path}")
+    }
 
     override fun filter(requestContext: ContainerRequestContext, responseContext: ContainerResponseContext) {
         val isSuccessful = responseContext.status in 200 until 300
@@ -23,9 +29,10 @@ class LoggingFilter : ContainerResponseFilter {
         val content: String = when (entity) {
             null -> "null"
             is String -> if (entity.length < 50) entity else "${entity.substring(0, 49)}\u2026"
-            is Number, is Boolean -> entity.toString()
+            is Number, is Boolean, is PutResponse -> entity.toString()
             is Collection<*> -> "[${entity::class.java.simpleName} (${entity.size})]"
-            else -> "[${entity::class.java.simpleName}]"
+            is Map<*, *> -> "{${entity::class.simpleName} (${entity.size}}"
+            else -> responseContext.entityType.typeName
         }
         val msg = "Response for ${requestContext.uriInfo.path}: ${responseContext.status}: $content"
         if (isSuccessful) log.trace(msg)

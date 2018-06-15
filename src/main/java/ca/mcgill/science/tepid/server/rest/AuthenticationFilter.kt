@@ -1,7 +1,10 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.bindings.*
 import ca.mcgill.science.tepid.models.data.FullSession
+import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
+import ca.mcgill.science.tepid.server.util.Config
 import ca.mcgill.science.tepid.server.util.SessionManager
 import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -98,7 +101,7 @@ class AuthenticationFilter : ContainerRequestFilter {
                 requestContext.abortWith(AUTH_REQUIRED)
                 return
             }
-            val role = session.user.getCtfRole()
+            val role = getCtfRole(session.user)
             if (role.isEmpty() || !roles.contains(role)) {
                 log.warn("User does not have enough privileges")
                 requestContext.abortWith(ACCESS_DENIED)
@@ -108,6 +111,8 @@ class AuthenticationFilter : ContainerRequestFilter {
             requestContext.setProperty(SESSION, session)
         }
     }
+
+
 
     companion object : WithLogging() {
         private const val AUTHORIZATION_PROPERTY = "Authorization"
@@ -124,5 +129,27 @@ class AuthenticationFilter : ContainerRequestFilter {
                     .header("WWW-Authenticate", "Basic realm=\"Restricted Resource\"").type(MediaType.TEXT_PLAIN).build()
         private inline val ACCESS_FORBIDDEN: Response
             get() = Response.Status.FORBIDDEN.text("403 No access to this resource")
+
+        /**
+         * Returns either an empty role, or one of
+         * [USER], [CTFER], or [ELDER]
+         *
+         * Note that this differs from the full user role,
+         * which may include being a local admin
+         */
+        fun getCtfRole(user: FullUser) : String {
+            if (user.authType == LOCAL){
+                return if (user.role == ADMIN) ELDER else USER
+            }
+            if (user.authType == null || user.authType != LOCAL) {
+                val g = user.groups.toSet()
+                if (Config.ELDERS_GROUP.any(g::contains)) return ELDER
+                if (Config.CTFERS_GROUP.any(g::contains)) return CTFER
+                if (Config.USERS_GROUP.any(g::contains)) return USER
+                return ""
+            } else {
+                return ""
+            }
+        }
     }
 }
