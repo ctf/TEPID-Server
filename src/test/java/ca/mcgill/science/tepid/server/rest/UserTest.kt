@@ -1,5 +1,7 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.bindings.CTFER
+import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.util.SessionManager
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -38,14 +40,23 @@ class TestUserGetQuota : WithLogging () {
         assertEquals(expected, actual, message)
     }
 
+    private fun userGetQuotaTest(tailoredUser: FullUser, tailoredUserRole: String, expected: Int, message: String) {
+        every {
+            AuthenticationFilter.getCtfRole(tailoredUser)
+        } returns tailoredUserRole
+        userGetQuotaTest(tailoredUser, expected, message)
+    }
+
 
     @Before
     fun initTest() {
         objectMockk(SessionManager).mock()
+        objectMockk(AuthenticationFilter).mock()
     }
     @After
     fun tearTest(){
         objectMockk(SessionManager).unmock()
+        objectMockk(AuthenticationFilter).unmock()
     }
 
 
@@ -56,17 +67,19 @@ class TestUserGetQuota : WithLogging () {
 
     @Test
     fun testGetQuotaQueriedUserNoRole(){
-        userGetQuotaTest(FullUser(role = ""), 0, "Null user is not assigned 0 quota")
+        userGetQuotaTest(FullUser(role = ""), "", 0, "Null user is not assigned 0 quota")
     }
 
     @Test
     fun testGetQuotaElder(){
-        fail("Test is not implemented")
+        fail("Test needs an expected value (discussion item)")
+        userGetQuotaTest(FullUser(role = ELDER), ELDER, 10000, "Elder is not given correct quota")
     }
 
     @Test
     fun testGetQuotaCTFer(){
-        fail("Test is not implemented")
+        fail("Test needs an expected value (discussion item)")
+        userGetQuotaTest(FullUser(role = CTFER), CTFER, 10000, "CTFER is not given correct quota")
     }
 
     @Test
