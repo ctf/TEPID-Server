@@ -70,24 +70,28 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         ldapUser.jobExpiration = dbUser.jobExpiration
 
         if (dbUser != ldapUser) {
-            log.trace("Update db instance")
-            try {
-                val response = CouchDb.path("u${ldapUser.shortUser}").putJson(ldapUser)
-                if (response.isSuccessful) {
-                    val responseObj = response.readEntity(ObjectNode::class.java)
-                    val newRev = responseObj.get("_rev")?.asText()
-                    if (newRev != null && newRev.length > 3) {
-                        ldapUser._rev = newRev
-                        log.trace("New rev for ${ldapUser.shortUser}: $newRev")
-                    }
-                } else {
-                    log.error("Response failed: $response")
-                }
-            } catch (e1: Exception) {
-                log.error("Could not put ${ldapUser.shortUser} into db", e1)
-            }
+            updateDbWithUser(ldapUser)
         } else {
             log.trace("Not updating dbUser; already matches ldap user")
+        }
+    }
+
+    private fun updateDbWithUser(ldapUser: FullUser) {
+        log.trace("Update db instance")
+        try {
+            val response = CouchDb.path("u${ldapUser.shortUser}").putJson(ldapUser)
+            if (response.isSuccessful) {
+                val responseObj = response.readEntity(ObjectNode::class.java)
+                val newRev = responseObj.get("_rev")?.asText()
+                if (newRev != null && newRev.length > 3) {
+                    ldapUser._rev = newRev
+                    log.trace("New rev for ${ldapUser.shortUser}: $newRev")
+                }
+            } else {
+                log.error("Response failed: $response")
+            }
+        } catch (e1: Exception) {
+            log.error("Could not put ${ldapUser.shortUser} into db", e1)
         }
     }
 
