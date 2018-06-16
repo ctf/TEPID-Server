@@ -12,11 +12,11 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 /**
- * SessionManager is responsible for managing the lifetime of sessions
- * To that end, it can start, resume, and end sessions.
- * It is an interface for the underlying authentication class
- * Also, it provides autosuggestion for usernames and can set students as exchange
- * TODO: evaluate why these two are here instead of elsewhere
+ * SessionManager is responsible for managing sessions and dealing with the underlying authentication.
+ * It is analogous to PAM, in that everything which needs authentication or user querying goes through this.
+ * For managing sessions, it can start, resume, and end sessions
+ * For user querying, it first checks the DB cache. The cache is updated every time a query to the underlying authentication is made.
+ * Since it also provides an interface with the underlying authentication, it also provides username autosuggestion and can set users as exchange.
  */
 
 object SessionManager : WithLogging() {
