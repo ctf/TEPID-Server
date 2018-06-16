@@ -79,7 +79,6 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
      * Returns user data, but guarantees a pass through ldap
      */
     fun authenticate(sam: String, pw: String): FullUser? {
-        if (!Config.LDAP_ENABLED) return null
         if (sam == "tepidtest") {
             log.debug("Tepid test received with password $pw")
             return null

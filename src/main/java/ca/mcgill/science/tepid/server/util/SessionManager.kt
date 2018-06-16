@@ -70,10 +70,14 @@ object SessionManager : WithLogging() {
     fun authenticate(sam: String, pw: String): FullUser? {
         val dbUser = queryUserDb(sam)
         log.trace("Db data for $sam")
-        return if (dbUser?.authType == LOCAL) {
-            if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
-        } else {
-            Ldap.authenticate(sam, pw)
+        if (dbUser?.authType == LOCAL) {
+            return if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
+        }
+        else if (Config.LDAP_ENABLED) {
+            return Ldap.authenticate(sam, pw)
+        }
+        else {
+            return null
         }
     }
 
