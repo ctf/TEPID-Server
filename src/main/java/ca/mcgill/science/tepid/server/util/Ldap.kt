@@ -36,7 +36,6 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         if (dbUser != null) return dbUser
         if (!sam.matches(shortUserRegex)) return null // cannot query without short user
         val ldapUser = queryUserLdap(sam, pw) ?: return null
-        updateUserNameInformation(ldapUser)
         mergeUsers(ldapUser, dbUser, pw != null)
 
         if (dbUser != ldapUser) {
@@ -117,7 +116,9 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
             log.trace("Querying by resource")
             Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
         }
-        return ldap.queryUser(sam, auth)
+        val user = ldap.queryUser(sam, auth)
+        updateUserNameInformation(user)
+        return user
     }
 
     /**
