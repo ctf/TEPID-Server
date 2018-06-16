@@ -62,23 +62,6 @@ class LdapTest {
         SessionManager.queryUser(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
     }
 
-    @Test
-    fun queryCache() {
-        Ldap.queryUserDb(Config.TEST_USER).assertEqualsTestUser()
-    }
-
-    @Test
-    fun queryCacheShort() {
-        val user = Ldap.queryUserDb("***REMOVED***")
-        assertNotNull(user)
-        println(user!!)
-    }
-
-    @Test
-    fun queryCacheLong() {
-        val user = Ldap.queryUserDb("allan.wang")
-        assertNotNull(user)
-        println(user!!)
     }
 
     @Test

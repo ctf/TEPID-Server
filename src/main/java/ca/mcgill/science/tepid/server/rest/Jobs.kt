@@ -44,7 +44,7 @@ class Jobs {
     }
 
     private fun PrintJob.getJobExpiration() =
-            System.currentTimeMillis() + (Ldap.queryUserDb(userIdentification)?.jobExpiration
+            System.currentTimeMillis() + (SessionManager.queryUserDb(userIdentification)?.jobExpiration
                     ?: TimeUnit.DAYS.toMillis(7))
 
     @POST

@@ -78,12 +78,11 @@ object SessionManager : WithLogging() {
     }
 
     /**
-     * Retrieve user from Ldap if available, otherwise retrieves from db
+     * Retrieve user from DB if available, otherwise retrieves from LDAP
      *
      * @param sam short user
      * @param pw  password
      * @return user if found
-     * @see [Ldap.queryUserDb]
      */
     fun queryUser(sam: String?, pw: String?): FullUser? {
         if (sam == null) return null

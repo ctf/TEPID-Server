@@ -55,26 +55,6 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         return user
     }
 
-    /**
-     * Retrieve a [FullUser] directly from the database when supplied with either a
-     * short user, long user, or student id
-     */
-    fun queryUserDb(sam: String?): FullUser? {
-        sam ?: return null
-        val dbUser = when {
-            sam.contains(".") -> CouchDb.getViewRows<FullUser>("byLongUser") {
-                query("key" to "\"${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}\"")
-            }.firstOrNull()
-            sam.matches(numRegex) -> CouchDb.getViewRows<FullUser>("byStudentId") {
-                query("key" to sam)
-            }.firstOrNull()
-            else -> CouchDb.path("u$sam").getJson()
-        }
-        dbUser?._id ?: return null
-        log.trace("Found db user (${dbUser._id}) ${dbUser.displayName} for $sam")
-        return dbUser
-    }
-
     @JvmStatic
     fun autoSuggest(like: String, limit: Int): Promise<List<FullUser>> {
         val q = Q.defer<List<FullUser>>()
