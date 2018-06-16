@@ -106,7 +106,12 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         }
         log.debug("Authenticating $sam against ldap")
 
-        val shortUser = if (sam.matches(shortUserRegex)) sam else queryUserDb(sam)?.shortUser ?: return null
+        var shortUser = if (sam.matches(shortUserRegex)) sam else SessionManager.queryUser(sam, null)?.shortUser
+        if (shortUser==null) {
+            shortUser = ldap.autoSuggest(sam, auth, 1).getOrNull(0)?.shortUser
+        }
+        if (shortUser==null) return null
+
 
         log.info("Authenticating $shortUser")
 

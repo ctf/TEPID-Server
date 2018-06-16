@@ -156,7 +156,7 @@ object SessionManager : WithLogging() {
      * Retrieve a [FullUser] directly from the database when supplied with either a
      * short user, long user, or student id
      */
-    private fun queryUserDb(sam: String?): FullUser? {
+    fun queryUserDb(sam: String?): FullUser? {
         sam ?: return null
         val dbUser = when {
             sam.contains(".") -> CouchDb.getViewRows<FullUser>("byLongUser") {
