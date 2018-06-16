@@ -74,7 +74,12 @@ object SessionManager : WithLogging() {
             return if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
         }
         else if (Config.LDAP_ENABLED) {
-            return Ldap.authenticate(sam, pw)
+            val ldapUser =  Ldap.authenticate(sam, pw)
+            if (ldapUser!=null){
+                mergeUsers(ldapUser, dbUser, true)
+                updateDbWithUser(ldapUser)
+            }
+            return ldapUser
         }
         else {
             return null
