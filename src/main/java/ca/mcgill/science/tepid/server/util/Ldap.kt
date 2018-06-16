@@ -36,6 +36,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         if (dbUser != null) return dbUser
         if (!sam.matches(shortUserRegex)) return null // cannot query without short user
         val ldapUser = queryUserLdap(sam, pw) ?: return null
+        updateUserNameInformation(ldapUser)
         mergeUsers(ldapUser, dbUser, pw != null)
 
         if (dbUser != ldapUser) {
@@ -67,7 +68,6 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
      * [queryAsOwner] should be true if [ldapUser] was retrieved by the owner rather than a resource account
      */
     private fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?, queryAsOwner: Boolean) {
-        updateUserNameInformation(ldapUser)
         // ensure that short users actually match before attempting any merge
         val ldapShortUser = ldapUser.shortUser ?: return
         if (ldapShortUser != dbUser?.shortUser) return
