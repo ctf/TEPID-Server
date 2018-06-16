@@ -3,10 +3,12 @@ package ca.mcgill.science.tepid.server.util
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.bindings.LOCAL
+import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.utils.WithLogging
+import com.fasterxml.jackson.databind.node.ObjectNode
 import org.mindrot.jbcrypt.BCrypt
 import java.math.BigInteger
 import java.security.SecureRandom
@@ -23,6 +25,7 @@ object SessionManager : WithLogging() {
 
     private const val HOUR_IN_MILLIS = 60 * 60 * 1000
     private val numRegex = Regex("[0-9]+")
+    private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
 
     private val random = SecureRandom()
 
@@ -82,8 +85,72 @@ object SessionManager : WithLogging() {
      * @return user if found
      * @see [Ldap.queryUserDb]
      */
-    fun queryUser(sam: String?, pw: String?): FullUser? =
-            if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else Ldap.queryUserDb(sam)
+    fun queryUser(sam: String?, pw: String?): FullUser? {
+        if (sam == null) return null
+        log.trace("Querying user $sam")
+
+        val dbUser = queryUserDb(sam)
+
+        if (dbUser != null) return dbUser
+
+        if (Config.LDAP_ENABLED) {
+            if (!sam.matches(shortUserRegex)) return null // cannot query without short user
+            val ldapUser = Ldap.queryUserLdap(sam, pw) ?: return null
+
+            mergeUsers(ldapUser, dbUser, pw != null)
+
+            if (dbUser != ldapUser) {
+                updateDbWithUser(ldapUser)
+            } else {
+                log.trace("Not updating dbUser; already matches ldap user")
+            }
+
+            log.trace("Found user from ldap $sam: ${ldapUser.longUser}")
+            return ldapUser
+        }
+        //finally
+        return null
+    }
+
+    /**
+     * Update [ldapUser] with db data
+     * [queryAsOwner] should be true if [ldapUser] was retrieved by the owner rather than a resource account
+     */
+    private fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?, queryAsOwner: Boolean) {
+        // ensure that short users actually match before attempting any merge
+        val ldapShortUser = ldapUser.shortUser ?: return
+        if (ldapShortUser != dbUser?.shortUser) return
+        // proceed with data merge
+        ldapUser.withDbData(dbUser)
+        if (!queryAsOwner) ldapUser.studentId = dbUser.studentId
+        ldapUser.preferredName = dbUser.preferredName
+        ldapUser.nick = dbUser.nick
+        ldapUser.colorPrinting = dbUser.colorPrinting
+        ldapUser.jobExpiration = dbUser.jobExpiration
+    }
+    /**
+     * Uploads a [user] to the DB,
+     * with logging for failures
+     */
+    private fun updateDbWithUser(user: FullUser) {
+        log.trace("Update db instance")
+        try {
+            val response = CouchDb.path("u${user.shortUser}").putJson(user)
+            if (response.isSuccessful) {
+                val responseObj = response.readEntity(ObjectNode::class.java)
+                val newRev = responseObj.get("_rev")?.asText()
+                if (newRev != null && newRev.length > 3) {
+                    user._rev = newRev
+                    log.trace("New rev for ${user.shortUser}: $newRev")
+                }
+            } else {
+                log.error("Response failed: $response")
+            }
+        } catch (e1: Exception) {
+            log.error("Could not put ${user.shortUser} into db", e1)
+        }
+    }
+
 
     /**
      * Retrieve a [FullUser] directly from the database when supplied with either a
