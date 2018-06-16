@@ -79,10 +79,6 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
      * Returns user data, but guarantees a pass through ldap
      */
     fun authenticate(sam: String, pw: String): FullUser? {
-        if (sam == "tepidtest") {
-            log.debug("Tepid test received with password $pw")
-            return null
-        }
         log.debug("Authenticating $sam against ldap")
 
         var shortUser = if (sam.matches(shortUserRegex)) sam else SessionManager.queryUser(sam, null)?.shortUser
