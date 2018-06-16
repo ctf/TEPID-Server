@@ -22,6 +22,7 @@ import java.security.SecureRandom
 object SessionManager : WithLogging() {
 
     private const val HOUR_IN_MILLIS = 60 * 60 * 1000
+    private val numRegex = Regex("[0-9]+")
 
     private val random = SecureRandom()
 
@@ -83,6 +84,26 @@ object SessionManager : WithLogging() {
      */
     fun queryUser(sam: String?, pw: String?): FullUser? =
             if (Config.LDAP_ENABLED) Ldap.queryUser(sam, pw) else Ldap.queryUserDb(sam)
+
+    /**
+     * Retrieve a [FullUser] directly from the database when supplied with either a
+     * short user, long user, or student id
+     */
+    private fun queryUserDb(sam: String?): FullUser? {
+        sam ?: return null
+        val dbUser = when {
+            sam.contains(".") -> CouchDb.getViewRows<FullUser>("byLongUser") {
+                query("key" to "\"${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}\"")
+            }.firstOrNull()
+            sam.matches(numRegex) -> CouchDb.getViewRows<FullUser>("byStudentId") {
+                query("key" to sam)
+            }.firstOrNull()
+            else -> CouchDb.path("u$sam").getJson()
+        }
+        dbUser?._id ?: return null
+        log.trace("Found db user (${dbUser._id}) ${dbUser.displayName} for $sam")
+        return dbUser
+    }
 
     /**
      * Sends list of matching [User]s based on current query
