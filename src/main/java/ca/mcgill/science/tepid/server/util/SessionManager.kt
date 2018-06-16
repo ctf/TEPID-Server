@@ -164,7 +164,7 @@ object SessionManager : WithLogging() {
             sam.matches(numRegex) -> CouchDb.getViewRows<FullUser>("byStudentId") {
                 query("key" to sam)
             }.firstOrNull()
-            else -> CouchDb.path("u$sam").getJson()
+            else -> CouchDb.path("u$sam").getJsonOrNull()
         }
         dbUser?._id ?: return null
         log.trace("Found db user (${dbUser._id}) ${dbUser.displayName} for $sam")
