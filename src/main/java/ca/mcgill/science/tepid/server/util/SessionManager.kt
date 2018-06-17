@@ -74,9 +74,9 @@ object SessionManager : WithLogging() {
             return if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
         }
         else if (Config.LDAP_ENABLED) {
-            val ldapUser =  Ldap.authenticate(sam, pw)
+            var ldapUser =  Ldap.authenticate(sam, pw)
             if (ldapUser!=null){
-                mergeUsers(ldapUser, dbUser, true)
+                ldapUser = mergeUsers(ldapUser, dbUser, true)
                 updateDbWithUser(ldapUser)
             }
             return ldapUser
@@ -103,9 +103,9 @@ object SessionManager : WithLogging() {
 
         if (Config.LDAP_ENABLED) {
             if (!sam.matches(shortUserRegex)) return null // cannot query without short user
-            val ldapUser = Ldap.queryUserLdap(sam, pw) ?: return null
+            var ldapUser = Ldap.queryUserLdap(sam, pw) ?: return null
 
-            mergeUsers(ldapUser, dbUser, pw != null)
+            ldapUser = mergeUsers(ldapUser, dbUser, pw != null)
 
             if (dbUser != ldapUser) {
                 updateDbWithUser(ldapUser)
@@ -124,17 +124,19 @@ object SessionManager : WithLogging() {
      * Update [ldapUser] with db data
      * [queryAsOwner] should be true if [ldapUser] was retrieved by the owner rather than a resource account
      */
-    private fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?, queryAsOwner: Boolean) {
+    private fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?, queryAsOwner: Boolean): FullUser {
         // ensure that short users actually match before attempting any merge
-        val ldapShortUser = ldapUser.shortUser ?: return
-        if (ldapShortUser != dbUser?.shortUser) return
+        val ldapShortUser = ldapUser.shortUser ?: return ldapUser
+        if (ldapShortUser != dbUser?.shortUser) return ldapUser
         // proceed with data merge
-        ldapUser.withDbData(dbUser)
-        if (!queryAsOwner) ldapUser.studentId = dbUser.studentId
-        ldapUser.preferredName = dbUser.preferredName
-        ldapUser.nick = dbUser.nick
-        ldapUser.colorPrinting = dbUser.colorPrinting
-        ldapUser.jobExpiration = dbUser.jobExpiration
+        val newUser = ldapUser.copy()
+        newUser.withDbData(dbUser)
+        if (!queryAsOwner) newUser.studentId = dbUser.studentId
+        newUser.preferredName = dbUser.preferredName
+        newUser.nick = dbUser.nick
+        newUser.colorPrinting = dbUser.colorPrinting
+        newUser.jobExpiration = dbUser.jobExpiration
+        return newUser
     }
     /**
      * Uploads a [user] to the DB,
