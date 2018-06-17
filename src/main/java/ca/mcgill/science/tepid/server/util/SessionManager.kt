@@ -126,8 +126,9 @@ object SessionManager : WithLogging() {
      */
     internal fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?): FullUser {
         // ensure that short users actually match before attempting any merge
-        val ldapShortUser = ldapUser.shortUser ?: return ldapUser
-        if (ldapShortUser != dbUser?.shortUser) return ldapUser
+        val ldapShortUser = ldapUser.shortUser ?: throw RuntimeException ("LDAP user does not have a short user. Maybe this will help {\"ldapUser\":\"${ldapUser.toString()},\"dbUser\":\"${dbUser.toString()}\"}")
+        if (dbUser == null) return ldapUser
+        if (ldapShortUser != dbUser.shortUser) throw RuntimeException ("Attempt to merge to different users {\"ldapUser\":\"${ldapUser.toString()},\"dbUser\":\"${dbUser.toString()}\"}")
         // proceed with data merge
         val newUser = ldapUser.copy()
         newUser.withDbData(dbUser)
