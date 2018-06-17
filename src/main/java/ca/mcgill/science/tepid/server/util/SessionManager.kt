@@ -76,7 +76,7 @@ object SessionManager : WithLogging() {
         else if (Config.LDAP_ENABLED) {
             var ldapUser =  Ldap.authenticate(sam, pw)
             if (ldapUser!=null){
-                ldapUser = mergeUsers(ldapUser, dbUser, true)
+                ldapUser = mergeUsers(ldapUser, dbUser)
                 updateDbWithUser(ldapUser)
             }
             return ldapUser
@@ -105,7 +105,7 @@ object SessionManager : WithLogging() {
             if (!sam.matches(shortUserRegex)) return null // cannot query without short user
             var ldapUser = Ldap.queryUserLdap(sam, pw) ?: return null
 
-            ldapUser = mergeUsers(ldapUser, dbUser, pw != null)
+            ldapUser = mergeUsers(ldapUser, dbUser)
 
             if (dbUser != ldapUser) {
                 updateDbWithUser(ldapUser)
@@ -124,14 +124,14 @@ object SessionManager : WithLogging() {
      * Update [ldapUser] with db data
      * [queryAsOwner] should be true if [ldapUser] was retrieved by the owner rather than a resource account
      */
-    private fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?, queryAsOwner: Boolean): FullUser {
+    internal fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?): FullUser {
         // ensure that short users actually match before attempting any merge
         val ldapShortUser = ldapUser.shortUser ?: return ldapUser
         if (ldapShortUser != dbUser?.shortUser) return ldapUser
         // proceed with data merge
         val newUser = ldapUser.copy()
         newUser.withDbData(dbUser)
-        if (!queryAsOwner) newUser.studentId = dbUser.studentId
+        newUser.studentId = if (ldapUser.studentId!=-1) ldapUser.studentId else dbUser.studentId
         newUser.preferredName = dbUser.preferredName
         newUser.nick = dbUser.nick
         newUser.colorPrinting = dbUser.colorPrinting
