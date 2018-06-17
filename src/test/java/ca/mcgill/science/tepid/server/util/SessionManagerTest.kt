@@ -4,10 +4,13 @@ import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.*
+
 import io.mockk.*
 import org.junit.*
 import org.junit.Test
 import java.util.logging.Logger
+import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import kotlin.test.*
@@ -81,19 +84,29 @@ class UpdateDbWithUserTest {
     @Before
     fun initTest() {
         objectMockk(CouchDb).mock()
-
+        staticMockk("ca.mcgill.science.tepid.server.util.WebTargetsKt").mock()
     }
 
     @After
     fun tearTest() {
         objectMockk(CouchDb).unmock()
+        staticMockk("ca.mcgill.science.tepid.server.util.WebTargetsKt").unmock()
     }
 
-    val testUser = FullUser(shortUser = "testSU")
+    val testSU = "testSU"
+    val testUser = FullUser(shortUser = testSU)
     
     @Test
     fun testUpdateUser () {
-
+        val wt = mockk<WebTarget>(relaxed = true)
+        every {
+            wt.putJson(FullUser::class)
+        } returns Response.accepted().build()
+        every {
+            CouchDb.path(any())
+        } returns wt
+        SessionManager.updateDbWithUser(testUser)
+        verify { CouchDb.path("u" + testSU) }
     }
     
     @Test
