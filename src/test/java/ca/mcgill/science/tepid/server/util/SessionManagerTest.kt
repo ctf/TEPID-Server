@@ -7,6 +7,9 @@ import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.*
 import org.junit.*
 import org.junit.Test
+import java.util.logging.Logger
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 import kotlin.test.*
 
 class SessionManagerTest : WithLogging() {
@@ -23,7 +26,7 @@ class SessionManagerTest : WithLogging() {
 
 }
 
-class MergeUsersTest : WithLogging() {
+class MergeUsersTest {
 
     //note that the shortUsers are the same, since they are the unique key
     val testLdapUser = FullUser(displayName = "ldapDN", givenName = "ldapGN", lastName = "ldapLN", shortUser = "SU", longUser = "ldapLU", email = "ldapEM", faculty = "ldapFaculty", groups = listOf("ldapGroups"), courses = listOf(Course("ldapCourseName", Season.FALL, 2222)), studentId = 1111)
@@ -72,4 +75,34 @@ class MergeUsersTest : WithLogging() {
         assertEquals(expected, actual)
     }
 
+}
+
+class UpdateDbWithUserTest {
+    @Before
+    fun initTest() {
+        objectMockk(CouchDb).mock()
+
+    }
+
+    @After
+    fun tearTest() {
+        objectMockk(CouchDb).unmock()
+    }
+
+    val testUser = FullUser(shortUser = "testSU")
+    
+    @Test
+    fun testUpdateUser () {
+
+    }
+    
+    @Test
+    fun testUpdateUserUnsuccessfulResponse () {
+        fail("Test is not implemented")
+    }
+    
+    @Test
+    fun testUpdateUserWithException () {
+        fail("Test is not implemented")
+    }
 }
