@@ -136,11 +136,57 @@ class UpdateDbWithUserTest {
     
     @Test
     fun testUpdateUserUnsuccessfulResponse () {
-        fail("Test is not implemented")
+
+        val mockObjectNode = ObjectMapper().createObjectNode()
+                .put("ok", true)
+                .put("id", "utestSU")
+                .put("_rev", "2222")
+
+        val mockResponse = spyk(Response.serverError().build())
+        every {
+            mockResponse.readEntity(ObjectNode::class.java)
+        } returns mockObjectNode
+
+        val wt = mockk<WebTarget>()
+        every {
+            wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
+        } returns mockResponse
+        every {
+            CouchDb.path(any())
+        } returns wt
+
+        // Run Test
+        SessionManager.updateDbWithUser(testUser)
+
+        // Verifies the path
+        verify { CouchDb.path("u" + testSU) }
+        verify { wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))}
+        assertEquals(testUser._rev, "1111")
     }
     
     @Test
     fun testUpdateUserWithException () {
-        fail("Test is not implemented")
+        val mockResponse = spyk(Response.ok().build())
+        every {
+            mockResponse.readEntity(ObjectNode::class.java)
+        } throws RuntimeException("Testing")
+
+        val wt = mockk<WebTarget>()
+        every {
+            wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
+        } returns mockResponse
+        every {
+            CouchDb.path(any())
+        } returns wt
+
+        // Run Test
+        SessionManager.updateDbWithUser(testUser)
+
+        // Verifies the path
+        verify { CouchDb.path("u" + testSU) }
+        verify { wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))}
+        // Verifies that it was called, but that it's unchanged
+        verify { mockResponse.readEntity(ObjectNode::class.java)}
+        assertEquals(testUser._rev, "1111")
     }
 }
