@@ -140,7 +140,7 @@ class UpdateDbWithUserTest {
         val mockObjectNode = ObjectMapper().createObjectNode()
                 .put("ok", true)
                 .put("id", "utestSU")
-                .put("_rev", "2222")
+                .put("_rev", "3333")
 
         val mockResponse = spyk(Response.serverError().build())
         every {
@@ -189,4 +189,65 @@ class UpdateDbWithUserTest {
         verify { mockResponse.readEntity(ObjectNode::class.java)}
         assertEquals(testUser._rev, "1111")
     }
+}
+
+class QueryUserDbTest {
+
+    @Before
+    fun initTest() {
+        objectMockk(CouchDb).mock()
+        staticMockk("ca.mcgill.science.tepid.server.util.WebTargetsKt").mock()
+    }
+
+    @After
+    fun tearTest() {
+        objectMockk(CouchDb).unmock()
+        staticMockk("ca.mcgill.science.tepid.server.util.WebTargetsKt").unmock()
+    }
+
+    @Test
+    fun testQueryUserDbNullSam () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserDbByEmail () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserDbByEmailNull () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserDbByFullUser () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserDbByFullUserNull () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserDbByStudentId () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserDbByStudentIdNull () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserDbByShortUser () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserDbByShortUserNull () {
+        fail("Test is not implemented")
+    }
+
 }
