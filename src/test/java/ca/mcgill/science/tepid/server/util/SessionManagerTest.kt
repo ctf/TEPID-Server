@@ -104,31 +104,34 @@ class UpdateDbWithUserTest {
     val testSU = "testSU"
     val testUser = FullUser(shortUser = testSU)
 
-    
     @Test
     fun testUpdateUser () {
 
-        val testResponseUser = testUser
-        testResponseUser._rev = "2222"
         val mockObjectNode = ObjectMapper().createObjectNode()
-        mockObjectNode.put("ok", true)
-        mockObjectNode.put("id", "utestSU")
-        mockObjectNode.put("_rev", "2222")
+                .put("ok", true)
+                .put("id", "utestSU")
+                .put("_rev", "2222")
 
-        val mockResponse = spyk(Response.ok(testResponseUser).build())
+        val mockResponse = spyk(Response.ok().build())
         every {
             mockResponse.readEntity(ObjectNode::class.java)
         } returns mockObjectNode
 
         val wt = mockk<WebTarget>()
-        every{
-            wt.request(MediaType.APPLICATION_JSON).put(any())
+        every {
+            wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
         } returns mockResponse
         every {
             CouchDb.path(any())
         } returns wt
+
+        // Run Test
         SessionManager.updateDbWithUser(testUser)
+
+        // Verifies the path
         verify { CouchDb.path("u" + testSU) }
+        verify { wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))}
+        assertEquals(testUser._rev, "2222")
     }
     
     @Test
