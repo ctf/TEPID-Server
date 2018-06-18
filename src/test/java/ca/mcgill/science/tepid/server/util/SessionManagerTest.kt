@@ -5,14 +5,21 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.utils.WithLogging
 import ca.mcgill.science.tepid.server.util.*
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.fasterxml.jackson.databind.node.ObjectNode
 
 import io.mockk.*
 import org.junit.*
 import org.junit.Test
+import org.omg.CORBA.Object
 import java.util.logging.Logger
+import javax.ws.rs.client.Entity
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Request
 import javax.ws.rs.core.Response
+import javax.ws.rs.core.Variant
 import kotlin.test.*
 
 class SessionManagerTest : WithLogging() {
@@ -85,6 +92,7 @@ class UpdateDbWithUserTest {
     fun initTest() {
         objectMockk(CouchDb).mock()
         staticMockk("ca.mcgill.science.tepid.server.util.WebTargetsKt").mock()
+        testUser._rev = "1111"
     }
 
     @After
@@ -95,13 +103,27 @@ class UpdateDbWithUserTest {
 
     val testSU = "testSU"
     val testUser = FullUser(shortUser = testSU)
+
     
     @Test
     fun testUpdateUser () {
-        val wt = mockk<WebTarget>(relaxed = true)
+
+        val testResponseUser = testUser
+        testResponseUser._rev = "2222"
+        val mockObjectNode = ObjectMapper().createObjectNode()
+        mockObjectNode.put("ok", true)
+        mockObjectNode.put("id", "utestSU")
+        mockObjectNode.put("_rev", "2222")
+
+        val mockResponse = spyk(Response.ok(testResponseUser).build())
         every {
-            wt.putJson(FullUser::class)
-        } returns Response.accepted().build()
+            mockResponse.readEntity(ObjectNode::class.java)
+        } returns mockObjectNode
+
+        val wt = mockk<WebTarget>()
+        every{
+            wt.request(MediaType.APPLICATION_JSON).put(any())
+        } returns mockResponse
         every {
             CouchDb.path(any())
         } returns wt
