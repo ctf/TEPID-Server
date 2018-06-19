@@ -138,3 +138,40 @@ fun testThings(){
     assert(testUser._rev == "2222")
 }
 ```
+
+##### With verifying contents of the request
+
+If you need to verify what object was POSTed or PUT to CouchDb, you need to break the webtarget out as a separate thing, since the chained-call-mock-resolver seems to have difficulty verifying the call otherwise
+
+```kotlin
+@Test
+fun testUpdateUser () {
+
+    val mockObjectNode = ObjectMapper().createObjectNode()
+            .put("ok", true)
+            .put("id", "utestSU")
+            .put("_rev", "2222")
+
+    val mockResponse = spyk(Response.ok(testResponseUser).build())
+    every {
+        mockResponse.readEntity(ObjectNode::class.java)
+    } returns mockObjectNode
+
+    // Mocks the WebTarget
+    val wt = mockk<WebTarget>()
+    // Mocks the WebTarget to return the mockResponse
+    every {
+        wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
+    } returns mockResponse
+    // Mocks CouchDb to return the WebTarget
+    every {
+        CouchDb.path(any())
+    } returns wt
+    // Run Test
+    SessionManager.updateDbWithUser(testUser)
+    // Verifies the path
+    verify { CouchDb.path("u" + testSU) }
+    // Verifies that the right object was put
+    verify { wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))}
+}
+```
