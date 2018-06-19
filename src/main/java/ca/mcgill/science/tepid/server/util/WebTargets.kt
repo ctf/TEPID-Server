@@ -105,8 +105,12 @@ inline fun <reified T : Any> WebTarget.getJsonOrNull(): T? = try {
  * with a "rows" attribute containing a map of data to "value"
  */
 inline fun <reified T : Any> WebTarget.getViewRows(): List<T> {
-    val rows = getObject().get("rows") ?: return emptyList()
-    return rows.mapNotNull { it?.get("value") }.map { mapper.treeToValue<T>(it) }
+    return getViewRows(T::class.java)
+}
+
+fun <T> WebTarget.getViewRows(classParameter : Class<T>): List<T> {
+    val rows = getObject().get("rows") ?: return emptyList<T>()
+    return rows.mapNotNull { it?.get("value") }.map { mapper.treeToValue(it, classParameter) }
 }
 
 /*
