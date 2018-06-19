@@ -15,6 +15,15 @@ object CouchDb : WithLogging() {
         get() = couchdbOld
 
     /**
+     * We have defined paths for views, this enum lists them out.
+     * Now the IDE can check for valid methods
+     */
+    enum class CouchDbView(val path: String){
+        ByLongUser("byLongUser"),
+        ByStudentId("byStudentId")
+    }
+
+    /**
      * Create an [ArrayNode] from the given [data] at field [fieldName]
      */
     fun <T> putArray(fieldName: String, data: Collection<T>): ArrayNode {
@@ -28,6 +37,10 @@ object CouchDb : WithLogging() {
         var target = couchdbOld
         segment.forEach { target = target.path(it) }
         return target
+    }
+
+    fun path(couchDbView: CouchDbView): WebTarget {
+        return couchdbOld.path(couchDbView.path)
     }
 
     /*
