@@ -170,9 +170,12 @@ object SessionManager : WithLogging() {
     fun queryUserDb(sam: String?): FullUser? {
         sam ?: return null
         val dbUser = when {
-            sam.contains(".") -> CouchDb.getViewRows<FullUser>("byLongUser") {
-                query("key" to "\"${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}\"")
-            }.firstOrNull()
+            sam.contains(".") ->
+                CouchDb
+                    .path(CouchDb.CouchDbView.ByLongUser)
+                    .queryParam("key", "\"${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}\"")
+                    .getViewRows<FullUser>()
+                    .firstOrNull()
             sam.matches(numRegex) -> CouchDb.getViewRows<FullUser>("byStudentId") {
                 query("key" to sam)
             }.firstOrNull()
