@@ -289,9 +289,7 @@ class QueryUserDbTest {
         val actual = SessionManager.queryUserDb(testUser.studentId.toString())
 
         verify { CouchDb.path(CouchDb.CouchDbView.ByStudentId)}
-        verify { wt.queryParam("key", match {
-            println(it.toString())
-            it.toString() == "3333"})}
+        verify { wt.queryParam("key", match {it.toString() == "3333"})}
         assertEquals(testUser, actual, "User was not returned when searched by studentId")
     }
 
@@ -302,20 +300,40 @@ class QueryUserDbTest {
         val actual = SessionManager.queryUserDb(testUser.studentId.toString())
 
         verify { CouchDb.path(CouchDb.CouchDbView.ByStudentId)}
-        verify { wt.queryParam("key", match {
-            println(it.toString())
-            it.toString() == "3333"})}
+        verify { wt.queryParam("key", match {it.toString() == "3333"})}
         assertEquals(null, actual, "Null was not returned when nonexistent searched by studentId")
     }
 
     @Test
     fun testQueryUserDbByShortUser () {
-        fail("Test is not implemented")
+        every {
+            CouchDb.path(ofType(String::class))
+        } returns wt
+        every{
+            wt.getJson(FullUser::class.java)
+        } returns testUser
+        makeMocks(listOf<FullUser>(testUser, testOtherUser))
+
+        val actual = SessionManager.queryUserDb(testUser.shortUser)
+
+        verify { CouchDb.path("uSU")}
+        assertEquals(testUser, actual, "User was not returned when searched by shortUser")
     }
 
     @Test
     fun testQueryUserDbByShortUserNull () {
-        fail("Test is not implemented")
+        every {
+            CouchDb.path(ofType(String::class))
+        } returns wt
+        every{
+            wt.getJson(FullUser::class.java)
+        } throws RuntimeException("Testing")
+        makeMocks(listOf<FullUser>())
+
+        val actual = SessionManager.queryUserDb(testUser.shortUser)
+
+        verify { CouchDb.path("uSU")}
+        assertEquals(null, actual, "Null was not returned when nonexistent searched by shortUser")
     }
 
 }
