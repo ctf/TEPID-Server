@@ -224,12 +224,27 @@ class QueryUserDbTest {
 
     @Test
     fun testQueryUserDbNullSam () {
-        fail("Test is not implemented")
+        val actual = SessionManager.queryUserDb(null)
+        assertEquals(null, actual, "Result was not null")
     }
 
     @Test
     fun testQueryUserDbByEmail () {
-        fail("Test is not implemented")
+        every{
+            CouchDb.path(ofType(CouchDb.CouchDbView::class))
+        }returns wt
+        every {
+            wt.queryParam(ofType(String::class), ofType(String::class))
+        } returns wt
+        every {
+            wt.getViewRows<FullUser>()
+        } returns listOf<FullUser>(testUser, testOtherUser)
+
+        val actual = SessionManager.queryUserDb(testUser.longUser)
+
+        verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser)}
+        verify { wt.queryParam("key", match {it.toString() == "\"db.LU%40config.example.com\""})}
+        assertEquals(testUser, actual, "User was not returned when searched by Email")
     }
 
     @Test
