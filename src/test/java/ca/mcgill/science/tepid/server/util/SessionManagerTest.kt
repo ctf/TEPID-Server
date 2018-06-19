@@ -122,7 +122,7 @@ class UpdateDbWithUserTest {
             wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
         } returns mockResponse
         every {
-            CouchDb.path(any())
+            CouchDb.path(ofType(String::class))
         } returns wt
 
         // Run Test
@@ -152,7 +152,7 @@ class UpdateDbWithUserTest {
             wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
         } returns mockResponse
         every {
-            CouchDb.path(any())
+            CouchDb.path(ofType(String::class))
         } returns wt
 
         // Run Test
@@ -176,7 +176,7 @@ class UpdateDbWithUserTest {
             wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
         } returns mockResponse
         every {
-            CouchDb.path(any())
+            CouchDb.path(ofType(String::class))
         } returns wt
 
         // Run Test
