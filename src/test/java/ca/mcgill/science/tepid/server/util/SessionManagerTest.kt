@@ -222,6 +222,18 @@ class QueryUserDbTest {
         objectMockk(Config).unmock()
     }
 
+    private fun makeMocks(userListReturned : List<FullUser>) {
+        every {
+            CouchDb.path(ofType(CouchDb.CouchDbView::class))
+        } returns wt
+        every {
+            wt.queryParam(ofType(String::class), ofType(String::class))
+        } returns wt
+        every {
+            wt.getViewRows<FullUser>()
+        } returns userListReturned
+    }
+
     @Test
     fun testQueryUserDbNullSam () {
         val actual = SessionManager.queryUserDb(null)
@@ -230,15 +242,7 @@ class QueryUserDbTest {
 
     @Test
     fun testQueryUserDbByEmail () {
-        every{
-            CouchDb.path(ofType(CouchDb.CouchDbView::class))
-        }returns wt
-        every {
-            wt.queryParam(ofType(String::class), ofType(String::class))
-        } returns wt
-        every {
-            wt.getViewRows<FullUser>()
-        } returns listOf<FullUser>(testUser, testOtherUser)
+        makeMocks(listOf<FullUser>(testUser, testOtherUser))
 
         val actual = SessionManager.queryUserDb(testUser.longUser)
 
@@ -249,7 +253,13 @@ class QueryUserDbTest {
 
     @Test
     fun testQueryUserDbByEmailNull () {
-        fail("Test is not implemented")
+        makeMocks(listOf<FullUser>())
+
+        val actual = SessionManager.queryUserDb(testUser.longUser)
+
+        verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser)}
+        verify { wt.queryParam("key", match {it.toString() == "\"db.LU%40config.example.com\""})}
+        assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
     }
 
     @Test
