@@ -55,7 +55,6 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         return user
     }
 
-    @JvmStatic
     fun autoSuggest(like: String, limit: Int): Promise<List<FullUser>> {
         val q = Q.defer<List<FullUser>>()
         if (!Config.LDAP_ENABLED) {

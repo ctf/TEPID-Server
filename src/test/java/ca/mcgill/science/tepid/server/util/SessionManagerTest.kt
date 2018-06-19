@@ -1,5 +1,7 @@
 package ca.mcgill.science.tepid.server.util
 
+import `in`.waffl.q.Promise
+import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
@@ -335,5 +337,61 @@ class QueryUserDbTest {
         verify { CouchDb.path("uSU")}
         assertEquals(null, actual, "Null was not returned when nonexistent searched by shortUser")
     }
+}
+class AutoSuggestTest {
 
+    lateinit var testUser:FullUser
+    val testLike = "testLike"
+    val testLimit = 15
+
+    @Before
+    fun initTest() {
+        testUser = FullUser(displayName = "dbDN", givenName = "dbGN", lastName = "dbLN", shortUser = "SU", longUser = "db.LU@example.com", email = "db.EM@example.com", faculty = "dbFaculty", groups = listOf("dbGroups"), courses = listOf(Course("dbCourseName", Season.FALL, 4444)), studentId = 3333, colorPrinting = true, jobExpiration = 12)
+        objectMockk(Config).mock()
+        objectMockk(Ldap).mock()
+
+
+    }
+
+    @After
+    fun tearTest() {
+        objectMockk(Config).unmock()
+        objectMockk(Ldap).unmock()
+    }
+
+    @Test
+    fun testAutoSuggestLdapEnabledResolves () {
+        val q = Q.defer<List<FullUser>>()
+        q.resolve(listOf(testUser))
+        val p = q.promise
+
+        every {
+            Config.LDAP_ENABLED
+        } returns true
+
+
+        every {
+            Ldap.autoSuggest(any(), any())
+        } returns q.promise
+
+        val actual = SessionManager.autoSuggest(testLike, testLimit)
+
+        verify{Ldap.autoSuggest(testLike, testLimit)}
+        assertEquals(p, actual, "Expected promise not returned")
+
+        objectMockk(Ldap).unmock()
+
+    }
+
+    @Test
+    fun testAutoSuggestLdapEnabledRejected () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testAutoSuggestLdapNotEnabled () {
+        every { Config.LDAP_ENABLED } returns false
+        fail("Test is not implemented")
+
+    }
 }
