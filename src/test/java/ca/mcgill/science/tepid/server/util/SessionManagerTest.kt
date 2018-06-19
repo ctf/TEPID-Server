@@ -211,8 +211,6 @@ class QueryUserDbTest {
         testOtherUser = FullUser(displayName = "ldapDN", givenName = "ldapGN", lastName = "ldapLN", shortUser = "SU", longUser = "ldap.LU@example.com", email = "ldap.EM@example.com", faculty = "ldapFaculty", groups = listOf("ldapGroups"), courses = listOf(Course("ldapCourseName", Season.FALL, 2222)), studentId = 1111)
         testUser._id = "1000"
         testUser._rev = "1001"
-
-
     }
 
     @After
@@ -244,6 +242,28 @@ class QueryUserDbTest {
     fun testQueryUserDbByEmail () {
         makeMocks(listOf<FullUser>(testUser, testOtherUser))
 
+        val actual = SessionManager.queryUserDb(testUser.email)
+
+        verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser)}
+        verify { wt.queryParam("key", match {it.toString() == "\"db.EM%40config.example.com\""})}
+        assertEquals(testUser, actual, "User was not returned when searched by Email")
+    }
+
+    @Test
+    fun testQueryUserDbByEmailNull () {
+        makeMocks(listOf<FullUser>())
+
+        val actual = SessionManager.queryUserDb(testUser.email)
+
+        verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser)}
+        verify { wt.queryParam("key", match {it.toString() == "\"db.EM%40config.example.com\""})}
+        assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
+    }
+
+    @Test
+    fun testQueryUserDbByFullUser () {
+        makeMocks(listOf<FullUser>(testUser, testOtherUser))
+
         val actual = SessionManager.queryUserDb(testUser.longUser)
 
         verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser)}
@@ -252,7 +272,7 @@ class QueryUserDbTest {
     }
 
     @Test
-    fun testQueryUserDbByEmailNull () {
+    fun testQueryUserDbByFullUserNull () {
         makeMocks(listOf<FullUser>())
 
         val actual = SessionManager.queryUserDb(testUser.longUser)
@@ -263,23 +283,29 @@ class QueryUserDbTest {
     }
 
     @Test
-    fun testQueryUserDbByFullUser () {
-        fail("Test is not implemented")
-    }
-
-    @Test
-    fun testQueryUserDbByFullUserNull () {
-        fail("Test is not implemented")
-    }
-
-    @Test
     fun testQueryUserDbByStudentId () {
-        fail("Test is not implemented")
+        makeMocks(listOf<FullUser>(testUser, testOtherUser))
+
+        val actual = SessionManager.queryUserDb(testUser.studentId.toString())
+
+        verify { CouchDb.path(CouchDb.CouchDbView.ByStudentId)}
+        verify { wt.queryParam("key", match {
+            println(it.toString())
+            it.toString() == "3333"})}
+        assertEquals(testUser, actual, "User was not returned when searched by studentId")
     }
 
     @Test
     fun testQueryUserDbByStudentIdNull () {
-        fail("Test is not implemented")
+        makeMocks(listOf<FullUser>())
+
+        val actual = SessionManager.queryUserDb(testUser.studentId.toString())
+
+        verify { CouchDb.path(CouchDb.CouchDbView.ByStudentId)}
+        verify { wt.queryParam("key", match {
+            println(it.toString())
+            it.toString() == "3333"})}
+        assertEquals(null, actual, "Null was not returned when nonexistent searched by studentId")
     }
 
     @Test

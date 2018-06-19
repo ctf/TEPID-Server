@@ -176,9 +176,12 @@ object SessionManager : WithLogging() {
                     .queryParam("key", "\"${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}\"")
                     .getViewRows<FullUser>()
                     .firstOrNull()
-            sam.matches(numRegex) -> CouchDb.getViewRows<FullUser>("byStudentId") {
-                query("key" to sam)
-            }.firstOrNull()
+            sam.matches(numRegex) ->
+                CouchDb
+                    .path(CouchDb.CouchDbView.ByStudentId)
+                    .queryParam("key", sam)
+                    .getViewRows<FullUser>()
+                    .firstOrNull()
             else -> CouchDb.path("u$sam").getJsonOrNull()
         }
         dbUser?._id ?: return null
