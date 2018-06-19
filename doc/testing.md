@@ -79,3 +79,62 @@ fun testQueryUserDbByEmail () {
 }
 
 ```
+
+#### PUT
+##### Without verifying contents of the request
+
+If you don't need to verify what object was put or posted to CouchDb, you can use the following
+
+```kotlin
+@Before
+fun initTest() {
+    objectMockk(CouchDb).mock() //mocks the actual CouchDb object
+    staticMockk("ca.mcgill.science.tepid.server.util.WebTargetsKt").mock() //mocks all the extension functions we use
+}
+
+@After
+fun tearTest(){
+    objectMockk(CouchDb).unmock()
+    staticMockk("ca.mcgill.science.tepid.server.util.WebTargetsKt").unmock()
+}
+
+@Test
+fun testThings(){
+    // Mocks the response parameters
+    val mockObjectNode = ObjectMapper().createObjectNode()
+            .put("ok", true)
+            .put("id", "utestSU")
+            .put("_rev", "2222")
+    // Mocks the readEntity of the response. We use a spy because it's an actual response and all the other functions should just work
+    // I am aware of how jank this is, given that mockResponse is an outboundJaxrsResponse and readEntity doesn't work for that
+    // But given that we need to mock its response, we might as well mock the whole function 
+    val mockResponse = spyk(Response.ok().build())
+    every {
+       mockResponse.readEntity(ObjectNode::class.java)
+    } returns mockObjectNode
+    
+    // Mocks the WebTarget to return the mockResponse
+
+    // We must instead mock the body which is inlined
+    every{
+       wt.request(MediaType.APPLICATION_JSON).put(any())
+    } returns mockResponse
+    
+    // Mocks the function invoked on CouchDb (in this case putJson)
+    // In this example, I only make one query, so I mock all responses and verify it later.
+    // If you need to make more queries, you can mock out specific paths so they return specific responses
+    every{
+        // Note that we cannot mock the actual function invoked, since that function is inline
+        // We must instead mock the body which is inlined
+        CouchDb.path(any()).request(MediaType.APPLICATION_JSON).put(any())
+    } returns mockResponse
+    
+    // Actually runs the test
+    SessionManager.updateDbWithUser(testUser)
+    
+    // Verifies that CouchDb was invoked with the right path
+    verify { CouchDb.path("u" + testSU) }
+    // Verifies that objectNode was read correctly and that the _rev was updated
+    assert(testUser._rev == "2222")
+}
+```
