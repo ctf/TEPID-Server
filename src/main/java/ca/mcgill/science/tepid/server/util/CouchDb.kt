@@ -20,7 +20,8 @@ object CouchDb : WithLogging() {
      */
     enum class CouchDbView(viewName :String){
         ByLongUser("byLongUser"),
-        ByStudentId("byStudentId");
+        ByStudentId("byStudentId"),
+        Queues("queues");
 
         val path : String = "$MAIN_VIEW/$viewName"
 
