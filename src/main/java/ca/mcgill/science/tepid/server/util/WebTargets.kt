@@ -1,11 +1,8 @@
 package ca.mcgill.science.tepid.server.util
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.fasterxml.jackson.module.kotlin.treeToValue
 import org.apache.logging.log4j.LogManager
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature
 import org.glassfish.jersey.jackson.JacksonFeature
@@ -91,7 +88,8 @@ inline fun <reified T : Any> WebTarget.getJson(): T =
         mapper.readValue(getString())
 
 fun <T> WebTarget.getJson(classParameter: Class<T>): T =
-        mapper.readValue(getString(), object: TypeReference<T>() {})
+        mapper.readValue<T>(getString(), classParameter)
+
 /**
  * Call [getJson] but with an exception check
  * Note that this is expensive, and should only be used if the target
