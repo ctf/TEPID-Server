@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.generateTestUser
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -21,6 +22,7 @@ import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.fail
 
 @RunWith(Suite::class)
@@ -500,18 +502,25 @@ class AuthenticateTest{
     var testShortUser = "testShortUser"
     var testPassword = "testPassword"
     lateinit var testUser: FullUser
+    lateinit var testUserFromDb: FullUser
 
 
     @Before
     fun initTest() {
-        testUser = generateTestUser("test").copy(shortUser = testShortUser)
+        testUser = generateTestUser("test").copy(shortUser = testShortUser, colorPrinting = true)
+        testUserFromDb = generateTestUser("db").copy(
+                shortUser = testUser.shortUser,
+                studentId = 5555,
+                colorPrinting = false
+        )
         objectMockk(Config).mock()
         sm = spyk(SessionManager)
-
+        objectMockk(Ldap).mock()
     }
     @After
     fun tearTest(){
         objectMockk(Config).unmock()
+        objectMockk(Ldap).unmock()
     }
 
     @Test
@@ -554,11 +563,31 @@ class AuthenticateTest{
 
     @Test
     fun testAuthenticateLdapUserNull () {
-        fail("Test is not implemented")
+        every { Config.LDAP_ENABLED } returns true
+        every { Ldap.authenticate(testShortUser, testPassword) } returns null
+
+        val actual = sm.authenticate(testShortUser, testPassword)
+        val expected = null
+
+        verify { Ldap.authenticate(testShortUser, testPassword) }
+        assertEquals(expected, actual, "")
     }
 
     @Test
     fun testAuthenticateLdap () {
-        fail("Test is not implemented")
+        every { Config.LDAP_ENABLED } returns true
+        every { sm.queryUserDb(any()) } returns testUserFromDb
+        every { Ldap.authenticate(testShortUser, testPassword) } returns testUser
+        every { sm.updateDbWithUser(any())} just runs
+
+        val actual = sm.authenticate(testShortUser, testPassword)
+        val expected = SessionManager.mergeUsers(testUser, testUserFromDb)
+
+        verify { Ldap.authenticate(testShortUser, testPassword) }
+        verify { sm.mergeUsers(testUser, testUserFromDb) }
+        verify { sm.updateDbWithUser(expected) }
+        // a check that mergeUsers has merged some DB stuff into ldapUser
+        assertFalse ( expected.colorPrinting )
+        assertEquals(expected, actual, "")
     }
 }
