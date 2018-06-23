@@ -31,7 +31,7 @@ class CouchTest : WithLogging() {
     fun queues() {
         CouchDb.getViewRows<PrintQueue>("queues").test {
             val names = toList().map(PrintQueue::name).toSet()
-            Room.values.forEach {
+            CouchDb.path(CouchDb.CouchDbView.Queues).getViewRows<PrintQueue>().forEach {
                 val roomName = it.toString()
                 assert(names.contains(roomName)) {
                     "$roomName not found in queues; not a one to one mapping"
