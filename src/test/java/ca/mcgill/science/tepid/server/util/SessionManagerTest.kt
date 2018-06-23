@@ -11,6 +11,8 @@ import io.mockk.*
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Suite
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
@@ -18,20 +20,16 @@ import javax.ws.rs.core.Response
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-class SessionManagerTest : WithLogging() {
+@RunWith(Suite::class)
+@Suite.SuiteClasses(
+        MergeUsersTest::class,
+        UpdateDbWithUserTest::class,
+        QueryUserDbTest::class,
+        AutoSuggestTest::class,
+        QueryUserTest::class
+)
 
-    @Before
-    fun initTest() {
-        objectMockk(Ldap).mock()
-    }
-
-    @After
-    fun tearTest() {
-        objectMockk(Ldap).unmock()
-    }
-
-}
-
+class SessionManagerTest
 class MergeUsersTest {
 
     //note that the shortUsers are the same, since they are the unique key
@@ -82,7 +80,6 @@ class MergeUsersTest {
     }
 
 }
-
 class UpdateDbWithUserTest {
     @Before
     fun initTest() {
@@ -186,7 +183,6 @@ class UpdateDbWithUserTest {
         assertEquals(testUser._rev, "1111")
     }
 }
-
 class QueryUserDbTest {
     lateinit var testUser: FullUser
     lateinit var testOtherUser: FullUser
@@ -395,7 +391,6 @@ class AutoSuggestTest {
 
     }
 }
-
 class QueryUserTest : WithLogging() {
 
     lateinit var testUser: FullUser
