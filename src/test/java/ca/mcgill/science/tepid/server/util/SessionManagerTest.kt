@@ -1,28 +1,21 @@
 package ca.mcgill.science.tepid.server.util
 
-import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.utils.WithLogging
-import ca.mcgill.science.tepid.server.util.*
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
-
 import io.mockk.*
-import org.junit.*
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
-import org.omg.CORBA.Object
-import java.util.logging.Logger
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Request
 import javax.ws.rs.core.Response
-import javax.ws.rs.core.Variant
-import kotlin.test.*
+import kotlin.test.assertEquals
 
 class SessionManagerTest : WithLogging() {
 
@@ -341,18 +334,19 @@ class QueryUserDbTest {
 class AutoSuggestTest {
 
     lateinit var testUser:FullUser
+    lateinit var q:Q<List<FullUser>>
     val testLike = "testLike"
     val testLimit = 15
 
     @Before
     fun initTest() {
+        q = Q.defer<List<FullUser>>()
         testUser = FullUser(displayName = "dbDN", givenName = "dbGN", lastName = "dbLN", shortUser = "SU", longUser = "db.LU@example.com", email = "db.EM@example.com", faculty = "dbFaculty", groups = listOf("dbGroups"), courses = listOf(Course("dbCourseName", Season.FALL, 4444)), studentId = 3333, colorPrinting = true, jobExpiration = 12)
         objectMockk(Config).mock()
         objectMockk(Ldap).mock()
 
 
     }
-
     @After
     fun tearTest() {
         objectMockk(Config).unmock()
@@ -360,8 +354,7 @@ class AutoSuggestTest {
     }
 
     @Test
-    fun testAutoSuggestLdapEnabledResolves () {
-        val q = Q.defer<List<FullUser>>()
+    fun testAutoSuggestLdapEnabled () {
         q.resolve(listOf(testUser))
         val p = q.promise
 
@@ -384,14 +377,20 @@ class AutoSuggestTest {
     }
 
     @Test
-    fun testAutoSuggestLdapEnabledRejected () {
-        fail("Test is not implemented")
-    }
-
-    @Test
     fun testAutoSuggestLdapNotEnabled () {
-        every { Config.LDAP_ENABLED } returns false
-        fail("Test is not implemented")
+        q.resolve(emptyList())
+        val p = q.promise
+
+        every {
+            Config.LDAP_ENABLED
+        } returns false
+
+        val actual = SessionManager.autoSuggest(testLike, testLimit)
+
+        verify {Ldap wasNot Called}
+        assertEquals(p.result, actual.result, "Expected promise not returned")
+
+
 
     }
 }
