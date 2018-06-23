@@ -59,12 +59,8 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         val q = Q.defer<List<FullUser>>()
         object : Thread("LDAP AutoSuggest: " + like) {
             override fun run() {
-                try {
-                    val out = ldap.autoSuggest(like, auth, limit)
-                    q.resolve(out)
-                } catch (ne: NamingException) {
-                    q.reject("Could not get autosuggest", ne)
-                }
+                val out = ldap.autoSuggest(like, auth, limit)
+                q.resolve(out)
             }
         }.start()
         return q.promise
