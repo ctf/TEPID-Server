@@ -103,15 +103,9 @@ object SessionManager : WithLogging() {
 
         if (Config.LDAP_ENABLED) {
             if (!sam.matches(shortUserRegex)) return null // cannot query without short user
-            var ldapUser = Ldap.queryUserLdap(sam, pw) ?: return null
+            val ldapUser = Ldap.queryUserLdap(sam, pw) ?: return null
 
-            ldapUser = mergeUsers(ldapUser, dbUser)
-
-            if (dbUser != ldapUser) {
-                updateDbWithUser(ldapUser)
-            } else {
-                log.trace("Not updating dbUser; already matches ldap user")
-            }
+            updateDbWithUser(ldapUser)
 
             log.trace("Found user from ldap $sam: ${ldapUser.longUser}")
             return ldapUser
