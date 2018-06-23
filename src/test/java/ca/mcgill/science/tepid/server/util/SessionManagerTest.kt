@@ -5,7 +5,6 @@ import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
-import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.generateTestUser
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -23,7 +22,6 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.fail
 
 @RunWith(Suite::class)
 @Suite.SuiteClasses(
@@ -34,8 +32,8 @@ import kotlin.test.fail
         QueryUserTest::class,
         AuthenticateTest::class
 )
-
 class SessionManagerTest
+
 class MergeUsersTest {
 
     //note that the shortUsers are the same, since they are the unique key
@@ -590,4 +588,35 @@ class AuthenticateTest{
         assertFalse ( expected.colorPrinting )
         assertEquals(expected, actual, "")
     }
+}
+class SetExchangeStudentTest {
+
+    val testSam = "testSam"
+
+    @Before
+    fun initTest() {
+        objectMockk(Ldap).mock()
+        every{Ldap.setExchangeStudent(any(), any())} just runs
+        objectMockk(Config).mock()
+    }
+    @After
+    fun tearTest(){
+        objectMockk(Ldap).unmock()
+        objectMockk(Config).unmock()
+    }
+
+    @Test
+    fun testSetExchangeStudentLdapEnabled () {
+        every { Config.LDAP_ENABLED } returns true
+        SessionManager.setExchangeStudent(testSam, true)
+        verify{Ldap.setExchangeStudent(testSam, true)}
+    }
+
+    @Test
+    fun testtestSetExchangeStudentLdapDisabled () {
+        every { Config.LDAP_ENABLED } returns false
+        SessionManager.setExchangeStudent(testSam, true)
+        verify(inverse = true){Ldap.setExchangeStudent(testSam, true)}
+    }
+
 }
