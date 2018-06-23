@@ -16,6 +16,7 @@ import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import kotlin.test.assertEquals
+import kotlin.test.fail
 
 class SessionManagerTest : WithLogging() {
 
@@ -393,4 +394,53 @@ class AutoSuggestTest {
 
 
     }
+}
+
+class queryUserTest : WithLogging() {
+
+    @Before
+    fun initTest() {
+        objectMockk(Config).mock()
+    }
+    @After
+    fun tearTest(){
+        objectMockk(Config).unmock()
+    }
+
+    @Test
+    fun testQueryUserSamNull () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserDbUserNull () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserDbUserNotNull () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserWithLdapBadSam () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserWithLdapLdapUserNull () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUSerWithLdapUpdateNeeded () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testQueryUserWithLdapNoUpdateNeeded () {
+        fail("Test is not implemented")
+    }
+
+
 }
