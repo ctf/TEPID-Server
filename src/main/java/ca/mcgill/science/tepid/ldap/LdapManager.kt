@@ -16,6 +16,7 @@ import javax.naming.directory.Attributes
 import javax.naming.directory.SearchControls
 import javax.naming.ldap.InitialLdapContext
 import javax.naming.ldap.LdapContext
+import javax.naming.ldap.LdapName
 
 /**
  * Collection of functions that can be exposed
@@ -87,20 +88,27 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
 
         }
 
+        fun getCn (ldapQuery:String): String {
+            val dn = LdapName(ldapQuery)
+            val cn = dn.get(dn.size()-1)
+            val i = cn.indexOf("=")
+            return cn.substring(i+1)
+        }
+
         val LdapGroups = get("memberOf")?.toList()?.mapNotNull {
             try {
-                val cn = ctx.getAttributes(it, arrayOf("CN"))?.get("CN")?.get()?.toString()
+                val cn = getCn(it)
                 val groupValues = semesterRegex.find(it.toLowerCase(Locale.CANADA))?.groupValues
                 val semester = if (groupValues != null) Semester(Season(groupValues[1]), groupValues[2].toInt())
                 else null
                 cn to semester
             } catch (e: NamingException) {
+                log.warn("Error instantiating LDAP Groups: $e")
                 null
             }
         }
 
         val groups = mutableListOf<String>()
-
         val courses = mutableListOf<Course>()
 
         LdapGroups?.forEach { (name, semester) ->
@@ -108,7 +116,6 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
             if (semester == null) groups.add(name)
             else courses.add(Course(name, semester.season, semester.year))
         }
-
         out.groups = groups
         out.courses = courses
 
