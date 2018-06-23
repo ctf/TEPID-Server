@@ -26,7 +26,8 @@ import kotlin.test.fail
         UpdateDbWithUserTest::class,
         QueryUserDbTest::class,
         AutoSuggestTest::class,
-        QueryUserTest::class
+        QueryUserTest::class,
+        AuthenticateTest::class
 )
 
 class SessionManagerTest
@@ -483,4 +484,42 @@ class QueryUserTest : WithLogging() {
         assertEquals(expected, actual, "SessionManager doesn't return null if Ldap returns null")
     }
 
+}
+class AuthenticateTest{
+    lateinit var sm : SessionManager
+
+    @Before
+    fun initTest() {
+        objectMockk().mock()
+        sm = spyk(SessionManager)
+    }
+    @After
+    fun tearTest(){
+        objectMockk().unmock()
+    }
+
+    @Test
+    fun testAuthenticateDbUserNull () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testAuthenticateAuthTypeLocal () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testAuthenticateLdapDisabled () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testAuthenticateLdapUserNull () {
+        fail("Test is not implemented")
+    }
+
+    @Test
+    fun testAuthenticateLdap () {
+        fail("Test is not implemented")
+    }
 }
