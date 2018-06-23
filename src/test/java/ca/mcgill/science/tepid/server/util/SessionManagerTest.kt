@@ -1,9 +1,11 @@
 package ca.mcgill.science.tepid.server.util
 
 import `in`.waffl.q.Q
+import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.server.generateTestUser
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -13,6 +15,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
+import org.mindrot.jbcrypt.BCrypt
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
@@ -486,31 +489,67 @@ class QueryUserTest : WithLogging() {
 
 }
 class AuthenticateTest{
+    /**
+     * These tests do not exhaustively test the authenticate function.
+     * Rather, they test the most difficult situations
+     * For example, they don't test local auth with LDAP disabled, since this case should be less difficult to handle than with LDAP enabled
+     * Basically, if this is something which needs testing, the actual function has logic which breaks the general description
+     */
+
     lateinit var sm : SessionManager
+    var testShortUser = "testShortUser"
+    var testPassword = "testPassword"
+    lateinit var testUser: FullUser
+
 
     @Before
     fun initTest() {
-        objectMockk().mock()
+        testUser = generateTestUser("test").copy(shortUser = testShortUser)
+        objectMockk(Config).mock()
         sm = spyk(SessionManager)
+
     }
     @After
     fun tearTest(){
-        objectMockk().unmock()
+        objectMockk(Config).unmock()
     }
 
     @Test
-    fun testAuthenticateDbUserNull () {
-        fail("Test is not implemented")
+    fun testAuthenticateAuthTypeLocalSuccess () {
+        every { Config.LDAP_ENABLED } returns true
+        testUser.authType = LOCAL
+        testUser.password = BCrypt.hashpw(testPassword, BCrypt.gensalt())
+        every{ sm.queryUserDb(testShortUser)} returns testUser
+
+        val actual = sm.authenticate(testShortUser, testPassword)
+        val expected = testUser
+
+        assertEquals(expected, actual, "")
     }
 
     @Test
-    fun testAuthenticateAuthTypeLocal () {
-        fail("Test is not implemented")
+    fun testAuthenticateAuthTypeLocalFailure () {
+        every { Config.LDAP_ENABLED } returns true
+        testUser.authType = LOCAL
+        testUser.password = BCrypt.hashpw(testPassword, BCrypt.gensalt())
+        every{ sm.queryUserDb(testShortUser)} returns testUser
+
+        val actual = sm.authenticate(testShortUser, testPassword+"otherStuff")
+        val expected = null
+
+        assertEquals(expected, actual, "")
     }
 
     @Test
     fun testAuthenticateLdapDisabled () {
-        fail("Test is not implemented")
+        every { Config.LDAP_ENABLED } returns false
+        // not necessary, but ensures that there is a password to auth against if it's derping
+        testUser.password = BCrypt.hashpw(testPassword, BCrypt.gensalt())
+
+        val actual = sm.authenticate(testShortUser, testPassword)
+        val expected = null
+
+        assertEquals(expected, actual, "")
     }
 
     @Test

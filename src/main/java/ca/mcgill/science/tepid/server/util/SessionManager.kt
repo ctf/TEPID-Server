@@ -61,11 +61,12 @@ object SessionManager : WithLogging() {
     }
 
     /**
-     * Authenticate user if necessary
+     * Authenticates user as appropriate:
+     * first with local auth (if applicable), then against LDAP (if enabled)
      *
      * @param sam short user
      * @param pw  password
-     * @return authenticated user
+     * @return authenticated user, or null if auth failure
      */
     fun authenticate(sam: String, pw: String): FullUser? {
         val dbUser = queryUserDb(sam)
