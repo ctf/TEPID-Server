@@ -396,51 +396,96 @@ class AutoSuggestTest {
     }
 }
 
-class queryUserTest : WithLogging() {
+class QueryUserTest : WithLogging() {
+
+    lateinit var testUser: FullUser
+
+    lateinit var sm : SessionManager
 
     @Before
     fun initTest() {
         objectMockk(Config).mock()
+        objectMockk(Ldap).mock()
+        sm = spyk(SessionManager)
+
+        testUser = FullUser(displayName = "dbDN", givenName = "dbGN", lastName = "dbLN", shortUser = "SU", longUser = "db.LU@example.com", email = "db.EM@example.com", faculty = "dbFaculty", groups = listOf("dbGroups"), courses = listOf(Course("dbCourseName", Season.FALL, 4444)), studentId = 3333, colorPrinting = true, jobExpiration = 12)
     }
+
     @After
     fun tearTest(){
         objectMockk(Config).unmock()
+        objectMockk(Ldap).unmock()
     }
 
     @Test
     fun testQueryUserSamNull () {
-        fail("Test is not implemented")
+        val actual = sm.queryUser(null, null)
+        val expected = null
+
+        assertEquals(expected, actual, "Null is not returned when SAM is null")
     }
 
     @Test
-    fun testQueryUserDbUserNull () {
-        fail("Test is not implemented")
+    fun testQueryUserDbHit () {
+        every { sm.queryUserDb("SU") } returns testUser
+
+        val actual = sm.queryUser("SU", null)
+        val expected = testUser
+
+        assertEquals(expected, actual, "User from DB is not returned when found")
     }
 
     @Test
-    fun testQueryUserDbUserNotNull () {
-        fail("Test is not implemented")
+    fun testQueryUserDbMissLdapDisabled () {
+        every { Config.LDAP_ENABLED } returns false
+        every { sm.queryUserDb("SU") } returns null
+
+        val actual = sm.queryUser("SU", null)
+        val expected = null
+
+        assertEquals(expected, actual, "Null is not returned when DB miss and Ldap disabled")
     }
 
     @Test
     fun testQueryUserWithLdapBadSam () {
-        fail("Test is not implemented")
+        every { Config.LDAP_ENABLED } returns true
+        every { sm.queryUserDb("db.LU@example.com") } returns null
+
+        val actual = sm.queryUser("db.LU@example.com", null)
+        val expected = null
+
+        verify(inverse = true) { sm.updateDbWithUser(any())}
+        assertEquals(expected, actual, "SessionManager doesn't return null if SAM is not shortUser")
+
     }
 
     @Test
     fun testQueryUserWithLdapLdapUserNull () {
-        fail("Test is not implemented")
+        every { Config.LDAP_ENABLED } returns true
+        every { sm.queryUserDb("SU") } returns null
+        every { Ldap.queryUserLdap(any(), null) } returns null
+
+        val actual = sm.queryUser("SU", null)
+        val expected = null
+
+        verify(inverse = true) { sm.updateDbWithUser(any())}
+        assertEquals(expected, actual, "SessionManager doesn't return null if Ldap returns null")
     }
+
 
     @Test
-    fun testQueryUSerWithLdapUpdateNeeded () {
-        fail("Test is not implemented")
-    }
+    fun testQueryUserWithLdap () {
+        every { Config.LDAP_ENABLED } returns true
+        every { sm.queryUserDb("SU") } returns null
+        every {sm.updateDbWithUser(any())} just runs
+        every { Ldap.queryUserLdap(any(), null) } returns testUser
 
-    @Test
-    fun testQueryUserWithLdapNoUpdateNeeded () {
-        fail("Test is not implemented")
-    }
 
+        val actual = sm.queryUser("SU", null)
+        val expected = testUser
+
+        verify { sm.updateDbWithUser(testUser) }
+        assertEquals(expected, actual, "SessionManager doesn't return null if Ldap returns null")
+    }
 
 }
