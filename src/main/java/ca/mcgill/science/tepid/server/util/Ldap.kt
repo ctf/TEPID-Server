@@ -57,10 +57,6 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
 
     fun autoSuggest(like: String, limit: Int): Promise<List<FullUser>> {
         val q = Q.defer<List<FullUser>>()
-        if (!Config.LDAP_ENABLED) {
-            q.reject("LDAP disabled in source")
-            return q.promise
-        }
         object : Thread("LDAP AutoSuggest: " + like) {
             override fun run() {
                 try {
