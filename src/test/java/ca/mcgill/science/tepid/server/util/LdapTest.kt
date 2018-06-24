@@ -62,24 +62,18 @@ class LdapTest {
         SessionManager.queryUser(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
     }
 
-    }
-
-    @Test
-    fun queryWithPass() {
-        Ldap.queryUser(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
-    }
 
     @Test
     fun queryWithoutPass() {
-        Ldap.queryUser(Config.TEST_USER, null).assertEqualsTestUser()
+        Ldap.queryUserLdap(Config.TEST_USER, null).assertEqualsTestUser()
     }
-
-    @Test
-    fun queryById() {
-        val id = ***REMOVED***
-        val user = Ldap.queryUser(id.toString(), null)
-        user.assertValidUser()
-        println(user!!.getSemesters())
-        assertEquals(id, user.studentId)
-    }
+//
+//    @Test
+//    fun queryById() {
+//        val id = ***REMOVED***
+//        val user = Ldap.queryUser(id.toString(), null)
+//        user.assertValidUser()
+//        println(user!!.getSemesters())
+//        assertEquals(id, user.studentId)
+//    }
 }
