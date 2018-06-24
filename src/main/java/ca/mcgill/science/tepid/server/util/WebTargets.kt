@@ -3,7 +3,6 @@ package ca.mcgill.science.tepid.server.util
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.fasterxml.jackson.module.kotlin.treeToValue
 import org.apache.logging.log4j.LogManager
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature
 import org.glassfish.jersey.jackson.JacksonFeature
@@ -88,13 +87,16 @@ fun WebTarget.getRev(): String = getObject().get("_rev")?.asText() ?: ""
 inline fun <reified T : Any> WebTarget.getJson(): T =
         mapper.readValue(getString())
 
+fun <T> WebTarget.getJson(classParameter: Class<T>): T =
+        mapper.readValue<T>(getString(), classParameter)
+
 /**
  * Call [getJson] but with an exception check
  * Note that this is expensive, and should only be used if the target
  * is expected to be potentially invalid
  */
 inline fun <reified T : Any> WebTarget.getJsonOrNull(): T? = try {
-    getJson()
+    getJson(T::class.java)
 } catch (e: Exception) {
     null
 }
@@ -105,8 +107,12 @@ inline fun <reified T : Any> WebTarget.getJsonOrNull(): T? = try {
  * with a "rows" attribute containing a map of data to "value"
  */
 inline fun <reified T : Any> WebTarget.getViewRows(): List<T> {
-    val rows = getObject().get("rows") ?: return emptyList()
-    return rows.mapNotNull { it?.get("value") }.map { mapper.treeToValue<T>(it) }
+    return getViewRows(T::class.java)
+}
+
+fun <T> WebTarget.getViewRows(classParameter : Class<T>): List<T> {
+    val rows = getObject().get("rows") ?: return emptyList<T>()
+    return rows.mapNotNull { it?.get("value") }.map { mapper.treeToValue(it, classParameter) }
 }
 
 /*

@@ -32,7 +32,7 @@ class CouchTest : WithLogging() {
     fun queues() {
         CouchDb.getViewRows<PrintQueue>("queues").test {
             val names = toList().map(PrintQueue::name).toSet()
-            Room.values.forEach {
+            CouchDb.path(CouchDb.CouchDbView.Queues).getViewRows<PrintQueue>().forEach {
                 val roomName = it.toString()
                 assert(names.contains(roomName)) {
                     "$roomName not found in queues; not a one to one mapping"
@@ -47,10 +47,10 @@ class CouchTest : WithLogging() {
         val shortUser = ""
         val longUser = ""
 
-        val byShortUser = Ldap.queryUserDb(shortUser)
+        val byShortUser = SessionManager.queryUserDb(shortUser)
         assertNotNull(byShortUser, "Query for $shortUser was null")
 
-        val byLongUser = Ldap.queryUserDb(longUser)
+        val byLongUser = SessionManager.queryUserDb(longUser)
         assertNotNull(byLongUser, "Query for $longUser was null")
 
         assertEquals(longUser, byShortUser!!.longUser)

@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.ChangeDelta
 import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.models.enums.Room
 import ca.mcgill.science.tepid.server.printer.Printer
@@ -44,7 +45,7 @@ class Jobs {
     }
 
     private fun PrintJob.getJobExpiration() =
-            System.currentTimeMillis() + (Ldap.queryUserDb(userIdentification)?.jobExpiration
+            System.currentTimeMillis() + (SessionManager.queryUserDb(userIdentification)?.jobExpiration
                     ?: TimeUnit.DAYS.toMillis(7))
 
     @POST
@@ -53,7 +54,8 @@ class Jobs {
     @Consumes(MediaType.APPLICATION_JSON)
     fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): Response {
         val session = ctx.getSession()
-        if (!Room.names.contains(j.queueName))
+        val queueNames:List<String> = CouchDb.path(CouchDb.CouchDbView.Queues).getViewRows<PrintQueue>().mapNotNull{it.name}.toList()
+        if (!queueNames.contains(j.queueName))
             failBadRequest("Invalid queue name ${j.queueName}")
         j.userIdentification = session.user.shortUser
         j.deleteDataOn = j.getJobExpiration()

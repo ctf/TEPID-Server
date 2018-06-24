@@ -62,44 +62,19 @@ class LdapTest {
         SessionManager.queryUser(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
     }
 
-    @Test
-    fun queryCache() {
-        Ldap.queryUserDb(Config.TEST_USER).assertEqualsTestUser()
-    }
 
     //TODO: parametrise for test user, not real data
-    @Test
-    fun queryCacheShort() {
-        val user = Ldap.queryUserDb("")
-        assertNotNull(user)
-        println(user!!)
-    }
-
-    //TODO: parametrise for test user, not real data
-    @Test
-    fun queryCacheLong() {
-        val user = Ldap.queryUserDb("")
-        assertNotNull(user)
-        println(user!!)
-    }
-
-    @Test
-    fun queryWithPass() {
-        Ldap.queryUser(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
-    }
-
     @Test
     fun queryWithoutPass() {
-        Ldap.queryUser(Config.TEST_USER, null).assertEqualsTestUser()
+        Ldap.queryUserLdap(Config.TEST_USER, null).assertEqualsTestUser()
     }
-
-    //TODO: parametrise for test user, not real data
-    @Test
-    fun queryById() {
-        val id = 0
-        val user = Ldap.queryUser(id.toString(), null)
-        user.assertValidUser()
-        println(user!!.getSemesters())
-        assertEquals(id, user.studentId)
-    }
+//
+//    @Test
+//    fun queryById() {
+//        val id = ***REMOVED***
+//        val user = Ldap.queryUser(id.toString(), null)
+//        user.assertValidUser()
+//        println(user!!.getSemesters())
+//        assertEquals(id, user.studentId)
+//    }
 }
