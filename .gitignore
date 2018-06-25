@@ -26,3 +26,7 @@ out/
 
 # Temp files for KDE and other Editor's 
 *~
+
+config/
+
+venv/
