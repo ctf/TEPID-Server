@@ -31,3 +31,17 @@ session = client.session()
 db = client['tepid-clone']
 ddoc = DesignDocument(db, 'migrate')
 ddoc.create()
+
+
+
+def makeMigrationUsers00_00_00_to_00_01_00():
+    ddoc.add_view('migrate_user_00_00_00_to_00_01_00', """function (doc){
+  if((doc.type==="user") && (!(doc._schema) || doc._schema=="00-00-00"))
+  {emit(doc._id);}
+}""")
+    ddoc.save()
+    q = ddoc.get_view("migrate_user_00_00_00_to_00_01_00")
+    results = q()
+
+    for row in results:
+        doc = db[row.key]
