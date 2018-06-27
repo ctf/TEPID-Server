@@ -1,4 +1,6 @@
 from cloudant.client import CouchDB
+from cloudant.result import Result, ResultByKey
+from cloudant.design_document import DesignDocument
 
 
 class DbConfig(object):
@@ -19,6 +21,13 @@ def parseConfig(filePath):
 
 
 Config = parseConfig("../../config/DB.properties")
-client = CouchDB(Config.dbUsername, Config.dbPassword, Config.dbUrl)
+client = CouchDB(user=Config.dbUsername,
+                 auth_token=Config.dbPassword,
+                 url=Config.dbUrl,
+                 admin_party=False,
+                 auto_renew=True)
+client.connect()
 session = client.session()
-db = client['tepid']
+db = client['tepid-clone']
+ddoc = DesignDocument(db, 'migrate')
+ddoc.create()
