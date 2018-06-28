@@ -34,9 +34,9 @@ ddoc.create()
 
 
 
-def makeMigrationUsers00_00_00_to_00_01_00():
+def makeMigrationJobs00_00_00_to_00_01_00():
     ddoc.add_view('migrate_user_00_00_00_to_00_01_00', """function (doc){
-  if((doc.type==="user") && (!(doc._schema) || doc._schema=="00-00-00"))
+  if((doc.type==="job") && (!(doc._schema) || doc._schema=="00-00-00"))
   {emit(doc._id);}
 }""")
     ddoc.save()
@@ -44,7 +44,20 @@ def makeMigrationUsers00_00_00_to_00_01_00():
     results = q()
 
     for row in results:
-        doc = db[row.key]def replace_null_with_value(dict, property, value):
+        doc = db[row.key]
+        try:
+            # type asserts
+            if not ((not doc._schema) or doc._schema=="00-00-00"):
+                raise TypeError("document schema is not applicable")
+            if not (doc.type == "user"):
+                raise TypeError("document is of incorrect type")
+            # migration
+
+
+        except TypeError as e:
+            print ("migration of " + doc._id + " was aborted bue to type not matching the specification for this migration: " +  e)
+
+
 def replace_null_with_value(dict, property, value):
     if dict[property] == "null":
         dict[property] = value
