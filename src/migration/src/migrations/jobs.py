@@ -1,6 +1,6 @@
 from migration import validate_migration_applicability
 from migration_setup import *
-from utils import replace_null_with_value, replace_nothing_with_value
+from utils import replace_null_with_value, replace_nothing_with_value, update_schema_version
 
 
 def add_job_migration_views():
@@ -35,5 +35,4 @@ def makeMigrationJobs00_00_00_to_00_01_00():
         except TypeError as e:
             print ("migration of " + doc._id + " was aborted due to type not matching the specification for this migration: " +  e)
 
-def update_schema_version(doc, version):
-    doc._schema = version
+
