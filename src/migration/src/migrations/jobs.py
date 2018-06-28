@@ -1,5 +1,4 @@
-from typing import List
-
+from migration import validate_migration_applicability
 from migration_setup import *
 from utils import replace_null_with_value, replace_nothing_with_value
 
@@ -34,22 +33,7 @@ def makeMigrationJobs00_00_00_to_00_01_00():
             doc.save()
 
         except TypeError as e:
-            print ("migration of " + doc._id + " was aborted bue to type not matching the specification for this migration: " +  e)
+            print ("migration of " + doc._id + " was aborted due to type not matching the specification for this migration: " +  e)
 
 def update_schema_version(doc, version):
     doc._schema = version
-
-
-def validate_type_applicable(doc_type: str, types: List[str]):
-    return doc_type in types
-
-
-def validate_version_applicable(doc_schema_version: str , versions: List[str]):
-    return doc_schema_version in versions
-
-
-def validate_migration_applicability(doc, types: List[str], versions: List[str]):
-    if not validate_type_applicable(doc.type, types):
-        raise TypeError("document is of incorrect type")
-    if not validate_version_applicable(doc._schema, versions):
-        raise TypeError("document schema is not applicable")

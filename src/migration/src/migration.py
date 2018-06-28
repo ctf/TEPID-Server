@@ -9,3 +9,18 @@ class Migration (object):
 
     def make(self, doc:str):
         self.migration_function(doc)
+
+
+def validate_type_applicable(doc_type: str, types: List[str]):
+    return doc_type in types
+
+
+def validate_version_applicable(doc_schema_version: str , versions: List[str]):
+    return doc_schema_version in versions
+
+
+def validate_migration_applicability(doc, types: List[str], versions: List[str]):
+    if not validate_type_applicable(doc.type, types):
+        raise TypeError("document is of incorrect type")
+    if not validate_version_applicable(doc._schema, versions):
+        raise TypeError("document schema is not applicable")
