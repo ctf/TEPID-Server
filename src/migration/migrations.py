@@ -52,6 +52,12 @@ def makeMigrationJobs00_00_00_to_00_01_00():
             if not (doc.type == "user"):
                 raise TypeError("document is of incorrect type")
             # migration
+            replace_null_with_value(doc, "started", -1)
+            replace_null_with_value(doc, "processed", -1)
+            replace_null_with_value(doc, "printed", -1)
+            replace_nothing_with_value(doc, "started", -1)
+            replace_nothing_with_value(doc, "processed", -1)
+            replace_nothing_with_value(doc, "printed", -1)
 
 
         except TypeError as e:
