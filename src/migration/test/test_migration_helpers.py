@@ -51,5 +51,6 @@ class Tests_Replace_Nothing_With_Value(unittest.TestCase):
         self.assertEqual(u[self.o], self.v)
         self.assertEqual(u[self.p], self.r)
 
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
