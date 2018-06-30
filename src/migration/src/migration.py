@@ -36,7 +36,8 @@ def validate_version_applicable(doc_schema_version: str, versions: List[str]):
 
 
 def validate_migration_applicability(doc, types: List[str], versions: List[str]):
-    if (types is not None) and (not validate_type_applicable(doc.type, types)):
+    if (types is not None) and (not validate_type_applicable(doc['type'], types)):
         raise TypeError("document is of incorrect type")
-    if (versions is not None) and (not validate_version_applicable(doc._schema, versions)):
+    if (versions is not None) and (not validate_version_applicable(doc['_schema'], versions)):
         raise TypeError("document schema is not applicable")
+    return True
