@@ -10,4 +10,4 @@ def replace_nothing_with_value(dict, property, value):
 
 def update_schema_version(doc, version):
     if version is not None:
-        doc._schema = version
+        doc["schema"] = version

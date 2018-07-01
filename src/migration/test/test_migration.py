@@ -18,7 +18,7 @@ class Tests_Validate_Applicability(unittest.TestCase):
     invalid_v = "v2"
 
     def helper(self, doc_t, doc_v, types, versions):
-        doc = {"type": doc_t, "_schema": doc_v}
+        doc = {"type": doc_t, "schema": doc_v}
         actual = validate_migration_applicability(doc, types, versions)
         self.assertEqual(True, actual)
 

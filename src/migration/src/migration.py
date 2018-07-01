@@ -13,7 +13,7 @@ class Migration (object):
 
     def make(self, doc: str):
         self.migration_function(doc)
-        doc["_schema"] = self.schema_version
+        update_schema_version(doc, self.schema_version)
 
     def apply_on_view(self, view):
         to_migrate = ddoc.get_view(view)()
@@ -21,8 +21,7 @@ class Migration (object):
             doc = db[row.key]
             try:
                 validate_migration_applicability(doc, self.applicable_types, self.applicable_schema_versions)
-                self.migration_function(doc)
-                update_schema_version(doc, self.schema_version)
+                self.make(doc)
                 doc.save()
             except TypeError as e:
                 print ("migration of " + doc._id + " was aborted due to type not matching the specification for this migration: " +  e)
@@ -39,6 +38,6 @@ def validate_version_applicable(doc_schema_version: str, versions: List[str]):
 def validate_migration_applicability(doc, types: List[str], versions: List[str]):
     if (types is not None) and (not validate_type_applicable(doc['type'], types)):
         raise TypeError("document is of incorrect type")
-    if (versions is not None) and (not validate_version_applicable(doc['_schema'], versions)):
+    if (versions is not None) and (not validate_version_applicable(doc['schema'], versions)):
         raise TypeError("document schema is not applicable")
     return True
