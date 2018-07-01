@@ -47,9 +47,9 @@ class Test_Migration (unittest.TestCase):
     def setUp(self):
         self.db_name = 'tepid_test' + str(uuid1())
         self.test_db = client.create_database(self.db_name)
-        self.job_no_schema = document_from_json_file(project_root + "/test/resources/job_no_schema.json")
-        self.job_00_00_00 = document_from_json_file(project_root + "/test/resources/job_with_schema.json")
-        self.job_00_01_00 = document_from_json_file(project_root + "/test/resources/job_00_01_00.json")
+        self.job_no_schema = document_from_json_file(self.test_db, project_root + "/test/resources/job_no_schema.json")
+        self.job_00_00_00 = document_from_json_file(self.test_db, project_root + "/test/resources/job_with_schema.json")
+        self.job_00_01_00 = document_from_json_file(self.test_db, project_root + "/test/resources/job_00_01_00.json")
 
     def tearDown(self):
         client.delete_database(self.db_name)
