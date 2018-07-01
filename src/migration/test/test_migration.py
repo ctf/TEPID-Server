@@ -1,8 +1,11 @@
 """Tests for the Migration class"""
 
 import unittest
+from uuid import uuid1
 
 from migration import validate_migration_applicability
+from migration_setup import client
+from test.utils import document_from_json_file, project_root
 
 
 class Tests_Validate_Applicability(unittest.TestCase):
@@ -36,6 +39,26 @@ class Tests_Validate_Applicability(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.helper(self.ts[0], self.vs[0], self.ts, self.invalid_v)
 
+class Test_Migration (unittest.TestCase):
+
+    db_name = None
+    test_db = None
+
+    def setUp(self):
+        self.db_name = 'tepid_test' + str(uuid1())
+        self.test_db = client.create_database(self.db_name)
+        self.job_no_schema = document_from_json_file(project_root + "/test/resources/job_no_schema.json")
+        self.job_00_00_00 = document_from_json_file(project_root + "/test/resources/job_with_schema.json")
+        self.job_00_01_00 = document_from_json_file(project_root + "/test/resources/job_00_01_00.json")
+
+    def tearDown(self):
+        client.delete_database(self.db_name)
+
+    def test_Apply_On_View_Valid(self):
+        self.fail()
+
+    def test_Apply_On_View_Invalid(self):
+        self.fail()
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
