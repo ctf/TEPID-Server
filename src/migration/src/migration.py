@@ -13,6 +13,7 @@ class Migration (object):
 
     def make(self, doc: str):
         self.migration_function(doc)
+        doc["_schema"] = self.schema_version
 
     def apply_on_view(self, view):
         to_migrate = ddoc.get_view(view)()

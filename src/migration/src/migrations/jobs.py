@@ -13,9 +13,10 @@ def add_job_migration_views():
 
 
 def migrate_00_00_00_to_00_01_00(doc:str):
-    replace_nothing_with_value(doc, "started", -1)
     replace_nothing_with_value(doc, "processed", -1)
     replace_nothing_with_value(doc, "printed", -1)
+    replace_nothing_with_value(doc, "failed", -1)
+    replace_nothing_with_value(doc, "received", -1)
 
 migration_jobs_00_00_00_to_00_01_00 = Migration(
     ["job"],
