@@ -1,6 +1,6 @@
-from migration import validate_migration_applicability, Migration
+from migration import Migration
 from migration_setup import *
-from utils import replace_null_with_value, replace_nothing_with_value, update_schema_version
+from utils import replace_nothing_with_value
 
 
 def add_job_migration_views():
@@ -9,6 +9,8 @@ def add_job_migration_views():
   {emit(doc._id);}
 }""")
     ddoc.save()
+
+
 
 def migrate_00_00_00_to_00_01_00(doc:str):
     replace_nothing_with_value(doc, "started", -1)
