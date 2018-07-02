@@ -12,6 +12,7 @@ class Migration (object):
         self.schema_version = schema_version
         self.db = db
         self.ddoc = ddoc
+        self.ddoc.fetch()
 
     def make(self, doc: str):
         self.migration_function(doc)
