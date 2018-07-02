@@ -5,7 +5,7 @@ from utils import replace_nothing_with_value
 
 def add_job_migration_views():
     ddoc.add_view('migrate_user_00_00_00_to_00_01_00', """function (doc){
-  if((doc.type==="job") && (!(doc.schema) || doc.schema=="00-00-00"))
+  if((doc.type==="job") && (doc.schema=="00-00-00"))
   {emit(doc._id);}
 }""")
     ddoc.save()
