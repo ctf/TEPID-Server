@@ -18,16 +18,25 @@ class Migration (object):
         self.migration_function(doc)
         update_schema_version(doc, self.schema_version)
 
-    def apply_on_view(self, view):
-        to_migrate = self.ddoc.get_view(view)()['rows']
-        for row in to_migrate:
-            doc = self.db[row['key']]
-            try:
-                validate_migration_applicability(doc, self.applicable_types, self.applicable_schema_versions)
-                self.make(doc)
-                doc.save()
-            except TypeError as e:
-                print("migration of " + doc['_id'] + " was aborted due to type not matching the specification for this migration: " + str(e))
+    def apply_on_view(self, view_name):
+        view = self.ddoc.get_view(view_name)()
+        total_to_migrate = view['total_rows']
+        docs_migrated = 0
+        skip = 0
+        while (len(self.ddoc.get_view(view_name)(skip=skip, limit=1)['rows']) > 0 ):
+            view = self.ddoc.get_view(view_name)(include_docs=True, limit=1000, skip=skip)
+            to_migrate = view['rows']
+            for row in to_migrate:
+                print("migrating {count} of {total}".format(count=docs_migrated, total=total_to_migrate))
+                doc = self.db.create_document(row['doc'])
+                try:
+                    validate_migration_applicability(doc, self.applicable_types, self.applicable_schema_versions)
+                    self.make(doc)
+                    doc.save()
+                    docs_migrated += 1
+                except TypeError as e:
+                    skip += 1
+                    print("migration of " + doc['_id'] + " was aborted due to type not matching the specification for this migration: " + str(e))
 
 
 def validate_type_applicable(doc_type: str, types: List[str]):

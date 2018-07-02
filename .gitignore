@@ -30,3 +30,5 @@ out/
 config/
 
 venv/
+
+*.pyc
