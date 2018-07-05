@@ -85,6 +85,8 @@ object Config : WithLogging() {
     val PUBLIC: About
 
     init {
+        //TODO: revise to use getNonNull, possibly implement a get with default
+
         log.info("**********************************")
         log.info("*       Setting up Configs       *")
         log.info("**********************************")
@@ -92,49 +94,55 @@ object Config : WithLogging() {
         externalConfigLocation = "/etc/tepid/"
         internalConfigLocation = "webapps/tepid/"
 
-        DEBUG = PropsURL.TESTING.toBoolean()
+        DefaultProps.withName = {fileName -> listOf(
+                FilePropLoader("/etc/tepid/$fileName"),
+                FilePropLoader("webapps/tepid/$fileName"),
+                JarPropLoader("/$fileName")
+        )}
 
-        TEPID_URL_PRODUCTION = PropsURL.SERVER_URL_PRODUCTION
-        TEPID_URL_TESTING = PropsURL.WEB_URL_TESTING
+        DEBUG = PropsURL.TESTING?.toBoolean() ?: true
 
-        COUCHDB_URL = PropsDB.COUCHDB_URL
-        COUCHDB_USERNAME = PropsDB.COUCHDB_USERNAME
-        COUCHDB_PASSWORD = PropsDB.COUCHDB_PASSWORD
+        TEPID_URL_PRODUCTION = PropsURL.SERVER_URL_PRODUCTION ?: throw RuntimeException()
+        TEPID_URL_TESTING = PropsURL.WEB_URL_TESTING ?: TEPID_URL_PRODUCTION
 
-        BARCODES_URL = PropsBarcode.BARCODES_URL
-        BARCODES_USERNAME = PropsBarcode.BARCODES_DB_USERNAME
-        BARCODES_PASSWORD = PropsBarcode.BARCODES_DB_PASSWORD
+        COUCHDB_URL = PropsDB.COUCHDB_URL ?: throw RuntimeException()
+        COUCHDB_USERNAME = PropsDB.COUCHDB_USERNAME ?: throw RuntimeException()
+        COUCHDB_PASSWORD = PropsDB.COUCHDB_PASSWORD ?: throw RuntimeException()
 
-        LDAP_ENABLED = PropsLDAP.LDAP_ENABLED.toBoolean() ?: true
-        LDAP_SEARCH_BASE = PropsLDAP.LDAP_SEARCH_BASE
-        ACCOUNT_DOMAIN = PropsLDAP.ACCOUNT_DOMAIN
-        PROVIDER_URL = PropsLDAP.PROVIDER_URL
-        SECURITY_PRINCIPAL_PREFIX = PropsLDAP.SECURITY_PRINCIPAL_PREFIX
+        BARCODES_URL = PropsBarcode.BARCODES_URL ?: ""
+        BARCODES_USERNAME = PropsBarcode.BARCODES_DB_USERNAME ?: ""
+        BARCODES_PASSWORD = PropsBarcode.BARCODES_DB_PASSWORD ?: ""
 
-        RESOURCE_USER = PropsLDAPResource.LDAP_RESOURCE_USER
-        RESOURCE_CREDENTIALS = PropsLDAPResource.LDAP_RESOURCE_CREDENTIALS
+        LDAP_ENABLED = PropsLDAP.LDAP_ENABLED?.toBoolean() ?: true
+        LDAP_SEARCH_BASE = PropsLDAP.LDAP_SEARCH_BASE ?: ""
+        ACCOUNT_DOMAIN = PropsLDAP.ACCOUNT_DOMAIN ?: ""
+        PROVIDER_URL = PropsLDAP.PROVIDER_URL ?: ""
+        SECURITY_PRINCIPAL_PREFIX = PropsLDAP.SECURITY_PRINCIPAL_PREFIX ?: ""
 
-        EXCHANGE_STUDENTS_GROUP_BASE = PropsLDAPGroups.EXCHANGE_STUDENTS_GROUP_BASE
-        GROUPS_LOCATION = PropsLDAPGroups.GROUPS_LOCATION
-        ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS.split(illegalLDAPCharacters)
-        CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS.split(illegalLDAPCharacters)
+        RESOURCE_USER = PropsLDAPResource.LDAP_RESOURCE_USER ?: ""
+        RESOURCE_CREDENTIALS = PropsLDAPResource.LDAP_RESOURCE_CREDENTIALS ?: ""
+
+        EXCHANGE_STUDENTS_GROUP_BASE = PropsLDAPGroups.EXCHANGE_STUDENTS_GROUP_BASE ?: ""
+        GROUPS_LOCATION = PropsLDAPGroups.GROUPS_LOCATION ?: ""
+        ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS?.split(illegalLDAPCharacters) ?: emptyList()
+        CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS?.split(illegalLDAPCharacters) ?: emptyList()
         
 //        USERS_GROUP
         fun getCurrentExchangeGroup(): String {
             val cal = Calendar.getInstance()
             return EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
         }
-        USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS.split(illegalLDAPCharacters)).plus(getCurrentExchangeGroup())
+        USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS?.split(illegalLDAPCharacters))?.plus(getCurrentExchangeGroup()) ?: emptyList()
 
-        TEM_URL = PropsTEM.TEM_URL
+        TEM_URL = PropsTEM.TEM_URL ?: ""
 
-        TEST_USER = PropsLDAPTestUser.TEST_USER
-        TEST_PASSWORD = PropsLDAPTestUser.TEST_PASSWORD
+        TEST_USER = PropsLDAPTestUser.TEST_USER ?: ""
+        TEST_PASSWORD = PropsLDAPTestUser.TEST_PASSWORD ?: ""
 
-        HASH = PropsCreationInfo.HASH
-        TAG = PropsCreationInfo.TAG
+        HASH = PropsCreationInfo.HASH ?: ""
+        TAG = PropsCreationInfo.TAG ?: ""
         CREATION_TIMESTAMP = PropsCreationInfo.CREATION_TIMESTAMP?.toLongOrNull() ?: -1
-        CREATION_TIME = PropsCreationInfo.CREATION_TIME
+        CREATION_TIME = PropsCreationInfo.CREATION_TIME ?: ""
 
         if (DEBUG)
             setLoggingLevel(Level.TRACE)
