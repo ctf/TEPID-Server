@@ -8,9 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-/**
- * Created by Allan Wang on 2017-10-31.
- */
 class LdapTest {
 
     companion object {
