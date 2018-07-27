@@ -22,19 +22,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
 
     private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
 
-    /**
-     * Adds information relating to the name of a student to a FullUser [user]
-     */
-    private fun updateUserNameInformation(user: FullUser?) {
-        user ?: return
-        user.salutation = if (user.nick == null)
-            if (!user.preferredName.isEmpty()) user.preferredName[user.preferredName.size - 1]
-            else user.givenName else user.nick
-        if (!user.preferredName.isEmpty())
-            user.realName = user.preferredName.asReversed().joinToString(" ")
-        else
-            user.realName = "${user.givenName} ${user.lastName}"
-    }
+
 
     /**
      * Retrieve a [FullUser] from ldap
@@ -51,7 +39,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
             Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
         }
         val user = ldap.queryUser(sam, auth)
-        updateUserNameInformation(user)
+        user?.updateUserNameInformation()
         return user
     }
 
