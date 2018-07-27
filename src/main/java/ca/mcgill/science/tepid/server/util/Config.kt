@@ -48,7 +48,6 @@ object Config : WithLogging() {
 
     /*
      * Boolean to enable ldap authentication
-     * Defaults to !DEBUG
      */
     val LDAP_ENABLED: Boolean
 
@@ -91,13 +90,11 @@ object Config : WithLogging() {
         log.info("*       Setting up Configs       *")
         log.info("**********************************")
 
-        externalConfigLocation = "/etc/tepid/"
-        internalConfigLocation = "webapps/tepid/"
-
         DefaultProps.withName = {fileName -> listOf(
                 FilePropLoader("/etc/tepid/$fileName"),
                 FilePropLoader("webapps/tepid/$fileName"),
-                JarPropLoader("/$fileName")
+                JarPropLoader("/$fileName"),
+                FilePropLoader("/config/$fileName")
         )}
 
         DEBUG = PropsURL.TESTING?.toBoolean() ?: true
