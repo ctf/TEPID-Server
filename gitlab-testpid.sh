@@ -12,23 +12,6 @@ echo "$CI_COMMIT_SHA"
 
 TO_DELETE=false
 
-if [ -n "$CI" ] && [ ! -f "priv.properties" ]; then
-    TO_DELETE=true
-    printf "Creating priv properties\n"
-    touch priv.properties
-    echo "DEBUG=true" >> priv.properties
-    echo "LDAP_ENABLED=true" >> priv.properties
-    echo "COUCHDB_USERNAME=$COUCHDB_USERNAME" >> priv.properties
-    echo "COUCHDB_PASSWORD=$COUCHDB_PASSWORD" >> priv.properties
-    echo "RESOURCE_CREDENTIALS=$RESOURCE_CREDENTIALS" >> priv.properties
-    echo "HASH=$CI_COMMIT_SHA" >> priv.properties
-    echo "CREATION_TIMESTAMP=$((`date +%s` * 1000 + `date +%-N` / 1000000))" >> priv.properties
-    echo "CREATION_TIME=$(date "+%Y-%m-%d--%H:%M:%S")" >> priv.properties
-    echo "TAG=$CI_COMMIT_TAG" >> priv.properties
-else
-    printf "Priv properties already exists in $PWD\n"
-fi
-
 chmod +x ./gradlew
 ./gradlew clean build test war
 
