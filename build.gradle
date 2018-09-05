@@ -35,7 +35,7 @@ repositories {
 }
 
 dependencies {
-    testCompile "junit:junit:$JUNIT"
+    testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$KOTLIN"
     testCompile "io.mockk:mockk:1.8"
 
