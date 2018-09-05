@@ -139,7 +139,9 @@ object Printer : WithLogging() {
 
                     //check if user has sufficient quota to print this job
                     log.trace("Testing for quota {'job':'{}'}", j2.getId())
-                    if (Users.getQuota(j2.userIdentification) < psInfo.pages + color * 2)
+
+                    val user = SessionManager.queryUser(j2.userIdentification, null)
+                    if (Users.getQuota(user) < psInfo.pages + color * 2)
                         throw PrintException(PrintError.INSUFFICIENT_QUOTA)
 
                     //add job to the queue

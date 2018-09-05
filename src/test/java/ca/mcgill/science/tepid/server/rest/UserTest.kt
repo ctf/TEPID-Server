@@ -49,15 +49,15 @@ class TestUserGetQuota : WithLogging () {
      */
     private fun userGetQuotaTest (tailoredUser: FullUser?, expected: Int, message: String){
         mockUser(tailoredUser)
-        val actual = Users.getQuota("targetUser")
+        val actual = Users.getQuota(tailoredUser)
         assertEquals(expected, actual, message)
     }
 
     private fun userGetQuotaTest(tailoredUser: FullUser, tailoredUserRole: String, expected: Int, message: String) {
         every {
-            AuthenticationFilter.getCtfRole(tailoredUser)
+            AuthenticationFilter.getCtfRole(ofType(FullUser::class))
         } returns tailoredUserRole
-        userGetQuotaTest(tailoredUser, expected, message)
+        userGetQuotaTest(tailoredUser.copy(shortUser = "tailoredUser"), expected, message)
     }
 
     private fun mockUser(tailoredUser: FullUser?){
@@ -147,8 +147,8 @@ class TestUserGetQuota : WithLogging () {
 
     @Test
     fun testGetQuotaTotalPrintedSubtracted(){
-        setPrintedPages(500)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018f)), USER, 500,"Printed pages not subtracted (you had one job)")
+        setPrintedPages(300)
+        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018f)), USER, 700,"Printed pages not subtracted (you had one job)")
     }
 
     //Tests that if there are multiple courses in the same semester they only contribute as one semester

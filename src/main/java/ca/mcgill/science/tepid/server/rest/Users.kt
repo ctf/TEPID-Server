@@ -138,8 +138,10 @@ class Users {
         val session = ctx.getSession()
         return if (session.role == USER && session.user.shortUser != shortUser)
             -1
-        else
-            getQuota(shortUser)
+        else{
+            val user = SessionManager.queryUser(shortUser, null)
+            getQuota(user)
+        }
     }
 
 
@@ -157,11 +159,11 @@ class Users {
         /**
          * Given a shortUser, query for the number of pages remaining
          */
-        fun getQuota(shortUser: String?): Int {
-            shortUser ?: return 0
+        fun getQuota(user: FullUser?): Int {
+            val shortUser = user?.shortUser ?: return 0
 
-            val user = SessionManager.queryUser(shortUser, null)
-            if (user == null || AuthenticationFilter.getCtfRole(user).isEmpty()) return 0
+
+            if (AuthenticationFilter.getCtfRole(user).isEmpty()) return 0
 
             val totalPrinted = getTotalPrinted(shortUser)
 
