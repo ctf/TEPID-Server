@@ -163,13 +163,13 @@ class Users {
             val user = SessionManager.queryUser(shortUser, null)
             if (user == null || AuthenticationFilter.getCtfRole(user).isEmpty()) return 0
 
-            val totalPrinted = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject()
-                    .get("rows")?.get(0)?.get("value")?.get("sum")?.asInt(0) ?: 0
+            val totalPrinted = getTotalPrinted(shortUser)
 
             val oldMaxQuota = oldMaxQuota(shortUser)
 
             val currentSemester = Semester.current
 
+            // TODO: incorporate summer escape into mapper
             val newMaxQuota = user.getSemesters()
                     .filter { it.season != Season.SUMMER } // we don't add quota for the summer
                     .filter { it >= fall(2016) }      // TEPID didn't exist before fall 2016
@@ -190,8 +190,12 @@ class Users {
 
             if (oldMaxQuota > newMaxQuota)
                 log.warn("Old quota $oldMaxQuota > new quota $newMaxQuota for $shortUser")
-            return Math.max(Math.max(oldMaxQuota, newMaxQuota) - totalPrinted, 0)
+            return Math.max(newMaxQuota - totalPrinted, 0)
         }
+
+        fun getTotalPrinted(shortUser: String?) =
+                CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject()
+                        .get("rows")?.get(0)?.get("value")?.get("sum")?.asInt(0) ?: 0
 
         private fun fall(year: Int) = Semester(Season.FALL, year)
         private fun winter(year: Int) = Semester(Season.WINTER, year)

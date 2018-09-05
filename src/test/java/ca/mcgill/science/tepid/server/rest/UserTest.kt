@@ -2,14 +2,19 @@ package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
+import ca.mcgill.science.tepid.models.bindings.USER
+import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.server.util.SessionManager
 import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.every
 import io.mockk.objectMockk
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
+import org.junit.jupiter.api.TestInstance
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -29,6 +34,13 @@ class UserTest : WithLogging() {
 
 class TestUserGetQuota : WithLogging () {
 
+    val c2018s = Course("2018s", Season.SUMMER, 2018)
+    val c1066f = Course("1066f", Season.FALL, 1066)
+    val c2016f = Course("2016f", Season.FALL, 2016)
+    val c2018f = Course("2018f", Season.FALL, 2018)
+    val c2018w = Course("2018w", Season.WINTER, 2018)
+    val c2018w0 = Course("2018w other", Season.WINTER, 2018)
+
     /**
      * Runs a test of Users.getQuota, Mockking [tailoredUser] as the user returned by SessionManager
      */
@@ -47,16 +59,24 @@ class TestUserGetQuota : WithLogging () {
         userGetQuotaTest(tailoredUser, expected, message)
     }
 
-
     @Before
     fun initTest() {
         objectMockk(SessionManager).mock()
         objectMockk(AuthenticationFilter).mock()
+        objectMockk(Users).mock()
     }
     @After
     fun tearTest(){
         objectMockk(SessionManager).unmock()
         objectMockk(AuthenticationFilter).unmock()
+        objectMockk(Users).unmock()
+
+    }
+
+    private fun setPrintedPages(printedPages:Int) {
+        every {
+            Users.getTotalPrinted(ofType(String::class))
+        } returns printedPages
     }
 
 
@@ -67,16 +87,18 @@ class TestUserGetQuota : WithLogging () {
 
     @Test
     fun testGetQuotaQueriedUserNoRole(){
-        userGetQuotaTest(FullUser(role = ""), "", 0, "Null user is not assigned 0 quota")
+        userGetQuotaTest(FullUser(), "", 0, "Null user is not assigned 0 quota")
     }
 
     @Test
+    @Ignore
     fun testGetQuotaElder(){
         fail("Test needs an expected value (discussion item)")
         userGetQuotaTest(FullUser(role = ELDER), ELDER, 10000, "Elder is not given correct quota")
     }
 
     @Test
+    @Ignore
     fun testGetQuotaCTFer(){
         fail("Test needs an expected value (discussion item)")
         userGetQuotaTest(FullUser(role = CTFER), CTFER, 10000, "CTFER is not given correct quota")
@@ -84,27 +106,45 @@ class TestUserGetQuota : WithLogging () {
 
     @Test
     fun testGetQuotaUserIgnoreSummerSemester(){
-        fail("Test is not implemented")
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018s)), USER, 0,"Summer gives quota")
     }
 
     @Test
-    fun testGetQuotaUserSemesterPre2016 () {
-        fail("Test is not implemented")
+    fun testGetQuotaUserSemesterPre2016() {
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role= USER, courses = listOf(c1066f)), USER, 0,"Ancient semester gives quota")
     }
 
     @Test
     fun testGetQuotaUserSemester2016F () {
-        fail("Test is not implemented")
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2016f)), USER, 500,"500 pages not give for 2016F")
     }
 
     @Test
     fun testGetQuotaUserSemesterPost2016F () {
-        fail("Test is not implemented")
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018f)), USER, 1000,"1000 pages not give for semester")
     }
 
     @Test
     fun testGetQuotaUserSpanMultipleSemesters () {
-        fail("Test is not implemented")
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018f, c2018w)), USER, 2000,"multiple semesters not counted")
+    }
+
+    @Test
+    fun testGetQuotaTotalPrintedSubtracted(){
+        setPrintedPages(500)
+        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018f)), USER, 500,"Printed pages not subtracted (you had one job)")
+    }
+
+    //Tests that if there are multiple courses in the same semester they only contribute as one semester
+    @Test
+    fun testGetQuotaMultipleCoursesReduced(){
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018w0, c2018w)), USER, 1000,"multiple courses in same semester counted as other semesters")
     }
 
 }
