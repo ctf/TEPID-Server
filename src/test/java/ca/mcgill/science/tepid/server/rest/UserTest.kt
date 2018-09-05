@@ -14,6 +14,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -32,6 +34,7 @@ class UserTest : WithLogging() {
 
 }
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestUserGetQuota : WithLogging () {
 
     val c2018s = Course("2018s", Season.SUMMER, 2018)
@@ -45,9 +48,7 @@ class TestUserGetQuota : WithLogging () {
      * Runs a test of Users.getQuota, Mockking [tailoredUser] as the user returned by SessionManager
      */
     private fun userGetQuotaTest (tailoredUser: FullUser?, expected: Int, message: String){
-        every {
-            SessionManager.queryUser("targetUser", null)
-        } returns (tailoredUser)
+        mockUser(tailoredUser)
         val actual = Users.getQuota("targetUser")
         assertEquals(expected, actual, message)
     }
@@ -59,11 +60,21 @@ class TestUserGetQuota : WithLogging () {
         userGetQuotaTest(tailoredUser, expected, message)
     }
 
+    private fun mockUser(tailoredUser: FullUser?){
+        every {
+            SessionManager.queryUser("targetUser", null)
+        } returns (tailoredUser)
+    }
+
     @Before
     fun initTest() {
         objectMockk(SessionManager).mock()
         objectMockk(AuthenticationFilter).mock()
         objectMockk(Users).mock()
+        every {
+            SessionManager.queryUser("targetUser", null)
+        } returns (FullUser())
+
     }
     @After
     fun tearTest(){
