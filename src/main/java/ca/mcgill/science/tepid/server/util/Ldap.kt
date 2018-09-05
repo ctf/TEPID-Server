@@ -23,7 +23,6 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
     private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
 
 
-
     /**
      * Retrieve a [FullUser] from ldap
      * [sam] must be a valid short user or long user
@@ -60,8 +59,9 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
     fun authenticate(sam: String, pw: String): FullUser? {
         log.debug("Authenticating $sam against ldap")
 
-        val shortUser = if (sam.matches(shortUserRegex)) sam else SessionManager.queryUser(sam, null)?.shortUser ?: ldap.autoSuggest(sam, auth, 1).getOrNull(0)?.shortUser
-        if (shortUser==null) return null
+        val shortUser = if (sam.matches(shortUserRegex)) sam else SessionManager.queryUser(sam, null)?.shortUser
+                ?: ldap.autoSuggest(sam, auth, 1).getOrNull(0)?.shortUser
+        if (shortUser == null) return null
 
         log.info("Authenticating $shortUser")
 
@@ -69,11 +69,16 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
     }
 
 
-    fun setExchangeStudent(sam: String, exchange: Boolean) {
+    /**
+     * Adds the supplied user to the exchange group
+     *
+     * @return updated status of the user; false if anything goes wrong
+     */
+    fun setExchangeStudent(sam: String, exchange: Boolean): Boolean {
         val longUser = sam.contains(".")
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchFilter = "(&(objectClass=user)(" + (if (longUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (longUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
-        val ctx = ldap.bindLdap(auth) ?: return
+        val ctx = ldap.bindLdap(auth) ?: return false
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
         var searchResult: SearchResult? = null
@@ -84,23 +89,25 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         } catch (e: Exception) {
         }
 
-        if (searchResult == null) return
+        if (searchResult == null) return false
         val cal = Calendar.getInstance()
         val userDn = searchResult.nameInNamespace
         val year = cal.get(Calendar.YEAR)
         val season = if (cal.get(Calendar.MONTH) < 8) "W" else "F"
-        val groupDn = "CN=" + Config.EXCHANGE_STUDENTS_GROUP_BASE + "$year$season, "+ Config.GROUPS_LOCATION
+        val groupDn = "CN=" + Config.EXCHANGE_STUDENTS_GROUP_BASE + "$year$season, " + Config.GROUPS_LOCATION
         val mods = arrayOfNulls<ModificationItem>(1)
         val mod = BasicAttribute("member", userDn)
+        // todo check if we should ignore modification action if the user is already in/not in the exchange group?
         mods[0] = ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod)
-        try {
+        return try {
             ctx.modifyAttributes(groupDn, mods)
             log.info("Added {} to exchange students.", sam)
+            exchange
         } catch (e: NamingException) {
             log.warn("Error adding to exchange students. {\"sam\":\"$sam\", \"userDN\":\"$userDn\",\"groupDN\":\"$groupDn\"}")
             e.printStackTrace()
+            false
         }
-
     }
 
 

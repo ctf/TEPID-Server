@@ -80,13 +80,16 @@ class Users {
         return CouchDb.path("u$shortUser").putJson(newAdmin)
     }
 
+    /**
+     * Attempts to add the supplied sam to the exchange group
+     * @return updated status of the user; false if anything goes wrong
+     */
     @PUT
     @Path("/{sam}/exchange")
     @RolesAllowed(CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
-    fun setExchange(@PathParam("sam") sam: String, exchange: Boolean) {
-        SessionManager.setExchangeStudent(sam, exchange)
-    }
+    fun setExchange(@PathParam("sam") sam: String, exchange: Boolean): Boolean =
+            SessionManager.setExchangeStudent(sam, exchange)
 
     /**
      * Abstract implementation of modifying user data
