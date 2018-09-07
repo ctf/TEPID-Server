@@ -73,16 +73,14 @@ object SessionManager : WithLogging() {
         log.trace("Db data for $sam")
         if (dbUser?.authType == LOCAL) {
             return if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
-        }
-        else if (Config.LDAP_ENABLED) {
-            var ldapUser =  Ldap.authenticate(sam, pw)
-            if (ldapUser!=null){
+        } else if (Config.LDAP_ENABLED) {
+            var ldapUser = Ldap.authenticate(sam, pw)
+            if (ldapUser != null) {
                 ldapUser = mergeUsers(ldapUser, dbUser)
                 updateDbWithUser(ldapUser)
             }
             return ldapUser
-        }
-        else {
+        } else {
             return null
         }
     }
@@ -121,19 +119,21 @@ object SessionManager : WithLogging() {
      */
     internal fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?): FullUser {
         // ensure that short users actually match before attempting any merge
-        val ldapShortUser = ldapUser.shortUser ?: throw RuntimeException ("LDAP user does not have a short user. Maybe this will help {\"ldapUser\":\"${ldapUser.toString()},\"dbUser\":\"${dbUser.toString()}\"}")
+        val ldapShortUser = ldapUser.shortUser
+                ?: throw RuntimeException("LDAP user does not have a short user. Maybe this will help {\"ldapUser\":\"${ldapUser.toString()},\"dbUser\":\"${dbUser.toString()}\"}")
         if (dbUser == null) return ldapUser
-        if (ldapShortUser != dbUser.shortUser) throw RuntimeException ("Attempt to merge to different users {\"ldapUser\":\"${ldapUser.toString()},\"dbUser\":\"${dbUser.toString()}\"}")
+        if (ldapShortUser != dbUser.shortUser) throw RuntimeException("Attempt to merge to different users {\"ldapUser\":\"${ldapUser.toString()},\"dbUser\":\"${dbUser.toString()}\"}")
         // proceed with data merge
         val newUser = ldapUser.copy()
         newUser.withDbData(dbUser)
-        newUser.studentId = if (ldapUser.studentId!=-1) ldapUser.studentId else dbUser.studentId
+        newUser.studentId = if (ldapUser.studentId != -1) ldapUser.studentId else dbUser.studentId
         newUser.preferredName = dbUser.preferredName
         newUser.nick = dbUser.nick
         newUser.colorPrinting = dbUser.colorPrinting
         newUser.jobExpiration = dbUser.jobExpiration
         return newUser
     }
+
     /**
      * Uploads a [user] to the DB,
      * with logging for failures
@@ -167,16 +167,16 @@ object SessionManager : WithLogging() {
         val dbUser = when {
             sam.contains(".") ->
                 CouchDb
-                    .path(CouchDb.CouchDbView.ByLongUser)
-                    .queryParam("key", "\"${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}\"")
-                    .getViewRows<FullUser>()
-                    .firstOrNull()
+                        .path(CouchDb.CouchDbView.ByLongUser)
+                        .queryParam("key", "\"${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}\"")
+                        .getViewRows<FullUser>()
+                        .firstOrNull()
             sam.matches(numRegex) ->
                 CouchDb
-                    .path(CouchDb.CouchDbView.ByStudentId)
-                    .queryParam("key", sam)
-                    .getViewRows<FullUser>()
-                    .firstOrNull()
+                        .path(CouchDb.CouchDbView.ByStudentId)
+                        .queryParam("key", sam)
+                        .getViewRows<FullUser>()
+                        .firstOrNull()
             else -> CouchDb.path("u$sam").getJsonOrNull()
         }
         dbUser?._id ?: return null
@@ -205,9 +205,10 @@ object SessionManager : WithLogging() {
      *
      * @param sam      shortId
      * @param exchange boolean for exchange status
+     * @return updated status of the user; false if anything goes wrong
      */
-    fun setExchangeStudent(sam: String, exchange: Boolean) {
-        if (Config.LDAP_ENABLED) Ldap.setExchangeStudent(sam, exchange)
-    }
+    fun setExchangeStudent(sam: String, exchange: Boolean): Boolean =
+            if (Config.LDAP_ENABLED) Ldap.setExchangeStudent(sam, exchange)
+            else false
 
 }
