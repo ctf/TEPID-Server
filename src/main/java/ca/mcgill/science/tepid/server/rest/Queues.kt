@@ -44,7 +44,7 @@ class Queues {
         //TODO limit param no longer user, should be replaced by from param in client
         // this should get all jobs in "queue" from the past 2 days
         val from = Date().time - 1000 * 60 * 60 * 24 * 2 // from 2 days ago
-        return CouchDb.getViewRows("_design/temp/_view", "JobsByQueueAndTime") {
+        return CouchDb.getViewRows("_design/main/_view", "jobsByQueueAndTime") {
             query("descending" to true,
                     "startkey" to "[\"$queue\",%7B%7D]",
                     "endkey" to "[\"$queue\",$from]")
