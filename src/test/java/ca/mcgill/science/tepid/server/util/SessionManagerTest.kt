@@ -596,7 +596,7 @@ class SetExchangeStudentTest {
     @Before
     fun initTest() {
         objectMockk(Ldap).mock()
-        every{Ldap.setExchangeStudent(any(), any())} just runs
+        every{Ldap.setExchangeStudent(any(), any())} returns true
         objectMockk(Config).mock()
     }
     @After
