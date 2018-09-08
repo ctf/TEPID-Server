@@ -595,14 +595,13 @@ class SetExchangeStudentTest {
 
     @Before
     fun initTest() {
-        objectMockk(Ldap).mock()
+        mockkObject(Ldap)
         every{Ldap.setExchangeStudent(any(), any())} returns true
-        objectMockk(Config).mock()
+        mockkObject(Config)
     }
     @After
     fun tearTest(){
-        objectMockk(Ldap).unmock()
-        objectMockk(Config).unmock()
+        unmockkAll()
     }
 
     @Test
@@ -613,7 +612,7 @@ class SetExchangeStudentTest {
     }
 
     @Test
-    fun testtestSetExchangeStudentLdapDisabled () {
+    fun testSetExchangeStudentLdapDisabled () {
         every { Config.LDAP_ENABLED } returns false
         SessionManager.setExchangeStudent(testSam, true)
         verify(inverse = true){Ldap.setExchangeStudent(testSam, true)}
