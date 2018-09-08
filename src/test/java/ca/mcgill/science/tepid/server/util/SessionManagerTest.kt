@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.generateTestUser
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -33,6 +34,21 @@ import kotlin.test.assertFalse
         AuthenticateTest::class
 )
 class SessionManagerTest
+
+object UserFactory {
+    fun makeDbUser(): FullUser {
+        val testUser = FullUser(displayName = "dbDN", givenName = "dbGN", lastName = "dbLN", shortUser = "SU", longUser = "db.LU@example.com", email = "db.EM@example.com", faculty = "dbFaculty", groups = listOf("dbGroups"), courses = listOf(Course("dbCourseName", Season.FALL, 4444)), studentId = 3333, colorPrinting = true, jobExpiration = 12)
+        testUser._id = "0000"
+        testUser._rev = "0001"
+        return testUser
+    }
+    fun makeLdapUser(): FullUser {
+        val testOtherUser = FullUser(displayName = "ldapDN", givenName = "ldapGN", lastName = "ldapLN", shortUser = "SU", longUser = "ldap.LU@example.com", email = "ldap.EM@example.com", faculty = "ldapFaculty", groups = listOf("ldapGroups"), courses = listOf(Course("ldapCourseName", Season.FALL, 2222)), studentId = 1111)
+        testOtherUser._id = "1000"
+        testOtherUser._rev = "1001"
+        return testOtherUser
+    }
+}
 
 class MergeUsersTest {
 
@@ -205,8 +221,8 @@ class QueryUserDbTest {
         testUser._id = "0000"
         testUser._rev = "0001"
         testOtherUser = FullUser(displayName = "ldapDN", givenName = "ldapGN", lastName = "ldapLN", shortUser = "SU", longUser = "ldap.LU@example.com", email = "ldap.EM@example.com", faculty = "ldapFaculty", groups = listOf("ldapGroups"), courses = listOf(Course("ldapCourseName", Season.FALL, 2222)), studentId = 1111)
-        testUser._id = "1000"
-        testUser._rev = "1001"
+        testOtherUser._id = "1000"
+        testOtherUser._rev = "1001"
     }
 
     @After
@@ -597,6 +613,13 @@ class SetExchangeStudentTest {
     fun initTest() {
         mockkObject(Ldap)
         every{Ldap.setExchangeStudent(any(), any())} returns true
+        mockkObject(SessionManager)
+        every {
+            SessionManager.queryUserDb(testSam)
+        } returns UserFactory.makeDbUser()
+        every{
+            Ldap.queryUserLdap(testSam, null)
+        } returns UserFactory.makeLdapUser()
         mockkObject(Config)
     }
     @After
