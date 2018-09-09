@@ -1,12 +1,12 @@
 package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.FullUser
-import org.junit.Assume
-import org.junit.BeforeClass
-import org.junit.Test
+import ca.mcgill.science.tepid.utils.WithLogging
+import org.junit.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
 class LdapTest {
 
@@ -65,13 +65,41 @@ class LdapTest {
     fun queryWithoutPass() {
         Ldap.queryUserLdap(Config.TEST_USER, null).assertEqualsTestUser()
     }
-//
-//    @Test
-//    fun queryById() {
-//        val id = ***REMOVED***
-//        val user = Ldap.queryUser(id.toString(), null)
-//        user.assertValidUser()
-//        println(user!!.getSemesters())
-//        assertEquals(id, user.studentId)
-//    }
+}
+
+class testQueryUserLdap : WithLogging() {
+
+    @Before
+    fun initTest() {
+
+    }
+    @After
+    fun tearTest(){
+
+    }
+
+    @Test
+    fun testQueryUserWithSuAndPw(){
+        fail("NI")
+    }
+
+    @Test
+    fun testQueryUserWithSuNoPw(){
+        fail("NI")
+    }
+
+    @Test
+    fun testQueryUserWithNonSuAndPw(){
+        fail("NI")
+    }
+
+    @Test
+    fun testQueryUserWithNonSuNoPw(){
+        fail("NI")
+    }
+
+    @Test
+    fun testQueryUserNullUser(){
+        fail("NI")
+    }
 }
