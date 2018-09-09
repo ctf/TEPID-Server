@@ -49,6 +49,17 @@ object UserFactory {
         testOtherUser.activeSince = 9999
         return testOtherUser
     }
+    fun makeMergedUser(): FullUser {
+        val dbUser = makeDbUser()
+        val testUser = makeLdapUser().copy(
+                colorPrinting = dbUser.colorPrinting,
+                jobExpiration = dbUser.jobExpiration,
+                preferredName = dbUser.preferredName,
+                nick = dbUser.nick
+        )
+        testUser.updateUserNameInformation()
+        return testUser
+    }
 }
 
 class MergeUsersTest {
