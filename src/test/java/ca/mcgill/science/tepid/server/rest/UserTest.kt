@@ -9,13 +9,12 @@ import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.server.util.SessionManager
 import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.every
-import io.mockk.objectMockk
+import io.mockk.mockkObject
+import io.mockk.unmockkAll
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -57,7 +56,7 @@ class TestUserGetQuota : WithLogging () {
         every {
             AuthenticationFilter.getCtfRole(ofType(FullUser::class))
         } returns tailoredUserRole
-        userGetQuotaTest(tailoredUser.copy(shortUser = "tailoredUser"), expected, message)
+        userGetQuotaTest(tailoredUser.copy(shortUser="tailoredUser"), expected, message)
     }
 
     private fun mockUser(tailoredUser: FullUser?){
@@ -68,9 +67,9 @@ class TestUserGetQuota : WithLogging () {
 
     @Before
     fun initTest() {
-        objectMockk(SessionManager).mock()
-        objectMockk(AuthenticationFilter).mock()
-        objectMockk(Users).mock()
+        mockkObject(SessionManager)
+        mockkObject(AuthenticationFilter)
+        mockkObject(Users)
         every {
             SessionManager.queryUser("targetUser", null)
         } returns (FullUser())
@@ -78,10 +77,7 @@ class TestUserGetQuota : WithLogging () {
     }
     @After
     fun tearTest(){
-        objectMockk(SessionManager).unmock()
-        objectMockk(AuthenticationFilter).unmock()
-        objectMockk(Users).unmock()
-
+        unmockkAll()
     }
 
     private fun setPrintedPages(printedPages:Int) {

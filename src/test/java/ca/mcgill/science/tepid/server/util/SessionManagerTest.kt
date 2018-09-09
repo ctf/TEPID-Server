@@ -5,7 +5,6 @@ import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
-import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.generateTestUser
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -64,10 +63,6 @@ object UserFactory {
 
 class MergeUsersTest {
 
-    //note that the shortUsers are the same, since they are the unique key
-    val testLdapUser = FullUser(displayName = "ldapDN", givenName = "ldapGN", lastName = "ldapLN", shortUser = "SU", longUser = "ldapLU", email = "ldapEM", faculty = "ldapFaculty", groups = listOf("ldapGroups"), courses = listOf(Course("ldapCourseName", Season.FALL, 2222)), studentId = 1111)
-    val testDbUser = FullUser(displayName = "dbDN", givenName = "dbGN", lastName = "dbLN", shortUser = "SU", longUser = "dbLU", email = "dbEM", faculty = "dbFaculty", groups = listOf("dbGroups"), courses = listOf(Course("dbCourseName", Season.FALL, 4444)), studentId = 3333, colorPrinting = true, jobExpiration = 12)
-    val testMergedUser = testLdapUser.copy(colorPrinting = true, jobExpiration = 12)
 
     // This should never happen, but it would cause so much trouble downstream that we need to guard against it
     // I don't even have a plausible scenario for how it would happen
@@ -81,9 +76,9 @@ class MergeUsersTest {
     @Test
     fun testMergeUsersNonMatchNullDbUser () {
         val dbUser:FullUser? = null
-        val ldapUser = testLdapUser
+        val ldapUser = UserFactory.makeLdapUser()
         val actual = SessionManager.mergeUsers(ldapUser, dbUser)
-        assertEquals(testLdapUser, actual)
+        assertEquals(UserFactory.makeLdapUser(), actual)
     }
     
     // This should never happen, but it would cause so much trouble downstream that we need to guard against it.
@@ -92,22 +87,22 @@ class MergeUsersTest {
     // I see no sane way to proceed automatically in that case
     @Test(expected = RuntimeException::class)
     fun testMergeUsersNonMatchDbUser () {
-        val dbUser:FullUser? = testDbUser.copy(shortUser = "dbSU")
-        val ldapUser = testLdapUser.copy(shortUser = "ldapSU")
+        val dbUser:FullUser? = UserFactory.makeDbUser().copy(shortUser = "dbSU")
+        val ldapUser = UserFactory.makeLdapUser().copy(shortUser = "ldapSU")
         SessionManager.mergeUsers(ldapUser, dbUser)
     }
     
     @Test
     fun testMergeUsers () {
-        val actual = SessionManager.mergeUsers(testLdapUser, testDbUser)
-        assertEquals(testMergedUser, actual)
+        val actual = SessionManager.mergeUsers(UserFactory.makeLdapUser(), UserFactory.makeDbUser())
+        assertEquals(UserFactory.makeMergedUser(), actual)
     }
 
     @Test
     fun testMergeUsersNoStudentIdInLdapUser () {
-        val ldapUser = testLdapUser.copy(studentId = -1)
-        val actual = SessionManager.mergeUsers(ldapUser, testDbUser)
-        val expected = testMergedUser.copy(studentId = testDbUser.studentId)
+        val ldapUser = UserFactory.makeLdapUser().copy(studentId = -1)
+        val actual = SessionManager.mergeUsers(ldapUser, UserFactory.makeDbUser())
+        val expected = UserFactory.makeMergedUser().copy(studentId = UserFactory.makeDbUser().studentId)
         assertEquals(expected, actual)
     }
 
@@ -115,15 +110,14 @@ class MergeUsersTest {
 class UpdateDbWithUserTest {
     @Before
     fun initTest() {
-        objectMockk(CouchDb).mock()
-        staticMockk("ca.mcgill.science.tepid.server.util.WebTargetsKt").mock()
+        mockkObject(CouchDb)
+        mockkStatic("ca.mcgill.science.tepid.server.util.WebTargetsKt")
         testUser._rev = "1111"
     }
 
     @After
     fun tearTest() {
-        objectMockk(CouchDb).unmock()
-        staticMockk("ca.mcgill.science.tepid.server.util.WebTargetsKt").unmock()
+        unmockkAll()
     }
 
     val testSU = "testSU"
@@ -216,32 +210,23 @@ class UpdateDbWithUserTest {
     }
 }
 class QueryUserDbTest {
-    lateinit var testUser: FullUser
-    lateinit var testOtherUser: FullUser
+    var testUser = UserFactory.makeDbUser()
+    var testOtherUser = UserFactory.makeLdapUser()
     lateinit var wt: WebTarget
 
     @Before
     fun initTest() {
-        objectMockk(Config).mock()
+        mockkObject(Config)
         every{Config.ACCOUNT_DOMAIN} returns "config.example.com"
-        objectMockk(CouchDb).mock()
-        staticMockk("ca.mcgill.science.tepid.server.util.WebTargetsKt").mock()
+        mockkObject(CouchDb)
+        mockkStatic("ca.mcgill.science.tepid.server.util.WebTargetsKt")
 
         wt = mockk<WebTarget>()
-
-        testUser = FullUser(displayName = "dbDN", givenName = "dbGN", lastName = "dbLN", shortUser = "SU", longUser = "db.LU@example.com", email = "db.EM@example.com", faculty = "dbFaculty", groups = listOf("dbGroups"), courses = listOf(Course("dbCourseName", Season.FALL, 4444)), studentId = 3333, colorPrinting = true, jobExpiration = 12)
-        testUser._id = "0000"
-        testUser._rev = "0001"
-        testOtherUser = FullUser(displayName = "ldapDN", givenName = "ldapGN", lastName = "ldapLN", shortUser = "SU", longUser = "ldap.LU@example.com", email = "ldap.EM@example.com", faculty = "ldapFaculty", groups = listOf("ldapGroups"), courses = listOf(Course("ldapCourseName", Season.FALL, 2222)), studentId = 1111)
-        testOtherUser._id = "1000"
-        testOtherUser._rev = "1001"
     }
 
     @After
     fun tearTest() {
-        objectMockk(CouchDb).unmock()
-        staticMockk("ca.mcgill.science.tepid.server.util.WebTargetsKt").unmock()
-        objectMockk(Config).unmock()
+        unmockkAll()
     }
 
     private fun makeMocks(userListReturned : List<FullUser>) {
@@ -291,7 +276,7 @@ class QueryUserDbTest {
         val actual = SessionManager.queryUserDb(testUser.longUser)
 
         verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser)}
-        verify { wt.queryParam("key", match {it.toString() == "\"db.LU%40config.example.com\""})}
+        verify { wt.queryParam("key", match {it.toString() == "\"db.lu%40config.example.com\""})}
         assertEquals(testUser, actual, "User was not returned when searched by Email")
     }
 
@@ -302,7 +287,7 @@ class QueryUserDbTest {
         val actual = SessionManager.queryUserDb(testUser.longUser)
 
         verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser)}
-        verify { wt.queryParam("key", match {it.toString() == "\"db.LU%40config.example.com\""})}
+        verify { wt.queryParam("key", match {it.toString() == "\"db.lu%40config.example.com\""})}
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
     }
 
@@ -362,7 +347,7 @@ class QueryUserDbTest {
 }
 class AutoSuggestTest {
 
-    lateinit var testUser:FullUser
+    var testUser = UserFactory.makeDbUser()
     lateinit var q:Q<List<FullUser>>
     val testLike = "testLike"
     val testLimit = 15
@@ -370,16 +355,13 @@ class AutoSuggestTest {
     @Before
     fun initTest() {
         q = Q.defer<List<FullUser>>()
-        testUser = FullUser(displayName = "dbDN", givenName = "dbGN", lastName = "dbLN", shortUser = "SU", longUser = "db.LU@example.com", email = "db.EM@example.com", faculty = "dbFaculty", groups = listOf("dbGroups"), courses = listOf(Course("dbCourseName", Season.FALL, 4444)), studentId = 3333, colorPrinting = true, jobExpiration = 12)
-        objectMockk(Config).mock()
-        objectMockk(Ldap).mock()
-
-
+        mockkObject(Config)
+        mockkObject(Ldap)
     }
+
     @After
     fun tearTest() {
-        objectMockk(Config).unmock()
-        objectMockk(Ldap).unmock()
+       unmockkAll()
     }
 
     @Test
@@ -400,9 +382,6 @@ class AutoSuggestTest {
 
         verify{Ldap.autoSuggest(testLike, testLimit)}
         assertEquals(p, actual, "Expected promise not returned")
-
-        objectMockk(Ldap).unmock()
-
     }
 
     @Test
@@ -425,23 +404,20 @@ class AutoSuggestTest {
 }
 class QueryUserTest : WithLogging() {
 
-    lateinit var testUser: FullUser
+    var testUser = UserFactory.makeDbUser()
 
     lateinit var sm : SessionManager
 
     @Before
     fun initTest() {
-        objectMockk(Config).mock()
-        objectMockk(Ldap).mock()
+        mockkObject(Config)
+        mockkObject(Ldap)
         sm = spyk(SessionManager)
-
-        testUser = FullUser(displayName = "dbDN", givenName = "dbGN", lastName = "dbLN", shortUser = "SU", longUser = "db.LU@example.com", email = "db.EM@example.com", faculty = "dbFaculty", groups = listOf("dbGroups"), courses = listOf(Course("dbCourseName", Season.FALL, 4444)), studentId = 3333, colorPrinting = true, jobExpiration = 12)
     }
 
     @After
     fun tearTest(){
-        objectMockk(Config).unmock()
-        objectMockk(Ldap).unmock()
+        unmockkAll()
     }
 
     @Test
@@ -539,14 +515,13 @@ class AuthenticateTest{
                 studentId = 5555,
                 colorPrinting = false
         )
-        objectMockk(Config).mock()
+        mockkObject(Config)
         sm = spyk(SessionManager)
-        objectMockk(Ldap).mock()
+        mockkObject(Ldap)
     }
     @After
     fun tearTest(){
-        objectMockk(Config).unmock()
-        objectMockk(Ldap).unmock()
+        unmockkAll()
     }
 
     @Test
