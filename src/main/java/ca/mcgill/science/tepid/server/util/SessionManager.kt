@@ -131,6 +131,7 @@ object SessionManager : WithLogging() {
         newUser.nick = dbUser.nick
         newUser.colorPrinting = dbUser.colorPrinting
         newUser.jobExpiration = dbUser.jobExpiration
+        newUser.updateUserNameInformation()
         return newUser
     }
 
