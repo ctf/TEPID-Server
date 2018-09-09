@@ -207,8 +207,15 @@ object SessionManager : WithLogging() {
      * @param exchange boolean for exchange status
      * @return updated status of the user; false if anything goes wrong
      */
-    fun setExchangeStudent(sam: String, exchange: Boolean): Boolean =
-            if (Config.LDAP_ENABLED) Ldap.setExchangeStudent(sam, exchange)
-            else false
+    fun setExchangeStudent(sam: String, exchange: Boolean): Boolean {
+        if (Config.LDAP_ENABLED) {
+            val success = Ldap.setExchangeStudent(sam, exchange)
+            val dbUser = queryUserDb(sam)
+            val ldapUser = Ldap.queryUserLdap(sam, null) ?: return false
+            val mergedUser = mergeUsers(ldapUser, dbUser)
+            updateDbWithUser(mergedUser)
+            return success
+        } else return false
+    }
 
 }
