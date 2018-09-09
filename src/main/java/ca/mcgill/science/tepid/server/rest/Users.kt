@@ -177,7 +177,7 @@ class Users {
             // TODO: incorporate summer escape into mapper
             val newMaxQuota = user.getSemesters()
                     .filter { it.season != Season.SUMMER } // we don't add quota for the summer
-                    .filter { it >= fall(2016) }      // TEPID didn't exist before fall 2016
+                    .filter { it >= Semester.fall(2016) }      // TEPID didn't exist before fall 2016
                     .filter { it <= currentSemester }      // only add quota for valid semesters
                     .map { semester ->
                         /*
@@ -188,7 +188,7 @@ class Users {
                          * you may specify ranges (inclusive) when matching
                          */
                         when (semester) {
-                            fall(2016) -> 500         // the first semester had 500 pages only
+                            Semester.fall(2016) -> 500         // the first semester had 500 pages only
                             else -> 1000                   // to date, every semester will add 1000 pages to the base quota
                         }
                     }.sum()
@@ -201,9 +201,6 @@ class Users {
         fun getTotalPrinted(shortUser: String?) =
                 CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject()
                         .get("rows")?.get(0)?.get("value")?.get("sum")?.asInt(0) ?: 0
-
-        private fun fall(year: Int) = Semester(Season.FALL, year)
-        private fun winter(year: Int) = Semester(Season.WINTER, year)
 
         private fun oldMaxQuota(shortUser: String): Int {
             try {
