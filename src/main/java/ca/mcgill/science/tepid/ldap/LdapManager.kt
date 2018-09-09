@@ -69,7 +69,7 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
      *
      * Note that when converting
      */
-    protected fun Attributes.toUser(ctx: LdapContext): FullUser {
+    private fun Attributes.toUser(ctx: LdapContext): FullUser {
         fun attr(name: String) = get(name)?.get()?.toString() ?: ""
         val out = FullUser(
                 displayName = attr("displayName"),
@@ -94,8 +94,7 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
             val i = cn.indexOf("=")
             return cn.substring(i+1)
         }
-
-        val LdapGroups = get("memberOf")?.toList()?.mapNotNull {
+        val ldapGroups = get("memberOf")?.toList()?.mapNotNull {
             try {
                 val cn = getCn(it)
                 val groupValues = semesterRegex.find(it.toLowerCase(Locale.CANADA))?.groupValues
@@ -103,7 +102,7 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
                 else null
                 cn to semester
             } catch (e: NamingException) {
-                log.warn("Error instantiating LDAP Groups: $e")
+                log.warn("Error instantiating LDAP Groups {\"user\":\"$out\", \"memberOF\":\"${get("memberOf")}\"}: $e")
                 null
             }
         }
@@ -111,8 +110,7 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
         val groups = mutableListOf<String>()
         val courses = mutableListOf<Course>()
 
-        LdapGroups?.forEach { (name, semester) ->
-            if (name == null) return@forEach
+        ldapGroups?.forEach { (name, semester) ->
             if (semester == null) groups.add(name)
             else courses.add(Course(name, semester.season, semester.year))
         }
@@ -127,11 +125,11 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
     /**
      * Defines the environment necessary for [InitialLdapContext]
      */
-    fun createAuthMap(user: String, password: String) = Hashtable<String, String>().apply {
+    private fun createAuthMap(user: String, password: String) = Hashtable<String, String>().apply {
         put(SECURITY_AUTHENTICATION, "simple")
         put(INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
         put(PROVIDER_URL, Config.PROVIDER_URL)
-        put(SECURITY_PRINCIPAL, Config.SECURITY_PRINCIPAL_PREFIX+"$user")
+        put(SECURITY_PRINCIPAL, Config.SECURITY_PRINCIPAL_PREFIX+ user)
         put(SECURITY_CREDENTIALS, password)
         put("com.sun.jndi.ldap.read.timeout", "5000")
         put("com.sun.jndi.ldap.connect.timeout", "500")
@@ -144,12 +142,12 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
      */
 
     fun bindLdap(user: String, password: String): LdapContext? {
-        log.trace("Attempting bind to LDAP: {'PROVIDER_URL':'{}', 'SECURITY_PRINCIPAL':'{}'}",Config.PROVIDER_URL, Config.SECURITY_PRINCIPAL_PREFIX+"$user")
+        log.trace("Attempting bind to LDAP: {'PROVIDER_URL':'${Config.PROVIDER_URL}', 'SECURITY_PRINCIPAL':'${Config.SECURITY_PRINCIPAL_PREFIX+ user}'}")
         try {
             val auth = createAuthMap(user, password)
             return InitialLdapContext(auth, null)
         } catch (e: Exception) {
-            log.error("Failed to bind to LDAP for $user", e)
+            log.error("Failed to bind to LDAP {\"user\":\"$user\"}", e)
             return null
         }
     }

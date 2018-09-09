@@ -31,10 +31,10 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
     fun queryUserLdap(sam: String, pw: String?): FullUser? {
         if (!Config.LDAP_ENABLED) return null
         val auth = if (pw != null && shortUserRegex.matches(sam)) {
-            log.trace("Querying by owner $sam")
+            log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"$sam\"}")
             sam to pw
         } else {
-            log.trace("Querying by resource")
+            log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
             Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
         }
         val user = ldap.queryUser(sam, auth)
@@ -57,13 +57,13 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
      * Returns user data, but guarantees a pass through ldap
      */
     fun authenticate(sam: String, pw: String): FullUser? {
-        log.debug("Authenticating $sam against ldap")
+        log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
 
         val shortUser = if (sam.matches(shortUserRegex)) sam else SessionManager.queryUser(sam, null)?.shortUser
                 ?: ldap.autoSuggest(sam, auth, 1).getOrNull(0)?.shortUser
         if (shortUser == null) return null
 
-        log.info("Authenticating $shortUser")
+        log.info("Authenticating {\"sam\":\"$sam\", \"shortUser\":\"$shortUser\"}")
 
         return ldap.queryUser(shortUser, shortUser to pw)
     }

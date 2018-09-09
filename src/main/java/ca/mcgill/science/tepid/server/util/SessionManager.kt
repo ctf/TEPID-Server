@@ -33,7 +33,7 @@ object SessionManager : WithLogging() {
         val session = FullSession(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
         val id = BigInteger(130, random).toString(32)
         session._id = id
-        log.trace("Creating session $id")
+        log.trace("Creating session {\"id\":\"$id\", \"shortUser\":\"${user.shortUser}\"}")
         val out = CouchDb.path(id).putJson(session)
         println(out)
         return session
@@ -42,7 +42,7 @@ object SessionManager : WithLogging() {
     operator fun get(token: String): FullSession? {
         val session = CouchDb.path(token).getJsonOrNull<FullSession>() ?: return null
         if (session.isValid()) return session
-        log.trace("Session $token is invalid; now ${System.currentTimeMillis()} expiration ${session.expiration}; deleting")
+        log.trace("Deleting session token {\"token\":\"$token\", \"expiration\":\"${session.expiration}\", \"now\":\"${System.currentTimeMillis()}\"}")
         CouchDb.path(token).deleteRev()
         return null
     }
@@ -70,7 +70,7 @@ object SessionManager : WithLogging() {
      */
     fun authenticate(sam: String, pw: String): FullUser? {
         val dbUser = queryUserDb(sam)
-        log.trace("Db data for $sam")
+        log.trace("Db data found for $sam")
         if (dbUser?.authType == LOCAL) {
             return if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
         } else if (Config.LDAP_ENABLED) {
@@ -94,7 +94,7 @@ object SessionManager : WithLogging() {
      */
     fun queryUser(sam: String?, pw: String?): FullUser? {
         if (sam == null) return null
-        log.trace("Querying user $sam")
+        log.trace("Querying user: {\"sam\":\"$sam\"}")
 
         val dbUser = queryUserDb(sam)
 
@@ -106,7 +106,7 @@ object SessionManager : WithLogging() {
 
             updateDbWithUser(ldapUser)
 
-            log.trace("Found user from ldap $sam: ${ldapUser.longUser}")
+            log.trace("Found user from ldap {\"sam\":\"$sam\", \"longUser\":\"${ldapUser.longUser}\"}")
             return ldapUser
         }
         //finally
@@ -114,15 +114,15 @@ object SessionManager : WithLogging() {
     }
 
     /**
-     * Update [ldapUser] with db data
-     * [queryAsOwner] should be true if [ldapUser] was retrieved by the owner rather than a resource account
+     * Merge users from LDAP and DB for their corresponding authorities
+     * Returns a new users (does not mutate either input
      */
     internal fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?): FullUser {
         // ensure that short users actually match before attempting any merge
         val ldapShortUser = ldapUser.shortUser
-                ?: throw RuntimeException("LDAP user does not have a short user. Maybe this will help {\"ldapUser\":\"${ldapUser.toString()},\"dbUser\":\"${dbUser.toString()}\"}")
+                ?: throw RuntimeException("LDAP user does not have a short user. Maybe this will help {\"ldapUser\":\"$ldapUser,\"dbUser\":\"$dbUser\"}")
         if (dbUser == null) return ldapUser
-        if (ldapShortUser != dbUser.shortUser) throw RuntimeException("Attempt to merge to different users {\"ldapUser\":\"${ldapUser.toString()},\"dbUser\":\"${dbUser.toString()}\"}")
+        if (ldapShortUser != dbUser.shortUser) throw RuntimeException("Attempt to merge to different users {\"ldapUser\":\"$ldapUser,\"dbUser\":\"$dbUser\"}")
         // proceed with data merge
         val newUser = ldapUser.copy()
         newUser.withDbData(dbUser)
@@ -140,7 +140,7 @@ object SessionManager : WithLogging() {
      * with logging for failures
      */
     internal fun updateDbWithUser(user: FullUser) {
-        log.trace("Update db instance")
+        log.trace("Update db instance {\"user\":\"${user.shortUser}\"}\n")
         try {
             val response = CouchDb.path("u${user.shortUser}").putJson(user)
             if (response.isSuccessful) {
@@ -148,13 +148,13 @@ object SessionManager : WithLogging() {
                 val newRev = responseObj.get("_rev")?.asText()
                 if (newRev != null && newRev.length > 3) {
                     user._rev = newRev
-                    log.trace("New rev for ${user.shortUser}: $newRev")
+                    log.trace("New rev {\"user\": \"${user.shortUser}\", \"rev\":\"$newRev\"}")
                 }
             } else {
-                log.error("Response failed: $response")
+                log.error("Updating DB with user failed: {\"user\": \"${user.shortUser}\",\"response\":\"$response\"}")
             }
         } catch (e1: Exception) {
-            log.error("Could not put ${user.shortUser} into db", e1)
+            log.error("Error updating DB with user: {\"user\": \"${user.shortUser}\"}", e1)
         }
     }
 
@@ -181,7 +181,7 @@ object SessionManager : WithLogging() {
             else -> CouchDb.path("u$sam").getJsonOrNull()
         }
         dbUser?._id ?: return null
-        log.trace("Found db user (${dbUser._id}) ${dbUser.displayName} for $sam")
+        log.trace("Found db user {\"sam\":\"$sam\",\"db_id\":\"${dbUser._id}\", \"dislayName\":\"${dbUser.displayName}\"}")
         return dbUser
     }
 
@@ -207,12 +207,13 @@ object SessionManager : WithLogging() {
 	 * This refreshes the groups and courses of a user,
 	 * which allows for thier role to change
      *
-     * @param sam      shortId
+     * @param sam      shortUser
      * @param exchange boolean for exchange status
      * @return updated status of the user; false if anything goes wrong
      */
     fun setExchangeStudent(sam: String, exchange: Boolean): Boolean {
         if (Config.LDAP_ENABLED) {
+            log.info("Setting exchange status {\"sam\":\"$sam\", \"exchange_status\":\"$exchange\"}")
             val success = Ldap.setExchangeStudent(sam, exchange)
             val dbUser = queryUserDb(sam)
             val ldapUser = Ldap.queryUserLdap(sam, null) ?: return false
