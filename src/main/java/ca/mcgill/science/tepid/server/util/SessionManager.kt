@@ -202,7 +202,10 @@ object SessionManager : WithLogging() {
     }
 
     /**
-     * Sets exchange student status
+     * Sets exchange student status.
+     * Also updates user information from LDAP.
+	 * This refreshes the groups and courses of a user,
+	 * which allows for thier role to change
      *
      * @param sam      shortId
      * @param exchange boolean for exchange status
