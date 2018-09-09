@@ -50,14 +50,14 @@ object SessionManager : WithLogging() {
     /**
      * Check if session exists and isn't expired
      *
-     * @param s sessionId
+     * @param token sessionId
      * @return true for valid, false otherwise
      */
-    fun valid(s: String): Boolean = this[s] != null
+    fun valid(token: String): Boolean = this[token] != null
 
-    fun end(s: String) {
+    fun end(token: String) {
         //todo test
-        CouchDb.path(s).deleteRev()
+        CouchDb.path(token).deleteRev()
     }
 
     /**
