@@ -141,12 +141,20 @@ class Users {
         val session = ctx.getSession()
         return if (session.role == USER && session.user.shortUser != shortUser)
             -1
-        else{
+        else {
             val user = SessionManager.queryUser(shortUser, null)
             getQuota(user)
         }
     }
 
+    @GET
+    @Path("/{sam}/quota/debug")
+    @RolesAllowed(CTFER, ELDER)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getQuotaDebug(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): QuotaData {
+        val user = SessionManager.queryUser(shortUser, null)
+        return getQuotaData(user) ?: failNotFound("Could not calculate quota")
+    }
 
     @GET
     @Path("/autosuggest/{like}")
@@ -159,44 +167,60 @@ class Users {
 
     companion object : WithLogging() {
 
-        /**
-         * Given a shortUser, query for the number of pages remaining
-         */
-        fun getQuota(user: FullUser?): Int {
-            val shortUser = user?.shortUser ?: return 0
+        data class QuotaData(val shortUser: String,
+                             val quota: Int,
+                             val maxQuota: Int,
+                             val oldMaxQuota: Int,
+                             val totalPrinted: Int,
+                             val semesters: List<Semester>)
 
+        fun getQuotaData(user: FullUser?): QuotaData? {
+            val shortUser = user?.shortUser ?: return null
 
-            if (AuthenticationFilter.getCtfRole(user).isEmpty()) return 0
+            if (AuthenticationFilter.getCtfRole(user).isEmpty()) return null
 
             val totalPrinted = getTotalPrinted(shortUser)
 
             val oldMaxQuota = oldMaxQuota(shortUser)
 
             val currentSemester = Semester.current
-
             // TODO: incorporate summer escape into mapper
-            val newMaxQuota = user.getSemesters()
+            val semesters = user.getSemesters()
                     .filter { it.season != Season.SUMMER } // we don't add quota for the summer
                     .filter { it >= Semester.fall(2016) }      // TEPID didn't exist before fall 2016
                     .filter { it <= currentSemester }      // only add quota for valid semesters
-                    .map { semester ->
-                        /*
-                         * The following mapper allows you to customize
-                         * The quota/semester
-                         *
-                         * Granted that semesters are comparable,
-                         * you may specify ranges (inclusive) when matching
-                         */
-                        when (semester) {
-                            Semester.fall(2016) -> 500         // the first semester had 500 pages only
-                            else -> 1000                   // to date, every semester will add 1000 pages to the base quota
-                        }
-                    }.sum()
+
+            val newMaxQuota = semesters.map { semester ->
+                /*
+                 * The following mapper allows you to customize
+                 * The quota/semester
+                 *
+                 * Granted that semesters are comparable,
+                 * you may specify ranges (inclusive) when matching
+                 */
+                when (semester) {
+                    Semester.fall(2016) -> 500         // the first semester had 500 pages only
+                    else -> 1000                   // to date, every semester will add 1000 pages to the base quota
+                }
+            }.sum()
 
             if (oldMaxQuota > newMaxQuota)
                 log.warn("Old quota $oldMaxQuota > new quota $newMaxQuota for $shortUser")
-            return Math.max(newMaxQuota - totalPrinted, 0)
+            val quota = Math.max(newMaxQuota - totalPrinted, 0)
+
+            return QuotaData(shortUser = shortUser,
+                    quota = quota,
+                    maxQuota = newMaxQuota,
+                    oldMaxQuota = oldMaxQuota,
+                    totalPrinted = totalPrinted,
+                    semesters = semesters)
         }
+
+        /**
+         * Given a shortUser, query for the number of pages remaining
+         * Returns 0 if an error has occurred
+         */
+        fun getQuota(user: FullUser?): Int = getQuotaData(user)?.quota ?: 0
 
         fun getTotalPrinted(shortUser: String?) =
                 CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject()
