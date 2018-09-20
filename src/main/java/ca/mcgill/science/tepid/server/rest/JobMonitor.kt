@@ -1,6 +1,6 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.server.printer.Printer
+import ca.mcgill.science.tepid.server.printing.Printer
 
 class JobMonitor : Runnable {
 
