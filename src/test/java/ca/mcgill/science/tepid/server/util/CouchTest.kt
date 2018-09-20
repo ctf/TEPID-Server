@@ -2,7 +2,7 @@ package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintQueue
-import ca.mcgill.science.tepid.models.enums.Room
+import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.junit.Test
 import kotlin.test.assertEquals

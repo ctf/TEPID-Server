@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.User
+import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.mindrot.jbcrypt.BCrypt
