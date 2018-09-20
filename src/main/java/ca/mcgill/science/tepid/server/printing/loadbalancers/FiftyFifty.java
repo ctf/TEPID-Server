@@ -1,4 +1,4 @@
-package ca.mcgill.science.tepid.server.loadbalancers;
+package ca.mcgill.science.tepid.server.printing.loadbalancers;
 
 import ca.mcgill.science.tepid.models.data.Destination;
 import ca.mcgill.science.tepid.models.data.FullDestination;
