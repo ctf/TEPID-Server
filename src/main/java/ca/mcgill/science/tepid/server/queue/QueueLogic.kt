@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.queue
 
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.server.printing.QueueResult
 
 interface QueueLogic {
     /**
