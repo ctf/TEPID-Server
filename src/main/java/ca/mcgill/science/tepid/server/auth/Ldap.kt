@@ -3,7 +3,7 @@ package ca.mcgill.science.tepid.server.auth
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.server.util.Config
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.*
 import javax.naming.NamingException

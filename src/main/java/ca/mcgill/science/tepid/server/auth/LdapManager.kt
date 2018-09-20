@@ -4,7 +4,7 @@ import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.server.util.Config
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.text.ParseException
 import java.text.SimpleDateFormat

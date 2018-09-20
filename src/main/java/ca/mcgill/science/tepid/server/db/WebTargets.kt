@@ -1,6 +1,6 @@
 package ca.mcgill.science.tepid.server.db
 
-import ca.mcgill.science.tepid.server.util.Config
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.mapper
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode

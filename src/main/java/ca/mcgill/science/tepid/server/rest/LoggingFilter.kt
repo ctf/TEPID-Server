@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.PutResponse
-import ca.mcgill.science.tepid.server.util.Config
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.container.ContainerRequestFilter

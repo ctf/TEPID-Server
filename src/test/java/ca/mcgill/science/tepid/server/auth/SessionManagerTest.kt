@@ -5,13 +5,11 @@ import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
-import ca.mcgill.science.tepid.server.auth.Ldap
-import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.getJson
 import ca.mcgill.science.tepid.server.db.getViewRows
 import ca.mcgill.science.tepid.server.generateTestUser
-import ca.mcgill.science.tepid.server.util.Config
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -223,7 +221,7 @@ class QueryUserDbTest {
     @Before
     fun initTest() {
         mockkObject(Config)
-        every{Config.ACCOUNT_DOMAIN} returns "config.example.com"
+        every{ Config.ACCOUNT_DOMAIN} returns "config.example.com"
         mockkObject(CouchDb)
         mockkStatic("ca.mcgill.science.tepid.server.db.WebTargetsKt")
 

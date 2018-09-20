@@ -8,7 +8,7 @@ import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.db.*
-import ca.mcgill.science.tepid.server.util.Config
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.mindrot.jbcrypt.BCrypt

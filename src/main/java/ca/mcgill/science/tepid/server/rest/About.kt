@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.About
-import ca.mcgill.science.tepid.server.util.Config
+import ca.mcgill.science.tepid.server.server.Config
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
