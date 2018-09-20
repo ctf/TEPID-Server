@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.printing.loadbalancers;
 
 import ca.mcgill.science.tepid.models.data.PrintJob;
-import ca.mcgill.science.tepid.server.util.QueueManager;
+import ca.mcgill.science.tepid.server.printing.QueueManager;
 
 public abstract class LoadBalancer {
 
