@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.models.data.ChangeDelta
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.PutResponse
+import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.*
 import ca.mcgill.science.tepid.server.printer.Printer
 import ca.mcgill.science.tepid.server.util.*

@@ -7,7 +7,6 @@ import ca.mcgill.science.tepid.ldap.LdapHelperContract
 import ca.mcgill.science.tepid.ldap.LdapHelperDelegate
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.util.Config
-import ca.mcgill.science.tepid.server.util.SessionManager
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.*
 import javax.naming.NamingException

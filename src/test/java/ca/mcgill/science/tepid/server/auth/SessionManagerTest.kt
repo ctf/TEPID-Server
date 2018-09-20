@@ -1,4 +1,4 @@
-package ca.mcgill.science.tepid.server.util
+package ca.mcgill.science.tepid.server.auth
 
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.bindings.LOCAL
@@ -6,10 +6,12 @@ import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.server.auth.Ldap
+import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.getJson
 import ca.mcgill.science.tepid.server.db.getViewRows
 import ca.mcgill.science.tepid.server.generateTestUser
+import ca.mcgill.science.tepid.server.util.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -630,7 +632,8 @@ class SetExchangeStudentTest {
         SessionManager.setExchangeStudent(testSam, true)
 
         val targetUser = SessionManager.mergeUsers(UserFactory.makeLdapUser(), UserFactory.makeDbUser())
-        verify{SessionManager.updateDbWithUser(
+        verify{
+            SessionManager.updateDbWithUser(
                 targetUser
         )}
         verify{ Ldap.setExchangeStudent(testSam, true)}
