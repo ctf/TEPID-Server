@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.server.rest.JobDataMonitor
 import ca.mcgill.science.tepid.server.rest.JobMonitor
-import ca.mcgill.science.tepid.server.rest.SessionMonitor
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
