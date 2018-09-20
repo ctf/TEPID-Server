@@ -8,6 +8,7 @@ import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.getJson
 import ca.mcgill.science.tepid.server.db.putJson
 import ca.mcgill.science.tepid.server.db.query
+import ca.mcgill.science.tepid.server.printing.Gs
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging

@@ -1,4 +1,4 @@
-package ca.mcgill.science.tepid.server.util
+package ca.mcgill.science.tepid.server.printing
 
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.io.File
