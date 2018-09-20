@@ -29,6 +29,6 @@
         <url-pattern>/*</url-pattern>
     </servlet-mapping>
     <listener>
-        <listener-class>ca.mcgill.science.tepid.server.rest.BackgroundTasks</listener-class>
+        <listener-class>ca.mcgill.science.tepid.server.server.BackgroundTasks</listener-class>
     </listener>
 </web-app>
