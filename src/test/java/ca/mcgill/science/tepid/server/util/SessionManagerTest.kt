@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.server.auth.Ldap
 import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.getJson
 import ca.mcgill.science.tepid.server.db.getViewRows
@@ -383,7 +384,7 @@ class AutoSuggestTest {
 
         val actual = SessionManager.autoSuggest(testLike, testLimit)
 
-        verify{Ldap.autoSuggest(testLike, testLimit)}
+        verify{ Ldap.autoSuggest(testLike, testLimit)}
         assertEquals(p, actual, "Expected promise not returned")
     }
 
@@ -398,7 +399,7 @@ class AutoSuggestTest {
 
         val actual = SessionManager.autoSuggest(testLike, testLimit)
 
-        verify {Ldap wasNot Called}
+        verify { Ldap wasNot Called}
         assertEquals(p.result, actual.result, "Expected promise not returned")
 
 
@@ -602,7 +603,7 @@ class SetExchangeStudentTest {
     @Before
     fun initTest() {
         mockkObject(Ldap)
-        every{Ldap.setExchangeStudent(any(), any())} returns true
+        every{ Ldap.setExchangeStudent(any(), any())} returns true
 
         mockkObject(SessionManager)
         every {
@@ -632,14 +633,14 @@ class SetExchangeStudentTest {
         verify{SessionManager.updateDbWithUser(
                 targetUser
         )}
-        verify{Ldap.setExchangeStudent(testSam, true)}
+        verify{ Ldap.setExchangeStudent(testSam, true)}
     }
 
     @Test
     fun testSetExchangeStudentLdapDisabled () {
         every { Config.LDAP_ENABLED } returns false
         SessionManager.setExchangeStudent(testSam, true)
-        verify(inverse = true){Ldap.setExchangeStudent(testSam, true)}
+        verify(inverse = true){ Ldap.setExchangeStudent(testSam, true)}
     }
 
 }

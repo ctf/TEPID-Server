@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.server.auth.Ldap
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.junit.*
 import kotlin.test.assertEquals
