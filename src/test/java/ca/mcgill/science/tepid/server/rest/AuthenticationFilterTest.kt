@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.bindings.*
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.util.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.junit.Test
