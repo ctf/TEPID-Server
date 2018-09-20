@@ -1,4 +1,4 @@
-package ca.mcgill.science.tepid.ldap
+package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
