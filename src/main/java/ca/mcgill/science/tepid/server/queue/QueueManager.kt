@@ -4,8 +4,7 @@ import ca.allanwang.kotlin.lazyResettable
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
-import ca.mcgill.science.tepid.server.db.CouchDb
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.db.*
 import org.apache.logging.log4j.LogManager
 
 data class QueueResult(val destination: String, val eta: Long)

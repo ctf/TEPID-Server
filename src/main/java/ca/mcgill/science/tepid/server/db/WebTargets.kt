@@ -1,6 +1,7 @@
-package ca.mcgill.science.tepid.server.util
+package ca.mcgill.science.tepid.server.db
 
-import ca.mcgill.science.tepid.server.db.CouchDb
+import ca.mcgill.science.tepid.server.util.Config
+import ca.mcgill.science.tepid.server.util.mapper
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.readValue

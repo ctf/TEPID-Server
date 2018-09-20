@@ -6,6 +6,8 @@ import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.server.db.CouchDb
+import ca.mcgill.science.tepid.server.db.getJson
+import ca.mcgill.science.tepid.server.db.getViewRows
 import ca.mcgill.science.tepid.server.generateTestUser
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -112,7 +114,7 @@ class UpdateDbWithUserTest {
     @Before
     fun initTest() {
         mockkObject(CouchDb)
-        mockkStatic("ca.mcgill.science.tepid.server.util.WebTargetsKt")
+        mockkStatic("ca.mcgill.science.tepid.server.db.WebTargetsKt")
         testUser._rev = "1111"
     }
 
@@ -220,7 +222,7 @@ class QueryUserDbTest {
         mockkObject(Config)
         every{Config.ACCOUNT_DOMAIN} returns "config.example.com"
         mockkObject(CouchDb)
-        mockkStatic("ca.mcgill.science.tepid.server.util.WebTargetsKt")
+        mockkStatic("ca.mcgill.science.tepid.server.db.WebTargetsKt")
 
         wt = mockk<WebTarget>()
     }
