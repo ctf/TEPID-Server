@@ -7,8 +7,9 @@ import ca.mcgill.science.tepid.models.data.ChangeDelta
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.PutResponse
-import ca.mcgill.science.tepid.models.enums.Room
-import ca.mcgill.science.tepid.server.printer.Printer
+import ca.mcgill.science.tepid.server.auth.SessionManager
+import ca.mcgill.science.tepid.server.db.*
+import ca.mcgill.science.tepid.server.printing.Printer
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ObjectNode

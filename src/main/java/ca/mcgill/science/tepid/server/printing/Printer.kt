@@ -1,9 +1,15 @@
-package ca.mcgill.science.tepid.server.printer
+package ca.mcgill.science.tepid.server.printing
 
 import ca.mcgill.science.tepid.models.bindings.PrintError
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.server.auth.SessionManager
+import ca.mcgill.science.tepid.server.db.CouchDb
+import ca.mcgill.science.tepid.server.db.getJson
+import ca.mcgill.science.tepid.server.db.putJson
+import ca.mcgill.science.tepid.server.db.query
 import ca.mcgill.science.tepid.server.rest.Users
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.tukaani.xz.XZInputStream
@@ -121,7 +127,8 @@ object Printer : WithLogging() {
                     val psMonochrome = br.isMonochrome()
                     log.trace("Detected ${if (psMonochrome) "monochrome" else "colour"} for job $id in ${System.currentTimeMillis() - now} ms")
                     //count pages
-                    val psInfo = Gs.psInfo(tmp) ?: throw PrintException("Internal Error")
+                    val psInfo = Gs.psInfo(tmp)
+                            ?: throw PrintException("Internal Error")
                     val color = if (psMonochrome) 0 else psInfo.colourPages
                     log.trace("Job $id has ${psInfo.pages} pages, $color in color")
 
@@ -148,7 +155,8 @@ object Printer : WithLogging() {
                     log.trace("Trying to assign destination {'job':'{}'}", j2.getId())
                     j2 = QueueManager.assignDestination(id)
                     //todo check destination field
-                    val destination = j2.destination ?: throw PrintException(PrintError.INVALID_DESTINATION)
+                    val destination = j2.destination
+                            ?: throw PrintException(PrintError.INVALID_DESTINATION)
 
                     val dest = CouchDb.path(destination).getJson<FullDestination>()
                     if (sendToSMB(tmp, dest, debug)) {
@@ -160,7 +168,8 @@ object Printer : WithLogging() {
                     }
                 } catch (e: Exception) {
                     log.error("Job $id failed", e)
-                    val msg = (e as? PrintException)?.message ?: "Failed to process"
+                    val msg = (e as? PrintException)?.message
+                            ?: "Failed to process"
                     failJob(id, msg)
                 } finally {
                     tmp.delete()

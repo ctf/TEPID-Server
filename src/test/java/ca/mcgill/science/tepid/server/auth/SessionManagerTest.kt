@@ -1,11 +1,15 @@
-package ca.mcgill.science.tepid.server.util
+package ca.mcgill.science.tepid.server.auth
 
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.server.db.CouchDb
+import ca.mcgill.science.tepid.server.db.getJson
+import ca.mcgill.science.tepid.server.db.getViewRows
 import ca.mcgill.science.tepid.server.generateTestUser
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -111,7 +115,7 @@ class UpdateDbWithUserTest {
     @Before
     fun initTest() {
         mockkObject(CouchDb)
-        mockkStatic("ca.mcgill.science.tepid.server.util.WebTargetsKt")
+        mockkStatic("ca.mcgill.science.tepid.server.db.WebTargetsKt")
         testUser._rev = "1111"
     }
 
@@ -217,9 +221,9 @@ class QueryUserDbTest {
     @Before
     fun initTest() {
         mockkObject(Config)
-        every{Config.ACCOUNT_DOMAIN} returns "config.example.com"
+        every{ Config.ACCOUNT_DOMAIN} returns "config.example.com"
         mockkObject(CouchDb)
-        mockkStatic("ca.mcgill.science.tepid.server.util.WebTargetsKt")
+        mockkStatic("ca.mcgill.science.tepid.server.db.WebTargetsKt")
 
         wt = mockk<WebTarget>()
     }
@@ -380,7 +384,7 @@ class AutoSuggestTest {
 
         val actual = SessionManager.autoSuggest(testLike, testLimit)
 
-        verify{Ldap.autoSuggest(testLike, testLimit)}
+        verify{ Ldap.autoSuggest(testLike, testLimit)}
         assertEquals(p, actual, "Expected promise not returned")
     }
 
@@ -395,7 +399,7 @@ class AutoSuggestTest {
 
         val actual = SessionManager.autoSuggest(testLike, testLimit)
 
-        verify {Ldap wasNot Called}
+        verify { Ldap wasNot Called}
         assertEquals(p.result, actual.result, "Expected promise not returned")
 
 
@@ -599,7 +603,7 @@ class SetExchangeStudentTest {
     @Before
     fun initTest() {
         mockkObject(Ldap)
-        every{Ldap.setExchangeStudent(any(), any())} returns true
+        every{ Ldap.setExchangeStudent(any(), any())} returns true
 
         mockkObject(SessionManager)
         every {
@@ -626,17 +630,18 @@ class SetExchangeStudentTest {
         SessionManager.setExchangeStudent(testSam, true)
 
         val targetUser = SessionManager.mergeUsers(UserFactory.makeLdapUser(), UserFactory.makeDbUser())
-        verify{SessionManager.updateDbWithUser(
+        verify{
+            SessionManager.updateDbWithUser(
                 targetUser
         )}
-        verify{Ldap.setExchangeStudent(testSam, true)}
+        verify{ Ldap.setExchangeStudent(testSam, true)}
     }
 
     @Test
     fun testSetExchangeStudentLdapDisabled () {
         every { Config.LDAP_ENABLED } returns false
         SessionManager.setExchangeStudent(testSam, true)
-        verify(inverse = true){Ldap.setExchangeStudent(testSam, true)}
+        verify(inverse = true){ Ldap.setExchangeStudent(testSam, true)}
     }
 
 }

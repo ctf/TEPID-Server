@@ -1,10 +1,10 @@
-package ca.mcgill.science.tepid.server.loadbalancers;
+package ca.mcgill.science.tepid.server.printing.loadbalancers;
 
 import ca.mcgill.science.tepid.models.data.Destination;
 import ca.mcgill.science.tepid.models.data.FullDestination;
 import ca.mcgill.science.tepid.models.data.PrintJob;
-import ca.mcgill.science.tepid.server.util.CouchDb;
-import ca.mcgill.science.tepid.server.util.QueueManager;
+import ca.mcgill.science.tepid.server.db.CouchDb;
+import ca.mcgill.science.tepid.server.printing.QueueManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

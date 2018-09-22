@@ -1,4 +1,4 @@
-package ca.mcgill.science.tepid.server.queue
+package ca.mcgill.science.tepid.server.printing
 
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob

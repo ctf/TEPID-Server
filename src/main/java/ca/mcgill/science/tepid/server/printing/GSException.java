@@ -1,4 +1,4 @@
-package ca.mcgill.science.tepid.server.gs;
+package ca.mcgill.science.tepid.server.printing;
 
 public class GSException extends RuntimeException {
 

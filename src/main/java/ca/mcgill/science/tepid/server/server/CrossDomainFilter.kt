@@ -1,4 +1,4 @@
-package ca.mcgill.science.tepid.server.rest
+package ca.mcgill.science.tepid.server.server
 
 import javax.annotation.Priority
 import javax.ws.rs.Priorities

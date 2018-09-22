@@ -1,4 +1,4 @@
-package ca.mcgill.science.tepid.server.rest
+package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.concurrent.Executors

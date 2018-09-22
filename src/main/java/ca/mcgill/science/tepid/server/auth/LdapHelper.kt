@@ -1,4 +1,4 @@
-package ca.mcgill.science.tepid.ldap
+package ca.mcgill.science.tepid.server.auth
 
 import javax.naming.directory.Attribute
 import javax.naming.directory.Attributes

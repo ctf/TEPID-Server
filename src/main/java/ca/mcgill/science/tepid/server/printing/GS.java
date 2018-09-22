@@ -1,4 +1,4 @@
-package ca.mcgill.science.tepid.server.gs;
+package ca.mcgill.science.tepid.server.printing;
 
 import ca.mcgill.science.tepid.server.util.DuplicatedOutputStream;
 import ca.mcgill.science.tepid.server.util.StreamDuplicator;

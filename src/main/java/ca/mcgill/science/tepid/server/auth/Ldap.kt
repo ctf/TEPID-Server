@@ -1,14 +1,10 @@
-package ca.mcgill.science.tepid.server.util
+package ca.mcgill.science.tepid.server.auth
 
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
-import ca.mcgill.science.tepid.ldap.LdapManager
-import ca.mcgill.science.tepid.ldap.LdapHelperContract
-import ca.mcgill.science.tepid.ldap.LdapHelperDelegate
-import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
-import com.fasterxml.jackson.databind.node.ObjectNode
 import java.util.*
 import javax.naming.NamingException
 import javax.naming.directory.*

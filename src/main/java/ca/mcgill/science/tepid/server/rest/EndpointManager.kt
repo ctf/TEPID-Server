@@ -2,7 +2,7 @@ package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
-import ca.mcgill.science.tepid.server.util.temdb
+import ca.mcgill.science.tepid.server.db.temdb
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.GET
 import javax.ws.rs.Path

@@ -1,8 +1,8 @@
-package ca.mcgill.science.tepid.server.rest
+package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.FullSession
-import ca.mcgill.science.tepid.server.util.CouchDb
-import ca.mcgill.science.tepid.server.util.postJson
+import ca.mcgill.science.tepid.server.db.CouchDb
+import ca.mcgill.science.tepid.server.db.postJson
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 

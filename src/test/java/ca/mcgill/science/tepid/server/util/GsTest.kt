@@ -1,5 +1,7 @@
 package ca.mcgill.science.tepid.server.util
 
+import ca.mcgill.science.tepid.server.printing.GsDelegate
+import ca.mcgill.science.tepid.server.printing.PsData
 import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals

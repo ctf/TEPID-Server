@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.FullSession
-import ca.mcgill.science.tepid.server.rest.AuthenticationFilter
+import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.logging.log4j.Logger
 import java.io.File

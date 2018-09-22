@@ -1,8 +1,8 @@
-package ca.mcgill.science.tepid.server.rest
+package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.server.util.CouchDb
-import ca.mcgill.science.tepid.server.util.putJson
+import ca.mcgill.science.tepid.server.db.CouchDb
+import ca.mcgill.science.tepid.server.db.putJson
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.io.File
 
