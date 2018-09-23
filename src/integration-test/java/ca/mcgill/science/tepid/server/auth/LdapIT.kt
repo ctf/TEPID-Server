@@ -1,28 +1,25 @@
-package ca.mcgill.science.tepid.server.util
+package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.server.auth.Ldap
-import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.utils.WithLogging
-import org.junit.*
+import org.junit.Assume
+import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlin.test.fail
 
-class LdapTest {
+class LdapIT {
 
-    companion object {
 
-        @BeforeClass
-        @JvmStatic
-        fun before() {
-            Assume.assumeTrue(Config.LDAP_ENABLED)
-            Assume.assumeTrue(Config.TEST_USER.isNotEmpty())
-            Assume.assumeTrue(Config.TEST_PASSWORD.isNotEmpty())
-            println("Running ldap tests with test user")
-        }
+    @Before
+    fun before() {
+        Assume.assumeTrue(Config.LDAP_ENABLED)
+        println(Config.TEST_USER)
+        Assume.assumeTrue(Config.TEST_USER.isNotEmpty())
+        Assume.assumeTrue(Config.TEST_PASSWORD.isNotEmpty())
+        println("Running ldap tests with test user")
     }
 
     private fun FullUser?.assertEqualsTestUser() {
@@ -46,41 +43,25 @@ class LdapTest {
             assertNotNull(data, "$tag is null for user")
         }
     }
-}
 
-class testQueryUserLdap : WithLogging() {
-
-    @Before
-    fun initTest() {
-
-    }
-    @After
-    fun tearTest(){
-
+    @Test
+    fun authenticate() {
+        Ldap.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
     }
 
     @Test
-    fun testQueryUserWithSuAndPw(){
-        fail("NI")
+    fun authenticateWithCache() {
+        SessionManager.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
     }
 
     @Test
-    fun testQueryUserWithSuNoPw(){
-        fail("NI")
+    fun query() {
+        SessionManager.queryUser(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
     }
 
+    //TODO: parametrise for test user, not real data
     @Test
-    fun testQueryUserWithNonSuAndPw(){
-        fail("NI")
-    }
-
-    @Test
-    fun testQueryUserWithNonSuNoPw(){
-        fail("NI")
-    }
-
-    @Test
-    fun testQueryUserNullUser(){
-        fail("NI")
+    fun queryWithoutPass() {
+        Ldap.queryUserLdap(Config.TEST_USER, null).assertEqualsTestUser()
     }
 }
