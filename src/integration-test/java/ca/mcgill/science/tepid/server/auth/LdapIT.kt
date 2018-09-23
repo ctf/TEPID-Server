@@ -4,19 +4,15 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.server.Config
 import org.junit.Assume
 import org.junit.Before
-import org.junit.BeforeClass
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class LdapIT {
-
-
+open class AuthIT {
     @Before
     fun before() {
         Assume.assumeTrue(Config.LDAP_ENABLED)
-        println(Config.TEST_USER)
         Assume.assumeTrue(Config.TEST_USER.isNotEmpty())
         Assume.assumeTrue(Config.TEST_PASSWORD.isNotEmpty())
         println("Running ldap tests with test user")
@@ -43,6 +39,9 @@ class LdapIT {
             assertNotNull(data, "$tag is null for user")
         }
     }
+}
+
+class LdapIT : AuthIT(){
 
     @Test
     fun authenticate() {
