@@ -3,15 +3,11 @@ package ca.mcgill.science.tepid.server.auth
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.deleteRev
-import ca.mcgill.science.tepid.server.db.getJsonOrNull
 import ca.mcgill.science.tepid.server.server.Config
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
-import kotlin.test.fail
+import kotlin.test.*
 
 open class AuthIT {
     @Before
@@ -89,5 +85,71 @@ class SessionManagerIT : AuthIT() {
     fun queryUserNotInDb() {
         CouchDb.path("u${Config.TEST_USER}").deleteRev()
         SessionManager.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
+    }
+
+    @Test
+    fun autosuggest() {
+        SessionManager.autoSuggest(Config.TEST_USER, 1).getResult(20000)[0].assertEqualsTestUser()
+    }
+
+    fun isExchange(testSU: String): Boolean {
+        val ldapUser = Ldap.queryUserLdap(testSU, null) ?: fail("Could get test user $testSU from LDAP")
+        val g = ldapUser.groups.toSet()
+        return g.contains(Config.CURRENT_EXCHANGE_GROUP)
+    }
+
+    fun addToExchangeStudent(testSU: String) {
+        assertTrue(SessionManager.setExchangeStudent(testSU, true))
+    }
+
+    fun addToExchangeStudentAlreadyIn(testSU: String) {
+        assertTrue(SessionManager.setExchangeStudent(testSU, true))
+    }
+
+    fun removeFromExchangeStudentAlreadyOut(testSU: String) {
+        assertFalse(SessionManager.setExchangeStudent(testSU, false))
+    }
+
+    fun removeFromExchangeStudent(testSU: String) {
+        assertFalse(SessionManager.setExchangeStudent(testSU, false))
+    }
+
+
+    @Test
+    fun addAndRemoveFromExchange() {
+        // ntodo: Refactor for prettiness to reduce code duplication
+        when (isExchange(Config.TEST_USER)) {
+            true -> {
+                println("0 : Already in")
+                println("1 : Removing")
+                removeFromExchangeStudent(Config.TEST_USER)
+                assertFalse(isExchange(Config.TEST_USER))
+                println("2 : Re-removing")
+                removeFromExchangeStudentAlreadyOut(Config.TEST_USER)
+                assertFalse(isExchange(Config.TEST_USER))
+                println("3 : Adding")
+                addToExchangeStudent(Config.TEST_USER)
+                assertTrue(isExchange(Config.TEST_USER))
+                println("4 : Re-adding")
+                addToExchangeStudentAlreadyIn(Config.TEST_USER)
+                assertTrue(isExchange(Config.TEST_USER))
+                println("5 : Done")
+            }
+            false -> {
+                println("0 : Already out")
+                println("1 : Adding")
+                addToExchangeStudent(Config.TEST_USER)
+                assertTrue(isExchange(Config.TEST_USER))
+                println("2 : Re-adding")
+                addToExchangeStudentAlreadyIn(Config.TEST_USER)
+                assertTrue(isExchange(Config.TEST_USER))
+                println("3 : Removing")
+                removeFromExchangeStudent(Config.TEST_USER)
+                assertFalse(isExchange(Config.TEST_USER))
+                println("4 : Re-removing")
+                removeFromExchangeStudentAlreadyOut(Config.TEST_USER)
+                assertFalse(isExchange(Config.TEST_USER))
+            }
+        }
     }
 }
