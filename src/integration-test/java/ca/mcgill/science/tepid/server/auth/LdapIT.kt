@@ -18,7 +18,7 @@ open class AuthIT {
         println("Running ldap tests with test user")
     }
 
-    private fun FullUser?.assertEqualsTestUser() {
+    protected fun FullUser?.assertEqualsTestUser() {
         assertNotNull(this)
         println(this!!)
         assertEquals(Config.TEST_USER, shortUser, "Short user mismatch. Perhaps you passed in the long user in your test?")
