@@ -48,6 +48,15 @@ class LdapIT : AuthIT(){
         Ldap.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
     }
 
+    //TODO: parametrise for test user, not real data
+    @Test
+    fun queryWithoutPass() {
+        Ldap.queryUserLdap(Config.TEST_USER, null).assertEqualsTestUser()
+    }
+}
+
+class SessionManagerIT : AuthIT(){
+    
     @Test
     fun authenticateWithCache() {
         SessionManager.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
@@ -56,11 +65,5 @@ class LdapIT : AuthIT(){
     @Test
     fun query() {
         SessionManager.queryUser(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
-    }
-
-    //TODO: parametrise for test user, not real data
-    @Test
-    fun queryWithoutPass() {
-        Ldap.queryUserLdap(Config.TEST_USER, null).assertEqualsTestUser()
     }
 }
