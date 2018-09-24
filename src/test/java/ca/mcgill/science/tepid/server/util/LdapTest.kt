@@ -48,6 +48,7 @@ class LdapTest {
     }
 }
 
+@Ignore("NI")
 class testQueryUserLdap : WithLogging() {
 
     @Before

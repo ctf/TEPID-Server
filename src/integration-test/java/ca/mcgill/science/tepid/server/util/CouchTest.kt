@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.getViewRows
 import ca.mcgill.science.tepid.utils.WithLogging
+import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -22,6 +23,7 @@ class CouchTest : WithLogging() {
     }
 
     //TODO: parametrise for test user, not real data
+    @Ignore("BROKEN TEST SMH: does not fail if couchdb is unavailable")
     @Test
     fun putUser() {
         val response = CouchDb.updateWithResponse<FullUser>("") {
