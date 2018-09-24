@@ -91,6 +91,9 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = JVM_TARGET
 }
+compileIntegrationTestKotlin{
+    kotlinOptions.jvmTarget = JVM_TARGET
+}
 
 test {
     dependsOn cleanTest
