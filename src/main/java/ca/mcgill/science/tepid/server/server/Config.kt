@@ -64,7 +64,9 @@ object Config : WithLogging() {
     val GROUPS_LOCATION : String
     val ELDERS_GROUP : List<String>
     val CTFERS_GROUP : List<String>
+    val CURRENT_EXCHANGE_GROUP : String
     val USERS_GROUP : List<String>
+
 
     /*
      * Optional arguments used to run unit tests for ldap
@@ -125,12 +127,11 @@ object Config : WithLogging() {
         ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS?.split(illegalLDAPCharacters) ?: emptyList()
         CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS?.split(illegalLDAPCharacters) ?: emptyList()
         
-//        USERS_GROUP
-        fun getCurrentExchangeGroup(): String {
+        CURRENT_EXCHANGE_GROUP = {
             val cal = Calendar.getInstance()
-            return EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
-        }
-        USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS?.split(illegalLDAPCharacters))?.plus(getCurrentExchangeGroup()) ?: emptyList()
+            EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
+        }()
+        USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS?.split(illegalLDAPCharacters))?.plus(CURRENT_EXCHANGE_GROUP) ?: emptyList()
 
         TEM_URL = PropsTEM.TEM_URL ?: ""
 
