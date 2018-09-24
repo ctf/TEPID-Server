@@ -98,7 +98,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         mods[0] = ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod)
         return try {
             ctx.modifyAttributes(groupDn, mods)
-            log.info("${if(exchange)"Added $sam to" else "removed $sam from"} exchange students.")
+            log.info("${if(exchange)"Added $sam to" else "Removed $sam from"} exchange students.")
             exchange
         } catch (e: NamingException) {
             if (e.message!!.contains("LDAP: error code 53")) {

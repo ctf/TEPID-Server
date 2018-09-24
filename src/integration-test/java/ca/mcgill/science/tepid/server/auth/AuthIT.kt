@@ -60,7 +60,7 @@ class SessionManagerIT : AuthIT() {
     @Test
     fun authenticateWithLdapUserInDb() {
         SessionManager.queryUser(Config.TEST_USER, null)
-                ?: fail("Could not prime DB with test user ${Config.TEST_USER}")
+                ?: fail("Couldn't prime DB with test user ${Config.TEST_USER}")
         SessionManager.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
     }
 
@@ -74,7 +74,7 @@ class SessionManagerIT : AuthIT() {
     fun queryUserInDb() {
         // TODO: add user to DB in way which does not need LDAP
         val ldapUser = Ldap.queryUserLdap(Config.TEST_USER, null)
-                ?: fail("Could get test user ${Config.TEST_USER} from LDAP")
+                ?: fail("Couldn't get test user ${Config.TEST_USER} from LDAP")
         SessionManager.updateDbWithUser(ldapUser)
         SessionManager.queryUserDb(Config.TEST_USER) ?: fail("User ${Config.TEST_USER} not already in DB")
 
@@ -93,62 +93,53 @@ class SessionManagerIT : AuthIT() {
     }
 
     fun isExchange(testSU: String): Boolean {
-        val ldapUser = Ldap.queryUserLdap(testSU, null) ?: fail("Could get test user $testSU from LDAP")
-        val g = ldapUser.groups.toSet()
-        return g.contains(Config.CURRENT_EXCHANGE_GROUP)
+        val ldapUser = Ldap.queryUserLdap(testSU, null) ?: fail("Couldn't get test user $testSU from LDAP")
+        return Config.CURRENT_EXCHANGE_GROUP in ldapUser.groups
     }
 
     fun addToExchangeStudent(testSU: String) {
+        println("Adding")
         assertTrue(SessionManager.setExchangeStudent(testSU, true))
+        assertTrue(isExchange(Config.TEST_USER))
     }
 
     fun addToExchangeStudentAlreadyIn(testSU: String) {
+        println("Re-adding")
         assertTrue(SessionManager.setExchangeStudent(testSU, true))
+        assertTrue(isExchange(Config.TEST_USER))
     }
 
     fun removeFromExchangeStudentAlreadyOut(testSU: String) {
+        println("Re-removing")
         assertFalse(SessionManager.setExchangeStudent(testSU, false))
+        assertFalse(isExchange(Config.TEST_USER))
     }
 
     fun removeFromExchangeStudent(testSU: String) {
+        println("Removing")
         assertFalse(SessionManager.setExchangeStudent(testSU, false))
+        assertFalse(isExchange(Config.TEST_USER))
     }
 
 
     @Test
     fun addAndRemoveFromExchange() {
-        // ntodo: Refactor for prettiness to reduce code duplication
         when (isExchange(Config.TEST_USER)) {
             true -> {
-                println("0 : Already in")
-                println("1 : Removing")
+                println("Already in")
                 removeFromExchangeStudent(Config.TEST_USER)
-                assertFalse(isExchange(Config.TEST_USER))
-                println("2 : Re-removing")
                 removeFromExchangeStudentAlreadyOut(Config.TEST_USER)
-                assertFalse(isExchange(Config.TEST_USER))
-                println("3 : Adding")
                 addToExchangeStudent(Config.TEST_USER)
-                assertTrue(isExchange(Config.TEST_USER))
-                println("4 : Re-adding")
                 addToExchangeStudentAlreadyIn(Config.TEST_USER)
-                assertTrue(isExchange(Config.TEST_USER))
-                println("5 : Done")
+                println("Done")
             }
             false -> {
-                println("0 : Already out")
-                println("1 : Adding")
+                println("Already out")
                 addToExchangeStudent(Config.TEST_USER)
-                assertTrue(isExchange(Config.TEST_USER))
-                println("2 : Re-adding")
                 addToExchangeStudentAlreadyIn(Config.TEST_USER)
-                assertTrue(isExchange(Config.TEST_USER))
-                println("3 : Removing")
                 removeFromExchangeStudent(Config.TEST_USER)
-                assertFalse(isExchange(Config.TEST_USER))
-                println("4 : Re-removing")
                 removeFromExchangeStudentAlreadyOut(Config.TEST_USER)
-                assertFalse(isExchange(Config.TEST_USER))
+                println("Done")
             }
         }
     }
