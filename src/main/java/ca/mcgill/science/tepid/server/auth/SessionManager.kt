@@ -141,7 +141,7 @@ object SessionManager : WithLogging() {
      * Uploads a [user] to the DB,
      * with logging for failures
      */
-    internal fun updateDbWithUser(user: FullUser) {
+    fun updateDbWithUser(user: FullUser) {
         log.trace("Update db instance {\"user\":\"${user.shortUser}\"}\n")
         try {
             val response = CouchDb.path("u${user.shortUser}").putJson(user)
