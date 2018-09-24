@@ -56,7 +56,7 @@ class LdapIT : AuthIT(){
 }
 
 class SessionManagerIT : AuthIT(){
-    
+
     @Test
     fun authenticateWithCache() {
         SessionManager.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
