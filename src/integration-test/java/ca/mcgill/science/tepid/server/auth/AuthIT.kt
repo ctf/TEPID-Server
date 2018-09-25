@@ -99,28 +99,31 @@ class SessionManagerIT : AuthIT() {
 
     fun addToExchangeStudent(testSU: String) {
         println("Adding")
+        assertFalse(isExchange(testSU), "Precondition failed: user $testSU is already in LDAP group")
         assertTrue(SessionManager.setExchangeStudent(testSU, true))
-        assertTrue(isExchange(Config.TEST_USER))
+        assertTrue(isExchange(testSU))
     }
 
     fun addToExchangeStudentAlreadyIn(testSU: String) {
         println("Re-adding")
+        assertTrue(isExchange(testSU), "Precondition failed: user $testSU is not already in LDAP group")
         assertTrue(SessionManager.setExchangeStudent(testSU, true))
-        assertTrue(isExchange(Config.TEST_USER))
+        assertTrue(isExchange(testSU))
     }
 
     fun removeFromExchangeStudentAlreadyOut(testSU: String) {
         println("Re-removing")
+        assertFalse(isExchange(testSU), "Precondition failed: user $testSU is not already out of LDAP group")
         assertFalse(SessionManager.setExchangeStudent(testSU, false))
-        assertFalse(isExchange(Config.TEST_USER))
+        assertFalse(isExchange(testSU))
     }
 
     fun removeFromExchangeStudent(testSU: String) {
         println("Removing")
+        assertTrue(isExchange(testSU), "Precondition failed: user $testSU is not already in LDAP group")
         assertFalse(SessionManager.setExchangeStudent(testSU, false))
-        assertFalse(isExchange(Config.TEST_USER))
+        assertFalse(isExchange(testSU))
     }
-
 
     @Test
     fun addAndRemoveFromExchange() {
