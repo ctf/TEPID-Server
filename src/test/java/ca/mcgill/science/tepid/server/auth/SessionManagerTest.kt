@@ -2,9 +2,8 @@ package ca.mcgill.science.tepid.server.auth
 
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.bindings.LOCAL
-import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.getJson
 import ca.mcgill.science.tepid.server.db.getViewRows
@@ -38,32 +37,6 @@ import kotlin.test.assertFalse
 )
 class SessionManagerTest
 
-object UserFactory {
-    //note that the shortUsers are the same, since they are the unique key
-    fun makeDbUser(): FullUser {
-        val testUser = FullUser(displayName = "dbDN", givenName = "dbGN", lastName = "dbLN", shortUser = "SU", longUser = "db.lu@example.com", email = "db.EM@example.com", faculty = "dbFaculty", groups = listOf("dbGroups"), courses = listOf(Course("dbCourseName", Season.FALL, 4444)), studentId = 3333, colorPrinting = true, jobExpiration = 12, nick = "dbNick", preferredName = listOf("dbPreferredName"))
-        testUser._id = "0000"
-        testUser._rev = "0001"
-        testUser.activeSince = 1000
-        return testUser
-    }
-    fun makeLdapUser(): FullUser {
-        val testOtherUser = FullUser(displayName = "ldapDN", givenName = "ldapGN", lastName = "ldapLN", shortUser = "SU", longUser = "ldap.lu@example.com", email = "ldap.EM@example.com", faculty = "ldapFaculty", groups = listOf("ldapGroups"), courses = listOf(Course("ldapCourseName", Season.FALL, 2222)), studentId = 1111, nick = "ldapNick", preferredName = listOf("ldapPreferredName"))
-        testOtherUser.activeSince = 9999
-        return testOtherUser
-    }
-    fun makeMergedUser(): FullUser {
-        val dbUser = makeDbUser()
-        val testUser = makeLdapUser().copy(
-                colorPrinting = dbUser.colorPrinting,
-                jobExpiration = dbUser.jobExpiration,
-                preferredName = dbUser.preferredName,
-                nick = dbUser.nick
-        )
-        testUser.updateUserNameInformation()
-        return testUser
-    }
-}
 
 class MergeUsersTest {
 
