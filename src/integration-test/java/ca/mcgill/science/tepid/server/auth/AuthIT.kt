@@ -153,9 +153,10 @@ class SessionManagerIT : AuthIT() {
         user.groups = emptyList()
         SessionManager.updateDbWithUser(user)
 
-        SessionManager.refreshUser(Config.TEST_USER)
+        val refreshedUser = SessionManager.refreshUser(Config.TEST_USER)
         val alteredUser = SessionManager.queryUser(Config.TEST_USER, null) ?: fail("Couldn't get test user ${Config.TEST_USER} from DB or LDAP")
 
-        assertFalse(user.groups.isEmpty())
+        assertFalse(alteredUser.groups.isEmpty(), "User has not been refreshed")
+        assertEquals(alteredUser, refreshedUser, "User from DB does not match refreshed user")
     }
 }
