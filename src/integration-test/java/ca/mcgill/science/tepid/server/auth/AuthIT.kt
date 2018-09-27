@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.deleteRev
 import ca.mcgill.science.tepid.server.server.Config
@@ -158,5 +159,16 @@ class SessionManagerIT : AuthIT() {
 
         assertFalse(alteredUser.groups.isEmpty(), "User has not been refreshed")
         assertEquals(alteredUser, refreshedUser, "User from DB does not match refreshed user")
+    }
+
+    @Test
+    fun invalidateSession() {
+        val user = UserFactory.makeLdapUser()
+        val session = SessionManager.start(user, 1000)
+        assertTrue(SessionManager.valid(session.toString()))
+
+        SessionManager.invalidateSessions(user.shortUser!!)
+
+        assertFalse(SessionManager.valid(session.toString()))
     }
 }
