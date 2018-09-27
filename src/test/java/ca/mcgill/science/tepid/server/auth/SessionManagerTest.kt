@@ -596,6 +596,7 @@ class AuthenticateTest{
         assertEquals(expected, actual, "")
     }
 }
+
 class SetExchangeStudentTest {
 
     val testSam = "SU"
@@ -644,4 +645,55 @@ class SetExchangeStudentTest {
         verify(inverse = true){ Ldap.setExchangeStudent(testSam, true)}
     }
 
+}
+
+class refreshUserTest {
+
+    val testSam = "SU"
+
+    @Before
+    fun initTest() {
+        mockkObject(Ldap)
+
+        mockkObject(SessionManager)
+        every {
+            SessionManager.queryUserDb(testSam)
+        } returns UserFactory.makeDbUser()
+        every{
+            Ldap.queryUserLdap(testSam, null)
+        } returns UserFactory.makeLdapUser()
+
+        every {
+            SessionManager.updateDbWithUser(ofType(FullUser::class))
+        } just runs
+
+        mockkObject(Config)
+    }
+    @After
+    fun tearTest(){
+        unmockkAll()
+    }
+
+    @Test
+    fun testRefreshUserLdapDisabled(){
+        every { Config.LDAP_ENABLED } returns false
+
+        val actual = SessionManager.refreshUser(testSam)
+
+        assertEquals(UserFactory.makeDbUser(), actual)
+    }
+
+    @Test
+    fun testRefreshUserLdapEnabled(){
+        every { Config.LDAP_ENABLED } returns true
+
+        val actual = SessionManager.refreshUser(testSam)
+
+        assertEquals(UserFactory.makeMergedUser(), actual)
+
+        verify{
+            SessionManager.updateDbWithUser(
+                    UserFactory.makeMergedUser()
+            )}
+    }
 }
