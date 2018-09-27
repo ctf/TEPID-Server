@@ -34,7 +34,17 @@ repositories {
     maven { url "https://jitpack.io" }
 }
 
+sourceSets {
+    integrationTest {
+        java.srcDir file('src/integration-test/java')
+        resources.srcDir file('src/integration-test/resources')
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
 dependencies {
+    integrationTestRuntime("org.junit.jupiter:junit-jupiter-engine:5.3.1")
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$KOTLIN"
     testCompile "io.mockk:mockk:1.8.7"
@@ -81,10 +91,25 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = JVM_TARGET
 }
+compileIntegrationTestKotlin{
+    kotlinOptions.jvmTarget = JVM_TARGET
+}
 
 test {
     dependsOn cleanTest
     testLogging.showStandardStreams = true
+}
+
+task integrationTest(type: Test) {
+    dependsOn cleanIntegrationTest
+    group = "verification"
+
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    testLogging.showStandardStreams = true
+    outputs.upToDateWhen { false }
+
+    mustRunAfter test
 }
 
 task copyConfigs(type: Copy) {

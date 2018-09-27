@@ -21,18 +21,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-class UserTest : WithLogging() {
 
-    val endpoints: Users by lazy {
-        Users()
-    }
-
-    @Test
-    fun configured() {
-        assertTrue(endpoints.adminConfigured(), "Tepid is not configured")
-    }
-
-}
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestUserGetQuota : WithLogging () {

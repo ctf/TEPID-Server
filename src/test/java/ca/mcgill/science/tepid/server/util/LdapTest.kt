@@ -46,30 +46,9 @@ class LdapTest {
             assertNotNull(data, "$tag is null for user")
         }
     }
-
-    @Test
-    fun authenticate() {
-        Ldap.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
-    }
-
-    @Test
-    fun authenticateWithCache() {
-        SessionManager.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
-    }
-
-    @Test
-    fun query() {
-        SessionManager.queryUser(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
-    }
-
-
-    //TODO: parametrise for test user, not real data
-    @Test
-    fun queryWithoutPass() {
-        Ldap.queryUserLdap(Config.TEST_USER, null).assertEqualsTestUser()
-    }
 }
 
+@Ignore("NI")
 class testQueryUserLdap : WithLogging() {
 
     @Before

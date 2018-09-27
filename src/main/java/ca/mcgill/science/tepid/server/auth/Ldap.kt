@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.*
 import javax.naming.NamingException
+import javax.naming.OperationNotSupportedException
 import javax.naming.directory.*
 
 object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
@@ -97,12 +98,20 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         mods[0] = ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod)
         return try {
             ctx.modifyAttributes(groupDn, mods)
-            log.info("Added {} to exchange students.", sam)
+            log.info("${if(exchange)"Added $sam to" else "Removed $sam from"} exchange students.")
             exchange
         } catch (e: NamingException) {
-            log.warn("Error adding to exchange students. {\"sam\":\"$sam\", \"userDN\":\"$userDn\",\"groupDN\":\"$groupDn\"}")
-            e.printStackTrace()
-            false
+            if (e.message!!.contains("LDAP: error code 53")) {
+                log.warn("Error removing user from Exchange: {\"sam\":\"$sam\", \"cause\":\"not in group\")")
+                false
+            } else if (e.message!!.contains("LDAP: error code 68")) {
+                log.warn("Error adding user from Exchange: {\"sam\":\"$sam\", \"cause\":\"already in group\")")
+                true
+            } else {
+                log.warn("Error adding to exchange students. {\"sam\":\"$sam\", \"userDN\":\"$userDn\",\"groupDN\":\"$groupDn\", \"cause\":null}")
+                e.printStackTrace()
+                false
+            }
         }
     }
 

@@ -11,7 +11,7 @@ echo "$CI_PROJECT_DIR"
 echo "$CI_COMMIT_SHA"
 
 chmod +x ./gradlew
-./gradlew clean build test war
+./gradlew clean build test integrationTest war
 
 if [ -e build/libs/tepid.war ]; then
     printf "Moving war file\n"

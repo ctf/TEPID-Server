@@ -2,5 +2,9 @@ deploy_job:
   script:
   - chmod 550 gitlab-testpid.sh
   - ./gitlab-testpid.sh
+  artifacts:
+    reports:
+      junit: [build/test-results/test/TEST-*.xml, build/test-results/integrationTest/TEST-*.xml]
+
   except:
   - /^(wip|test).*$/
