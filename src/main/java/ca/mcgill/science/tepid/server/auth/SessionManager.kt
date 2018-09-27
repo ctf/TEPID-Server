@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.isSuccessful
@@ -60,6 +61,17 @@ object SessionManager : WithLogging() {
     fun end(token: String) {
         //todo test
         DB.deleteSession(token)
+    }
+
+    /**
+     * Invalidates all of the sessions belonging to a certain user.
+     *
+     * @param shortUser the shortUser
+     */
+    fun invalidateSessions(shortUser: String) {
+        val sessions = CouchDb.getViewRows<Session>("sessions")
+                .filter { it.user.shortUser == shortUser}
+                .map { SessionManager.end(it.toString())}
     }
 
     /**
