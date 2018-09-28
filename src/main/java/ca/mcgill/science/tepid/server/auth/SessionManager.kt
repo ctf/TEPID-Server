@@ -11,8 +11,10 @@ import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.isSuccessful
 import ca.mcgill.science.tepid.server.server.Config
+import ca.mcgill.science.tepid.server.util.mapper
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.mindrot.jbcrypt.BCrypt
 import java.math.BigInteger
 import java.security.SecureRandom
@@ -69,10 +71,13 @@ object SessionManager : WithLogging() {
      * @param shortUser the shortUser
      */
     fun invalidateSessions(shortUser: String) {
-        CouchDb.getViewRows<TepidDbDelegate>("sessionsByUser") { query("key" to "\"$shortUser\"") }
-                .mapNotNull { it._id }
+        CouchDb.getViewRows<Test>("sessionsByUser") { query("key" to "\"$shortUser\"") }
+                .map { it.id }
                 .forEach { SessionManager.end(it) }
+
     }
+
+    data class Test (val id: String, val key: String, val value: String)
 
     /**
      * Authenticates user as appropriate:
