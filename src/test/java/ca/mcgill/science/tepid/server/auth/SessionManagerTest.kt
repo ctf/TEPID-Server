@@ -661,6 +661,9 @@ class RefreshUserTest {
     @Test
     fun testRefreshUserLdapEnabled(){
         every { Config.LDAP_ENABLED } returns true
+        every {
+            SessionManager.invalidateSessions(testSam)
+        } just runs
 
         val actual = SessionManager.refreshUser(testSam)
 
