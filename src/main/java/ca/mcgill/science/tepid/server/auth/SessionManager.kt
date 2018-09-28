@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.auth
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.bindings.LOCAL
+import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
@@ -68,7 +69,7 @@ object SessionManager : WithLogging() {
      * @param shortUser the shortUser
      */
     fun invalidateSessions(shortUser: String) {
-        CouchDb.getViewRows<FullSession>("sessionsByUser") { query("key" to "\"$shortUser\"") }
+        CouchDb.getViewRows<TepidDbDelegate>("sessionsByUser") { query("key" to "\"$shortUser\"") }
                 .mapNotNull { it._id }
                 .forEach { SessionManager.end(it) }
     }
