@@ -159,6 +159,19 @@ class Users {
         return getQuotaData(user) ?: failNotFound("Could not calculate quota")
     }
 
+    @POST
+    @Path("/{sam}/refresh")
+    @RolesAllowed(CTFER, ELDER)
+    @Produces(MediaType.TEXT_PLAIN)
+    fun forceRefresh(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext) {
+        try {
+            SessionManager.refreshUser(shortUser)
+            SessionManager.invalidateSessions(shortUser)
+        } catch (e:Exception){
+            throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
+        }
+    }
+
     @GET
     @Path("/autosuggest/{like}")
     @RolesAllowed(CTFER, ELDER)
