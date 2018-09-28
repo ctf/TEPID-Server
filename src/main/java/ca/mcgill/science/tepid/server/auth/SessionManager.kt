@@ -6,7 +6,6 @@ import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.isSuccessful
@@ -229,6 +228,13 @@ object SessionManager : WithLogging() {
         if (Config.LDAP_ENABLED) {
             val ldapUser = Ldap.queryUserLdap(sam, null) ?: throw RuntimeException("Could not fetch user from LDAP {\"sam\":\"$sam\"}")
             val refreshedUser = mergeUsers(ldapUser, dbUser)
+            if (dbUser.role != refreshedUser.role){
+                try {
+                    invalidateSessions(sam)
+                } catch (e: Exception) {
+                    log.warn("Could not delete sessions")
+                }
+            }
             updateDbWithUser(refreshedUser)
             return refreshedUser
         } else {
