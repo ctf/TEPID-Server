@@ -69,9 +69,10 @@ object SessionManager : WithLogging() {
      * @param shortUser the shortUser
      */
     fun invalidateSessions(shortUser: String) {
-        val sessions = CouchDb.getViewRows<Session>("sessions")
-                .filter { it.user.shortUser == shortUser}
-                .map { SessionManager.end(it.toString())}
+        CouchDb.getViewRows<FullSession>("sessions")
+                .filter { it.user.shortUser == shortUser }
+                .mapNotNull { it._id }
+                .forEach { SessionManager.end(it) }
     }
 
     /**
@@ -223,15 +224,14 @@ object SessionManager : WithLogging() {
         } else return false
     }
 
-    fun refreshUser(sam : String): FullUser {
+    fun refreshUser(sam: String): FullUser {
         val dbUser = queryUserDb(sam) ?: throw RuntimeException("Could not fetch user from DB {\"sam\":\"$sam\"}")
         if (Config.LDAP_ENABLED) {
             val ldapUser = Ldap.queryUserLdap(sam, null) ?: throw RuntimeException("Could not fetch user from LDAP {\"sam\":\"$sam\"}")
-            val refreshedUser  = mergeUsers(ldapUser, dbUser)
+            val refreshedUser = mergeUsers(ldapUser, dbUser)
             updateDbWithUser(refreshedUser)
             return refreshedUser
-        }
-        else {
+        } else {
             return dbUser
         }
     }
