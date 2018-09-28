@@ -33,7 +33,9 @@ import kotlin.test.assertFalse
         QueryUserDbTest::class,
         AutoSuggestTest::class,
         QueryUserTest::class,
-        AuthenticateTest::class
+        AuthenticateTest::class,
+        SetExchangeStudentTest::class,
+        RefreshUserTest::class
 )
 class SessionManagerTest
 
@@ -620,7 +622,7 @@ class SetExchangeStudentTest {
 
 }
 
-class refreshUserTest {
+class RefreshUserTest {
 
     val testSam = "SU"
 
