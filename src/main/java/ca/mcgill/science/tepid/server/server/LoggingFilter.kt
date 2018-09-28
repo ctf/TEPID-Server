@@ -28,7 +28,7 @@ class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
         val content: String = when (entity) {
             null -> "null"
             is Throwable -> entity.localizedMessage
-            is String -> if (entity.length < 50) entity else "${entity.substring(0, 49)}\u2026"
+            is String -> entity
             is Number, is Boolean, is PutResponse -> entity.toString()
             is Collection<*> -> "[${entity::class.java.simpleName} (${entity.size})]"
             is Map<*, *> -> "{${entity::class.simpleName} (${entity.size}}"
