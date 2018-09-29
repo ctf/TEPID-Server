@@ -36,16 +36,16 @@ object SessionManager : WithLogging() {
         val id = BigInteger(130, random).toString(32)
         session._id = id
         log.trace("Creating session {\"id\":\"$id\", \"shortUser\":\"${user.shortUser}\"}")
-        val out = CouchDb.path(id).putJson(session)
-        println(out)
+        val out = DB.putSession(session)
+        log.trace(out)
         return session
     }
 
     operator fun get(token: String): FullSession? {
-        val session = CouchDb.path(token).getJsonOrNull<FullSession>() ?: return null
+        val session = DB.getSessionOrNull(token) ?: return null
         if (session.isValid()) return session
         log.trace("Deleting session token {\"token\":\"$token\", \"expiration\":\"${session.expiration}\", \"now\":\"${System.currentTimeMillis()}\"}")
-        CouchDb.path(token).deleteRev()
+        DB.deleteSession(token)
         return null
     }
 
@@ -59,7 +59,7 @@ object SessionManager : WithLogging() {
 
     fun end(token: String) {
         //todo test
-        CouchDb.path(token).deleteRev()
+        DB.deleteSession(token)
     }
 
     /**
@@ -73,17 +73,17 @@ object SessionManager : WithLogging() {
     fun authenticate(sam: String, pw: String): FullUser? {
         val dbUser = queryUserDb(sam)
         log.trace("Db data found for $sam")
-        if (dbUser?.authType == LOCAL) {
-            return if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
-        } else if (Config.LDAP_ENABLED) {
-            var ldapUser = Ldap.authenticate(sam, pw)
-            if (ldapUser != null) {
-                ldapUser = mergeUsers(ldapUser, dbUser)
-                updateDbWithUser(ldapUser)
+        return when {
+            dbUser?.authType == LOCAL -> if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
+            Config.LDAP_ENABLED -> {
+                var ldapUser = Ldap.authenticate(sam, pw)
+                if (ldapUser != null) {
+                    ldapUser = mergeUsers(ldapUser, dbUser)
+                    updateDbWithUser(ldapUser)
+                }
+                ldapUser
             }
-            return ldapUser
-        } else {
-            return null
+            else -> null
         }
     }
 
@@ -144,7 +144,7 @@ object SessionManager : WithLogging() {
     fun updateDbWithUser(user: FullUser) {
         log.trace("Update db instance {\"user\":\"${user.shortUser}\"}\n")
         try {
-            val response = CouchDb.path("u${user.shortUser}").putJson(user)
+            val response = DB.putUser(user)
             if (response.isSuccessful) {
                 val responseObj = response.readEntity(ObjectNode::class.java)
                 val newRev = responseObj.get("_rev")?.asText()
@@ -167,21 +167,7 @@ object SessionManager : WithLogging() {
      */
     fun queryUserDb(sam: String?): FullUser? {
         sam ?: return null
-        val dbUser = when {
-            sam.contains(".") ->
-                CouchDb
-                        .path(CouchDb.CouchDbView.ByLongUser)
-                        .queryParam("key", "\"${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}\"")
-                        .getViewRows<FullUser>()
-                        .firstOrNull()
-            sam.matches(numRegex) ->
-                CouchDb
-                        .path(CouchDb.CouchDbView.ByStudentId)
-                        .queryParam("key", sam)
-                        .getViewRows<FullUser>()
-                        .firstOrNull()
-            else -> CouchDb.path("u$sam").getJsonOrNull()
-        }
+        val dbUser = DB.getUserOrNull(sam)
         dbUser?._id ?: return null
         log.trace("Found db user {\"sam\":\"$sam\",\"db_id\":\"${dbUser._id}\", \"dislayName\":\"${dbUser.displayName}\"}")
         return dbUser
@@ -206,8 +192,8 @@ object SessionManager : WithLogging() {
     /**
      * Sets exchange student status.
      * Also updates user information from LDAP.
-	 * This refreshes the groups and courses of a user,
-	 * which allows for thier role to change
+     * This refreshes the groups and courses of a user,
+     * which allows for thier role to change
      *
      * @param sam      shortUser
      * @param exchange boolean for exchange status

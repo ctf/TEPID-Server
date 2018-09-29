@@ -1,7 +1,12 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.data.*
+import java.io.InputStream
 import javax.ws.rs.core.Response
+import javax.ws.rs.core.UriInfo
+
+// todo bind layer
+lateinit var DB: DbLayer
 
 // TODO deleteDestination should return Response instead of String
 // TODO, all outputs returning response should likely return models that can then be wrapped inside a response
@@ -21,7 +26,15 @@ typealias Id = String
 typealias Sam = String
 
 enum class Order {
-    ASCENDING, DESCENDING
+    ASCENDING {
+        override fun <T : Comparable<T>> sort(iterable: Iterable<T>): List<T> =
+                iterable.sorted()
+    }, DESCENDING {
+        override fun <T : Comparable<T>> sort(iterable: Iterable<T>): List<T> =
+                iterable.sortedDescending()
+    };
+
+    abstract fun <T : Comparable<T>> sort(iterable: Iterable<T>): List<T>
 }
 
 /**
@@ -36,15 +49,17 @@ interface DbLayer :
         DbQueueLayer,
         DbMarqueeLayer,
         DbSessionLayer,
-        DbUserLayer
+        DbUserLayer {
+    fun <T: Comparable<T>> List<T>.sortAs(order: Order): List<T> = order.sort(this)
+}
 
 interface DbDestinationLayer {
 
-    fun getDestinations(): Map<Id, FullDestination>
+    fun getDestinations(): List<FullDestination>
 
-    fun putDestinations(destinations: Map<Id, FullDestination>)
+    fun putDestinations(destinations: Map<Id, FullDestination>): String
 
-    fun updateDestination(id: Id, updater: FullDestination.() -> Unit): Response
+    fun updateDestinationWithResponse(id: Id, updater: FullDestination.() -> Unit): Response
 
     /**
      * Returns a string result representing a response entity
@@ -75,10 +90,15 @@ interface DbJobLayer {
 
     fun postJob(job: PrintJob): Response
 
-    fun getJobChanges(id: Id): ChangeDelta
+    fun getJobChanges(id: Id, uriInfo: UriInfo): ChangeDelta
 
-    fun getJobFile(id: Id, file: String): Response
+    fun getJobFile(id: Id, file: String): InputStream?
 
+    /**
+     * Returns earliest job in ms
+     * Defaults to -1 if not found
+     */
+    fun getEarliestJobTime(shortUser: String): Long
 }
 
 interface DbQueueLayer {
@@ -86,6 +106,8 @@ interface DbQueueLayer {
     fun getQueues(): List<PrintQueue>
 
     fun putQueues(queues: Collection<PrintQueue>): Response
+
+    fun deleteQueue(id: Id): String
 
 }
 
@@ -112,9 +134,6 @@ interface DbUserLayer {
     fun getUserOrNull(sam: Sam): FullUser?
 
     fun isAdminConfigured(): Boolean
-
-    // TODO delete? Or at least use shortUser from user
-    fun putAdmin(shortUser: String, user: FullUser): Response
 
     fun getTotalPrintedCount(shortUser: String): Int
 }

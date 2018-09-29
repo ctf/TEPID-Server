@@ -29,14 +29,15 @@ class Queues {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun putQueues(queues: List<PrintQueue>): Response {
-        val root = CouchDb.putArray("docs", queues)
+        val response = DB.putQueues(queues)
         queues.forEach { log.info("Added new queue {}.", it.name) }
-        return CouchDb.path("_bulk_docs").postJson(root)
+        return response
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQueues(): List<PrintQueue> = CouchDb.getViewRows("queues")
+    fun getQueues(): List<PrintQueue> = DB.getQueues()
+
 
     @GET
     @Path("/{queue}")
@@ -44,19 +45,15 @@ class Queues {
     fun listJobs(@PathParam("queue") queue: String, @QueryParam("limit") @DefaultValue("-1") limit: Int): Collection<PrintJob> {
         //TODO limit param no longer user, should be replaced by from param in client
         // this should get all jobs in "queue" from the past 2 days
-        val from = Date().time - 1000 * 60 * 60 * 24 * 2 // from 2 days ago
-        return CouchDb.getViewRows("_design/main/_view", "jobsByQueueAndTime") {
-            query("descending" to true,
-                    "startkey" to "[\"$queue\",%7B%7D]",
-                    "endkey" to "[\"$queue\",$from]")
-        }
+        val twoDaysMs =  1000 * 60 * 60 * 24 * 2L
+        return DB.getJobsByQueue(queue, maxAge = twoDaysMs, sortOrder = Order.DESCENDING)
     }
 
     @GET
     @Path("/{queue}/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getJob(@PathParam("queue") queue: String, @PathParam("id") id: String): PrintJob {
-        val j = CouchDb.path(id).getJson<PrintJob>()
+        val j = DB.getJob(id)
         if (!j.queueName.equals(queue, ignoreCase = true))
             failBadRequest("Job queue does not match $queue")
         return j
@@ -67,18 +64,16 @@ class Queues {
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun deleteQueue(@PathParam("queue") queue: String): String =
-            CouchDb.path(queue).deleteRev()
+            DB.deleteQueue(queue)
 
     @GET
     @Path("/{queue}/{id}/{file}")
     fun getAttachment(@PathParam("queue") queue: String, @PathParam("id") id: String, @PathParam("file") file: String): InputStream {
         try {
-            val j = CouchDb.path(id).getJson<PrintJob>()
+            val j = DB.getJob(id)
             if (!j.queueName.equals(queue, ignoreCase = true))
                 failNotFound("Could not find job $id in queue $queue")
-            val resp = CouchDb.path(id, file).request().get()
-            if (resp.isSuccessful)
-                return resp.readEntity(InputStream::class.java)
+            return DB.getJobFile(id, file)!!
         } catch (ignored: Exception) {
         }
         failNotFound("Could not find $file for job $id")
@@ -88,6 +83,7 @@ class Queues {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{queue}/_changes")
     fun getChanges(@PathParam("queue") queue: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse) {
+        // TODO remove changeTarget instances?
         var target = changeTarget.query("queue" to queue)
         val qp = uriInfo.queryParameters
         if (qp.containsKey("feed")) target = target.queryParam("feed", qp.getFirst("feed"))
@@ -107,6 +103,7 @@ class Queues {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/_changes")
     fun getChanges(@Context uriInfo: UriInfo): String {
+        // TODO remove
         var target = changeTarget
         val qp = uriInfo.queryParameters
         if (qp.containsKey("feed")) target = target.query("feed" to qp.getFirst("feed"))

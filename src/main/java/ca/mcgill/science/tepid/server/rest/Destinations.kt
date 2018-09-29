@@ -6,10 +6,7 @@ import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.Destination
 import ca.mcgill.science.tepid.models.data.DestinationTicket
 import ca.mcgill.science.tepid.models.data.FullDestination
-import ca.mcgill.science.tepid.server.db.CouchDb
-import ca.mcgill.science.tepid.server.db.deleteRev
-import ca.mcgill.science.tepid.server.db.isSuccessful
-import ca.mcgill.science.tepid.server.db.postJson
+import ca.mcgill.science.tepid.server.db.*
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.annotation.security.RolesAllowed
@@ -32,7 +29,7 @@ class Destinations {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun putDestinations(destinations: Map<String, FullDestination>): String =
-            CouchDb.putArray("docs", destinations.values).postJson("_bulk_docs")
+           DB.putDestinations(destinations)
 
     /**
      * Retrieves map of room names as [String] and their details in [Destination]
@@ -45,7 +42,7 @@ class Destinations {
     @RolesAllowed(USER, CTFER, ELDER)
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
         val session = ctx.getSession()
-        return CouchDb.getViewRows<FullDestination>("destinations")
+        return DB.getDestinations()
                 .map { it.toDestination(session.role) }
                 .mapNotNull {
                     val id = it._id ?: return@mapNotNull null
@@ -63,7 +60,7 @@ class Destinations {
         val session = crc.getSession()
         ticket.user = session.user.toUser()
         val successText = "$id marked as ${if (ticket.up) "up" else "down"}"
-        val response = CouchDb.updateWithResponse<FullDestination>(id) {
+        val response = DB.updateDestinationWithResponse(id) {
             up = ticket.up
             this.ticket = if (ticket.up) null else ticket
             log.info("Destination $successText.")
@@ -79,7 +76,7 @@ class Destinations {
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun deleteQueue(@PathParam("dest") destination: String): String =
-            CouchDb.path(destination).deleteRev()
+            DB.deleteDestination(destination)
 
     private companion object : WithLogging()
 

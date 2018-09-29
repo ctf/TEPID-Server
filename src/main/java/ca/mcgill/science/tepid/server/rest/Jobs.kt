@@ -40,9 +40,7 @@ class Jobs {
         if (session.role == USER && session.user.shortUser != sam) {
             return emptyList()
         }
-        return CouchDb.getViewRows<PrintJob>("byUser") {
-            query("key" to "\"$sam\"")
-        }.sortedDescending()
+        return DB.getJobsByUser(sam, Order.DESCENDING)
     }
 
     private fun PrintJob.getJobExpiration() =
@@ -55,7 +53,7 @@ class Jobs {
     @Consumes(MediaType.APPLICATION_JSON)
     fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): Response {
         val session = ctx.getSession()
-        val queueNames:List<String> = CouchDb.path(CouchDb.CouchDbView.Queues).getViewRows<PrintQueue>().mapNotNull{it.name}.toList()
+        val queueNames: List<String> = DB.getQueues().mapNotNull { it.name }
         if (!queueNames.contains(j.queueName))
             failBadRequest("Invalid queue name ${j.queueName}")
         j.userIdentification = session.user.shortUser
@@ -98,18 +96,14 @@ class Jobs {
     fun getChanges(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse, @Context ctx: ContainerRequestContext) {
         val session = ctx.getSession()
         ar.setTimeoutHandler { ar.resume(emptyList<ChangeDelta>()) }
-        val j = CouchDb.path(id).getJson<PrintJob>()
+        val j = DB.getJob(id)
         if (session.role == USER && session.user.shortUser != j.userIdentification) {
             ar.resume(Response.Status.UNAUTHORIZED.text("You cannot access this resource"))
             return
         }
-        val changes = CouchDb.path("_changes")
-                .query("filter" to "main/byJob", "job" to id)
-                .query(uriInfo, "feed", "since")
-                .getObject().get("results").get(0)
 
-        val delta = ChangeDelta(changes.get("id").asText())
-        log.debug("Changes: $changes\ndelta: $delta")
+        val delta = DB.getJobChanges(id, uriInfo)
+        log.debug("Delta: $delta")
 
         if (!ar.isDone && !ar.isCancelled) {
             try {
@@ -127,7 +121,7 @@ class Jobs {
     fun getJob(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Context ctx: ContainerRequestContext): PrintJob {
         val session = ctx.getSession()
         log.trace("Queried job $id")
-        val j = CouchDb.path(id).getJson<PrintJob>()
+        val j = DB.getJob(id)
         if (session.role == USER && session.user.shortUser != j.userIdentification)
             failUnauthorized("You cannot access this resource")
         return j
@@ -138,7 +132,7 @@ class Jobs {
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun setJobRefunded(@PathParam("id") id: String, refunded: Boolean): PutResponse {
-        val result = CouchDb.update<PrintJob>(id) {
+        val result = DB.updateJob(id) {
             isRefunded = refunded
             log.debug("Refunded job $id")
         } ?: failInternal("Could not modify refund status")
@@ -151,7 +145,7 @@ class Jobs {
     @Produces(MediaType.TEXT_PLAIN)
     fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): String {
         val session = ctx.getSession()
-        val j = CouchDb.path(id).getJson<PrintJob>()
+        val j = DB.getJob(id)
         val file = Utils.existingFile(j.file) ?: failInternal("Data for this job no longer exists")
         if (session.role == USER && session.user.shortUser != j.userIdentification)
             failUnauthorized("You cannot reprint someone else's job")
@@ -163,7 +157,7 @@ class Jobs {
                 deleteDataOn = j.getJobExpiration()
         )
         log.debug("Reprinted ${reprint.name}")
-        val response = CouchDb.target.postJson(reprint)
+        val response = DB.postJob(reprint)
         if (!response.isSuccessful)
             throw WebApplicationException(response)
         val content = response.readEntity(ObjectNode::class.java)
