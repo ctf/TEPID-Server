@@ -6,8 +6,10 @@ import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.Destination
 import ca.mcgill.science.tepid.models.data.DestinationTicket
 import ca.mcgill.science.tepid.models.data.FullDestination
-import ca.mcgill.science.tepid.server.db.*
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.isSuccessful
+import ca.mcgill.science.tepid.server.util.failNotFound
+import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*

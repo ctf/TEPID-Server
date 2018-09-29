@@ -1,12 +1,10 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.*
-import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.Order
 import ca.mcgill.science.tepid.server.util.failNotFound
-import ca.mcgill.science.tepid.server.db.query
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.*
 import javax.ws.rs.*

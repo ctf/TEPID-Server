@@ -1,9 +1,10 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.data.*
-import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.util.failBadRequest
+import ca.mcgill.science.tepid.server.util.mapper
+import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory

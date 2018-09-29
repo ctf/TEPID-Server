@@ -5,10 +5,10 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.server.db.*
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.util.failBadRequest
+import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.io.InputStream
-import java.util.*
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
 import javax.ws.rs.container.AsyncResponse

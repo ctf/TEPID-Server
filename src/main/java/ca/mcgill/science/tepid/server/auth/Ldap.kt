@@ -7,7 +7,6 @@ import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.*
 import javax.naming.NamingException
-import javax.naming.OperationNotSupportedException
 import javax.naming.directory.*
 
 object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {

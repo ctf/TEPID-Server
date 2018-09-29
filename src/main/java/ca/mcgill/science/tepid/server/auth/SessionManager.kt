@@ -7,7 +7,8 @@ import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.User
-import ca.mcgill.science.tepid.server.db.*
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.isSuccessful
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -26,7 +27,6 @@ import java.security.SecureRandom
 object SessionManager : WithLogging() {
 
     private const val HOUR_IN_MILLIS = 60 * 60 * 1000
-    private val numRegex = Regex("[0-9]+")
     private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
 
     private val random = SecureRandom()

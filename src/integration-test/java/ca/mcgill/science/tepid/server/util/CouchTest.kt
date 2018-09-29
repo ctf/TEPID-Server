@@ -4,6 +4,8 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.CouchDb
+import ca.mcgill.science.tepid.server.db.CouchDbLayer
+import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.db.getViewRows
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.junit.Ignore

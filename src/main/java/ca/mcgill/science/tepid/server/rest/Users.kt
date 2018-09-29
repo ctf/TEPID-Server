@@ -7,8 +7,10 @@ import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.SessionManager
-import ca.mcgill.science.tepid.server.db.*
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.util.failNotFound
+import ca.mcgill.science.tepid.server.util.getSession
+import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
 import java.net.URI
