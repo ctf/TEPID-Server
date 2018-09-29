@@ -180,7 +180,7 @@ object CouchDb : WithLogging() {
      * View data retriever
      *
      * Given path, retrieve ViewResult variant
-     * and return just the row values
+     * and return just the value of the "value" attribute of each row
      * -------------------------------------------
      */
 
