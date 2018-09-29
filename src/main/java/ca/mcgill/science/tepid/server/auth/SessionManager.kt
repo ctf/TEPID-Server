@@ -71,10 +71,8 @@ object SessionManager : WithLogging() {
      * @param shortUser the shortUser
      */
     fun invalidateSessions(shortUser: String) {
-        CouchDb.getViewRows<Test>("sessionsByUser") { query("key" to "\"$shortUser\"") }
-                .map { it.id }
+        CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"$shortUser\"") }
                 .forEach { SessionManager.end(it) }
-
     }
 
     data class Test (val id: String, val key: String, val value: String)
