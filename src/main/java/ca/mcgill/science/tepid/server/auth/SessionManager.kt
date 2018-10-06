@@ -76,8 +76,6 @@ object SessionManager : WithLogging() {
         DB.getSessionIdsForUser(shortUser).forEach{ SessionManager.end(it) }
     }
 
-    data class Test (val id: String, val key: String, val value: String)
-
     /**
      * Authenticates user as appropriate:
      * first with local auth (if applicable), then against LDAP (if enabled)
