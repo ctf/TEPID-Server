@@ -123,6 +123,8 @@ interface DbSessionLayer {
 
     fun getSessionOrNull(id: Id): FullSession?
 
+    fun getSessionIdsForUser(user: Sam): List<String>
+
     fun deleteSession(id: Id): String
 
 }

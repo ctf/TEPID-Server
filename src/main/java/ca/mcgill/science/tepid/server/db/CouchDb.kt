@@ -11,7 +11,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.module.kotlin.convertValue
 import java.io.InputStream
 import java.util.*
+import javax.ws.rs.NotFoundException
 import javax.ws.rs.client.WebTarget
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
 
@@ -98,6 +100,11 @@ class CouchDbLayer : DbLayer {
 
     override fun getSessionOrNull(id: Id): FullSession? =
             CouchDb.path(id).getJsonOrNull()
+
+    override fun getSessionIdsForUser(sam: Sam): List<String> {
+        val user = DB.getUserOrNull(sam) ?: throw NotFoundException(Response.status(404).entity("Could not find sam " + sam).type(MediaType.TEXT_PLAIN).build())
+        return CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"${user.shortUser}\"") }
+    }
 
     override fun deleteSession(id: Id): String =
             CouchDb.path(id).deleteRev()
