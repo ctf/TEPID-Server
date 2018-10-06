@@ -7,11 +7,10 @@ import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.SessionManager
-import ca.mcgill.science.tepid.server.db.CouchDb
-import ca.mcgill.science.tepid.server.db.getObject
-import ca.mcgill.science.tepid.server.db.putJson
-import ca.mcgill.science.tepid.server.db.query
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.util.failNotFound
+import ca.mcgill.science.tepid.server.util.getSession
+import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
 import java.net.URI
@@ -32,8 +31,7 @@ class Users {
     @Path("/configured")
     @Produces(MediaType.APPLICATION_JSON)
     fun adminConfigured(): Boolean = try {
-        val rows = CouchDb.path(CouchDb.MAIN_VIEW, "localAdmins").getObject().get("rows")
-        rows.size() > 0
+        DB.isAdminConfigured()
     } catch (e: Exception) {
         log.error("localAdmin check failed", e)
         false
@@ -74,6 +72,7 @@ class Users {
             return Response.Status.UNAUTHORIZED.text("Local admin already exists")
         }
         val hashedPw = BCrypt.hashpw(newAdmin.password, BCrypt.gensalt())
+        newAdmin.shortUser = shortUser
         newAdmin.password = hashedPw
         newAdmin.role = ADMIN
         newAdmin.authType = LOCAL
@@ -81,9 +80,7 @@ class Users {
         newAdmin.displayName = "${newAdmin.givenName} ${newAdmin.lastName}"
         newAdmin.salutation = newAdmin.givenName
         newAdmin.longUser = newAdmin.email
-
-
-        return CouchDb.path("u$shortUser").putJson(newAdmin)
+        return DB.putUser(newAdmin)
     }
 
     /**
@@ -108,7 +105,7 @@ class Users {
         if (session.role == USER && session.user.shortUser != user.shortUser)
             return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
         action(user)
-        return CouchDb.path("u${user.shortUser}").putJson(user)
+        return DB.putUser(user)
     }
 
 
@@ -229,13 +226,12 @@ class Users {
         fun getQuota(user: FullUser?): Int = getQuotaData(user)?.quota ?: 0
 
         fun getTotalPrinted(shortUser: String?) =
-                CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject()
-                        .get("rows")?.get(0)?.get("value")?.get("sum")?.asInt(0) ?: 0
+                if (shortUser == null) 0
+                else DB.getTotalPrintedCount(shortUser)
 
         private fun oldMaxQuota(shortUser: String): Int {
             try {
-                val rows = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject().get("rows")
-                val ej = rows.get(0).get("value").get("earliestJob").asLong(-1)
+                val ej = DB.getEarliestJobTime(shortUser)
                 if (ej == -1L) {
                     log.debug("Old quota for new user $shortUser")
                     return 1000

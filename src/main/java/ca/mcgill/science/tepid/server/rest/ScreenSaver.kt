@@ -1,11 +1,12 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.*
-import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.auth.SessionManager
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.Order
 import ca.mcgill.science.tepid.server.util.failNotFound
-import ca.mcgill.science.tepid.server.db.query
 import ca.mcgill.science.tepid.utils.WithLogging
+import java.util.*
 import javax.ws.rs.*
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
@@ -23,7 +24,7 @@ class ScreenSaver {
     @GET
     @Path("queues")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQueues(): List<PrintQueue> = CouchDb.getViewRows("queues")
+    fun getQueues(): List<PrintQueue> = DB.getQueues()
 
     /**
      * @param queue The name of the queue to retrieve from
@@ -36,14 +37,7 @@ class ScreenSaver {
     fun listJobs(@PathParam("queue") queue: String,
                  @QueryParam("limit") @DefaultValue("13") limit: Int,
                  @QueryParam("from") @DefaultValue("0") from: Long): Collection<PrintJob> =
-            CouchDb.getViewRows<PrintJob>("jobsByQueueAndTime") {
-                query(
-                        "descending" to true,
-                        "startkey" to "[\"$queue\",%7B%7D]",
-                        "endkey" to "[\"$queue\",$from]",
-                        "limit" to limit
-                )
-            }.sortedDescending()
+            DB.getJobsByQueue(queue, maxAge = Date().time - from, sortOrder = Order.DESCENDING)
 
     /**
      * Gets the Up status for each Queue.
@@ -57,16 +51,15 @@ class ScreenSaver {
     @Path("queues/status")
     @Produces(MediaType.APPLICATION_JSON)
     fun getStatus(): Map<String, Boolean> {
-        val destinations = CouchDb.getViewRows<FullDestination>("destinations")
-                .map { it._id to it }.toMap()
+        val destinations = DB.getDestinations().map { it._id to it }.toMap()
 
-        val queues = CouchDb.getViewRows<PrintQueue>("queues")
+        val queues = DB.getQueues()
 
         val out = mutableMapOf<String, Boolean>()
 
-        queues.forEach forQueue@{ q ->
+        queues.forEach forQueue@ { q ->
             val name = q.name ?: return@forQueue
-            q.destinations.forEach forDest@{
+            q.destinations.forEach forDest@ {
                 val isUp = destinations[it]?.up ?: return@forDest
                 out[name] = isUp || out[name] ?: false
             }
@@ -83,8 +76,7 @@ class ScreenSaver {
     @GET
     @Path("marquee")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getMarquee(): List<MarqueeData> =
-            CouchDb.getViewRows("_design/marquee/_view", "all")
+    fun getMarquee(): List<MarqueeData> = DB.getMarquees()
 
     /**
      * Note that this is an exact replica of [Destinations.getDestinations]
@@ -95,7 +87,7 @@ class ScreenSaver {
     @GET
     @Path("destinations")
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
-        return CouchDb.getViewRows<FullDestination>("destinations")
+        return DB.getDestinations()
                 .map { it.toDestination() }
                 .mapNotNull {
                     val id = it._id ?: return@mapNotNull null

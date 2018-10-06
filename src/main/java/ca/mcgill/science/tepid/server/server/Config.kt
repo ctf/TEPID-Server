@@ -6,7 +6,7 @@ import ca.mcgill.science.tepid.utils.*
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.LoggerContext
-import java.util.Calendar
+import java.util.*
 
 /**
  * Created by Allan Wang on 27/01/2017.
