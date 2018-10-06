@@ -8,8 +8,10 @@ import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.User
+import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.isSuccessful
+import ca.mcgill.science.tepid.server.db.query
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.mapper
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -71,8 +73,7 @@ object SessionManager : WithLogging() {
      * @param shortUser the shortUser
      */
     fun invalidateSessions(shortUser: String) {
-        CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"$shortUser\"") }
-                .forEach { SessionManager.end(it) }
+        DB.getSessionIdsForUser(shortUser).forEach{ SessionManager.end(it) }
     }
 
     data class Test (val id: String, val key: String, val value: String)
