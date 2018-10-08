@@ -231,7 +231,11 @@ object SessionManager : WithLogging() {
     }
 
     fun refreshUser(sam: String): FullUser {
-        val dbUser = queryUserDb(sam) ?: throw RuntimeException("Could not fetch user from DB {\"sam\":\"$sam\"}")
+        val dbUser = queryUserDb(sam)
+        if (dbUser == null){
+            log.info("Could not fetch user from DB {\"sam\":\"$sam\"}")
+            return queryUser(sam, null) ?: throw RuntimeException("Could not fetch user from anywhere {\"sam\":\"$sam\"}")
+        }
         if (Config.LDAP_ENABLED) {
             val ldapUser = Ldap.queryUserLdap(sam, null) ?: throw RuntimeException("Could not fetch user from LDAP {\"sam\":\"$sam\"}")
             val refreshedUser = mergeUsers(ldapUser, dbUser)
