@@ -165,10 +165,10 @@ class SessionManagerIT : AuthIT() {
     fun invalidateSession() {
         val user = UserFactory.makeLdapUser()
         val session = SessionManager.start(user, 1000)
-        assertTrue(SessionManager.valid(session.toString()))
+        assertTrue(SessionManager.isValid(session))
 
         SessionManager.invalidateSessions(user.shortUser!!)
 
-        assertFalse(SessionManager.valid(session.toString()))
+        assertFalse(SessionManager.isValid(session))
     }
 }

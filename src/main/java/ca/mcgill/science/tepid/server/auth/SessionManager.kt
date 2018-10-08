@@ -48,19 +48,24 @@ object SessionManager : WithLogging() {
 
     operator fun get(token: String): FullSession? {
         val session = DB.getSessionOrNull(token) ?: return null
-        if (session.isValid()) return session
+        if (isValid(session)) return session
         log.trace("Deleting session token {\"token\":\"$token\", \"expiration\":\"${session.expiration}\", \"now\":\"${System.currentTimeMillis()}\"}")
         DB.deleteSession(token)
         return null
     }
 
     /**
-     * Check if session exists and isn't expired
+     * Check if session isn't expired and has the cached role
      *
-     * @param token sessionId
+     * @param session the fullSession to be tested
      * @return true for valid, false otherwise
      */
-    fun valid(token: String): Boolean = this[token] != null
+    fun isValid(session: FullSession): Boolean {
+        if (!session.isValid()) return false
+
+        if (session.role != queryUserDb(session.user.shortUser)?.role) return false
+        return true
+    }
 
     fun end(token: String) {
         //todo test
