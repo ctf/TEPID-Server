@@ -240,11 +240,7 @@ object SessionManager : WithLogging() {
             val ldapUser = Ldap.queryUserLdap(sam, null) ?: throw RuntimeException("Could not fetch user from LDAP {\"sam\":\"$sam\"}")
             val refreshedUser = mergeUsers(ldapUser, dbUser)
             if (dbUser.role != refreshedUser.role) {
-                try {
-                    invalidateSessions(sam)
-                } catch (e: Exception) {
-                    log.warn("Could not delete sessions")
-                }
+                invalidateSessions(sam)
             }
             updateDbWithUser(refreshedUser)
             return refreshedUser
