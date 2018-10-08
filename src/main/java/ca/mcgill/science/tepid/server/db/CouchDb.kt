@@ -102,8 +102,7 @@ class CouchDbLayer : DbLayer {
             CouchDb.path(id).getJsonOrNull()
 
     override fun getSessionIdsForUser(sam: Sam): List<String> {
-        val user = DB.getUserOrNull(sam) ?: throw NotFoundException(Response.status(404).entity("Could not find sam " + sam).type(MediaType.TEXT_PLAIN).build())
-        return CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"${user.shortUser}\"") }
+        return CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"${sam}\"") }
     }
 
     override fun deleteSession(id: Id): String =
