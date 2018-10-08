@@ -723,3 +723,42 @@ class SessionIsValidTest {
         assertFalse(SessionManager.isValid(mockSession), "SessionaManger ignores a mismatch between session permission and user permission")
     }
 }
+
+class SessionGetTest {
+
+    val testUser = UserFactory.makeDbUser().copy(role = "user")
+    val testSession = FullSession("user", testUser)
+
+    @Before
+    fun initTest() {
+        testSession._id = "testId"
+        testSession._rev = "testRev"
+        mockkObject(SessionManager)
+        every { SessionManager.queryUserDb(testUser.shortUser) } returns testUser
+        mockkObject(DB)
+    }
+
+    @After
+    fun tearTest() {
+        unmockkAll()
+    }
+
+    @Test
+    fun testGetInvalidSession() {
+        every { DB.getSessionOrNull("testID") } returns testSession
+        every { DB.deleteSession("testID") } returns "fakeResponse"
+        every { SessionManager.isValid(testSession) } returns false
+
+        assertEquals(null, SessionManager.get("testID"), "Does not return null for invalid session")
+    }
+
+    @Test
+    fun testGetValidSession() {
+        every { DB.getSessionOrNull("testID") } returns testSession
+        every { DB.deleteSession("testID") } returns "fakeResponse"
+        every { SessionManager.isValid(testSession) } returns true
+
+        assertEquals(testSession, SessionManager.get("testID"), "Does not return valid session")
+
+    }
+}
