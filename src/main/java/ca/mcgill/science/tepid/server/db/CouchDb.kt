@@ -101,8 +101,8 @@ class CouchDbLayer : DbLayer {
     override fun getSessionOrNull(id: Id): FullSession? =
             CouchDb.path(id).getJsonOrNull()
 
-    override fun getSessionIdsForUser(sam: Sam): List<String> {
-        return CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"${sam}\"") }
+    override fun getSessionIdsForUser(shortUser: ShortUser): List<String> {
+        return CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"${shortUser}\"") }
     }
 
     override fun deleteSession(id: Id): String =
