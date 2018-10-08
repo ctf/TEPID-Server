@@ -3,9 +3,11 @@ package ca.mcgill.science.tepid.server.auth
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
+import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.db.CouchDb
+import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.getJson
 import ca.mcgill.science.tepid.server.db.getViewRows
 import ca.mcgill.science.tepid.server.generateTestUser
@@ -685,5 +687,39 @@ class RefreshUserTest {
                     UserFactory.makeMergedUser()
             )
         }
+    }
+}
+
+class SessionIsValidTest {
+
+    val testUser = UserFactory.makeDbUser().copy(role = "user")
+    val testSession = FullSession("user", testUser)
+    val mockSession = spyk(testSession)
+
+    @Before
+    fun initTest() {
+        mockkObject(SessionManager)
+        every { SessionManager.queryUserDb(testUser.shortUser) } returns testUser
+    }
+
+    @After
+    fun tearTest() {
+        unmockkAll()
+    }
+
+    @Test
+    fun testValidSelfInvalidation() {
+        every { mockSession.isValid() } returns false
+
+        assertFalse(SessionManager.isValid(mockSession), "SessionaManger ignores a session's declaration of invalidity")
+    }
+
+    @Test
+    fun testValidRoleInvalidation() {
+        mockSession.role = "oldRole"
+
+        every { mockSession.isValid() } returns true
+
+        assertFalse(SessionManager.isValid(mockSession), "SessionaManger ignores a mismatch between session permission and user permission")
     }
 }
