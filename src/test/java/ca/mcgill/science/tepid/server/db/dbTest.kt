@@ -13,7 +13,7 @@ import kotlin.test.fail
 @Ignore("Just some demos of deserialisation from couchdb ")
 class QueryWithoutDocsTest {
 
-    data class queryResult(val id: String, val key: String, val value: String)
+    data class QueryResult(val id: String, val key: String, val value: String)
 
     @Before
     fun initTest() {
@@ -34,8 +34,8 @@ class QueryWithoutDocsTest {
         val queryKey = "queryKey"
         val queryValue = "queryValue"
 
-        val result = mapper.readValue<queryResult>("{\"id\":\"$queryId\",\"key\":\"$queryKey\",\"value\":\"$queryValue\"}")
-        assertEquals(queryResult::class, result::class)
+        val result = mapper.readValue<QueryResult>("{\"id\":\"$queryId\",\"key\":\"$queryKey\",\"value\":\"$queryValue\"}")
+        assertEquals(QueryResult::class, result::class)
         assertEquals(queryId, result.id)
         assertEquals(queryKey, result.key)
         assertEquals(queryValue, result.value)
@@ -59,7 +59,7 @@ class QueryWithoutDocsTest {
         )
 //        // Will throw an error
 //        val rows = input.get("rows") ?: fail ("null returned from parsing")
-//        val result =  rows.mapNotNull { it?.get("value") }.map { mapper.treeToValue(it, queryResult::class.java)}
+//        val result =  rows.mapNotNull { it?.get("value") }.map { mapper.treeToValue(it, QueryResult::class.java)}
 
         val rows = input.get("rows") ?: fail("null returned from parsing")
         val result = rows.mapNotNull { it?.get("value") }.map { mapper.treeToValue(it, String::class.java) }
