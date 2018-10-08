@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.auth
 
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.bindings.LOCAL
-import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.UserFactory
@@ -10,13 +9,10 @@ import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.getJson
 import ca.mcgill.science.tepid.server.db.getViewRows
-import ca.mcgill.science.tepid.server.generateTestUser
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.server.util.mapper
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.mockk.*
 import org.junit.After
 import org.junit.Before
@@ -497,8 +493,8 @@ class AuthenticateTest {
 
     @Before
     fun initTest() {
-        testUser = generateTestUser("test").copy(shortUser = testShortUser, colorPrinting = true)
-        testUserFromDb = generateTestUser("db").copy(
+        testUser = UserFactory.generateTestUser("test").copy(shortUser = testShortUser, colorPrinting = true)
+        testUserFromDb = UserFactory.generateTestUser("db").copy(
                 shortUser = testUser.shortUser,
                 studentId = 5555,
                 colorPrinting = false
