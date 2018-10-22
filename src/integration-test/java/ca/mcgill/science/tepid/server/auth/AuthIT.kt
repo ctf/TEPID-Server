@@ -163,7 +163,7 @@ class SessionManagerIT : AuthIT() {
 
     @Test
     fun invalidateSession() {
-        val user = UserFactory.makeLdapUser()
+        val user = SessionManager.queryUser(Config.TEST_USER, null) ?: fail("Couldn't get test user ${Config.TEST_USER} from DB or LDAP")
         val session = SessionManager.start(user, 1000)
         assertNotNull(SessionManager.get(session._id!!))
 
