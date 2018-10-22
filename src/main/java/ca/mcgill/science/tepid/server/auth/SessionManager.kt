@@ -41,7 +41,7 @@ object SessionManager : WithLogging() {
         val id = BigInteger(130, random).toString(32)
         session._id = id
         session.role = AuthenticationFilter.getCtfRole(session.user)
-        log.trace("Creating session {\"id\":\"$id\", \"shortUser\":\"${user.shortUser}\"}")
+        log.trace("Starting session {\"id\":\"$id\", \"shortUser\":\"${user.shortUser}\",\"duration\":\"${expiration * HOUR_IN_MILLIS}\", \"expiration\":\"${session.expiration}\"}")
         val out = DB.putSession(session)
         log.trace(out)
         return session
