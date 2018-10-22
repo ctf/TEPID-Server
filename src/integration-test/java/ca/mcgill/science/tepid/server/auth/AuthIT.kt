@@ -1,7 +1,6 @@
 package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.deleteRev
 import ca.mcgill.science.tepid.server.server.Config
@@ -20,8 +19,7 @@ open class AuthIT {
     }
 
     protected fun FullUser?.assertEqualsTestUser() {
-        assertNotNull(this)
-        println(this!!)
+        assertNotNull(this!!)
         assertEquals(Config.TEST_USER, shortUser, "Short user mismatch. Perhaps you passed in the long user in your test?")
         val user = toUser()
         assertTrue(user.role.isNotEmpty(), "Role may not have propagated")
