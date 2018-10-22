@@ -40,6 +40,7 @@ object SessionManager : WithLogging() {
         val session = FullSession(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
         val id = BigInteger(130, random).toString(32)
         session._id = id
+        session.role = AuthenticationFilter.getCtfRole(session.user)
         log.trace("Creating session {\"id\":\"$id\", \"shortUser\":\"${user.shortUser}\"}")
         val out = DB.putSession(session)
         log.trace(out)
@@ -62,7 +63,6 @@ object SessionManager : WithLogging() {
      */
     internal fun isValid(session: FullSession): Boolean {
         if (!session.isValid()) return false
-
         if (session.role != queryUserDb(session.user.shortUser)?.role) return false
         return true
     }
