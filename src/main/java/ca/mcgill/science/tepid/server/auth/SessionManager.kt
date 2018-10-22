@@ -60,7 +60,7 @@ object SessionManager : WithLogging() {
      * @param session the fullSession to be tested
      * @return true for valid, false otherwise
      */
-    fun isValid(session: FullSession): Boolean {
+    internal fun isValid(session: FullSession): Boolean {
         if (!session.isValid()) return false
 
         if (session.role != queryUserDb(session.user.shortUser)?.role) return false

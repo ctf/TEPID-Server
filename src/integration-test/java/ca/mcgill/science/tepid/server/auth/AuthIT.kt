@@ -166,7 +166,6 @@ class SessionManagerIT : AuthIT() {
         val user = UserFactory.makeLdapUser()
         val session = SessionManager.start(user, 1000)
         assertNotNull(SessionManager.get(session._id!!))
-        assertTrue(SessionManager.isValid(session))
 
         SessionManager.invalidateSessions(user.shortUser!!)
 
