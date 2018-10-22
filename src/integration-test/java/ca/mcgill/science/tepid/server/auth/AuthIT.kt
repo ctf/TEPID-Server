@@ -151,13 +151,13 @@ class SessionManagerIT : AuthIT() {
     @Test
     fun forceDbRefresh() {
         val user = SessionManager.queryUser(Config.TEST_USER, null) ?: fail("Couldn't get test user ${Config.TEST_USER} from DB or LDAP")
-        user.groups = emptyList()
+        user.groups = listOf("DefinitelyFakeGroup")
         SessionManager.updateDbWithUser(user)
 
         val refreshedUser = SessionManager.refreshUser(Config.TEST_USER)
         val alteredUser = SessionManager.queryUser(Config.TEST_USER, null) ?: fail("Couldn't get test user ${Config.TEST_USER} from DB or LDAP")
 
-        assertFalse(alteredUser.groups.isEmpty(), "User has not been refreshed")
+        assertFalse(alteredUser.groups.contains("DefinitelyFakeGroup"), "User has not been refreshed")
         assertEquals(alteredUser, refreshedUser, "User from DB does not match refreshed user")
     }
 
