@@ -258,7 +258,7 @@ class QueryUserDbTest {
         val actual = SessionManager.queryUserDb(testUser.longUser)
 
         verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser) }
-        verify { wt.queryParam("key", match { it.toString() == "\"db.lu%40config.example.com\"" }) }
+        verify { wt.queryParam("key", match { it.toString() == "\"db.LU%40config.example.com\"" }) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
     }
 
@@ -269,7 +269,7 @@ class QueryUserDbTest {
         val actual = SessionManager.queryUserDb(testUser.longUser)
 
         verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser) }
-        verify { wt.queryParam("key", match { it.toString() == "\"db.lu%40config.example.com\"" }) }
+        verify { wt.queryParam("key", match { it.toString() == "\"db.LU%40config.example.com\"" }) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
     }
 
