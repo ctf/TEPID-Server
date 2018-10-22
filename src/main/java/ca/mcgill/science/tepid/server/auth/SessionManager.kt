@@ -3,15 +3,20 @@ package ca.mcgill.science.tepid.server.auth
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.bindings.LOCAL
+import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.User
+import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.isSuccessful
+import ca.mcgill.science.tepid.server.db.query
 import ca.mcgill.science.tepid.server.server.Config
+import ca.mcgill.science.tepid.server.util.mapper
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.mindrot.jbcrypt.BCrypt
 import java.math.BigInteger
 import java.security.SecureRandom
@@ -35,7 +40,8 @@ object SessionManager : WithLogging() {
         val session = FullSession(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
         val id = BigInteger(130, random).toString(32)
         session._id = id
-        log.trace("Creating session {\"id\":\"$id\", \"shortUser\":\"${user.shortUser}\"}")
+        session.role = AuthenticationFilter.getCtfRole(session.user)
+        log.trace("Starting session {\"id\":\"$id\", \"shortUser\":\"${user.shortUser}\",\"duration\":\"${expiration * HOUR_IN_MILLIS}\", \"expiration\":\"${session.expiration}\"}")
         val out = DB.putSession(session)
         log.trace(out)
         return session
@@ -43,23 +49,37 @@ object SessionManager : WithLogging() {
 
     operator fun get(token: String): FullSession? {
         val session = DB.getSessionOrNull(token) ?: return null
-        if (session.isValid()) return session
-        log.trace("Deleting session token {\"token\":\"$token\", \"expiration\":\"${session.expiration}\", \"now\":\"${System.currentTimeMillis()}\"}")
+        if (isValid(session)) return session
+        log.trace("Deleting session token {\"token\":\"$token\", \"expiration\":\"${session.expiration}\", \"now\":\"${System.currentTimeMillis()}\",\"sessionRole\":\"${session.role}\", \"userRole\":\"${queryUserDb(session.user.shortUser)?.role}\"}")
         DB.deleteSession(token)
         return null
     }
 
+
     /**
-     * Check if session exists and isn't expired
+     * Check if session isn't expired and has the cached role
      *
-     * @param token sessionId
+     * @param session the fullSession to be tested
      * @return true for valid, false otherwise
      */
-    fun valid(token: String): Boolean = this[token] != null
+    internal fun isValid(session: FullSession): Boolean {
+        if (!session.isValid()) return false
+        if (session.role != queryUserDb(session.user.shortUser)?.role) return false
+        return true
+    }
 
     fun end(token: String) {
         //todo test
         DB.deleteSession(token)
+    }
+
+    /**
+     * Invalidates all of the sessions belonging to a certain user.
+     *
+     * @param shortUser the shortUser
+     */
+    fun invalidateSessions(shortUser: String) {
+        DB.getSessionIdsForUser(shortUser).forEach{ SessionManager.end(it) }
     }
 
     /**
@@ -211,4 +231,22 @@ object SessionManager : WithLogging() {
         } else return false
     }
 
+    fun refreshUser(sam: String): FullUser {
+        val dbUser = queryUserDb(sam)
+        if (dbUser == null){
+            log.info("Could not fetch user from DB {\"sam\":\"$sam\"}")
+            return queryUser(sam, null) ?: throw RuntimeException("Could not fetch user from anywhere {\"sam\":\"$sam\"}")
+        }
+        if (Config.LDAP_ENABLED) {
+            val ldapUser = Ldap.queryUserLdap(sam, null) ?: throw RuntimeException("Could not fetch user from LDAP {\"sam\":\"$sam\"}")
+            val refreshedUser = mergeUsers(ldapUser, dbUser)
+            if (dbUser.role != refreshedUser.role) {
+                invalidateSessions(sam)
+            }
+            updateDbWithUser(refreshedUser)
+            return refreshedUser
+        } else {
+            return dbUser
+        }
+    }
 }

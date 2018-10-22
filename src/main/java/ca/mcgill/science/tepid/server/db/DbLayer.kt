@@ -24,6 +24,7 @@ typealias Id = String
  * - student id
  */
 typealias Sam = String
+typealias ShortUser = String
 
 enum class Order {
     ASCENDING {
@@ -98,7 +99,7 @@ interface DbJobLayer {
      * Returns earliest job in ms
      * Defaults to -1 if not found
      */
-    fun getEarliestJobTime(shortUser: String): Long
+    fun getEarliestJobTime(shortUser: ShortUser): Long
 }
 
 interface DbQueueLayer {
@@ -123,6 +124,8 @@ interface DbSessionLayer {
 
     fun getSessionOrNull(id: Id): FullSession?
 
+    fun getSessionIdsForUser(shortUser: ShortUser): List<Id>
+
     fun deleteSession(id: Id): String
 
 }
@@ -135,6 +138,6 @@ interface DbUserLayer {
 
     fun isAdminConfigured(): Boolean
 
-    fun getTotalPrintedCount(shortUser: String): Int
+    fun getTotalPrintedCount(shortUser: ShortUser): Int
 }
 

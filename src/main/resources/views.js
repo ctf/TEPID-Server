@@ -91,6 +91,9 @@
     },
     "jobsByQueueAndTime": {
       "map": "function(doc) {\n  if (doc.queueName) {\n    emit([doc.queueName, doc.started], doc);\n  }\n};"
+    },
+    "sessionsByUser": {
+        "map":"function (doc) {\n if (doc.type==='session') {\n emit(doc.user.shortUser, doc._id);\n }\n}"
     }
   },
   "filters": {

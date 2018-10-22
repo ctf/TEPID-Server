@@ -1,11 +1,15 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.SessionRequest
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.util.failUnauthorized
 import ca.mcgill.science.tepid.utils.WithLogging
+import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
+import javax.ws.rs.container.ContainerRequestContext
+import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 
 @Path("/sessions")
@@ -48,6 +52,14 @@ class Sessions {
     @Produces(MediaType.TEXT_PLAIN)
     fun endSession(@PathParam("id") id: String) {
         SessionManager.end(id)
+    }
+
+    @POST
+    @RolesAllowed(ELDER)
+    @Path("/invalidate/{sam}")
+    @Produces(MediaType.TEXT_PLAIN)
+    fun invalidateSessions(@PathParam("sam") sam: String, @Context ctx: ContainerRequestContext) {
+        SessionManager.invalidateSessions(sam)
     }
 
     private companion object : WithLogging()

@@ -11,7 +11,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.module.kotlin.convertValue
 import java.io.InputStream
 import java.util.*
+import javax.ws.rs.NotFoundException
 import javax.ws.rs.client.WebTarget
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
 
@@ -99,6 +101,10 @@ class CouchDbLayer : DbLayer {
     override fun getSessionOrNull(id: Id): FullSession? =
             CouchDb.path(id).getJsonOrNull()
 
+    override fun getSessionIdsForUser(shortUser: ShortUser): List<String> {
+        return CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"${shortUser}\"") }
+    }
+
     override fun deleteSession(id: Id): String =
             CouchDb.path(id).deleteRev()
 
@@ -180,7 +186,7 @@ object CouchDb : WithLogging() {
      * View data retriever
      *
      * Given path, retrieve ViewResult variant
-     * and return just the row values
+     * and return just the value of the "value" attribute of each row
      * -------------------------------------------
      */
 

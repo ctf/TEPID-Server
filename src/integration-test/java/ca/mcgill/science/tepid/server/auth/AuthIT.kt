@@ -19,8 +19,7 @@ open class AuthIT {
     }
 
     protected fun FullUser?.assertEqualsTestUser() {
-        assertNotNull(this)
-        println(this!!)
+        assertNotNull(this!!)
         assertEquals(Config.TEST_USER, shortUser, "Short user mismatch. Perhaps you passed in the long user in your test?")
         val user = toUser()
         assertTrue(user.role.isNotEmpty(), "Role may not have propagated")
@@ -145,5 +144,29 @@ class SessionManagerIT : AuthIT() {
                 println("Done")
             }
         }
+    }
+
+    @Test
+    fun forceDbRefresh() {
+        val user = SessionManager.queryUser(Config.TEST_USER, null) ?: fail("Couldn't get test user ${Config.TEST_USER} from DB or LDAP")
+        user.groups = listOf("DefinitelyFakeGroup")
+        SessionManager.updateDbWithUser(user)
+
+        val refreshedUser = SessionManager.refreshUser(Config.TEST_USER)
+        val alteredUser = SessionManager.queryUser(Config.TEST_USER, null) ?: fail("Couldn't get test user ${Config.TEST_USER} from DB or LDAP")
+
+        assertFalse(alteredUser.groups.contains("DefinitelyFakeGroup"), "User has not been refreshed")
+        assertEquals(alteredUser, refreshedUser, "User from DB does not match refreshed user")
+    }
+
+    @Test
+    fun invalidateSession() {
+        val user = SessionManager.queryUser(Config.TEST_USER, null) ?: fail("Couldn't get test user ${Config.TEST_USER} from DB or LDAP")
+        val session = SessionManager.start(user, 24)
+        assertNotNull(SessionManager.get(session._id!!))
+
+        SessionManager.invalidateSessions(user.shortUser!!)
+
+        assertNull(SessionManager.get(session._id!!))
     }
 }
