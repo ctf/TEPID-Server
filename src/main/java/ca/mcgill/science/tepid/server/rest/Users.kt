@@ -43,23 +43,32 @@ class Users {
     @Produces(MediaType.APPLICATION_JSON)
     fun queryLdap(@PathParam("sam") shortUser: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getSession()
-        val user = SessionManager.queryUser(shortUser, pw)
-        //TODO security wise, should the second check not happen before the first?
-        if (user == null) {
-            log.warn("Could not find user {}.", shortUser)
-            throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
-        }
-        if (session.role == USER && session.user.shortUser != user.shortUser) {
-            log.warn("Unauthorized attempt to lookup {} by user {}.", shortUser, session.user.longUser)
-            return Response.Status.FORBIDDEN.text("You cannot access this resource")
-        }
-        try {
-            if (user.shortUser != shortUser && !uriInfo.queryParameters.containsKey("noRedirect")) {
-                return Response.seeOther(URI("users/" + user.shortUser)).build()
+
+        when (session.role){
+            USER -> {
+                val querriedUser = SessionManager.queryUser(shortUser, pw)
+                if (querriedUser == null || session.user.shortUser != querriedUser.shortUser) {
+                            return Response.Status.FORBIDDEN.text("You cannot access this resource")
+                        }
+                // queried user is the querying user
+                try {
+                    if (!uriInfo.queryParameters.containsKey("noRedirect")) {
+                        return Response.seeOther(URI("users/" + querriedUser.shortUser)).build()
+                    }
+                } catch (ignored: URISyntaxException) {
+                }
+                return Response.ok(querriedUser).build()
             }
-        } catch (ignored: URISyntaxException) {
+            CTFER, ELDER-> {
+                val querriedUser = SessionManager.queryUser(shortUser, pw)
+                if (querriedUser == null) {
+                    log.warn("Could not find user {}.", shortUser)
+                    throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
+                }
+                return Response.ok(querriedUser).build()
+            }
         }
-        return Response.ok(user).build()
+        return Response.Status.FORBIDDEN.text("You cannot access this resource")
     }
 
     @PUT

@@ -227,7 +227,7 @@ class getUserBySamTest : WithLogging() {
 
         try {
             doTestUserQuery(CTFER, null, null)
-            fail("Did not throw 404 error when an Elder queried for a nonexistant user")
+            fail("Did not throw 404 error when a CTFer queried for a nonexistant user")
         } catch (e: ClientErrorException) {
             assertEquals(404, e.response.status)
         }
@@ -235,12 +235,10 @@ class getUserBySamTest : WithLogging() {
 
     @Test
     fun getUserBySamUserAndInvalidUser(){
-        try {
-            doTestUserQuery(USER, null, null)
-            fail("Did not throw 403 error when a User queried for a nonexistant user")
-        } catch (e: NotFoundException) {
-            assertEquals(403, e.response.status)
-        }
+        mockSession(USER)
+        mockUserQuery(null)
+        val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
+        assertEquals(403, response.status)
     }
 
     @Test
@@ -272,7 +270,7 @@ class getUserBySamTest : WithLogging() {
     @Test
     fun getUserBySamNoneAndInvalidUser(){
         mockSession("")
-        mockUserQuery(targetUser)
+        mockUserQuery(null)
         val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
         assertEquals(403, response.status)
     }
