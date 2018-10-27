@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.util.getSession
@@ -155,10 +156,8 @@ class getUserBySamTest : WithLogging() {
         Users()
     }
 
-    lateinit var querryingUser: FullUser
-    var targetUser: FullUser = FullUser("targetUser", shortUser = "tarUser")
-
-
+    var querryingUser: FullUser = UserFactory.generateTestUser("querying")
+    var targetUser: FullUser = UserFactory.generateTestUser("target")
 
     @Before
     fun initTest() {
@@ -176,7 +175,6 @@ class getUserBySamTest : WithLogging() {
         var uriInfo = mockk<UriInfo>()
         every {uriInfo.getQueryParameters().containsKey("noRedirect")} returns true
 
-        querryingUser = FullUser(shortUser = "qerUser", longUser = "queryingUser")
         val elderSession = FullSession("ELDER", querryingUser)
 
         val rc = mockk<ContainerRequestContext>()
@@ -188,11 +186,11 @@ class getUserBySamTest : WithLogging() {
         mockkObject(SessionManager)
         every {
             SessionManager.queryUser("targetUser", null)
-        } returns (querryingUser)
+        } returns (targetUser)
 
         var result = endpoints.queryLdap("targetUser", null, rc, uriInfo)
-        println(result)
-        fail("not implemented")
+        println(result.entity)
+        assertEquals(targetUser, result.entity)
 
     }
 
