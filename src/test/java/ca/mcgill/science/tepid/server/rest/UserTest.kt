@@ -205,6 +205,10 @@ class getUserBySamTest : WithLogging() {
         mockUserQuery(queryResult)
         val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
         assertEquals(403, response.status)
+
+        // This line makes sure that a 403 response doesn't also leak an attached user.
+        // In case the user is added to the response before the response is marked as forbidden
+        assertEquals("You cannot access this resource", response.entity)
     }
 
     @Test
