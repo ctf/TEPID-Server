@@ -18,13 +18,13 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.jupiter.api.TestInstance
+import javax.ws.rs.ClientErrorException
+import javax.ws.rs.NotFoundException
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.test.fail
-
 
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -157,7 +157,7 @@ class getUserBySamTest : WithLogging() {
         Users()
     }
 
-    var querryingUser: FullUser = UserFactory.generateTestUser("querying")
+    var queryingUser: FullUser = UserFactory.generateTestUser("querying")
     var targetUser: FullUser = UserFactory.generateTestUser("target")
 
     lateinit var uriInfo: UriInfo
@@ -167,8 +167,6 @@ class getUserBySamTest : WithLogging() {
 
     @Before
     fun initTest() {
-
-
     }
     @After
     fun tearTest() {
@@ -179,7 +177,7 @@ class getUserBySamTest : WithLogging() {
         uriInfo = mockk<UriInfo>()
         every {uriInfo.getQueryParameters().containsKey("noRedirect")} returns true
 
-        val session = FullSession(role, querryingUser)
+        val session = FullSession(role, queryingUser)
 
         rc = mockk<ContainerRequestContext>()
         mockkStatic("ca.mcgill.science.tepid.server.util.UtilsKt")
@@ -205,22 +203,40 @@ class getUserBySamTest : WithLogging() {
 
     @Test
     fun getUserBySamElderAndValidUser() {
-        doTestUserQuery("ELDER", targetUser, querryingUser)
+        doTestUserQuery(ELDER, targetUser, targetUser)
     }
 
     @Test
     fun getUserBySamElderAndInvalidUser(){
-        val response = doTestUserQuery("ELDER", null, null)
-        assertEquals(response.status, 404)
 
+        try {
+            doTestUserQuery(ELDER, null, null)
+            fail("Did not throw 404 error when an Elder queried for a nonexistant user")
+        } catch (e: ClientErrorException) {
+            assertEquals(404, e.response.status)
+        }
     }
 
     @Test
-    fun getUserBySamUserAndInvalidUser(){}
+    fun getUserBySamUserAndInvalidUser(){
+        try {
+            doTestUserQuery(USER, null, null)
+            fail("Did not throw 403 error when a User queried for a nonexistant user")
+        } catch (e: NotFoundException) {
+            assertEquals(403, e.response.status)
+        }
+    }
 
     @Test
-    fun getUserBySamUserAndOtherUSer(){}
+    fun getUserBySamUserAndOtherUser(){
+        mockSession(USER)
+        mockUserQuery(targetUser)
+        val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
+        assertEquals(403, response.status)
+    }
 
     @Test
-    fun getUserBySamUserAndSelfUser(){}
+    fun getUserBySamUserAndSelfUser(){
+        doTestUserQuery(USER, queryingUser, queryingUser)
+    }
 }
