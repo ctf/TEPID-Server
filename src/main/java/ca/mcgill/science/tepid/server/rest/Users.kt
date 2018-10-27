@@ -51,7 +51,7 @@ class Users {
         }
         if (session.role == USER && session.user.shortUser != user.shortUser) {
             log.warn("Unauthorized attempt to lookup {} by user {}.", shortUser, session.user.longUser)
-            return Response.Status.UNAUTHORIZED.text("You cannot access this resource")
+            return Response.Status.FORBIDDEN.text("You cannot access this resource")
         }
         try {
             if (user.shortUser != shortUser && !uriInfo.queryParameters.containsKey("noRedirect")) {
