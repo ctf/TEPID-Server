@@ -19,6 +19,7 @@ import org.junit.Ignore
 import org.junit.Test
 import org.junit.jupiter.api.TestInstance
 import javax.ws.rs.container.ContainerRequestContext
+import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -159,6 +160,11 @@ class getUserBySamTest : WithLogging() {
     var querryingUser: FullUser = UserFactory.generateTestUser("querying")
     var targetUser: FullUser = UserFactory.generateTestUser("target")
 
+    lateinit var uriInfo: UriInfo
+    lateinit var rc : ContainerRequestContext
+
+
+
     @Before
     fun initTest() {
 
@@ -169,33 +175,45 @@ class getUserBySamTest : WithLogging() {
         unmockkAll()
     }
 
-
-    @Test
-    fun getUserBySamElderAndValidUser() {
-        var uriInfo = mockk<UriInfo>()
+    fun mockSession(role:String){
+        uriInfo = mockk<UriInfo>()
         every {uriInfo.getQueryParameters().containsKey("noRedirect")} returns true
 
-        val elderSession = FullSession("ELDER", querryingUser)
+        val session = FullSession(role, querryingUser)
 
-        val rc = mockk<ContainerRequestContext>()
+        rc = mockk<ContainerRequestContext>()
         mockkStatic("ca.mcgill.science.tepid.server.util.UtilsKt")
         every {
             rc.getSession()
-        } returns elderSession
+        } returns session
 
+
+    }
+    fun mockUserQuery(user:FullUser?){
         mockkObject(SessionManager)
         every {
             SessionManager.queryUser("targetUser", null)
-        } returns (targetUser)
-
-        var result = endpoints.queryLdap("targetUser", null, rc, uriInfo)
-        println(result.entity)
-        assertEquals(targetUser, result.entity)
-
+        } returns (user)
+    }
+    fun doTestUserQuery(role:String, querryResult: FullUser?, expected: FullUser?): Response {
+        mockSession(role)
+        mockUserQuery(querryResult)
+        val result = endpoints.queryLdap("targetUser", null, rc, uriInfo)
+        assertEquals(expected, result.entity)
+        return result
     }
 
     @Test
-    fun getUserBySamElderAndInvalidUser(){}
+    fun getUserBySamElderAndValidUser() {
+        doTestUserQuery("ELDER", targetUser, querryingUser)
+    }
+
+    @Test
+    fun getUserBySamElderAndInvalidUser(){
+        val response = doTestUserQuery("ELDER", null, null)
+        assertEquals(response.status, 404)
+
+    }
 
     @Test
     fun getUserBySamUserAndInvalidUser(){}
