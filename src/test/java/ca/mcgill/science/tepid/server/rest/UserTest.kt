@@ -218,6 +218,22 @@ class getUserBySamTest : WithLogging() {
     }
 
     @Test
+    fun getUserBySamCtferAndValidUser() {
+        doTestUserQuery(CTFER, targetUser, targetUser)
+    }
+
+    @Test
+    fun getUserBySamCtferAndInvalidUser(){
+
+        try {
+            doTestUserQuery(CTFER, null, null)
+            fail("Did not throw 404 error when an Elder queried for a nonexistant user")
+        } catch (e: ClientErrorException) {
+            assertEquals(404, e.response.status)
+        }
+    }
+
+    @Test
     fun getUserBySamUserAndInvalidUser(){
         try {
             doTestUserQuery(USER, null, null)
@@ -238,5 +254,26 @@ class getUserBySamTest : WithLogging() {
     @Test
     fun getUserBySamUserAndSelfUser(){
         doTestUserQuery(USER, queryingUser, queryingUser)
+    }
+
+
+    /*
+    I am aware that this is technically overkill; the AuthenticationFilter should already reject sessions without any role.
+    That said, given how hard it is to get sessions right and given how bad it would be to leak user data, I've got these here.
+     */
+    @Test
+    fun getUserBySamNoneAndValidUser() {
+        mockSession("")
+        mockUserQuery(targetUser)
+        val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
+        assertEquals(403, response.status)
+    }
+
+    @Test
+    fun getUserBySamNoneAndInvalidUser(){
+        mockSession("")
+        mockUserQuery(targetUser)
+        val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
+        assertEquals(403, response.status)
     }
 }
