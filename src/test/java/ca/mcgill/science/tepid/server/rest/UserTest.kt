@@ -4,19 +4,21 @@ import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.Course
+import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.SessionManager
+import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.utils.WithLogging
-import io.mockk.every
-import io.mockk.mockkObject
-import io.mockk.unmockkAll
+import io.mockk.*
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.jupiter.api.TestInstance
+import javax.ws.rs.container.ContainerRequestContext
+import javax.ws.rs.core.UriInfo
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -165,8 +167,7 @@ class getUserBySamTest : WithLogging() {
     }
     @After
     fun tearTest() {
-        objectMockk(SessionManager).unmock()
-        staticMockk("ca.mcgill.science.tepid.server.util.UtilsKt").unmock()
+        unmockkAll()
     }
 
 
@@ -179,12 +180,12 @@ class getUserBySamTest : WithLogging() {
         val elderSession = FullSession("ELDER", querryingUser)
 
         val rc = mockk<ContainerRequestContext>()
-        staticMockk("ca.mcgill.science.tepid.server.util.UtilsKt").mock()
+        mockkStatic("ca.mcgill.science.tepid.server.util.UtilsKt")
         every {
             rc.getSession()
         } returns elderSession
 
-        objectMockk(SessionManager).mock()
+        mockkObject(SessionManager)
         every {
             SessionManager.queryUser("targetUser", null)
         } returns (querryingUser)
@@ -194,7 +195,6 @@ class getUserBySamTest : WithLogging() {
         fail("not implemented")
 
     }
-
 
     @Test
     fun getUserBySamElderAndInvalidUser(){}
