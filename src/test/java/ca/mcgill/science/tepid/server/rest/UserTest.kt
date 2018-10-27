@@ -19,7 +19,6 @@ import org.junit.Ignore
 import org.junit.Test
 import org.junit.jupiter.api.TestInstance
 import javax.ws.rs.ClientErrorException
-import javax.ws.rs.NotFoundException
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
@@ -193,12 +192,19 @@ class getUserBySamTest : WithLogging() {
             SessionManager.queryUser("targetUser", null)
         } returns (user)
     }
-    fun doTestUserQuery(role:String, querryResult: FullUser?, expected: FullUser?): Response {
+    fun doTestUserQuery(role:String, queryResult: FullUser?, expected: FullUser?): Response {
         mockSession(role)
-        mockUserQuery(querryResult)
+        mockUserQuery(queryResult)
         val result = endpoints.queryLdap("targetUser", null, rc, uriInfo)
         assertEquals(expected, result.entity)
         return result
+    }
+
+    fun doTestUserQuery403(role:String, queryResult: FullUser?) {
+        mockSession(role)
+        mockUserQuery(queryResult)
+        val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
+        assertEquals(403, response.status)
     }
 
     @Test
@@ -235,18 +241,12 @@ class getUserBySamTest : WithLogging() {
 
     @Test
     fun getUserBySamUserAndInvalidUser(){
-        mockSession(USER)
-        mockUserQuery(null)
-        val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
-        assertEquals(403, response.status)
+        doTestUserQuery403(USER,null)
     }
 
     @Test
     fun getUserBySamUserAndOtherUser(){
-        mockSession(USER)
-        mockUserQuery(targetUser)
-        val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
-        assertEquals(403, response.status)
+        doTestUserQuery403(USER,targetUser)
     }
 
     @Test
@@ -261,17 +261,11 @@ class getUserBySamTest : WithLogging() {
      */
     @Test
     fun getUserBySamNoneAndValidUser() {
-        mockSession("")
-        mockUserQuery(targetUser)
-        val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
-        assertEquals(403, response.status)
+        doTestUserQuery403("",targetUser)
     }
 
     @Test
     fun getUserBySamNoneAndInvalidUser(){
-        mockSession("")
-        mockUserQuery(null)
-        val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
-        assertEquals(403, response.status)
+        doTestUserQuery403("",null)
     }
 }
