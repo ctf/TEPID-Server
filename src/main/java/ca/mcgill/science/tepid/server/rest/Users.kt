@@ -41,14 +41,14 @@ class Users {
     @Path("/{sam}")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun queryLdap(@PathParam("sam") shortUser: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
+    fun queryLdap(@PathParam("sam") sam: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getSession()
 
         val returnedUser: FullUser // an explicit return, so that nothing is accidentally returned
 
         when (session.role) {
             USER -> {
-                val queriedUser = SessionManager.queryUser(shortUser, pw)
+                val queriedUser = SessionManager.queryUser(sam, pw)
                 if (queriedUser == null || session.user.shortUser != queriedUser.shortUser) {
                     return Response.Status.FORBIDDEN.text("You cannot access this resource")
                 }
@@ -57,10 +57,10 @@ class Users {
                 returnedUser = queriedUser
             }
             CTFER, ELDER -> {
-                val queriedUser = SessionManager.queryUser(shortUser, pw)
+                val queriedUser = SessionManager.queryUser(sam, pw)
                 if (queriedUser == null) {
-                    log.warn("Could not find user {}.", shortUser)
-                    throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
+                    log.warn("Could not find user {}.", sam)
+                    throw NotFoundException(Response.status(404).entity("Could not find user " + sam).type(MediaType.TEXT_PLAIN).build())
                 }
                 returnedUser = queriedUser
             }
@@ -70,7 +70,8 @@ class Users {
         }
 
 
-        if (!uriInfo.queryParameters.containsKey("noRedirect")) {
+        // A SAM can be used as the query, but the url should be for the uname 
+        if (sam != returnedUser.shortUser && !uriInfo.queryParameters.containsKey("noRedirect")) {
             try {
                 return Response.seeOther(URI("users/" + returnedUser.shortUser)).build()
             } catch (ignored: URISyntaxException) {
