@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.SessionRequest
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.util.failUnauthorized
+import ca.mcgill.science.tepid.server.util.getSessionSafely
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
@@ -50,8 +51,12 @@ class Sessions {
     @DELETE
     @Path("/{id}")
     @Produces(MediaType.TEXT_PLAIN)
-    fun endSession(@PathParam("id") id: String) {
-        SessionManager.end(id)
+    fun endSession(@PathParam("id") id: String, @Context ctx: ContainerRequestContext) {
+        val requestSession = ctx.getSessionSafely() ?: return
+        val targetSession = SessionManager[id] ?: return
+        if (requestSession.user == targetSession.user){
+            SessionManager.end(id)
+        }
     }
 
     @POST
