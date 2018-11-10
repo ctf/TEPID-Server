@@ -46,26 +46,26 @@ class Users {
 
         when (session.role){
             USER -> {
-                val querriedUser = SessionManager.queryUser(shortUser, pw)
-                if (querriedUser == null || session.user.shortUser != querriedUser.shortUser) {
+                val queriedUser = SessionManager.queryUser(shortUser, pw)
+                if (queriedUser == null || session.user.shortUser != queriedUser.shortUser) {
                             return Response.Status.FORBIDDEN.text("You cannot access this resource")
                         }
                 // queried user is the querying user
                 try {
                     if (!uriInfo.queryParameters.containsKey("noRedirect")) {
-                        return Response.seeOther(URI("users/" + querriedUser.shortUser)).build()
+                        return Response.seeOther(URI("users/" + queriedUser.shortUser)).build()
                     }
                 } catch (ignored: URISyntaxException) {
                 }
-                return Response.ok(querriedUser).build()
+                return Response.ok(queriedUser).build()
             }
             CTFER, ELDER-> {
-                val querriedUser = SessionManager.queryUser(shortUser, pw)
-                if (querriedUser == null) {
+                val queriedUser = SessionManager.queryUser(shortUser, pw)
+                if (queriedUser == null) {
                     log.warn("Could not find user {}.", shortUser)
                     throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
                 }
-                return Response.ok(querriedUser).build()
+                return Response.ok(queriedUser).build()
             }
         }
         return Response.Status.FORBIDDEN.text("You cannot access this resource")
