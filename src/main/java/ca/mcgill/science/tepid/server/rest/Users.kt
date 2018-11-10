@@ -44,6 +44,8 @@ class Users {
     fun queryLdap(@PathParam("sam") shortUser: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getSession()
 
+        val returnedUser:FullUser // an explicit return, so that nothing is accidentally returned
+
         when (session.role){
             USER -> {
                 val queriedUser = SessionManager.queryUser(shortUser, pw)
@@ -51,24 +53,30 @@ class Users {
                             return Response.Status.FORBIDDEN.text("You cannot access this resource")
                         }
                 // queried user is the querying user
-                try {
-                    if (!uriInfo.queryParameters.containsKey("noRedirect")) {
-                        return Response.seeOther(URI("users/" + queriedUser.shortUser)).build()
-                    }
-                } catch (ignored: URISyntaxException) {
-                }
-                return Response.ok(queriedUser).build()
+
+                returnedUser = queriedUser
             }
-            CTFER, ELDER-> {
+            CTFER, ELDER -> {
                 val queriedUser = SessionManager.queryUser(shortUser, pw)
                 if (queriedUser == null) {
                     log.warn("Could not find user {}.", shortUser)
                     throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
                 }
-                return Response.ok(queriedUser).build()
+                returnedUser = queriedUser
+            }
+            else -> {
+                return Response.Status.FORBIDDEN.text("You cannot access this resource")
             }
         }
-        return Response.Status.FORBIDDEN.text("You cannot access this resource")
+
+        try {
+            if (!uriInfo.queryParameters.containsKey("noRedirect")) {
+                return Response.seeOther(URI("users/" + returnedUser.shortUser)).build()
+            }
+        } catch (ignored: URISyntaxException) {
+        }
+        return Response.ok(returnedUser).build()
+
     }
 
     @PUT
