@@ -44,14 +44,14 @@ class Users {
     fun queryLdap(@PathParam("sam") shortUser: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getSession()
 
-        val returnedUser:FullUser // an explicit return, so that nothing is accidentally returned
+        val returnedUser: FullUser // an explicit return, so that nothing is accidentally returned
 
-        when (session.role){
+        when (session.role) {
             USER -> {
                 val queriedUser = SessionManager.queryUser(shortUser, pw)
                 if (queriedUser == null || session.user.shortUser != queriedUser.shortUser) {
-                            return Response.Status.FORBIDDEN.text("You cannot access this resource")
-                        }
+                    return Response.Status.FORBIDDEN.text("You cannot access this resource")
+                }
                 // queried user is the querying user
 
                 returnedUser = queriedUser
@@ -69,11 +69,12 @@ class Users {
             }
         }
 
-        try {
-            if (!uriInfo.queryParameters.containsKey("noRedirect")) {
+
+        if (!uriInfo.queryParameters.containsKey("noRedirect")) {
+            try {
                 return Response.seeOther(URI("users/" + returnedUser.shortUser)).build()
+            } catch (ignored: URISyntaxException) {
             }
-        } catch (ignored: URISyntaxException) {
         }
         return Response.ok(returnedUser).build()
 
@@ -184,7 +185,7 @@ class Users {
         try {
             SessionManager.refreshUser(shortUser)
             SessionManager.invalidateSessions(shortUser)
-        } catch (e:Exception){
+        } catch (e: Exception) {
             throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
         }
     }
