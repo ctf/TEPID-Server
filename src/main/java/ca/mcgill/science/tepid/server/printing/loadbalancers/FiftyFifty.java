@@ -38,6 +38,7 @@ public class FiftyFifty extends LoadBalancer {
 
     // hack fix until we rewrite the load balancer, prevents needing to restart TEPID when printer status changes
     private void refreshDestinationsStatus() {
+        this.allDown = true;
         destinations.clear(); // clear out the old Destination objects
         for (String d : qM.queueConfig.getDestinations()) {
             FullDestination dest = couchdb.path(d).request(MediaType.APPLICATION_JSON).get(FullDestination.class);
