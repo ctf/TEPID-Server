@@ -186,7 +186,6 @@ class Users {
         data class QuotaData(val shortUser: String,
                              val quota: Int,
                              val maxQuota: Int,
-                             val oldMaxQuota: Int,
                              val totalPrinted: Int,
                              val semesters: List<Semester>)
 
@@ -196,8 +195,6 @@ class Users {
             if (AuthenticationFilter.getCtfRole(user).isEmpty()) return null
 
             val totalPrinted = getTotalPrinted(shortUser)
-
-            val oldMaxQuota = oldMaxQuota(shortUser)
 
             val currentSemester = Semester.current
             // TODO: incorporate summer escape into mapper
@@ -220,14 +217,11 @@ class Users {
                 }
             }.sum()
 
-            if (oldMaxQuota > newMaxQuota)
-                log.warn("Old quota $oldMaxQuota > new quota $newMaxQuota for $shortUser")
             val quota = Math.max(newMaxQuota - totalPrinted, 0)
 
             return QuotaData(shortUser = shortUser,
                     quota = quota,
                     maxQuota = newMaxQuota,
-                    oldMaxQuota = oldMaxQuota,
                     totalPrinted = totalPrinted,
                     semesters = semesters)
         }
