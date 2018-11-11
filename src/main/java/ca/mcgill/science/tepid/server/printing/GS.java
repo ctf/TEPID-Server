@@ -7,6 +7,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
@@ -200,7 +201,7 @@ public class GS {
                         } else if (write) {
                             pos.write(buf, 0, bytesRead);
                         } else {
-                            //					System.out.println(new String(buf));
+                            //                    System.out.println(new String(buf));
                         }
                     }
                     out.done = true;
@@ -210,5 +211,15 @@ public class GS {
             }
         }.start();
         return out;
+    }
+
+    public static void testRequiredDevicesInstalled() {
+        Process p = GS.run("-dNOPAUSE", "-dBATCH", "-dSAFER", "-sDEVICE=ink_cov", "-dQUIET", "-q");
+        // https://stackoverflow.com/a/35446009/1947070
+        Scanner s = new Scanner(p.getInputStream()).useDelimiter("\\A");
+        String result = s.hasNext() ? s.next() : "";
+        if (result.contains("Unknown device")) {
+            throw new GSException("Could not invoke GS ink_cov device");
+        }
     }
 }
