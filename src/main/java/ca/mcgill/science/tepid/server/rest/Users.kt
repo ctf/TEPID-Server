@@ -41,25 +41,44 @@ class Users {
     @Path("/{sam}")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun queryLdap(@PathParam("sam") shortUser: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
+    fun queryLdap(@PathParam("sam") sam: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getSession()
-        val user = SessionManager.queryUser(shortUser, pw)
-        //TODO security wise, should the second check not happen before the first?
-        if (user == null) {
-            log.warn("Could not find user {}.", shortUser)
-            throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
-        }
-        if (session.role == USER && session.user.shortUser != user.shortUser) {
-            log.warn("Unauthorized attempt to lookup {} by user {}.", shortUser, session.user.longUser)
-            return Response.Status.UNAUTHORIZED.text("You cannot access this resource")
-        }
-        try {
-            if (user.shortUser != shortUser && !uriInfo.queryParameters.containsKey("noRedirect")) {
-                return Response.seeOther(URI("users/" + user.shortUser)).build()
+
+        val returnedUser: FullUser // an explicit return, so that nothing is accidentally returned
+
+        when (session.role) {
+            USER -> {
+                val queriedUser = SessionManager.queryUser(sam, pw)
+                if (queriedUser == null || session.user.shortUser != queriedUser.shortUser) {
+                    return Response.Status.FORBIDDEN.text("You cannot access this resource")
+                }
+                // queried user is the querying user
+
+                returnedUser = queriedUser
             }
-        } catch (ignored: URISyntaxException) {
+            CTFER, ELDER -> {
+                val queriedUser = SessionManager.queryUser(sam, pw)
+                if (queriedUser == null) {
+                    log.warn("Could not find user {}.", sam)
+                    throw NotFoundException(Response.status(404).entity("Could not find user " + sam).type(MediaType.TEXT_PLAIN).build())
+                }
+                returnedUser = queriedUser
+            }
+            else -> {
+                return Response.Status.FORBIDDEN.text("You cannot access this resource")
+            }
         }
-        return Response.ok(user).build()
+
+
+        // A SAM can be used as the query, but the url should be for the uname 
+        if (sam != returnedUser.shortUser && !uriInfo.queryParameters.containsKey("noRedirect")) {
+            try {
+                return Response.seeOther(URI("users/" + returnedUser.shortUser)).build()
+            } catch (ignored: URISyntaxException) {
+            }
+        }
+        return Response.ok(returnedUser).build()
+
     }
 
     @PUT
@@ -167,7 +186,7 @@ class Users {
         try {
             SessionManager.refreshUser(shortUser)
             SessionManager.invalidateSessions(shortUser)
-        } catch (e:Exception){
+        } catch (e: Exception) {
             throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
         }
     }
