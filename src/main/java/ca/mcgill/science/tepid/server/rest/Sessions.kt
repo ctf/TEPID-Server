@@ -60,9 +60,11 @@ class Sessions {
         val requestSession = ctx.getSession()
         val targetSession = SessionManager[id] ?: failNotFound("")
         if (requestSession.user.shortUser == targetSession.user.shortUser) {
+            log.info("deleting session {\"session\":\"$targetSession\"}")
             SessionManager.end(id)
             return Response.ok("ok").build()
         }
+        log.warn("Unauthorized attempt to delete session of {} by user {}.", requestSession.user.shortUser, targetSession.user.shortUser)
         failNotFound("")
     }
 
