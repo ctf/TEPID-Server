@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.SessionRequest
 import ca.mcgill.science.tepid.server.auth.SessionManager
+import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.failUnauthorized
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -14,6 +15,7 @@ import javax.ws.rs.*
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 @Path("/sessions")
 class Sessions {
@@ -57,7 +59,7 @@ class Sessions {
     fun endSession(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): Response {
         val requestSession = ctx.getSession()
         val targetSession = SessionManager[id] ?: failNotFound("")
-        if (requestSession.user == targetSession.user) {
+        if (requestSession.user.shortUser == targetSession.user.shortUser) {
             SessionManager.end(id)
             return Response.ok("ok").build()
         }
