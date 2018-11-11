@@ -99,10 +99,9 @@ class ScreenSaver {
     @GET
     @Path("/user/{username}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getUserInfo(@PathParam("username") username: String): NameUser {
-        val user = SessionManager.queryUser(username, null)
-                ?: failNotFound("Could not find user $username")
-        return user.toNameUser()
+    fun getUserInfo(@PathParam("username") username: String): String {
+        return SessionManager.queryUser(username, null)?.nick
+                ?: failNotFound("No nick associated with $username")
     }
 
     private companion object : WithLogging()
