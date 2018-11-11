@@ -54,6 +54,13 @@ class Sessions {
 
     @DELETE
     @RolesAllowed(USER, CTFER, ELDER)
+    fun endCurrentSession(@Context ctx: ContainerRequestContext): Response {
+        val requestSession = ctx.getSession()
+        return endSession(requestSession.getId(), ctx)
+    }
+
+    @DELETE
+    @RolesAllowed(USER, CTFER, ELDER)
     @Path("/{id}")
     @Produces(MediaType.TEXT_PLAIN)
     fun endSession(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): Response {
