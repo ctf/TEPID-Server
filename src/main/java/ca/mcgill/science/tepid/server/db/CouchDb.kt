@@ -1,12 +1,145 @@
 package ca.mcgill.science.tepid.server.db
 
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.server.server.Config
+import ca.mcgill.science.tepid.server.util.failBadRequest
+import ca.mcgill.science.tepid.server.util.mapper
+import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.module.kotlin.convertValue
+import java.io.InputStream
+import java.util.*
+import javax.ws.rs.NotFoundException
 import javax.ws.rs.client.WebTarget
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import javax.ws.rs.core.UriInfo
+
+class CouchDbLayer : DbLayer {
+
+    override fun getDestinations(): List<FullDestination> =
+            CouchDb.getViewRows("destinations")
+
+    override fun putDestinations(destinations: Map<Id, FullDestination>): String =
+            CouchDb.putArray("docs", destinations.values).postJson("_bulk_docs")
+
+
+    override fun updateDestinationWithResponse(id: Id, updater: FullDestination.() -> Unit): Response =
+            CouchDb.updateWithResponse(id, updater)
+
+    override fun deleteDestination(id: Id): String =
+            CouchDb.path(id).deleteRev()
+
+    override fun getJob(id: Id): PrintJob =
+            CouchDb.path(id).getJson()
+
+    override fun getJobsByQueue(queue: String,
+                                maxAge: Long,
+                                sortOrder: Order,
+                                limit: Int): List<PrintJob> {
+        val from = if (maxAge > 0) Date().time - maxAge else 0 // assuming 0 is near beginning of time
+        return CouchDb.getViewRows<PrintJob>("jobsByQueueAndTime") {
+            // TODO verify that the descending keyword actually works.
+            // In Screensaver, the list was being sorted again afterwards
+            query("descending" to (sortOrder == Order.DESCENDING),
+                    "startkey" to "[\"$queue\",%7B%7D]",
+                    "endkey" to "[\"$queue\",$from]")
+        }.sortAs(sortOrder)
+    }
+
+    override fun getJobsByUser(sam: Sam, sortOrder: Order): List<PrintJob> =
+            CouchDb.getViewRows<PrintJob>("byUser") {
+                query("key" to "\"$sam\"")
+            }.sortAs(sortOrder)
+
+    override fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob? =
+            CouchDb.update(id, updater)
+
+    override fun postJob(job: PrintJob): Response =
+            CouchDb.target.postJson(job)
+
+    override fun getJobChanges(id: Id, uriInfo: UriInfo): ChangeDelta {
+        val changes = CouchDb.path("_changes")
+                .query("filter" to "main/byJob", "job" to id)
+                .query(uriInfo, "feed", "since")
+                .getObject().get("results").get(0)
+
+        return ChangeDelta(changes.get("id").asText())
+    }
+
+    override fun getJobFile(id: Id, file: String): InputStream? =
+            CouchDb.path(id, file).request().get()
+                    .takeIf(Response::isSuccessful)
+                    ?.readEntity(InputStream::class.java)
+
+    override fun getEarliestJobTime(shortUser: String): Long =
+            CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted")
+                    .query("key" to "\"$shortUser\"").getObject().get("rows")
+                    ?.get(0)?.get("value")?.get("earliestJob")?.asLong(-1L) ?: -1L
+
+
+    override fun getQueues(): List<PrintQueue> =
+            CouchDb.path(CouchDb.CouchDbView.Queues).getViewRows()
+
+    override fun putQueues(queues: Collection<PrintQueue>): Response {
+        val root = CouchDb.putArray("docs", queues)
+        return CouchDb.path("_bulk_docs").postJson(root)
+    }
+
+    override fun deleteQueue(id: Id): String =
+            CouchDb.path(id).deleteRev()
+
+    override fun getMarquees(): List<MarqueeData> =
+            CouchDb.getViewRows("_design/marquee/_view", "all")
+
+    override fun putSession(session: FullSession): Response =
+            CouchDb.path(session._id ?: failBadRequest("No id applied to session"))
+                    .putJson(session)
+
+    override fun getSessionOrNull(id: Id): FullSession? =
+            CouchDb.path(id).getJsonOrNull()
+
+    override fun getSessionIdsForUser(shortUser: ShortUser): List<String> {
+        return CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"${shortUser}\"") }
+    }
+
+    override fun deleteSession(id: Id): String =
+            CouchDb.path(id).deleteRev()
+
+    override fun putUser(user: FullUser): Response =
+            CouchDb.path("u${user.shortUser}").putJson(user)
+
+    private val numRegex = Regex("[0-9]+")
+
+    override fun getUserOrNull(sam: Sam): FullUser? = when {
+        sam.contains(".") ->
+            CouchDb
+                    .path(CouchDb.CouchDbView.ByLongUser)
+                    .queryParam("key", "\"${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}\"")
+                    .getViewRows<FullUser>()
+                    .firstOrNull()
+        sam.matches(numRegex) ->
+            CouchDb
+                    .path(CouchDb.CouchDbView.ByStudentId)
+                    .queryParam("key", sam)
+                    .getViewRows<FullUser>()
+                    .firstOrNull()
+        else -> CouchDb.path("u$sam").getJsonOrNull()
+    }
+
+    override fun isAdminConfigured(): Boolean {
+        val rows = CouchDb.path(CouchDb.MAIN_VIEW, "localAdmins").getObject().get("rows")
+        return rows.size() > 0
+    }
+
+    override fun getTotalPrintedCount(shortUser: String): Int =
+            CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted")
+                    .query("key" to "\"$shortUser\"").getObject()
+                    .get("rows")?.get(0)?.get("value")?.get("sum")?.asInt(0) ?: 0
+
+}
 
 object CouchDb : WithLogging() {
 
@@ -19,12 +152,12 @@ object CouchDb : WithLogging() {
      * We have defined paths for views, this enum lists them out.
      * Now the IDE can check for valid methods
      */
-    enum class CouchDbView(viewName :String){
+    enum class CouchDbView(viewName: String) {
         ByLongUser("byLongUser"),
         ByStudentId("byStudentId"),
         Queues("queues");
 
-        val path : String = "$MAIN_VIEW/$viewName"
+        val path: String = "$MAIN_VIEW/$viewName"
 
     }
 
@@ -53,7 +186,7 @@ object CouchDb : WithLogging() {
      * View data retriever
      *
      * Given path, retrieve ViewResult variant
-     * and return just the row values
+     * and return just the value of the "value" attribute of each row
      * -------------------------------------------
      */
 

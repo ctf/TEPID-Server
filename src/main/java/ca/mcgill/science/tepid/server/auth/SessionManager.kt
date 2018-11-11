@@ -3,14 +3,20 @@ package ca.mcgill.science.tepid.server.auth
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.bindings.LOCAL
+import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.User
-import ca.mcgill.science.tepid.server.db.*
+import ca.mcgill.science.tepid.server.db.CouchDb
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.isSuccessful
+import ca.mcgill.science.tepid.server.db.query
 import ca.mcgill.science.tepid.server.server.Config
+import ca.mcgill.science.tepid.server.util.mapper
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.mindrot.jbcrypt.BCrypt
 import java.math.BigInteger
 import java.security.SecureRandom
@@ -26,7 +32,6 @@ import java.security.SecureRandom
 object SessionManager : WithLogging() {
 
     private const val HOUR_IN_MILLIS = 60 * 60 * 1000
-    private val numRegex = Regex("[0-9]+")
     private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
 
     private val random = SecureRandom()
@@ -35,31 +40,46 @@ object SessionManager : WithLogging() {
         val session = FullSession(user = user, expiration = System.currentTimeMillis() + expiration * HOUR_IN_MILLIS)
         val id = BigInteger(130, random).toString(32)
         session._id = id
-        log.trace("Creating session {\"id\":\"$id\", \"shortUser\":\"${user.shortUser}\"}")
-        val out = CouchDb.path(id).putJson(session)
-        println(out)
+        session.role = AuthenticationFilter.getCtfRole(session.user)
+        log.trace("Starting session {\"id\":\"$id\", \"shortUser\":\"${user.shortUser}\",\"duration\":\"${expiration * HOUR_IN_MILLIS}\", \"expiration\":\"${session.expiration}\"}")
+        val out = DB.putSession(session)
+        log.trace(out)
         return session
     }
 
     operator fun get(token: String): FullSession? {
-        val session = CouchDb.path(token).getJsonOrNull<FullSession>() ?: return null
-        if (session.isValid()) return session
-        log.trace("Deleting session token {\"token\":\"$token\", \"expiration\":\"${session.expiration}\", \"now\":\"${System.currentTimeMillis()}\"}")
-        CouchDb.path(token).deleteRev()
+        val session = DB.getSessionOrNull(token) ?: return null
+        if (isValid(session)) return session
+        log.trace("Deleting session token {\"token\":\"$token\", \"expiration\":\"${session.expiration}\", \"now\":\"${System.currentTimeMillis()}\",\"sessionRole\":\"${session.role}\", \"userRole\":\"${queryUserDb(session.user.shortUser)?.role}\"}")
+        DB.deleteSession(token)
         return null
     }
 
+
     /**
-     * Check if session exists and isn't expired
+     * Check if session isn't expired and has the cached role
      *
-     * @param token sessionId
+     * @param session the fullSession to be tested
      * @return true for valid, false otherwise
      */
-    fun valid(token: String): Boolean = this[token] != null
+    internal fun isValid(session: FullSession): Boolean {
+        if (!session.isValid()) return false
+        if (session.role != queryUserDb(session.user.shortUser)?.role) return false
+        return true
+    }
 
     fun end(token: String) {
         //todo test
-        CouchDb.path(token).deleteRev()
+        DB.deleteSession(token)
+    }
+
+    /**
+     * Invalidates all of the sessions belonging to a certain user.
+     *
+     * @param shortUser the shortUser
+     */
+    fun invalidateSessions(shortUser: String) {
+        DB.getSessionIdsForUser(shortUser).forEach{ SessionManager.end(it) }
     }
 
     /**
@@ -73,17 +93,17 @@ object SessionManager : WithLogging() {
     fun authenticate(sam: String, pw: String): FullUser? {
         val dbUser = queryUserDb(sam)
         log.trace("Db data found for $sam")
-        if (dbUser?.authType == LOCAL) {
-            return if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
-        } else if (Config.LDAP_ENABLED) {
-            var ldapUser = Ldap.authenticate(sam, pw)
-            if (ldapUser != null) {
-                ldapUser = mergeUsers(ldapUser, dbUser)
-                updateDbWithUser(ldapUser)
+        return when {
+            dbUser?.authType == LOCAL -> if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
+            Config.LDAP_ENABLED -> {
+                var ldapUser = Ldap.authenticate(sam, pw)
+                if (ldapUser != null) {
+                    ldapUser = mergeUsers(ldapUser, dbUser)
+                    updateDbWithUser(ldapUser)
+                }
+                ldapUser
             }
-            return ldapUser
-        } else {
-            return null
+            else -> null
         }
     }
 
@@ -144,7 +164,7 @@ object SessionManager : WithLogging() {
     fun updateDbWithUser(user: FullUser) {
         log.trace("Update db instance {\"user\":\"${user.shortUser}\"}\n")
         try {
-            val response = CouchDb.path("u${user.shortUser}").putJson(user)
+            val response = DB.putUser(user)
             if (response.isSuccessful) {
                 val responseObj = response.readEntity(ObjectNode::class.java)
                 val newRev = responseObj.get("_rev")?.asText()
@@ -167,21 +187,7 @@ object SessionManager : WithLogging() {
      */
     fun queryUserDb(sam: String?): FullUser? {
         sam ?: return null
-        val dbUser = when {
-            sam.contains(".") ->
-                CouchDb
-                        .path(CouchDb.CouchDbView.ByLongUser)
-                        .queryParam("key", "\"${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}\"")
-                        .getViewRows<FullUser>()
-                        .firstOrNull()
-            sam.matches(numRegex) ->
-                CouchDb
-                        .path(CouchDb.CouchDbView.ByStudentId)
-                        .queryParam("key", sam)
-                        .getViewRows<FullUser>()
-                        .firstOrNull()
-            else -> CouchDb.path("u$sam").getJsonOrNull()
-        }
+        val dbUser = DB.getUserOrNull(sam)
         dbUser?._id ?: return null
         log.trace("Found db user {\"sam\":\"$sam\",\"db_id\":\"${dbUser._id}\", \"dislayName\":\"${dbUser.displayName}\"}")
         return dbUser
@@ -206,8 +212,8 @@ object SessionManager : WithLogging() {
     /**
      * Sets exchange student status.
      * Also updates user information from LDAP.
-	 * This refreshes the groups and courses of a user,
-	 * which allows for thier role to change
+     * This refreshes the groups and courses of a user,
+     * which allows for thier role to change
      *
      * @param sam      shortUser
      * @param exchange boolean for exchange status
@@ -225,4 +231,22 @@ object SessionManager : WithLogging() {
         } else return false
     }
 
+    fun refreshUser(sam: String): FullUser {
+        val dbUser = queryUserDb(sam)
+        if (dbUser == null){
+            log.info("Could not fetch user from DB {\"sam\":\"$sam\"}")
+            return queryUser(sam, null) ?: throw RuntimeException("Could not fetch user from anywhere {\"sam\":\"$sam\"}")
+        }
+        if (Config.LDAP_ENABLED) {
+            val ldapUser = Ldap.queryUserLdap(sam, null) ?: throw RuntimeException("Could not fetch user from LDAP {\"sam\":\"$sam\"}")
+            val refreshedUser = mergeUsers(ldapUser, dbUser)
+            if (dbUser.role != refreshedUser.role) {
+                invalidateSessions(sam)
+            }
+            updateDbWithUser(refreshedUser)
+            return refreshedUser
+        } else {
+            return dbUser
+        }
+    }
 }

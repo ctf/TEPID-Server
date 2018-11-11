@@ -10,7 +10,7 @@ import ca.mcgill.science.tepid.server.db.putJson
 import ca.mcgill.science.tepid.server.db.query
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.util.copyFrom
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.tukaani.xz.XZInputStream
 import java.io.*

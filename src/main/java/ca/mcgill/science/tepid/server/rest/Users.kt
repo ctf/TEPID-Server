@@ -7,11 +7,10 @@ import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.SessionManager
-import ca.mcgill.science.tepid.server.db.CouchDb
-import ca.mcgill.science.tepid.server.db.getObject
-import ca.mcgill.science.tepid.server.db.putJson
-import ca.mcgill.science.tepid.server.db.query
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.util.failNotFound
+import ca.mcgill.science.tepid.server.util.getSession
+import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
 import java.net.URI
@@ -32,8 +31,7 @@ class Users {
     @Path("/configured")
     @Produces(MediaType.APPLICATION_JSON)
     fun adminConfigured(): Boolean = try {
-        val rows = CouchDb.path(CouchDb.MAIN_VIEW, "localAdmins").getObject().get("rows")
-        rows.size() > 0
+        DB.isAdminConfigured()
     } catch (e: Exception) {
         log.error("localAdmin check failed", e)
         false
@@ -43,25 +41,44 @@ class Users {
     @Path("/{sam}")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun queryLdap(@PathParam("sam") shortUser: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
+    fun queryLdap(@PathParam("sam") sam: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getSession()
-        val user = SessionManager.queryUser(shortUser, pw)
-        //TODO security wise, should the second check not happen before the first?
-        if (user == null) {
-            log.warn("Could not find user {}.", shortUser)
-            throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
-        }
-        if (session.role == USER && session.user.shortUser != user.shortUser) {
-            log.warn("Unauthorized attempt to lookup {} by user {}.", shortUser, session.user.longUser)
-            return Response.Status.UNAUTHORIZED.text("You cannot access this resource")
-        }
-        try {
-            if (user.shortUser != shortUser && !uriInfo.queryParameters.containsKey("noRedirect")) {
-                return Response.seeOther(URI("users/" + user.shortUser)).build()
+
+        val returnedUser: FullUser // an explicit return, so that nothing is accidentally returned
+
+        when (session.role) {
+            USER -> {
+                val queriedUser = SessionManager.queryUser(sam, pw)
+                if (queriedUser == null || session.user.shortUser != queriedUser.shortUser) {
+                    return Response.Status.FORBIDDEN.text("You cannot access this resource")
+                }
+                // queried user is the querying user
+
+                returnedUser = queriedUser
             }
-        } catch (ignored: URISyntaxException) {
+            CTFER, ELDER -> {
+                val queriedUser = SessionManager.queryUser(sam, pw)
+                if (queriedUser == null) {
+                    log.warn("Could not find user {}.", sam)
+                    throw NotFoundException(Response.status(404).entity("Could not find user " + sam).type(MediaType.TEXT_PLAIN).build())
+                }
+                returnedUser = queriedUser
+            }
+            else -> {
+                return Response.Status.FORBIDDEN.text("You cannot access this resource")
+            }
         }
-        return Response.ok(user).build()
+
+
+        // A SAM can be used as the query, but the url should be for the uname 
+        if (sam != returnedUser.shortUser && !uriInfo.queryParameters.containsKey("noRedirect")) {
+            try {
+                return Response.seeOther(URI("users/" + returnedUser.shortUser)).build()
+            } catch (ignored: URISyntaxException) {
+            }
+        }
+        return Response.ok(returnedUser).build()
+
     }
 
     @PUT
@@ -74,6 +91,7 @@ class Users {
             return Response.Status.UNAUTHORIZED.text("Local admin already exists")
         }
         val hashedPw = BCrypt.hashpw(newAdmin.password, BCrypt.gensalt())
+        newAdmin.shortUser = shortUser
         newAdmin.password = hashedPw
         newAdmin.role = ADMIN
         newAdmin.authType = LOCAL
@@ -81,9 +99,7 @@ class Users {
         newAdmin.displayName = "${newAdmin.givenName} ${newAdmin.lastName}"
         newAdmin.salutation = newAdmin.givenName
         newAdmin.longUser = newAdmin.email
-
-
-        return CouchDb.path("u$shortUser").putJson(newAdmin)
+        return DB.putUser(newAdmin)
     }
 
     /**
@@ -108,7 +124,7 @@ class Users {
         if (session.role == USER && session.user.shortUser != user.shortUser)
             return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
         action(user)
-        return CouchDb.path("u${user.shortUser}").putJson(user)
+        return DB.putUser(user)
     }
 
 
@@ -162,6 +178,19 @@ class Users {
         return getQuotaData(user) ?: failNotFound("Could not calculate quota")
     }
 
+    @POST
+    @Path("/{sam}/refresh")
+    @RolesAllowed(CTFER, ELDER)
+    @Produces(MediaType.TEXT_PLAIN)
+    fun forceRefresh(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext) {
+        try {
+            SessionManager.refreshUser(shortUser)
+            SessionManager.invalidateSessions(shortUser)
+        } catch (e: Exception) {
+            throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
+        }
+    }
+
     @GET
     @Path("/autosuggest/{like}")
     @RolesAllowed(CTFER, ELDER)
@@ -176,7 +205,6 @@ class Users {
         data class QuotaData(val shortUser: String,
                              val quota: Int,
                              val maxQuota: Int,
-                             val oldMaxQuota: Int,
                              val totalPrinted: Int,
                              val semesters: List<Semester>)
 
@@ -186,8 +214,6 @@ class Users {
             if (AuthenticationFilter.getCtfRole(user).isEmpty()) return null
 
             val totalPrinted = getTotalPrinted(shortUser)
-
-            val oldMaxQuota = oldMaxQuota(shortUser)
 
             val currentSemester = Semester.current
             // TODO: incorporate summer escape into mapper
@@ -210,14 +236,11 @@ class Users {
                 }
             }.sum()
 
-            if (oldMaxQuota > newMaxQuota)
-                log.warn("Old quota $oldMaxQuota > new quota $newMaxQuota for $shortUser")
             val quota = Math.max(newMaxQuota - totalPrinted, 0)
 
             return QuotaData(shortUser = shortUser,
                     quota = quota,
                     maxQuota = newMaxQuota,
-                    oldMaxQuota = oldMaxQuota,
                     totalPrinted = totalPrinted,
                     semesters = semesters)
         }
@@ -229,13 +252,12 @@ class Users {
         fun getQuota(user: FullUser?): Int = getQuotaData(user)?.quota ?: 0
 
         fun getTotalPrinted(shortUser: String?) =
-                CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject()
-                        .get("rows")?.get(0)?.get("value")?.get("sum")?.asInt(0) ?: 0
+                if (shortUser == null) 0
+                else DB.getTotalPrintedCount(shortUser)
 
         private fun oldMaxQuota(shortUser: String): Int {
             try {
-                val rows = CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted").query("key" to "\"$shortUser\"").getObject().get("rows")
-                val ej = rows.get(0).get("value").get("earliestJob").asLong(-1)
+                val ej = DB.getEarliestJobTime(shortUser)
                 if (ej == -1L) {
                     log.debug("Old quota for new user $shortUser")
                     return 1000

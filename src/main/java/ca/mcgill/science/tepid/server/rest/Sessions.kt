@@ -1,12 +1,21 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.bindings.CTFER
+import ca.mcgill.science.tepid.models.bindings.ELDER
+import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.SessionRequest
 import ca.mcgill.science.tepid.server.auth.SessionManager
+import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.failUnauthorized
+import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.utils.WithLogging
+import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
+import javax.ws.rs.container.ContainerRequestContext
+import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 @Path("/sessions")
 class Sessions {
@@ -44,10 +53,35 @@ class Sessions {
     }
 
     @DELETE
+    @RolesAllowed(USER, CTFER, ELDER)
+    fun endCurrentSession(@Context ctx: ContainerRequestContext): Response {
+        val requestSession = ctx.getSession()
+        return endSession(requestSession.getId(), ctx)
+    }
+
+    @DELETE
+    @RolesAllowed(USER, CTFER, ELDER)
     @Path("/{id}")
     @Produces(MediaType.TEXT_PLAIN)
-    fun endSession(@PathParam("id") id: String) {
-        SessionManager.end(id)
+    fun endSession(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): Response {
+        val requestSession = ctx.getSession()
+        val targetSession = SessionManager[id] ?: failNotFound("")
+        if (requestSession.user.shortUser == targetSession.user.shortUser) {
+            log.info("deleting session {\"session\":\"$targetSession\"}")
+            SessionManager.end(id)
+            return Response.ok("ok").build()
+        }
+        log.warn("Unauthorized attempt to delete session of {} by user {}.", requestSession.user.shortUser, targetSession.user.shortUser)
+        // returns failNotFound for uniformity with the case when the session doesn't exist
+        failNotFound("")
+    }
+
+    @POST
+    @RolesAllowed(ELDER)
+    @Path("/invalidate/{sam}")
+    @Produces(MediaType.TEXT_PLAIN)
+    fun invalidateSessions(@PathParam("sam") sam: String, @Context ctx: ContainerRequestContext) {
+        SessionManager.invalidateSessions(sam)
     }
 
     private companion object : WithLogging()

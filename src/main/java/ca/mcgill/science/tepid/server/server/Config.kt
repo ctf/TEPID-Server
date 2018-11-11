@@ -1,12 +1,14 @@
 package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.About
+import ca.mcgill.science.tepid.server.printing.GS
+import ca.mcgill.science.tepid.server.printing.GSException
 import ca.mcgill.science.tepid.server.util.Utils
 import ca.mcgill.science.tepid.utils.*
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.LoggerContext
-import java.util.Calendar
+import java.util.*
 
 /**
  * Created by Allan Wang on 27/01/2017.
@@ -168,6 +170,13 @@ object Config : WithLogging() {
             log.fatal("COUCHDB_PASSWORD not set")
         if (RESOURCE_CREDENTIALS.isEmpty())
             log.error("RESOURCE_CREDENTIALS not set")
+
+        try {
+            GS.testRequiredDevicesInstalled()
+        } catch (e: GSException){
+            log.fatal("GS ink_cov device unavailable")
+        }
+
         log.info("Build hash: $HASH")
 
         PUBLIC = About(debug = DEBUG,

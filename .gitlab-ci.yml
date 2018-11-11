@@ -3,6 +3,7 @@ deploy_job:
   - chmod 550 gitlab-testpid.sh
   - ./gitlab-testpid.sh
   artifacts:
+    when: always
     reports:
       junit: [build/test-results/test/TEST-*.xml, build/test-results/integrationTest/TEST-*.xml]
 
