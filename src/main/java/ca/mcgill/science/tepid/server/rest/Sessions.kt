@@ -65,6 +65,7 @@ class Sessions {
             return Response.ok("ok").build()
         }
         log.warn("Unauthorized attempt to delete session of {} by user {}.", requestSession.user.shortUser, targetSession.user.shortUser)
+        // returns failNotFound for uniformity with the case when the session doesn't exist
         failNotFound("")
     }
 
