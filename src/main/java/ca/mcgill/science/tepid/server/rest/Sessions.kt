@@ -54,13 +54,14 @@ class Sessions {
     @RolesAllowed(USER, CTFER, ELDER)
     @Path("/{id}")
     @Produces(MediaType.TEXT_PLAIN)
-    fun endSession(@PathParam("id") id: String, @Context ctx: ContainerRequestContext) {
+    fun endSession(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): Response {
         val requestSession = ctx.getSession()
-        val targetSession = SessionManager[id] ?: return
-        log.info("deleting session {\"session\":\"$targetSession\"}")
+        val targetSession = SessionManager[id] ?: failNotFound("")
         if (requestSession.user == targetSession.user) {
             SessionManager.end(id)
+            return Response.ok("ok").build()
         }
+        failNotFound("")
     }
 
     @POST
