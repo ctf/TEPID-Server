@@ -56,10 +56,10 @@ internal class GsDelegate : WithLogging(), GsContract {
     * For example, a page might have a small color logo which is too small to count for more than 1% of 1% of the page (a square roughly 7mm on a side). With inkcov, there are not enough decimals printed for this to show up. But ink_cov will make the difference greater, and so more color pages will be detected as color
     * This is undocumented in GhostScript, but they have basically the same inputs
     */
-    fun gs(f: File): List<String>? {
+    fun gs(f: File): List<String> {
         val gsProcess = run("-sOutputFile=%stdout%",
                 "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
-                "-sDEVICE=ink_cov", f.absolutePath) ?: return null
+                "-sDEVICE=ink_cov", f.absolutePath) ?: throw Printer.PrintException("Internal Error processing postscript")
         return gsProcess.inputStream.bufferedReader().useLines { it.toList() }
     }
 
@@ -83,8 +83,8 @@ internal class GsDelegate : WithLogging(), GsContract {
                 InkCoverage(c.toFloat(), y.toFloat(), m.toFloat(), k.toFloat())
             }.toList()
 
-    override fun inkCoverage(f: File): List<InkCoverage>? {
-        return inkCoverage(gs(f) ?: return null)
+    override fun inkCoverage(f: File): List<InkCoverage> {
+        return inkCoverage(gs(f))
     }
 
 
@@ -104,8 +104,8 @@ internal class GsDelegate : WithLogging(), GsContract {
         return false
     }
 
-    override fun psInfo(f: File): PsData? {
-        val coverage = inkCoverage(f) ?: return null
+    override fun psInfo(f: File): PsData {
+        val coverage = inkCoverage(f)
 
 
         var info = coverageToInfo(coverage)
