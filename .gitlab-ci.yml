@@ -46,3 +46,8 @@ war:
     when: always
     paths:
     - ./build/libs/tepid.war
+    
+staging:
+  stage: deploy
+  script:
+  - mv tepid.war /var/lib/tomcat8/webapps
