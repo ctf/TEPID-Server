@@ -1,17 +1,21 @@
+.base:
+  except:
+  - /^(wip|test).*$/
+
 stages:
   - build
   - test
   - deploy
 
 clean:
+  extends: .base
   stage: build
   script:
   - chmod +x gradlew
   - ./gradlew 
-  except:
-  - /^(wip|test).*$/
 
 test:
+  extends: .base
   stage: test
   script:
   - chmod +x gradlew
@@ -20,10 +24,9 @@ test:
     when: always
     reports:
       junit: [build/test-results/test/TEST-*.xml]
-  except:
-  - /^(wip|test).*$/
   
 integration_test:
+  extends: .base
   stage: test
   script:
   - chmod +x gradlew
@@ -32,23 +35,21 @@ integration_test:
     when: always
     reports:
       junit: [build/test-results/integrationTest/TEST-*.xml]
-  except:
-  - /^(wip|test).*$/
 
 war:
+  extends: .base
   stage: deploy
   script:
   - chmod +x gradlew
   - ./gradlew war
   - cp ./build/libs/tepid.war ~/tepid.war
-  except:
-  - /^(wip|test).*$/
   artifacts:
     when: always
     paths:
     - ./build/libs/tepid.war
     
 staging:
+  extends: .base
   stage: deploy
   script:
   - cp ~/tepid.war /var/lib/tomcat8/webapps
