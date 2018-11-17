@@ -12,7 +12,7 @@ clean:
   stage: build
   script:
   - chmod +x gradlew
-  - ./gradlew 
+  - ./gradlew clean
 
 test:
   extends: .base
