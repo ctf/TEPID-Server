@@ -42,3 +42,7 @@ war:
   - ./gradlew war
   except:
   - /^(wip|test).*$/
+  artifacts:
+    when: always
+    paths:
+    - ./build/libs/tepid.war
