@@ -121,15 +121,13 @@ object Printer : WithLogging() {
                     val decompress = XZInputStream(FileInputStream(tmpXz))
                     tmp.copyFrom(decompress)
 
-                    // Detect PostScript monochrome instruction
-                    val br = BufferedReader(FileReader(tmp.absolutePath))
                     val now = System.currentTimeMillis()
-                    val psMonochrome = br.isMonochrome()
-                    log.trace("Detected ${if (psMonochrome) "monochrome" else "colour"} for job $id in ${System.currentTimeMillis() - now} ms")
+
                     //count pages
                     val psInfo = Gs.psInfo(tmp)
                             ?: throw PrintException("Internal Error")
                     val colorPages = psInfo.colorPages
+                    log.trace("Detected ${if (psInfo.isColour) "color" else "monochrome"} for job $id in ${System.currentTimeMillis() - now} ms")
                     log.trace("Job $id has ${psInfo.pages} pages, $colorPages in color")
 
                     //update page count and status in db
