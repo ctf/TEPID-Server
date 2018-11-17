@@ -77,7 +77,7 @@ object Printer : WithLogging() {
             if (line.contains(INDICATOR_COLOR))
                 return false
         }
-        return true
+        return false
     }
 
     /**
