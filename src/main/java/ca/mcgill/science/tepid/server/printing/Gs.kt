@@ -23,7 +23,7 @@ interface GsContract {
     /**
      * Given a postscript file, output for the entire file:
      * - total page count
-     * - colour page count (ignoring a '/ProcessColorModel /DeviceGray' declaration)
+     * - colour page count
      * Returns null if the process fails to launch
      */
     fun psInfo(f: File): PsData?
@@ -92,11 +92,9 @@ internal class GsDelegate : WithLogging(), GsContract {
     private val INDICATOR_MONOCHROME = "/ProcessColorModel /DeviceGray"
 
     /**
-     * Returns true if monochrome was detected,
-     * or false if colour was detected
-     * Defaults to colour
+     * Returns true if a monochrome color model is specified
      */
-    private fun BufferedReader.isMonochrome(): Boolean {
+    private fun BufferedReader.hasMonochromeColorModel(): Boolean {
         for (line in lines()) {
             if (line.contains(INDICATOR_MONOCHROME))
                 return true
@@ -113,7 +111,7 @@ internal class GsDelegate : WithLogging(), GsContract {
         var info = coverageToInfo(coverage)
 
         val br = BufferedReader(FileReader(f.absolutePath))
-        val psMonochrome = br.isMonochrome()
+        val psMonochrome = br.hasMonochromeColorModel()
         if (psMonochrome){
             info = info.copy(colourPages = 0)
         }
