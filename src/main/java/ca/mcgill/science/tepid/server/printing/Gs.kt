@@ -1,7 +1,9 @@
 package ca.mcgill.science.tepid.server.printing
 
 import ca.mcgill.science.tepid.utils.WithLogging
+import java.io.BufferedReader
 import java.io.File
+import java.io.FileReader
 import java.io.IOException
 
 /**
@@ -83,6 +85,25 @@ internal class GsDelegate : WithLogging(), GsContract {
 
     override fun inkCoverage(f: File): List<InkCoverage>? {
         return inkCoverage(gs(f) ?: return null)
+    }
+
+
+    private val INDICATOR_COLOR = "/ProcessColorModel /DeviceCMYK"
+    private val INDICATOR_MONOCHROME = "/ProcessColorModel /DeviceGray"
+
+    /**
+     * Returns true if monochrome was detected,
+     * or false if colour was detected
+     * Defaults to colour
+     */
+    private fun BufferedReader.isMonochrome(): Boolean {
+        for (line in lines()) {
+            if (line.contains(INDICATOR_MONOCHROME))
+                return true
+            if (line.contains(INDICATOR_COLOR))
+                return false
+        }
+        return false
     }
 
     override fun psInfo(f: File): PsData? {
