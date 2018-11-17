@@ -19,7 +19,7 @@ test:
   artifacts:
     when: always
     reports:
-      junit: [build/test-results/test/TEST-*.xml, build/test-results/integrationTest/TEST-*.xml]
+      junit: [build/test-results/test/TEST-*.xml]
   except:
   - /^(wip|test).*$/
   
@@ -31,7 +31,7 @@ integration_test:
   artifacts:
     when: always
     reports:
-      junit: [build/test-results/test/TEST-*.xml, build/test-results/integrationTest/TEST-*.xml]
+      junit: [build/test-results/integrationTest/TEST-*.xml]
   except:
   - /^(wip|test).*$/
 
