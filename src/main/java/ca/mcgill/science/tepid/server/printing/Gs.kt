@@ -108,7 +108,17 @@ internal class GsDelegate : WithLogging(), GsContract {
 
     override fun psInfo(f: File): PsData? {
         val coverage = inkCoverage(f) ?: return null
-        return coverageToInfo(coverage)
+
+
+        var info = coverageToInfo(coverage)
+
+        val br = BufferedReader(FileReader(f.absolutePath))
+        val psMonochrome = br.isMonochrome()
+        if (psMonochrome){
+            info = info.copy(colourPages = 0)
+        }
+
+        return info
     }
 
     fun coverageToInfo(coverage: List<InkCoverage>): PsData {
