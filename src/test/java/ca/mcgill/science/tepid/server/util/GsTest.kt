@@ -40,7 +40,7 @@ class GsTest {
         }
 
         gsDir.listFiles { _, name -> name.endsWith(".ps") }.forEach {
-            val lines = gs.gs(it) ?: fail("Failed to get gs info for ${it.absolutePath}")
+            val lines = gs.gs(it)
             println("\nTested ${it.name}: lines\n${lines.joinToString("\n")}")
             val coverage = gs.inkCoverage(lines)
             val psInfo = gs.coverageToInfo(coverage)

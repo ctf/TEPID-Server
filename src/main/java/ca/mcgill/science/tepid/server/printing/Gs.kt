@@ -59,7 +59,7 @@ internal class GsDelegate : WithLogging(), GsContract {
     fun gs(f: File): List<String> {
         val gsProcess = run("-sOutputFile=%stdout%",
                 "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
-                "-sDEVICE=ink_cov", f.absolutePath) ?: throw Printer.PrintException("Internal Error processing postscript")
+                "-sDEVICE=ink_cov", f.absolutePath) ?: throw Printer.PrintException("Internal Error processing postscript file at ${f.absolutePath}")
         return gsProcess.inputStream.bufferedReader().useLines { it.toList() }
     }
 
