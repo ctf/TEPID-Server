@@ -112,4 +112,7 @@ data class InkCoverage(val c: Float, val m: Float, val y: Float, val k: Float) {
 /**
  * Holds info for ps files
  */
-data class PsData(val pages: Int, val colourPages: Int)
+data class PsData(val pages: Int, val colourPages: Int) {
+    val isColour: Boolean
+        get() = this.colourPages != 0
+}
