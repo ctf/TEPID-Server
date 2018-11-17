@@ -12,13 +12,6 @@ clean:
   except:
   - /^(wip|test).*$/
 
-build:
-  script:
-  - chmod +x gradlew
-  - ./gradlew build
-  except:
-  - /^(wip|test).*$/
-
 test:
   script:
   - chmod +x gradlew
