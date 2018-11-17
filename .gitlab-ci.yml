@@ -7,12 +7,14 @@ clean:
 
 build:
   script:
+  - chmod +x gradlew
   - ./gradlew build
   except:
   - /^(wip|test).*$/
 
 test:
   script:
+  - chmod +x gradlew
   - ./gradlew test
   artifacts:
     when: always
@@ -23,7 +25,7 @@ test:
   
 integration_test:
   script:
-  - chmod 550 gitlab-testpid.sh
+  - chmod +x gradlew
   - ./gradlew integrationTest
   artifacts:
     when: always
@@ -34,6 +36,7 @@ integration_test:
 
 war:
   script:
+  - chmod +x gradlew
   - ./gradlew war
   except:
   - /^(wip|test).*$/
