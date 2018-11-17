@@ -1,11 +1,39 @@
-deploy_job:
+clean:
   script:
-  - chmod 550 gitlab-testpid.sh
-  - ./gitlab-testpid.sh
+  - chmod +x gradlew
+  - ./gradlew 
+  except:
+  - /^(wip|test).*$/
+
+build:
+  script:
+  - ./gradlew build
+  except:
+  - /^(wip|test).*$/
+
+test:
+  script:
+  - ./gradlew test
   artifacts:
     when: always
     reports:
       junit: [build/test-results/test/TEST-*.xml, build/test-results/integrationTest/TEST-*.xml]
+  except:
+  - /^(wip|test).*$/
+  
+integration_test:
+  script:
+  - chmod 550 gitlab-testpid.sh
+  - ./gradlew integrationTest
+  artifacts:
+    when: always
+    reports:
+      junit: [build/test-results/test/TEST-*.xml, build/test-results/integrationTest/TEST-*.xml]
+  except:
+  - /^(wip|test).*$/
 
+war:
+  script:
+  - ./gradlew war
   except:
   - /^(wip|test).*$/
