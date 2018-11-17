@@ -1,11 +1,10 @@
 stages:
-  - clean
   - build
   - test
-  - integration_test
-  - war
+  - deploy
 
 clean:
+  stage: build
   script:
   - chmod +x gradlew
   - ./gradlew 
@@ -13,6 +12,7 @@ clean:
   - /^(wip|test).*$/
 
 test:
+  stage: test
   script:
   - chmod +x gradlew
   - ./gradlew test
@@ -24,6 +24,7 @@ test:
   - /^(wip|test).*$/
   
 integration_test:
+  stage: test
   script:
   - chmod +x gradlew
   - ./gradlew integrationTest
@@ -35,6 +36,7 @@ integration_test:
   - /^(wip|test).*$/
 
 war:
+  stage: deploy
   script:
   - chmod +x gradlew
   - ./gradlew war
