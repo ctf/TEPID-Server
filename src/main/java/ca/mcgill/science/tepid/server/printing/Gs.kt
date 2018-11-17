@@ -113,7 +113,7 @@ internal class GsDelegate : WithLogging(), GsContract {
         val br = BufferedReader(FileReader(f.absolutePath))
         val psMonochrome = br.hasMonochromeColorModel()
         if (psMonochrome){
-            info = info.copy(colourPages = 0)
+            info = info.copy(colorPages = 0)
         }
 
         return info
@@ -141,7 +141,7 @@ data class InkCoverage(val c: Float, val m: Float, val y: Float, val k: Float) {
 /**
  * Holds info for ps files
  */
-data class PsData(val pages: Int, val colourPages: Int) {
+data class PsData(val pages: Int, val colorPages: Int) {
     val isColour: Boolean
-        get() = this.colourPages != 0
+        get() = this.colorPages != 0
 }
