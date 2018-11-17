@@ -50,4 +50,4 @@ war:
 staging:
   stage: deploy
   script:
-  - mv tepid.war /var/lib/tomcat8/webapps
+  - mv ./build/libs/tepid.war /var/lib/tomcat8/webapps
