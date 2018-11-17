@@ -19,7 +19,9 @@ interface GsContract {
     fun inkCoverage(f: File): List<InkCoverage>?
 
     /**
-     * Given a postscript file, output the info for the entire file
+     * Given a postscript file, output for the entire file:
+     * - total page count
+     * - colour page count (ignoring a '/ProcessColorModel /DeviceGray' declaration)
      * Returns null if the process fails to launch
      */
     fun psInfo(f: File): PsData?
