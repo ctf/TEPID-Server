@@ -40,14 +40,15 @@ war:
   script:
   - chmod +x gradlew
   - ./gradlew war
+  - mv ./build/libs/tepid.war ~/tepid.war
   except:
   - /^(wip|test).*$/
   artifacts:
     when: always
     paths:
-    - ./build/libs/tepid.war
+    - ~/tepid.war
     
 staging:
   stage: deploy
   script:
-  - mv ./build/libs/tepid.war /var/lib/tomcat8/webapps
+  - mv ~/tepid.war /var/lib/tomcat8/webapps
