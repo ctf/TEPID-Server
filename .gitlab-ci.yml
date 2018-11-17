@@ -1,3 +1,10 @@
+stages:
+  - clean
+  - build
+  - test
+  - integration_test
+  - war
+
 clean:
   script:
   - chmod +x gradlew
