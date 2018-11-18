@@ -26,7 +26,7 @@ interface GsContract {
      * - colour page count
      * Returns null if the process fails to launch
      */
-    fun psInfo(f: File): PsData?
+    fun psInfo(f: File): PsData
 
 }
 
