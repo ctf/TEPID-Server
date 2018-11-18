@@ -35,7 +35,7 @@ interface GsContract {
  */
 internal class GsDelegate : WithLogging(), GsContract {
     private val gsBin = if (System.getProperty("os.name").startsWith("Windows"))
-        "C:/Program Files/gs/gs9.20/bin/gswin64c.exe" else "gs"
+        "gswin64c.exe" else "gs"
 
     private fun run(vararg args: String): Process? {
         val pb = ProcessBuilder(listOf(gsBin, *args))
