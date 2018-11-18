@@ -78,7 +78,8 @@ class PsInfoTest {
         "V3/ADOBE GRAYSCALE.ps, 1, 0",
         "V3/CHROME BW.prn, 2, 0",
         "V3/CHROME COLORED PRINTDIALOGED.prn, 1, 1",
-        "V3/CHROME COLORED.prn, 2, 1",
+        "V3/CHROME COLORED NOXEROX.prn, 1, 1",
+        "V3/CHROME COLORED XEROX.prn, 1, 1",
         "V3/PINGU BW PHOTO.prn, 1, 0",
         "V3/PINGU COLORED PHOTO.prn, 1, 1",
 

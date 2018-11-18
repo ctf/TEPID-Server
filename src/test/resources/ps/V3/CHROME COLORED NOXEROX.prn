@@ -5,7 +5,7 @@
 %!PS-Adobe-3.0
 %%Title: PDF Test Page
 %%Creator: PScript5.dll Version 5.2.2
-%%CreationDate: 11/8/2018 13:36:27
+%%CreationDate: 11/17/2018 23:22:11
 %%For: yren15
 %%BoundingBox: (atend)
 %%Pages: (atend)
@@ -18,12 +18,12 @@
 %%LanguageLevel: 3
 %%DriverName: Xerox Global Print Driver PS
 %%DriverLanguage: English
-%%DCPVer: UNIV 5.585.13.1
-%%DriverBuildVer: 5.585.13.0N 2017.11.28
-%%Copyright © 2000-2017 Xerox Corporation. All Rights Reserved.
+%%DCPVer: UNIV 5.617.7.1
+%%DriverBuildVer: 5.617.7.0N 2018.05.30
+%%Copyright © 2000-2018 Xerox Corporation. All Rights Reserved.
 %%XEROX is a registered trademark of Xerox Corporation.
-%%RenOSVer: Windows 10.0, build 14393 (64 bit)
-%%DataType: EMF
+%%RenOSVer: Windows 10.0, build 17134 (64 bit)
+%%DataType: RAW
 %%EndComments
 
 %%BeginDefaults
@@ -162,7 +162,7 @@ end
 	featurebegin{<< /MediaClass null >> setpagedevice}featurecleanup
 	featurebegin{<< /MediaPosition null /TraySwitch true >> setpagedevice}featurecleanup
 	featurebegin{<< /Duplex true /Tumble false >> setpagedevice}featurecleanup
-	featurebegin{<< /ProcessColorModel /DeviceGray>> setpagedevice}featurecleanup
+	featurebegin{<< /ProcessColorModel /DeviceCMYK>> setpagedevice}featurecleanup
 
 statusdict begin (%%[ ProductName: ) print product print ( ]%%)= flush end
 [ 1 0 0 1 0 0 ] false Pscript_WinNT_Incr dup /initialize get exec
@@ -1872,22 +1872,6 @@ LH
 (%%[Page: 1]%%) = 
 %%PageTrailer
 
-%%Page: 2 2
-%%PageBoundingBox: 15 15 597 777
-%%EndPageComments
-%%BeginPageSetup
-
-%%XrxRotate180 (OFF)
-userdict begin /XrxRotate180 false def end
-%Xrx ICMM=4, ICMI=2
-/DeviceRGB dup setcolorspace /colspABC exch def
-mysetup concat colspRefresh
-%%EndPageSetup
-
-LH
-(%%[Page: 2]%%) = 
-%%PageTrailer
-
 %%Trailer
 %%BoundingBox: 15 15 597 777
 %%DocumentNeededResources: 
@@ -1899,7 +1883,7 @@ LH
 %%+ procset Pscript_WinNT_Compat 5.0 0
 Pscript_WinNT_Incr dup /terminate get exec
 ehsave restore
-%%Pages: 2
+%%Pages: 1
 (%%[LastPage]%%) = 
 %%EOF
 %-12345X@PJL EOJ
