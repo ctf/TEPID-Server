@@ -1,14 +1,13 @@
-package ca.mcgill.science.tepid.server.util
+package ca.mcgill.science.tepid.server.printing
 
-import ca.mcgill.science.tepid.server.printing.GsDelegate
-import ca.mcgill.science.tepid.server.printing.PsData
 import org.junit.Ignore
 import org.junit.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.fail
 
 class GsTest {
 
@@ -63,6 +62,42 @@ class GsTest {
         assertEquals(y, inkCov.y)
         assertEquals(k, inkCov.k)
         assertFalse(inkCov.monochrome)
+    }
+
+}
+
+class PsInfoTest {
+
+    private val gs = GsDelegate()
+
+    @ParameterizedTest
+    @CsvSource(
+        "V3/ADOBE BW.ps, 1, 0",
+        "V3/ADOBE COLORED IMAGE.prn, 1, 1",
+        "V3/ADOBE COLORED.ps, 1, 1",
+        "V3/ADOBE GRAYSCALE.ps, 1, 0",
+        "V3/CHROME BW.prn, 2, 0",
+        "V3/CHROME COLORED PRINTDIALOGED.prn, 1, 1",
+        "V3/CHROME COLORED.prn, 2, 1",
+        "V3/PINGU BW PHOTO.prn, 1, 0",
+        "V3/PINGU COLORED PHOTO.prn, 1, 1",
+
+        "V4/ADOBE BW.prn, 1, 0",
+        "V4/ADOBE COLORED IMAGE.prn, 1, 1",
+        "V4/ADOBE COLORED.prn, 1, 1",
+        "V4/ADOBE GRAYSCALE.prn, 1, 0",
+        "V4/CHROME BW.prn, 1, 0",
+        "V4/CHROME COLORED.prn, 1, 1",
+        "V4/PDF FIREFOX BW.prn, 1, 0",
+        "V4/PDF FIREFOX COLORED.prn, 1, 1",
+        "V4/PINGU BW PHOTO.prn, 1, 0",
+        "V4/PINGU COLORED PHOTO.prn, 1, 1"
+    )
+    fun psInfoTest(fileName:String, pages: Int, colorPages: Int){
+        val tmp = File("src/test/resources/ps/"+fileName)
+        val r = gs.psInfo(tmp)
+        assertEquals(pages, r.pages, "Total page count incorrect")
+        assertEquals(colorPages, r.colorPages, "Color page count incorrect")
     }
 
 }
