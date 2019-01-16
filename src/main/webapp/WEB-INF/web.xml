@@ -44,13 +44,18 @@
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
             <param-value>
-                ca.mcgill.science.tepid.server.auth;ca.mcgill.science.tepid.server.server;ca.mcgill.science.tepid.server.rest;com.fasterxml.jackson.jaxrs.json
+                ca.mcgill.science.tepid.server.auth;
+                ca.mcgill.science.tepid.server.server;
+                ca.mcgill.science.tepid.server.rest;
+                com.fasterxml.jackson.jaxrs.json;
+                io.swagger.jaxrs.listing
             </param-value>
         </init-param>
         <init-param>
             <param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
             <param-value>
-                ca.mcgill.science.tepid.server.server.CrossDomainFilter;ca.mcgill.science.tepid.server.server.AuthTokenFilter
+                ca.mcgill.science.tepid.server.server.CrossDomainFilter;
+                ca.mcgill.science.tepid.server.server.AuthTokenFilter
             </param-value>
         </init-param>
         <init-param>
