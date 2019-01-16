@@ -72,4 +72,20 @@
     <listener>
         <listener-class>ca.mcgill.science.tepid.server.server.BackgroundTasks</listener-class>
     </listener>
+
+    <!-- Swagger -->
+    <servlet>
+        <servlet-name>Jersey2Config</servlet-name>
+        <servlet-class>io.swagger.jersey.config.JerseyJaxrsConfig</servlet-class>
+        <init-param>
+            <param-name>api.version</param-name>
+            <param-value>1.1.0</param-value>
+        </init-param>
+        <init-param>
+            <param-name>swagger.api.basepath</param-name>
+            <param-value>http://localhost:8443/tepid</param-value>
+        </init-param>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+
 </web-app>
