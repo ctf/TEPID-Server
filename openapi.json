@@ -35,53 +35,6 @@
         }
       }
     },
-    "/destinations" : {
-      "get" : {
-        "operationId" : "getDestinations",
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "object",
-                  "additionalProperties" : {
-                    "$ref" : "#/components/schemas/Destination"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "operationId" : "putDestinations",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "type" : "object",
-                "additionalProperties" : {
-                  "$ref" : "#/components/schemas/FullDestination"
-                }
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/destinations/{dest}" : {
       "post" : {
         "operationId" : "setStatus",
@@ -139,6 +92,53 @@
         }
       }
     },
+    "/destinations" : {
+      "get" : {
+        "operationId" : "getDestinations",
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "$ref" : "#/components/schemas/Destination"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "operationId" : "putDestinations",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "$ref" : "#/components/schemas/FullDestination"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/endpoints" : {
       "get" : {
         "operationId" : "getAuthorizedEndpoints",
@@ -151,6 +151,27 @@
                   "type" : "string"
                 }
               }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/job/{id}/_changes" : {
+      "get" : {
+        "operationId" : "getChanges",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
             }
           }
         }
@@ -324,11 +345,11 @@
         }
       }
     },
-    "/jobs/job/{id}/_changes" : {
+    "/queues/{queue}/_changes" : {
       "get" : {
-        "operationId" : "getChanges",
+        "operationId" : "getChanges_1",
         "parameters" : [ {
-          "name" : "id",
+          "name" : "queue",
           "in" : "path",
           "required" : true,
           "schema" : {
@@ -340,6 +361,23 @@
             "description" : "default response",
             "content" : {
               "application/json" : { }
+            }
+          }
+        }
+      }
+    },
+    "/queues/_changes" : {
+      "get" : {
+        "operationId" : "getChanges_2",
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
             }
           }
         }
@@ -372,49 +410,6 @@
                   "$ref" : "#/components/schemas/PrintJob"
                 }
               }
-            }
-          }
-        }
-      }
-    },
-    "/queues" : {
-      "get" : {
-        "operationId" : "getQueues",
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/PrintQueue"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "operationId" : "putQueues",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "type" : "array",
-                "items" : {
-                  "$ref" : "#/components/schemas/PrintQueue"
-                }
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : { }
             }
           }
         }
@@ -479,6 +474,49 @@
         }
       }
     },
+    "/queues" : {
+      "get" : {
+        "operationId" : "getQueues",
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PrintQueue"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "operationId" : "putQueues",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/PrintQueue"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        }
+      }
+    },
     "/queues/{queue}/{id}/{file}" : {
       "get" : {
         "operationId" : "getAttachment",
@@ -538,37 +576,19 @@
         }
       }
     },
-    "/queues/{queue}/_changes" : {
+    "/screensaver/destinations" : {
       "get" : {
-        "operationId" : "getChanges_1",
-        "parameters" : [ {
-          "name" : "queue",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
+        "operationId" : "getDestinations_1",
         "responses" : {
           "default" : {
             "description" : "default response",
             "content" : {
-              "application/json" : { }
-            }
-          }
-        }
-      }
-    },
-    "/queues/_changes" : {
-      "get" : {
-        "operationId" : "getChanges_2",
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
+              "*/*" : {
                 "schema" : {
-                  "type" : "string"
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "$ref" : "#/components/schemas/Destination"
+                  }
                 }
               }
             }
@@ -588,26 +608,6 @@
                   "type" : "array",
                   "items" : {
                     "$ref" : "#/components/schemas/PrintQueue"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/screensaver/destinations" : {
-      "get" : {
-        "operationId" : "getDestinations_1",
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "object",
-                  "additionalProperties" : {
-                    "$ref" : "#/components/schemas/Destination"
                   }
                 }
               }
@@ -853,23 +853,6 @@
         }
       }
     },
-    "/users/configured" : {
-      "get" : {
-        "operationId" : "adminConfigured",
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "boolean"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/users/{sam}" : {
       "get" : {
         "operationId" : "queryLdap",
@@ -1046,6 +1029,23 @@
         }
       }
     },
+    "/users/configured" : {
+      "get" : {
+        "operationId" : "adminConfigured",
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/{sam}/quota/debug" : {
       "get" : {
         "operationId" : "getQuotaDebug",
@@ -1191,6 +1191,9 @@
             "type" : "integer",
             "format" : "int32"
           },
+          "schema" : {
+            "type" : "string"
+          },
           "get_id" : {
             "type" : "string"
           },
@@ -1198,9 +1201,6 @@
             "type" : "string"
           },
           "type" : {
-            "type" : "string"
-          },
-          "schema" : {
             "type" : "string"
           }
         }
@@ -1271,13 +1271,13 @@
           "colorPrinting" : {
             "type" : "boolean"
           },
+          "schema" : {
+            "type" : "string"
+          },
           "get_id" : {
             "type" : "string"
           },
           "get_rev" : {
-            "type" : "string"
-          },
-          "schema" : {
             "type" : "string"
           }
         }
@@ -1358,6 +1358,9 @@
             "type" : "integer",
             "format" : "int64"
           },
+          "schema" : {
+            "type" : "string"
+          },
           "get_id" : {
             "type" : "string"
           },
@@ -1365,9 +1368,6 @@
             "type" : "boolean"
           },
           "get_rev" : {
-            "type" : "string"
-          },
-          "schema" : {
             "type" : "string"
           }
         }
@@ -1402,15 +1402,6 @@
           "binary" : {
             "type" : "boolean"
           },
-          "boolean" : {
-            "type" : "boolean"
-          },
-          "int" : {
-            "type" : "boolean"
-          },
-          "short" : {
-            "type" : "boolean"
-          },
           "number" : {
             "type" : "boolean"
           },
@@ -1426,12 +1417,21 @@
           "long" : {
             "type" : "boolean"
           },
-          "float" : {
-            "type" : "boolean"
-          },
           "nodeType" : {
             "type" : "string",
             "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
+          },
+          "boolean" : {
+            "type" : "boolean"
+          },
+          "int" : {
+            "type" : "boolean"
+          },
+          "short" : {
+            "type" : "boolean"
+          },
+          "float" : {
+            "type" : "boolean"
           },
           "array" : {
             "type" : "boolean"
@@ -1522,13 +1522,13 @@
           "colorPrinting" : {
             "type" : "boolean"
           },
+          "schema" : {
+            "type" : "string"
+          },
           "get_id" : {
             "type" : "string"
           },
           "get_rev" : {
-            "type" : "string"
-          },
-          "schema" : {
             "type" : "string"
           }
         }
@@ -1684,13 +1684,13 @@
               "type" : "string"
             }
           },
+          "schema" : {
+            "type" : "string"
+          },
           "get_id" : {
             "type" : "string"
           },
           "get_rev" : {
-            "type" : "string"
-          },
-          "schema" : {
             "type" : "string"
           }
         }
@@ -1726,6 +1726,9 @@
             "type" : "integer",
             "format" : "int32"
           },
+          "schema" : {
+            "type" : "string"
+          },
           "get_id" : {
             "type" : "string"
           },
@@ -1733,9 +1736,6 @@
             "type" : "string"
           },
           "type" : {
-            "type" : "string"
-          },
-          "schema" : {
             "type" : "string"
           }
         }

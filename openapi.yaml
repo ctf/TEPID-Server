@@ -20,34 +20,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JsonNode'
-  /destinations:
-    get:
-      operationId: getDestinations
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  $ref: '#/components/schemas/Destination'
-    put:
-      operationId: putDestinations
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties:
-                $ref: '#/components/schemas/FullDestination'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: string
   /destinations/{dest}:
     post:
       operationId: setStatus
@@ -84,6 +56,34 @@ paths:
             application/json:
               schema:
                 type: string
+  /destinations:
+    get:
+      operationId: getDestinations
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/Destination'
+    put:
+      operationId: putDestinations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                $ref: '#/components/schemas/FullDestination'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: string
   /endpoints:
     get:
       operationId: getAuthorizedEndpoints
@@ -94,6 +94,20 @@ paths:
             application/json:
               schema:
                 type: string
+  /jobs/job/{id}/_changes:
+    get:
+      operationId: getChanges
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
   /jobs/job/{id}:
     get:
       operationId: getJob
@@ -199,11 +213,11 @@ paths:
             text/plain:
               schema:
                 type: string
-  /jobs/job/{id}/_changes:
+  /queues/{queue}/_changes:
     get:
-      operationId: getChanges
+      operationId: getChanges_1
       parameters:
-      - name: id
+      - name: queue
         in: path
         required: true
         schema:
@@ -213,6 +227,16 @@ paths:
           description: default response
           content:
             application/json: {}
+  /queues/_changes:
+    get:
+      operationId: getChanges_2
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: string
   /queues/{queue}/{id}:
     get:
       operationId: getJob_1
@@ -234,32 +258,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PrintJob'
-  /queues:
-    get:
-      operationId: getQueues
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PrintQueue'
-    put:
-      operationId: putQueues
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/PrintQueue'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
   /queues/{queue}:
     get:
       operationId: listJobs_1
@@ -299,6 +297,32 @@ paths:
             application/json:
               schema:
                 type: string
+  /queues:
+    get:
+      operationId: getQueues
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PrintQueue'
+    put:
+      operationId: putQueues
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/PrintQueue'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
   /queues/{queue}/{id}/{file}:
     get:
       operationId: getAttachment
@@ -337,42 +361,6 @@ paths:
                 type: array
                 items:
                   type: string
-  /queues/{queue}/_changes:
-    get:
-      operationId: getChanges_1
-      parameters:
-      - name: queue
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-  /queues/_changes:
-    get:
-      operationId: getChanges_2
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: string
-  /screensaver/queues:
-    get:
-      operationId: getQueues_1
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PrintQueue'
   /screensaver/destinations:
     get:
       operationId: getDestinations_1
@@ -385,6 +373,18 @@ paths:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/Destination'
+  /screensaver/queues:
+    get:
+      operationId: getQueues_1
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PrintQueue'
   /screensaver/queues/{queue}:
     get:
       operationId: listJobs_2
@@ -536,16 +536,6 @@ paths:
             application/json:
               schema:
                 type: object
-  /users/configured:
-    get:
-      operationId: adminConfigured
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: boolean
   /users/{sam}:
     get:
       operationId: queryLdap
@@ -659,6 +649,16 @@ paths:
               schema:
                 type: integer
                 format: int32
+  /users/configured:
+    get:
+      operationId: adminConfigured
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: boolean
   /users/{sam}/quota/debug:
     get:
       operationId: getQuotaDebug
@@ -755,13 +755,13 @@ components:
         ppm:
           type: integer
           format: int32
+        schema:
+          type: string
         get_id:
           type: string
         get_rev:
           type: string
         type:
-          type: string
-        schema:
           type: string
     User:
       type: object
@@ -809,11 +809,11 @@ components:
           format: int64
         colorPrinting:
           type: boolean
+        schema:
+          type: string
         get_id:
           type: string
         get_rev:
-          type: string
-        schema:
           type: string
     Semester:
       type: object
@@ -873,13 +873,13 @@ components:
         deleteDataOn:
           type: integer
           format: int64
+        schema:
+          type: string
         get_id:
           type: string
         refunded:
           type: boolean
         get_rev:
-          type: string
-        schema:
           type: string
     JsonNode:
       type: object
@@ -902,12 +902,6 @@ components:
           type: boolean
         binary:
           type: boolean
-        boolean:
-          type: boolean
-        int:
-          type: boolean
-        short:
-          type: boolean
         number:
           type: boolean
         bigDecimal:
@@ -917,8 +911,6 @@ components:
         double:
           type: boolean
         long:
-          type: boolean
-        float:
           type: boolean
         nodeType:
           type: string
@@ -932,6 +924,14 @@ components:
           - OBJECT
           - POJO
           - STRING
+        boolean:
+          type: boolean
+        int:
+          type: boolean
+        short:
+          type: boolean
+        float:
+          type: boolean
         array:
           type: boolean
         null:
@@ -992,11 +992,11 @@ components:
           format: int64
         colorPrinting:
           type: boolean
+        schema:
+          type: string
         get_id:
           type: string
         get_rev:
-          type: string
-        schema:
           type: string
     PutResponse:
       type: object
@@ -1100,11 +1100,11 @@ components:
           type: array
           items:
             type: string
+        schema:
+          type: string
         get_id:
           type: string
         get_rev:
-          type: string
-        schema:
           type: string
     FullDestination:
       type: object
@@ -1128,13 +1128,13 @@ components:
         ppm:
           type: integer
           format: int32
+        schema:
+          type: string
         get_id:
           type: string
         get_rev:
           type: string
         type:
-          type: string
-        schema:
           type: string
     Course:
       type: object
