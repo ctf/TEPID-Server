@@ -5,6 +5,7 @@
          id="WebApp_ID" version="3.0">
     <display-name>TEPID Server</display-name>
 
+    <!--CORS filter-->
     <filter>
         <filter-name>CorsFilter</filter-name>
         <async-supported>true</async-supported>
@@ -46,6 +47,17 @@
         <url-pattern>/webjars/*</url-pattern>
     </servlet-mapping>
 
+    <!--Swagger UI JSP-->
+    <servlet>
+        <servlet-name>Swagger UI</servlet-name>
+        <jsp-file>/WEB-INF/swagger-ui.jsp</jsp-file>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Swagger UI</servlet-name>
+        <url-pattern>/swagger-ui.jsp</url-pattern>
+    </servlet-mapping>
+
+    <!--TEPID server-->
     <servlet>
         <servlet-name>TEPID REST Service</servlet-name>
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
