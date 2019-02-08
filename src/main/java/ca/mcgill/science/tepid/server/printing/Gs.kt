@@ -88,17 +88,21 @@ internal class GsDelegate : WithLogging(), GsContract {
     }
 
 
-    private val INDICATOR_COLOR = "/ProcessColorModel /DeviceCMYK"
-    private val INDICATOR_MONOCHROME = "/ProcessColorModel /DeviceGray"
+    private val INDICATOR_COLOR_V3 = "/ProcessColorModel /DeviceCMYK"
+    private val INDICATOR_MONOCHROME_V3 = "/ProcessColorModel /DeviceGray"
+
+
+    private val INDICATOR_COLOR_V4 = "<color-effects-type syntax=\"keyword\">color</color-effects-type>"
+    private val INDICATOR_MONOCHROME_V4 = "<color-effects-type syntax=\"keyword\">monochrome-grayscale</color-effects-type>"
 
     /**
      * Returns true if a monochrome color model is specified
      */
     private fun BufferedReader.hasMonochromeColorModel(): Boolean {
         for (line in lines()) {
-            if (line.contains(INDICATOR_MONOCHROME))
+            if (line.contains(INDICATOR_MONOCHROME_V3) or line.contains(INDICATOR_MONOCHROME_V4))
                 return true
-            if (line.contains(INDICATOR_COLOR))
+            if (line.contains(INDICATOR_COLOR_V3) or line.contains(INDICATOR_COLOR_V4))
                 return false
         }
         return false
