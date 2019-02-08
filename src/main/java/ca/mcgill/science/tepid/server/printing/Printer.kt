@@ -62,24 +62,6 @@ object Printer : WithLogging() {
             "/tmp/tepid"
     }
 
-    private const val INDICATOR_COLOR = "/ProcessColorModel /DeviceCMYK"
-    private const val INDICATOR_MONOCHROME = "/ProcessColorModel /DeviceGray"
-
-    /**
-     * Returns true if monochrome was detected,
-     * or false if color was detected
-     * Defaults to monochrome
-     */
-    private fun BufferedReader.isMonochrome(): Boolean {
-        for (line in lines()) {
-            if (line.contains(INDICATOR_MONOCHROME))
-                return true
-            if (line.contains(INDICATOR_COLOR))
-                return false
-        }
-        return false
-    }
-
     /**
      * Attempts to start printing the given job
      * Returns a pair of success, message
