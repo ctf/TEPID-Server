@@ -87,6 +87,7 @@ class PsInfoTest {
         "V4/ADOBE COLORED IMAGE.prn, 1, 1",
         "V4/ADOBE COLORED.prn, 1, 1",
         "V4/ADOBE GRAYSCALE.prn, 1, 0",
+        //"V4/ADOBE GRAYSCALE BUT COLOR.prn, 1, 0",
         "V4/CHROME BW.prn, 1, 0",
         "V4/CHROME COLORED.prn, 1, 1",
         "V4/PDF FIREFOX BW.prn, 1, 0",
