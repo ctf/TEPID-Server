@@ -23,7 +23,7 @@ interface GsContract {
     /**
      * Given a postscript file, output for the entire file:
      * - total page count
-     * - colour page count
+     * - color page count
      */
     fun psInfo(f: File): PsData
 
@@ -48,10 +48,10 @@ internal class GsDelegate : WithLogging(), GsContract {
 
     /*
     * The ink_cov device differs from the inkcov device
-    * ink_cov tries to get a more accurate representation of the actual colours which will be used by the page.
+    * ink_cov tries to get a more accurate representation of the actual colors which will be used by the page.
     * it tries to deal with conversions from RGB space to CMYK space.
     * For example, it will try to crush all monochrome to K, rather than some CMY combination or a "rich black" MYK
-    * It is also able to deal with pages with a small patch of colour.
+    * It is also able to deal with pages with a small patch of color.
     * For example, a page might have a small color logo which is too small to count for more than 1% of 1% of the page (a square roughly 7mm on a side). With inkcov, there are not enough decimals printed for this to show up. But ink_cov will make the difference greater, and so more color pages will be detected as color
     * This is undocumented in GhostScript, but they have basically the same inputs
     */
@@ -124,8 +124,8 @@ internal class GsDelegate : WithLogging(), GsContract {
 
     fun coverageToInfo(coverage: List<InkCoverage>): PsData {
         val pages = coverage.size
-        val colour = coverage.filter { !it.monochrome }.size
-        return PsData(pages, colour)
+        val color = coverage.filter { !it.monochrome }.size
+        return PsData(pages, color)
     }
     
 }
@@ -145,6 +145,6 @@ data class InkCoverage(val c: Float, val m: Float, val y: Float, val k: Float) {
  * Holds info for ps files
  */
 data class PsData(val pages: Int, val colorPages: Int) {
-    val isColour: Boolean
+    val isColor: Boolean
         get() = this.colorPages != 0
 }

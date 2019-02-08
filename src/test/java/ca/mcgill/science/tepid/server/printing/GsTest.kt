@@ -18,7 +18,7 @@ class GsTest {
     /**
      * [GsInfo] is provided if a file's name is of the format:
      *
-     * [...]_[colour]_[pages].ps
+     * [...]_[color]_[pages].ps
      *
      * Pages is mandatory
      */
@@ -27,8 +27,8 @@ class GsTest {
             val parts = nameWithoutExtension.split("_")
             if (parts.size < 3) return null
             val pages = parts[parts.size - 1].toIntOrNull() ?: return null
-            val colour = parts[parts.size - 2].toIntOrNull() ?: 0
-            return PsData(pages, colour)
+            val color = parts[parts.size - 2].toIntOrNull() ?: 0
+            return PsData(pages, color)
         }
 
     @Disabled("BROKEN TEST SMH: test resource not present")
@@ -52,7 +52,7 @@ class GsTest {
     }
 
     @Test
-    fun lineToInkCovColour() {
+    fun lineToInkCovColor() {
         val c = 0.06841f
         val m = 0.41734f
         val y = 0.17687f
