@@ -24,7 +24,6 @@ interface GsContract {
      * Given a postscript file, output for the entire file:
      * - total page count
      * - colour page count
-     * Returns null if the process fails to launch
      */
     fun psInfo(f: File): PsData
 
