@@ -98,7 +98,7 @@ class PsInfoTest {
         "V4/PINGU COLORED PHOTO.prn, 1, 1"
     )
     fun psInfoTest(fileName:String, pages: Int, colorPages: Int){
-        val tmp = File("src/test/resources/ps/"+fileName)
+        val tmp = File(this::class.java.classLoader.getResource("ps").file+"\\"+fileName)
         val r = gs.psInfo(tmp)
         assertEquals(pages, r.pages, "Total page count incorrect")
         assertEquals(colorPages, r.colorPages, "Color page count incorrect")
