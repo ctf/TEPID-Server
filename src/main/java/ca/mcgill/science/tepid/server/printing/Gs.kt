@@ -87,12 +87,7 @@ internal class GsDelegate : WithLogging(), GsContract {
     }
 
 
-    private val INDICATOR_COLOR_V3 = "/ProcessColorModel /DeviceCMYK"
-    private val INDICATOR_MONOCHROME_V3 = "/ProcessColorModel /DeviceGray"
 
-
-    private val INDICATOR_COLOR_V4 = "<color-effects-type syntax=\"keyword\">color</color-effects-type>"
-    private val INDICATOR_MONOCHROME_V4 = "<color-effects-type syntax=\"keyword\">monochrome-grayscale</color-effects-type>"
 
     /**
      * Returns true if a monochrome color model is specified
@@ -127,7 +122,15 @@ internal class GsDelegate : WithLogging(), GsContract {
         val color = coverage.filter { !it.monochrome }.size
         return PsData(pages, color)
     }
-    
+
+    companion object {
+        private const val INDICATOR_COLOR_V3 = "/ProcessColorModel /DeviceCMYK"
+        private const val INDICATOR_MONOCHROME_V3 = "/ProcessColorModel /DeviceGray"
+
+
+        private const val INDICATOR_COLOR_V4 = "<color-effects-type syntax=\"keyword\">color</color-effects-type>"
+        private const val INDICATOR_MONOCHROME_V4 = "<color-effects-type syntax=\"keyword\">monochrome-grayscale</color-effects-type>"
+    }
 }
 
 /**
