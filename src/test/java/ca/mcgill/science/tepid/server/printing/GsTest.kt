@@ -1,13 +1,15 @@
 package ca.mcgill.science.tepid.server.printing
 
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+
+
 
 class GsTest {
 
@@ -29,7 +31,7 @@ class GsTest {
             return PsData(pages, colour)
         }
 
-    @Ignore("BROKEN TEST SMH: test resource not present")
+    @Disabled("BROKEN TEST SMH: test resource not present")
     @Test
     fun fileTests() {
         val gsDir = File(this::class.java.classLoader.getResource("gs").file)

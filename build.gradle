@@ -46,8 +46,11 @@ sourceSets {
 
 dependencies {
     integrationTestRuntime("org.junit.jupiter:junit-jupiter-engine:5.3.1")
+    testCompile "org.junit.jupiter:junit-jupiter-engine:5.3.1"
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
+    testCompile "org.jetbrains.kotlin:kotlin-test:$KOTLIN"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$KOTLIN"
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit5:$KOTLIN"
     testCompile "io.mockk:mockk:1.8.7"
     testCompile "org.junit.jupiter:junit-jupiter-params:5.1.0"
 
@@ -98,6 +101,7 @@ compileIntegrationTestKotlin{
 }
 
 test {
+    useJUnitPlatform()
     dependsOn cleanTest
     testLogging.showStandardStreams = true
 }
