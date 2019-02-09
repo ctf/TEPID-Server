@@ -1,7 +1,9 @@
 package ca.mcgill.science.tepid.server.printing
 
 import ca.mcgill.science.tepid.utils.WithLogging
+import java.io.BufferedReader
 import java.io.File
+import java.io.FileReader
 import java.io.IOException
 
 /**
@@ -19,10 +21,11 @@ interface GsContract {
     fun inkCoverage(f: File): List<InkCoverage>?
 
     /**
-     * Given a postscript file, output the info for the entire file
-     * Returns null if the process fails to launch
+     * Given a postscript file, output for the entire file:
+     * - total page count
+     * - color page count
      */
-    fun psInfo(f: File): PsData?
+    fun psInfo(f: File): PsData
 
 }
 
@@ -31,7 +34,7 @@ interface GsContract {
  */
 internal class GsDelegate : WithLogging(), GsContract {
     private val gsBin = if (System.getProperty("os.name").startsWith("Windows"))
-        "C:/Program Files/gs/gs9.20/bin/gswin64c.exe" else "gs"
+        "gswin64c.exe" else "gs"
 
     private fun run(vararg args: String): Process? {
         val pb = ProcessBuilder(listOf(gsBin, *args))
@@ -45,17 +48,17 @@ internal class GsDelegate : WithLogging(), GsContract {
 
     /*
     * The ink_cov device differs from the inkcov device
-    * ink_cov tries to get a more accurate representation of the actual colours which will be used by the page.
+    * ink_cov tries to get a more accurate representation of the actual colors which will be used by the page.
     * it tries to deal with conversions from RGB space to CMYK space.
     * For example, it will try to crush all monochrome to K, rather than some CMY combination or a "rich black" MYK
-    * It is also able to deal with pages with a small patch of colour.
+    * It is also able to deal with pages with a small patch of color.
     * For example, a page might have a small color logo which is too small to count for more than 1% of 1% of the page (a square roughly 7mm on a side). With inkcov, there are not enough decimals printed for this to show up. But ink_cov will make the difference greater, and so more color pages will be detected as color
     * This is undocumented in GhostScript, but they have basically the same inputs
     */
-    fun gs(f: File): List<String>? {
+    fun gs(f: File): List<String> {
         val gsProcess = run("-sOutputFile=%stdout%",
                 "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
-                "-sDEVICE=ink_cov", f.absolutePath) ?: return null
+                "-sDEVICE=ink_cov", f.absolutePath) ?: throw Printer.PrintException("Internal Error processing postscript file at ${f.absolutePath}")
         return gsProcess.inputStream.bufferedReader().useLines { it.toList() }
     }
 
@@ -79,21 +82,55 @@ internal class GsDelegate : WithLogging(), GsContract {
                 InkCoverage(c.toFloat(), y.toFloat(), m.toFloat(), k.toFloat())
             }.toList()
 
-    override fun inkCoverage(f: File): List<InkCoverage>? {
-        return inkCoverage(gs(f) ?: return null)
+    override fun inkCoverage(f: File): List<InkCoverage> {
+        return inkCoverage(gs(f))
     }
 
-    override fun psInfo(f: File): PsData? {
-        val coverage = inkCoverage(f) ?: return null
-        return coverageToInfo(coverage)
+
+
+
+    /**
+     * Returns true if a monochrome color model is specified
+     */
+    private fun BufferedReader.hasMonochromeColorModel(): Boolean {
+        for (line in lines()) {
+            if (line.contains(INDICATOR_MONOCHROME_V3) or line.contains(INDICATOR_MONOCHROME_V4))
+                return true
+            if (line.contains(INDICATOR_COLOR_V3) or line.contains(INDICATOR_COLOR_V4))
+                return false
+        }
+        return false
+    }
+
+    override fun psInfo(f: File): PsData {
+        val coverage = inkCoverage(f)
+
+
+        var info = coverageToInfo(coverage)
+
+        val br = BufferedReader(FileReader(f.absolutePath))
+        val psMonochrome = br.hasMonochromeColorModel()
+        if (psMonochrome){
+            info = info.copy(colorPages = 0)
+        }
+
+        return info
     }
 
     fun coverageToInfo(coverage: List<InkCoverage>): PsData {
         val pages = coverage.size
-        val colour = coverage.filter { !it.monochrome }.size
-        return PsData(pages, colour)
+        val color = coverage.filter { !it.monochrome }.size
+        return PsData(pages, color)
     }
-    
+
+    companion object {
+        private const val INDICATOR_COLOR_V3 = "/ProcessColorModel /DeviceCMYK"
+        private const val INDICATOR_MONOCHROME_V3 = "/ProcessColorModel /DeviceGray"
+
+
+        private const val INDICATOR_COLOR_V4 = "<color-effects-type syntax=\"keyword\">color</color-effects-type>"
+        private const val INDICATOR_MONOCHROME_V4 = "<color-effects-type syntax=\"keyword\">monochrome-grayscale</color-effects-type>"
+    }
 }
 
 /**
@@ -110,4 +147,7 @@ data class InkCoverage(val c: Float, val m: Float, val y: Float, val k: Float) {
 /**
  * Holds info for ps files
  */
-data class PsData(val pages: Int, val colourPages: Int)
+data class PsData(val pages: Int, val colorPages: Int) {
+    val isColor: Boolean
+        get() = this.colorPages != 0
+}
