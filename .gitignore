@@ -32,3 +32,5 @@ config/
 venv/
 
 *.pyc
+
+transaction\.log
