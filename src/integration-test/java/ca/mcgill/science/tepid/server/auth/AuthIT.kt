@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.deleteRev
 import ca.mcgill.science.tepid.server.server.Config
+import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
@@ -13,14 +14,14 @@ open class AuthIT {
     @Before
     fun before() {
         Assume.assumeTrue(Config.LDAP_ENABLED)
-        Assume.assumeTrue(Config.TEST_USER.isNotEmpty())
-        Assume.assumeTrue(Config.TEST_PASSWORD.isNotEmpty())
+        Assume.assumeTrue(PropsLDAPTestUser.TEST_USER.isNotEmpty())
+        Assume.assumeTrue(PropsLDAPTestUser.TEST_PASSWORD.isNotEmpty())
         println("Running ldap tests with test user")
     }
 
     protected fun FullUser?.assertEqualsTestUser() {
         assertNotNull(this!!)
-        assertEquals(Config.TEST_USER, shortUser, "Short user mismatch. Perhaps you passed in the long user in your test?")
+        assertEquals(PropsLDAPTestUser.TEST_USER, shortUser, "Short user mismatch. Perhaps you passed in the long user in your test?")
         val user = toUser()
         assertTrue(user.role.isNotEmpty(), "Role may not have propagated")
     }
@@ -44,13 +45,13 @@ class LdapIT : AuthIT() {
 
     @Test
     fun authenticate() {
-        Ldap.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
+        Ldap.authenticate(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD).assertEqualsTestUser()
     }
 
     //TODO: parametrise for test user, not real data
     @Test
     fun queryWithoutPass() {
-        Ldap.queryUserLdap(Config.TEST_USER, null).assertEqualsTestUser()
+        Ldap.queryUserLdap(PropsLDAPTestUser.TEST_USER, null).assertEqualsTestUser()
     }
 }
 
@@ -58,37 +59,37 @@ class SessionManagerIT : AuthIT() {
 
     @Test
     fun authenticateWithLdapUserInDb() {
-        SessionManager.queryUser(Config.TEST_USER, null)
-                ?: fail("Couldn't prime DB with test user ${Config.TEST_USER}")
-        SessionManager.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
+        SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, null)
+                ?: fail("Couldn't prime DB with test user ${PropsLDAPTestUser.TEST_USER}")
+        SessionManager.authenticate(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD).assertEqualsTestUser()
     }
 
     @Test
     fun authenticateWithLdapUserNotInDb() {
-        CouchDb.path("u${Config.TEST_USER}").deleteRev()
-        SessionManager.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
+        CouchDb.path("u${PropsLDAPTestUser.TEST_USER}").deleteRev()
+        SessionManager.authenticate(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD).assertEqualsTestUser()
     }
 
     @Test
     fun queryUserInDb() {
         // TODO: add user to DB in way which does not need LDAP
-        val ldapUser = Ldap.queryUserLdap(Config.TEST_USER, null)
-                ?: fail("Couldn't get test user ${Config.TEST_USER} from LDAP")
+        val ldapUser = Ldap.queryUserLdap(PropsLDAPTestUser.TEST_USER, null)
+                ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from LDAP")
         SessionManager.updateDbWithUser(ldapUser)
-        SessionManager.queryUserDb(Config.TEST_USER) ?: fail("User ${Config.TEST_USER} not already in DB")
+        SessionManager.queryUserDb(PropsLDAPTestUser.TEST_USER) ?: fail("User ${PropsLDAPTestUser.TEST_USER} not already in DB")
 
-        SessionManager.queryUser(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
+        SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD).assertEqualsTestUser()
     }
 
     @Test
     fun queryUserNotInDb() {
-        CouchDb.path("u${Config.TEST_USER}").deleteRev()
-        SessionManager.authenticate(Config.TEST_USER, Config.TEST_PASSWORD).assertEqualsTestUser()
+        CouchDb.path("u${PropsLDAPTestUser.TEST_USER}").deleteRev()
+        SessionManager.authenticate(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD).assertEqualsTestUser()
     }
 
     @Test
     fun autosuggest() {
-        SessionManager.autoSuggest(Config.TEST_USER, 1).getResult(20000)[0].assertEqualsTestUser()
+        SessionManager.autoSuggest(PropsLDAPTestUser.TEST_USER, 1).getResult(20000)[0].assertEqualsTestUser()
     }
 
     fun isExchange(testSU: String): Boolean {
@@ -126,21 +127,21 @@ class SessionManagerIT : AuthIT() {
 
     @Test
     fun addAndRemoveFromExchange() {
-        when (isExchange(Config.TEST_USER)) {
+        when (isExchange(PropsLDAPTestUser.TEST_USER)) {
             true -> {
                 println("Already in")
-                removeFromExchangeStudent(Config.TEST_USER)
-                removeFromExchangeStudentAlreadyOut(Config.TEST_USER)
-                addToExchangeStudent(Config.TEST_USER)
-                addToExchangeStudentAlreadyIn(Config.TEST_USER)
+                removeFromExchangeStudent(PropsLDAPTestUser.TEST_USER)
+                removeFromExchangeStudentAlreadyOut(PropsLDAPTestUser.TEST_USER)
+                addToExchangeStudent(PropsLDAPTestUser.TEST_USER)
+                addToExchangeStudentAlreadyIn(PropsLDAPTestUser.TEST_USER)
                 println("Done")
             }
             false -> {
                 println("Already out")
-                addToExchangeStudent(Config.TEST_USER)
-                addToExchangeStudentAlreadyIn(Config.TEST_USER)
-                removeFromExchangeStudent(Config.TEST_USER)
-                removeFromExchangeStudentAlreadyOut(Config.TEST_USER)
+                addToExchangeStudent(PropsLDAPTestUser.TEST_USER)
+                addToExchangeStudentAlreadyIn(PropsLDAPTestUser.TEST_USER)
+                removeFromExchangeStudent(PropsLDAPTestUser.TEST_USER)
+                removeFromExchangeStudentAlreadyOut(PropsLDAPTestUser.TEST_USER)
                 println("Done")
             }
         }
@@ -148,12 +149,12 @@ class SessionManagerIT : AuthIT() {
 
     @Test
     fun forceDbRefresh() {
-        val user = SessionManager.queryUser(Config.TEST_USER, null) ?: fail("Couldn't get test user ${Config.TEST_USER} from DB or LDAP")
+        val user = SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, null) ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from DB or LDAP")
         user.groups = listOf("DefinitelyFakeGroup")
         SessionManager.updateDbWithUser(user)
 
-        val refreshedUser = SessionManager.refreshUser(Config.TEST_USER)
-        val alteredUser = SessionManager.queryUser(Config.TEST_USER, null) ?: fail("Couldn't get test user ${Config.TEST_USER} from DB or LDAP")
+        val refreshedUser = SessionManager.refreshUser(PropsLDAPTestUser.TEST_USER)
+        val alteredUser = SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, null) ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from DB or LDAP")
 
         assertFalse(alteredUser.groups.contains("DefinitelyFakeGroup"), "User has not been refreshed")
         assertEquals(alteredUser, refreshedUser, "User from DB does not match refreshed user")
@@ -161,7 +162,7 @@ class SessionManagerIT : AuthIT() {
 
     @Test
     fun invalidateSession() {
-        val user = SessionManager.queryUser(Config.TEST_USER, null) ?: fail("Couldn't get test user ${Config.TEST_USER} from DB or LDAP")
+        val user = SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, null) ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from DB or LDAP")
         val session = SessionManager.start(user, 24)
         assertNotNull(SessionManager.get(session._id!!))
 

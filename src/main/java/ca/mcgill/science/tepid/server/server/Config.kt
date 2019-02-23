@@ -70,16 +70,8 @@ object Config : WithLogging() {
     val USERS_GROUP : List<String>
 
 
-    /*
-     * Optional arguments used to run unit tests for ldap
-     */
-    val TEST_USER: String
-    val TEST_PASSWORD: String
-
     val HASH: String
-
     val TAG: String
-
     val CREATION_TIMESTAMP: Long
     val CREATION_TIME: String
 
@@ -136,9 +128,6 @@ object Config : WithLogging() {
         USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS?.split(illegalLDAPCharacters))?.plus(CURRENT_EXCHANGE_GROUP) ?: emptyList()
 
         TEM_URL = PropsTEM.TEM_URL ?: ""
-
-        TEST_USER = PropsLDAPTestUser.TEST_USER ?: ""
-        TEST_PASSWORD = PropsLDAPTestUser.TEST_PASSWORD ?: ""
 
         HASH = PropsCreationInfo.HASH ?: ""
         TAG = PropsCreationInfo.TAG ?: ""
