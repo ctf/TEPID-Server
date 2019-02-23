@@ -35,9 +35,9 @@ object Config : WithLogging() {
     /*
      * Couchdb data
      */
-    val COUCHDB_URL: String
-    val COUCHDB_USERNAME: String
-    val COUCHDB_PASSWORD: String
+    val DB_URL: String
+    val DB_USERNAME: String
+    val DB_PASSWORD: String
     /*
      * Barcode data
      */
@@ -107,9 +107,9 @@ object Config : WithLogging() {
         TEPID_URL_PRODUCTION = PropsURL.SERVER_URL_PRODUCTION ?: throw RuntimeException()
         TEPID_URL_TESTING = PropsURL.WEB_URL_TESTING ?: TEPID_URL_PRODUCTION
 
-        COUCHDB_URL = PropsDB.COUCHDB_URL ?: throw RuntimeException()
-        COUCHDB_USERNAME = PropsDB.COUCHDB_USERNAME ?: throw RuntimeException()
-        COUCHDB_PASSWORD = PropsDB.COUCHDB_PASSWORD ?: throw RuntimeException()
+        DB_URL = PropsDB.URL ?: throw RuntimeException()
+        DB_USERNAME = PropsDB.USERNAME ?: throw RuntimeException()
+        DB_PASSWORD = PropsDB.PASSWORD ?: throw RuntimeException()
 
         BARCODES_URL = PropsBarcode.BARCODES_URL ?: ""
         BARCODES_USERNAME = PropsBarcode.BARCODES_DB_USERNAME ?: ""
@@ -164,10 +164,10 @@ object Config : WithLogging() {
 
         log.info("Debug mode: $DEBUG")
         log.info("LDAP mode: $LDAP_ENABLED")
-        if (COUCHDB_URL.isEmpty())
+        if (DB_URL.isEmpty())
             log.fatal("COUCHDB_URL not set")
-        if (COUCHDB_PASSWORD.isEmpty())
-            log.fatal("COUCHDB_PASSWORD not set")
+        if (DB_PASSWORD.isEmpty())
+            log.fatal("DB_PASSWORD not set")
         if (RESOURCE_CREDENTIALS.isEmpty())
             log.error("RESOURCE_CREDENTIALS not set")
 

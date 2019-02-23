@@ -41,7 +41,7 @@ private fun initTarget(target: String): WebTarget {
 }
 
 //todo hide
-val couchdbOld: WebTarget by lazy { initTarget(Config.COUCHDB_USERNAME, Config.COUCHDB_PASSWORD, Config.COUCHDB_URL) }
+val couchdbOld: WebTarget by lazy { initTarget(Config.DB_USERNAME, Config.DB_PASSWORD, Config.DB_URL) }
 val temdb: WebTarget by lazy { initTarget(Config.TEM_URL) }
 val barcodesdb: WebTarget by lazy { initTarget(Config.BARCODES_USERNAME, Config.BARCODES_PASSWORD, Config.BARCODES_URL) }
 
