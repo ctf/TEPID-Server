@@ -45,7 +45,7 @@ class HibernateCrud(val em: EntityManager): IHibernateCrud, Loggable by WithLogg
     }
 
     override fun <T> create(obj:T) {
-        return dbOpTransaction({ em -> em.persist(obj) }, { e -> "Error inserting object {\"object\":\"$obj\", \"error\":\"$e\"" })
+        return dbOpTransaction({ e -> "Error inserting object {\"object\":\"$obj\", \"error\":\"$e\"" }, { em -> em.persist(obj) })
     }
 
     inline fun <reified T, P> read(id: P): T{
@@ -53,10 +53,12 @@ class HibernateCrud(val em: EntityManager): IHibernateCrud, Loggable by WithLogg
     }
 
     override fun <T,P> read(classParameter: Class<T>, id:P):T{
-        return dbOp{em -> em.find(classParameter, id)}
+        return dbOp(
+                { e -> "Error reading object {\"class\":\"$classParameter\",\"id\":\"$id\", \"error\":\"$e\"" },
+                {em -> em.find(classParameter, id)})
     }
 
     override fun <T> update(obj:T) {
-        dbOpTransaction<Unit>({ em -> em.merge(obj) }, { e -> "Error updating object {\"object\":\"$obj\", \"error\":\"$e\"" })
+        dbOpTransaction<Unit>({ e -> "Error updating object {\"object\":\"$obj\", \"error\":\"$e\"" },{ em -> em.merge(obj) })
     }
 }
