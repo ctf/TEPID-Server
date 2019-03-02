@@ -29,4 +29,19 @@ class HibernateCrud(val emf: EntityManagerFactory): IHibernateCrud, Loggable by 
             em.close()
         }
     }
+
+    fun <T> dbOpTransaction(f:(em:EntityManager)->T, errorLogger : (e:Exception)->String){
+        dbOp{
+            try {
+                it.transaction.begin()
+                f(it)
+                it.transaction.commit()
+            } catch (e: Exception){
+                log.error(errorLogger(e))
+                it.transaction.rollback()
+                throw e
+            }
+        }
+    }
+
 }
