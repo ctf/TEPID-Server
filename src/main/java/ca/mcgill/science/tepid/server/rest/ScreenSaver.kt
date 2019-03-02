@@ -88,10 +88,9 @@ class ScreenSaver {
     @Path("destinations")
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
         return DB.getDestinations()
-                .map { it.toDestination() }
                 .mapNotNull {
                     val id = it._id ?: return@mapNotNull null
-                    id to it
+                    id to it.toDestination()
                 }
                 .toMap()
     }

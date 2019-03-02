@@ -45,10 +45,9 @@ class Destinations {
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
         val session = ctx.getSession()
         return DB.getDestinations()
-                .map { it.toDestination(session.role) }
                 .mapNotNull {
                     val id = it._id ?: return@mapNotNull null
-                    id to it
+                    id to it.toDestination(session.role)
                 }
                 .toMap()
     }
