@@ -6,6 +6,9 @@
     <persistence-unit name="hibernate-pu-test" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <!-- add classes -->
+        <class>ca.mcgill.science.tepid.server.db.TestEntity</class>
+
+
         <class>ca.mcgill.science.tepid.models.data.FullUser</class>
         <class>ca.mcgill.science.tepid.models.data.FullSession</class>
         <class>ca.mcgill.science.tepid.models.data.PrintJob</class>

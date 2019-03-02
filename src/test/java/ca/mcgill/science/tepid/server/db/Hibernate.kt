@@ -1,18 +1,19 @@
 package ca.mcgill.science.tepid.server.db
 
-import org.h2.tools.RunScript
-import org.hibernate.Session
-import org.hibernate.jdbc.Work
+import ca.mcgill.science.tepid.models.bindings.TepidDb
+import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
+import junit.framework.Assert.assertNull
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.io.File
-import java.io.FileReader
-import java.sql.Connection
 import javax.persistence.*
-import kotlin.test.assertNotNull
+import kotlin.test.assertEquals
 
+@Entity
+data class TestEntity(
+        @Column(nullable = false)
+        var content: String = ""
+) : @EmbeddedId TepidDb by TepidDbDelegate()
 
 open class DbTest {
 
