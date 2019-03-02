@@ -122,7 +122,7 @@ class HibernateCrudTest() : DbTest(){
         @JvmStatic
         @BeforeAll
         fun initHelper(){
-            pc = HibernateCrud(emf)
+            pc = HibernateCrud(em)
         }
     }
 
