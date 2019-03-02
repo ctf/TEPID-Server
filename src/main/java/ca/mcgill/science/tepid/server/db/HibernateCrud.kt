@@ -47,6 +47,15 @@ class HibernateCrud(val emf: EntityManagerFactory): IHibernateCrud, Loggable by 
     override fun <T> create(obj:T) {
         return dbOpTransaction({ em -> em.persist(obj) }, { e -> "Error inserting object {\"object\":\"$obj\", \"error\":\"$e\"" })
     }
+
+    inline fun <reified T, P> read(id: P): T{
+        return read((T::class.java), id)
+    }
+
+    override fun <T,P> read(classParameter: Class<T>, id:P):T{
+        return dbOp{em -> em.find(classParameter, id)}
+    }
+
     override fun <T> update(obj:T) {
         dbOpTransaction<Unit>({ em -> em.merge(obj) }, { e -> "Error updating object {\"object\":\"$obj\", \"error\":\"$e\"" })
     }
