@@ -61,4 +61,19 @@ class HibernateCrud(val em: EntityManager): IHibernateCrud, Loggable by WithLogg
     override fun <T> update(obj:T) {
         dbOpTransaction<Unit>({ e -> "Error updating object {\"object\":\"$obj\", \"error\":\"$e\"" },{ em -> em.merge(obj) })
     }
+
+    override fun <T> delete(obj: T) {
+
+        dbOpTransaction({ e ->
+            "Error deleting object {\"object\":\"$obj\", \"error\":\"$e\""
+        },
+                {
+            it.remove(obj)
+        })
+    }
+
+    override fun <T, P> deleteById(classParameter: Class<T>, id: P) {
+        val u = em.find(classParameter, id)
+        delete(u)
+    }
 }
