@@ -1,6 +1,9 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.utils.Loggable
+import ca.mcgill.science.tepid.utils.WithLogging
+import javax.persistence.EntityManager
+import javax.persistence.EntityManagerFactory
 
 interface IHibernateCrud : Loggable {
 
@@ -14,4 +17,7 @@ interface IHibernateCrud : Loggable {
 
     fun <T, P> deleteById(classParameter:Class<T>, id:P)
 
+}
+
+class HibernateCrud(val emf: EntityManagerFactory): IHibernateCrud, Loggable by WithLogging() {
 }

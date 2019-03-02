@@ -52,7 +52,7 @@ class HibernateCrudTest() : DbTest(){
     @Test
     fun testPsqlCrudCreate(){
         val te = TestEntity("TEST")
-        te._id = "ID"
+        te._id = "ID0"
 
         pc.create(te)
 
@@ -63,7 +63,7 @@ class HibernateCrudTest() : DbTest(){
     @Test
     fun testPsqlCrudRead(){
         val te = TestEntity("TEST")
-        te._id = "ID"
+        te._id = "ID1"
         em.transaction.begin()
         em.persist(te)
         em.transaction.commit()
@@ -76,7 +76,7 @@ class HibernateCrudTest() : DbTest(){
     @Test
     fun testPsqlCrudUpdate(){
         val te = TestEntity("TEST")
-        te._id = "ID"
+        te._id = "ID2"
         em.transaction.begin()
         em.persist(te)
         em.transaction.commit()
@@ -91,7 +91,7 @@ class HibernateCrudTest() : DbTest(){
     @Test
     fun testPsqlCrudDelete(){
         val te = TestEntity("TEST")
-        te._id = "ID"
+        te._id = "ID3"
         em.transaction.begin()
         em.persist(te)
         em.transaction.commit()
@@ -105,7 +105,7 @@ class HibernateCrudTest() : DbTest(){
     @Test
     fun testPsqlCrudDeleteById(){
         val te = TestEntity("TEST")
-        te._id = "ID"
+        te._id = "ID4"
         em.transaction.begin()
         em.persist(te)
         em.transaction.commit()
