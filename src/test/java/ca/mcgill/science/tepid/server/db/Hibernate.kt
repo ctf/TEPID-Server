@@ -49,6 +49,72 @@ open class DbTest {
 
 class HibernateCrudTest() : DbTest(){
 
+    @Test
+    fun testPsqlCrudCreate(){
+        val te = TestEntity("TEST")
+        te._id = "ID"
+
+        pc.create(te)
+
+        val re = em.find(TestEntity::class.java, te._id)
+        assertEquals(te, re)
+    }
+
+    @Test
+    fun testPsqlCrudRead(){
+        val te = TestEntity("TEST")
+        te._id = "ID"
+        em.transaction.begin()
+        em.persist(te)
+        em.transaction.commit()
+
+        val re:TestEntity = pc.read(te._id)
+
+        assertEquals(te, re)
+    }
+
+    @Test
+    fun testPsqlCrudUpdate(){
+        val te = TestEntity("TEST")
+        te._id = "ID"
+        em.transaction.begin()
+        em.persist(te)
+        em.transaction.commit()
+        te.content = "NEW"
+
+        pc.update(te)
+
+        val re = em.find(TestEntity::class.java, te._id)
+        assertEquals(te, re)
+    }
+
+    @Test
+    fun testPsqlCrudDelete(){
+        val te = TestEntity("TEST")
+        te._id = "ID"
+        em.transaction.begin()
+        em.persist(te)
+        em.transaction.commit()
+
+        pc.delete(te)
+
+        val re = em.find(TestEntity::class.java, te._id)
+        assertNull(re)
+    }
+
+    @Test
+    fun testPsqlCrudDeleteById(){
+        val te = TestEntity("TEST")
+        te._id = "ID"
+        em.transaction.begin()
+        em.persist(te)
+        em.transaction.commit()
+
+        pc.deleteById(TestEntity::class.java, te._id)
+
+        val re = em.find(TestEntity::class.java, te._id)
+        assertNull(re)
+    }
 
     companion object {
         lateinit var pc: HibernateCrud
