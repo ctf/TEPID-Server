@@ -3,7 +3,6 @@ package ca.mcgill.science.tepid.server.db
 import ca.mcgill.science.tepid.utils.Loggable
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.persistence.EntityManager
-import javax.persistence.EntityManagerFactory
 
 interface IHibernateCrud : Loggable {
 
@@ -19,19 +18,20 @@ interface IHibernateCrud : Loggable {
 
 }
 
-class HibernateCrud(val emf: EntityManagerFactory): IHibernateCrud, Loggable by WithLogging() {
+class HibernateCrud(val em: EntityManager): IHibernateCrud, Loggable by WithLogging() {
 
-    fun <T>dbOp(f:(em: EntityManager)->T):T{
-        val em = emf.createEntityManager()
+
+    fun <T>dbOp(errorLogger : (e:Exception)->String, f:(em: EntityManager)->T):T{
         try {
             return f(em)
-        } finally {
-            em.close()
+        } catch (e:Exception){
+            log.error(errorLogger(e))
+            throw e
         }
     }
 
-    fun <T> dbOpTransaction(f:(em:EntityManager)->T, errorLogger : (e:Exception)->String){
-        dbOp{
+    fun <T> dbOpTransaction(errorLogger : (e:Exception)->String, f:(em:EntityManager)->T){
+        dbOp(errorLogger){
             try {
                 it.transaction.begin()
                 f(it)
