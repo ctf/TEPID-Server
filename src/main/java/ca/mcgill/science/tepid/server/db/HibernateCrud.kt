@@ -20,4 +20,13 @@ interface IHibernateCrud : Loggable {
 }
 
 class HibernateCrud(val emf: EntityManagerFactory): IHibernateCrud, Loggable by WithLogging() {
+
+    fun <T>dbOp(f:(em: EntityManager)->T):T{
+        val em = emf.createEntityManager()
+        try {
+            return f(em)
+        } finally {
+            em.close()
+        }
+    }
 }
