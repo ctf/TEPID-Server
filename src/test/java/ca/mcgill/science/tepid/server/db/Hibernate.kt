@@ -45,8 +45,20 @@ open class DbTest {
             emf.close()
         }
     }
+}
+
+class HibernateCrudTest() : DbTest(){
 
 
+    companion object {
+        lateinit var pc: HibernateCrud
+
+        @JvmStatic
+        @BeforeAll
+        fun initHelper(){
+            pc = HibernateCrud(emf)
+        }
+    }
 
 }
 
