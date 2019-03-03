@@ -9,11 +9,14 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import junit.framework.Assert.assertNull
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.util.*
 import javax.persistence.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+import kotlin.test.fail
 
 @Entity
 data class TestEntity(
@@ -30,8 +33,10 @@ open class DbTest {
     }
 
     fun<T:TepidId> persistMultiple (list:List<T>){
-        list.map { e -> e._id=UUID.randomUUID().toString(); persist(e)}
+        list.map { e -> e._id=newId(); persist(e)}
     }
+
+    internal fun newId() = UUID.randomUUID().toString()
 
     /*@BeforeEach
     fun initialiseDb(){
@@ -220,7 +225,7 @@ class HibernateDestinationLayerTest : DbTest(){
     @Test
     fun testPutDestination(){
         val testList = testItems.toList().
-                map { it._id = UUID.randomUUID().toString(); it}
+                map { it._id = newId(); it}
         val testMap = testList.
                 map { it._id!! to it}.
                 toMap()
@@ -288,9 +293,10 @@ class HibernateJobLayerTest : DbTest() {
 
     companion object {
         val testItems  = listOf(
-                PrintJob("1"),
-                PrintJob("2"),
-                PrintJob("3")
+                PrintJob("1", userIdentification = "USER1", queueName = "Queue1"),
+                PrintJob("2", userIdentification = "USER2",queueName = "Queue1"),
+                PrintJob("3", userIdentification = "USER1", queueName = "Queue1"),
+                PrintJob("4", userIdentification = "USER1", queueName = "Queue2")
         )
 
         lateinit var hc: HibernateCrud<PrintJob, String?>
