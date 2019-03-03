@@ -312,6 +312,19 @@ class HibernateJobLayerTest : DbTest() {
         assertTrue(retrieved.fold(true) {res,e -> (e.userIdentification == "USER1") && res})
     }
 
+    @Test
+    fun testUpdateJob(){
+        val ti = testItems.first()
+        val id = newId()
+        ti._id = id
+        persist(ti)
+
+        hl.updateJob(id){name = "NEWNAME"}
+
+        val ri = hl.hc.read(id) ?: fail("Not Persisted")
+        assertEquals("NEWNAME", ri.name)
+        assertEquals(ti, ri)
+    }
     companion object {
         val testItems  = listOf(
                 PrintJob("1", userIdentification = "USER1", queueName = "Queue1"),
