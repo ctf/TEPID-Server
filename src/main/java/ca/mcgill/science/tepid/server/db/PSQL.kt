@@ -77,7 +77,16 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
     }
 
     override fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob? {
-        return PrintJob() //TODO("Implement updateJob")
+
+        try{
+            val printJob : PrintJob = hc.read(id) ?: throw EntityNotFoundException()
+            updater(printJob)
+            hc.update(printJob)
+            return printJob
+        }catch (e : Exception){
+            hc.log.error("Error updating printjob {\"id\":\"$id\", \"error\":\"${e.message}\"}")
+        }
+        return null
     }
 
     override fun postJob(job: PrintJob): Response {
