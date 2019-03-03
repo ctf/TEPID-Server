@@ -291,6 +291,16 @@ class HibernateDestinationLayerTest : DbTest(){
 
 class HibernateJobLayerTest : DbTest() {
 
+    @Test
+    fun testGetJobsByQueue(){
+        persistMultiple(testItems)
+
+        val retrieved = hl.getJobsByQueue("Queue1")
+
+        assertEquals(3, retrieved.size)
+        assertEquals(listOf("1", "2", "3").sorted(), retrieved.map{it.name}.sorted())
+        assertTrue(retrieved.fold(true) {res,e -> (e.queueName == "Queue1") && res})
+    }
     companion object {
         val testItems  = listOf(
                 PrintJob("1", userIdentification = "USER1", queueName = "Queue1"),
