@@ -6,6 +6,7 @@ import junit.framework.Assert.assertNull
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import java.util.*
 import javax.persistence.*
 import kotlin.test.assertEquals
 
@@ -16,6 +17,12 @@ data class TestEntity(
 ) : @EmbeddedId TepidDb by TepidDbDelegate()
 
 open class DbTest {
+
+    fun <C> persist (obj:C){
+        em.transaction.begin()
+        em.persist(obj)
+        em.transaction.commit()
+    }
 
     /*@BeforeEach
     fun initialiseDb(){
