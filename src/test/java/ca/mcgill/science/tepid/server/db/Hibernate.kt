@@ -87,6 +87,16 @@ class HibernateCrudTest() : DbTest(){
     }
 
     @Test
+    fun testPsqlCrudReadAll(){
+        val testItems = listOf(TestEntity("1"),TestEntity("2"),TestEntity("3"))
+        persistMultiple(testItems)
+
+        val retrieved = pc.readAll(TestEntity::class.java)
+
+        assertEquals(testItems, retrieved)
+    }
+
+    @Test
     fun testPsqlCrudUpdate(){
         val te = TestEntity("TEST")
         te._id = "ID2"

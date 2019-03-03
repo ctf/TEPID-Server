@@ -7,6 +7,6 @@ class HibernateMarqueeLayer(val hc : HibernateCrud) : DbMarqueeLayer {
 
     override fun getMarquees(): List<MarqueeData> {
 
-        return hc.em.createQuery("SELECT c FROM MarqueeData  c", MarqueeData::class.java).resultList
+        return hc.readAll(MarqueeData::class.java)
     }
 }

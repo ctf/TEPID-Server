@@ -10,6 +10,8 @@ interface IHibernateCrud : Loggable {
 
     fun <T, P> read(classParameter: Class<T> ,id:P) : T
 
+    fun <T> readAll(classParameter: Class<T>) : List<T>
+
     fun <T> update(obj:T)
 
     fun <T> delete(obj:T)
@@ -19,7 +21,6 @@ interface IHibernateCrud : Loggable {
 }
 
 class HibernateCrud(val em: EntityManager): IHibernateCrud, Loggable by WithLogging() {
-
 
     fun <T>dbOp(errorLogger : (e:Exception)->String, f:(em: EntityManager)->T):T{
         try {
@@ -56,6 +57,15 @@ class HibernateCrud(val em: EntityManager): IHibernateCrud, Loggable by WithLogg
         return dbOp(
                 { e -> "Error reading object {\"class\":\"$classParameter\",\"id\":\"$id\", \"error\":\"$e\"" },
                 {em -> em.find(classParameter, id)})
+    }
+
+    override fun <T> readAll(classParameter: Class<T>): List<T> {
+        return dbOp(
+            {e -> "Error reading all objects {\"class\":\"$classParameter\", \"error\":\"$e\""},
+            {
+                em -> em.createQuery("SELECT c FROM ${classParameter.simpleName} c", classParameter).resultList ?: emptyList<T>()
+            }
+        )
     }
 
     override fun <T> update(obj:T) {
