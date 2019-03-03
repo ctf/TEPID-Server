@@ -38,7 +38,14 @@ class HibernateDestinationLayer(val hc : HibernateCrud<FullDestination, String?>
     }
 
     override fun deleteDestination(id: Id): String {
-        return String() //TODO("Implement ${FUNTION_NAME}")
+        val failures = mutableListOf<String>()
+        try {
+            hc.deleteById(id)
+        } catch (e: Exception) {
+            failures.add(e.message ?: "Generic Failure for ID: $id")
+        }
+
+        return mapper.writeValueAsString(if(failures.isEmpty()) "Success" else failures)
     }
 
 }

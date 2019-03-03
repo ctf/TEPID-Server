@@ -250,6 +250,20 @@ class HibernateDestinationLayerTest : DbTest(){
         assertEquals(response.status, 200)
     }
 
+    @Test
+    fun testDeleteDestination(){
+        val testItem = testItems.first()
+        val id = "testDeleteDestination"
+        testItem._id = id
+        persist(testItem)
+
+        val response = hl.deleteDestination(id)
+
+        val retrieved = hl.hc.read(id)
+
+        assertNull(retrieved)
+    }
+
     companion object {
         val testItems  = listOf(
                 FullDestination("1"),
