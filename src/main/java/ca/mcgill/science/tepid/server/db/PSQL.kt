@@ -72,7 +72,7 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
         val sort = if(sortOrder == Order.ASCENDING) "ASC" else "DESC"
         return hc.em.
                 createQuery("SELECT c FROM PrintJob c WHERE c.userIdentification = :userId ORDER BY c.started $sort", PrintJob::class.java).
-                setParameter("userId", Sam).
+                setParameter("userId", sam).
                 resultList
     }
 
