@@ -60,20 +60,20 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
     }
 
     override fun getJobsByQueue(queue: String, maxAge: Long, sortOrder: Order, limit: Int): List<PrintJob> {
+        val sort = if(sortOrder == Order.ASCENDING) "ASC" else "DESC"
         return hc.em.
-                createQuery("SELECT c FROM PrintJob c WHERE c.queueName = :queueName", PrintJob::class.java).
+                createQuery("SELECT c FROM PrintJob c WHERE c.queueName = :queueName ORDER BY c.started $sort", PrintJob::class.java).
                 setParameter("queueName", queue).
                 resultList
-        // TODO("sortOrder")
         // TODO("limit")
     }
 
     override fun getJobsByUser(sam: Sam, sortOrder: Order): List<PrintJob> {
+        val sort = if(sortOrder == Order.ASCENDING) "ASC" else "DESC"
         return hc.em.
-                createQuery("SELECT c FROM PrintJob c WHERE c.userIdentification = :userId", PrintJob::class.java).
+                createQuery("SELECT c FROM PrintJob c WHERE c.userIdentification = :userId ORDER BY c.started $sort", PrintJob::class.java).
                 setParameter("userId", Sam).
                 resultList
-        // TODO("sortOrder")
     }
 
     override fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob? {
