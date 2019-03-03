@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.bindings.TepidDb
 import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
+import ca.mcgill.science.tepid.models.data.MarqueeData
 import junit.framework.Assert.assertNull
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -132,6 +133,33 @@ class HibernateCrudTest() : DbTest(){
             pc = HibernateCrud(em)
         }
     }
-
 }
 
+class HibernateMarqueeLayerTest : DbTest(){
+
+    @Test
+    fun testMultipleItems(){
+        val testItems = listOf(MarqueeData("T1"),MarqueeData("T2"),MarqueeData("T3"))
+        testItems.map { e -> e._id=UUID.randomUUID().toString(); persist(e)}
+
+        val retrieved = hml.getMarquees()
+
+        assertEquals(testItems, retrieved)
+
+
+    }
+
+    companion object {
+        lateinit var hc: HibernateCrud
+        lateinit var hml: HibernateMarqueeLayer
+
+        @JvmStatic
+        @BeforeAll
+        fun initHelper(){
+            hc = HibernateCrud(em)
+            hml = HibernateMarqueeLayer(hc)
+        }
+    }
+
+
+}
