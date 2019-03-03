@@ -10,6 +10,20 @@ class HibernateDestinationLayer(val hc : HibernateCrud) : DbDestinationLayer{
     override fun getDestinations(): List<FullDestination> {
         return hc.readAll(FullDestination::class.java)
     }
+
+    override fun putDestinations(destinations: Map<Id, FullDestination>): String {
+        val failures = mutableListOf<String>()
+        destinations.map {
+            try{
+                it.value._id = it.key
+                hc.updateOrCreateIfNotExist(it.value)
+            }catch (e:Exception){
+                failures.add(e.message ?: "Generic Failure :(")
+            }
+        }
+
+        return mapper.writeValueAsString(failures)
+    }
 }
 
 class HibernateMarqueeLayer(val hc : HibernateCrud) : DbMarqueeLayer {
