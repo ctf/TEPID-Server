@@ -143,3 +143,36 @@ class HibernateMarqueeLayer(val hc : HibernateCrud<MarqueeData, String?>) : DbMa
         return hc.readAll()
     }
 }
+
+class HibernateSessionLayer(val hc : HibernateCrud<FullSession, String?>) : DbSessionLayer {
+    override fun putSession(session: FullSession): Response {
+        try{
+            hc.updateOrCreateIfNotExist(session)
+        }catch (e : Exception){
+            return parsePersistenceErrorToResponse(e)
+        }
+        return Response.ok().build()
+    }
+
+    override fun getSessionOrNull(id: Id): FullSession? {
+        return hc.read(id)
+    }
+
+    override fun getSessionIdsForUser(shortUser: ShortUser): List<Id> {
+        return hc.em.
+                createQuery("SELECT c.id FROM FullSession c WHERE c.user.shortUser = :userId", String::class.java).
+                setParameter("userId", shortUser).
+                resultList
+    }
+
+    override fun deleteSession(id: Id): String {
+        val failures = mutableListOf<String>()
+        try {
+            hc.deleteById(id)
+        } catch (e: Exception) {
+            failures.add(e.message ?: "Generic Failure for ID: $id")
+        }
+        return mapper.writeValueAsString(if(failures.isEmpty()) "Success" else failures)
+    }
+
+}
