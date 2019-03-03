@@ -229,6 +229,25 @@ class HibernateDestinationLayerTest : DbTest(){
         assertEquals(testList, retrieved)
     }
 
+    @Test
+    fun testUpdateDestinationWithResponse(){
+        val testItem = testItems.first()
+        val id = "testUpdateDestinationWithResponse"
+        val newName = "A NEW NAME"
+        testItem._id = id
+        persist(testItem)
+
+
+
+        val response = hl.updateDestinationWithResponse(id) {
+            this.name = newName
+        }
+
+        val retrieved = hl.hc.read(id)
+        assertEquals(retrieved.name, newName)
+        assertEquals(response.status, 200)
+    }
+
     companion object {
         val testItems  = listOf(
                 FullDestination("1"),

@@ -3,7 +3,6 @@ package ca.mcgill.science.tepid.server.db
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.MarqueeData
 import ca.mcgill.science.tepid.server.util.mapper
-import ca.mcgill.science.tepid.server.util.text
 import javax.ws.rs.core.Response
 
 
@@ -25,9 +24,17 @@ class HibernateDestinationLayer(val hc : HibernateCrud<FullDestination, String?>
 
         return mapper.writeValueAsString(failures)
     }
+
     override fun updateDestinationWithResponse(id: Id, updater: FullDestination.() -> Unit): Response {
-        return Response.ok().build() //TODO("Implement ${FUNTION_NAME}")
-}
+        try{
+            val destination : FullDestination = hc.read(id)
+            updater(destination)
+            hc.update(destination)
+        }catch (e : Exception){
+            return parsePersistenceErrorToResponse(e)
+        }
+        return Response.ok().build()
+    }
 
     override fun deleteDestination(id: Id): String {
         return String() //TODO("Implement ${FUNTION_NAME}")
