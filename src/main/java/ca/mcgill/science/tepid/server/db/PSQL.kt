@@ -1,9 +1,6 @@
 package ca.mcgill.science.tepid.server.db
 
-import ca.mcgill.science.tepid.models.data.ChangeDelta
-import ca.mcgill.science.tepid.models.data.FullDestination
-import ca.mcgill.science.tepid.models.data.MarqueeData
-import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.mapper
 import java.io.InputStream
@@ -110,6 +107,33 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
     override fun getEarliestJobTime(shortUser: ShortUser): Long {
         throw NotImplementedError()
     }
+}
+
+class HibernateQueueLayer(val hc : HibernateCrud<PrintQueue, String?>) : DbQueueLayer {
+    override fun getQueues(): List<PrintQueue> {
+        return hc.readAll()
+    }
+
+    override fun putQueues(queues: Collection<PrintQueue>): Response {
+        try{
+            queues.map { hc.updateOrCreateIfNotExist(it) }
+        }catch (e : Exception){
+            return parsePersistenceErrorToResponse(e)
+        }
+        return Response.ok().build()
+    }
+
+    override fun deleteQueue(id: Id): String {
+        val failures = mutableListOf<String>()
+        try {
+            hc.deleteById(id)
+        } catch (e: Exception) {
+            failures.add(e.message ?: "Generic Failure for ID: $id")
+        }
+
+        return mapper.writeValueAsString(if(failures.isEmpty()) "Success" else failures)
+    }
+
 }
 
 class HibernateMarqueeLayer(val hc : HibernateCrud<MarqueeData, String?>) : DbMarqueeLayer {
