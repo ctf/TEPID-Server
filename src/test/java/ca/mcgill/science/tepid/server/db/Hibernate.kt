@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.db
 import ca.mcgill.science.tepid.models.bindings.TepidDb
 import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
 import ca.mcgill.science.tepid.models.bindings.TepidId
+import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.MarqueeData
 import junit.framework.Assert.assertNull
 import org.junit.jupiter.api.AfterAll
@@ -139,6 +140,33 @@ class HibernateCrudTest() : DbTest(){
         assertNull(re)
     }
 
+    @Test
+    fun testPsqlCrudUpdateOrCreateIfNotExistWithId(){
+        updateOrCreateIfNotExistTest("ID2")
+    }
+
+    @Test
+    fun testPsqlCrudUpdateOrCreateIfNotExistWithoutId(){
+        updateOrCreateIfNotExistTest()
+    }
+
+    private fun updateOrCreateIfNotExistTest(id : String? = null) {
+        val te = TestEntity("TEST")
+        if (id != null) te._id = id
+
+        pc.updateOrCreateIfNotExist(te)
+        val reCreated = em.find(TestEntity::class.java, te._id)
+        assertEquals(te, reCreated)
+
+        te.content = "NEW"
+
+        pc.updateOrCreateIfNotExist(te)
+
+        val reUpdate = em.find(TestEntity::class.java, te._id)
+        assertEquals(te, reUpdate)
+    }
+
+
     companion object {
         lateinit var pc: HibernateCrud
 
@@ -160,8 +188,6 @@ class HibernateMarqueeLayerTest : DbTest(){
         val retrieved = hml.getMarquees()
 
         assertEquals(testItems, retrieved)
-
-
     }
 
     companion object {
@@ -175,6 +201,33 @@ class HibernateMarqueeLayerTest : DbTest(){
             hml = HibernateMarqueeLayer(hc)
         }
     }
+}
 
+class HibernateDestinationLayerTest : DbTest(){
 
+    @Test
+    fun testGetDestination(){
+        val testItems  = listOf(
+                FullDestination("1"),
+                FullDestination("2"),
+                FullDestination("3")
+        )
+        persistMultiple(testItems)
+
+        val retrieved = hl.getDestinations()
+
+        assertEquals(testItems,retrieved)
+    }
+
+    companion object {
+        lateinit var hc: HibernateCrud
+        lateinit var hl: HibernateDestinationLayer
+
+        @JvmStatic
+        @BeforeAll
+        fun initHelper(){
+            hc = HibernateCrud(em)
+            hl = HibernateDestinationLayer(hc)
+        }
+    }
 }

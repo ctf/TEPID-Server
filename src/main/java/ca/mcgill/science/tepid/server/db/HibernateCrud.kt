@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.db
 
+import ca.mcgill.science.tepid.models.bindings.TepidId
 import ca.mcgill.science.tepid.utils.Loggable
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.persistence.EntityManager
@@ -17,6 +18,8 @@ interface IHibernateCrud : Loggable {
     fun <T> delete(obj:T)
 
     fun <T, P> deleteById(classParameter:Class<T>, id:P)
+
+    fun <T: TepidId> updateOrCreateIfNotExist(obj:T)
 
 }
 
@@ -75,7 +78,7 @@ class HibernateCrud(val em: EntityManager): IHibernateCrud, Loggable by WithLogg
     override fun <T> delete(obj: T) {
 
         dbOpTransaction({ e ->
-            "Error deleting object {\"object\":\"$obj\", \"error\":\"$e\""
+            "Error deleting object {\"object\":\"$obj\", \"error\":\"$e\"}"
         },
                 {
             it.remove(obj)
@@ -85,5 +88,12 @@ class HibernateCrud(val em: EntityManager): IHibernateCrud, Loggable by WithLogg
     override fun <T, P> deleteById(classParameter: Class<T>, id: P) {
         val u = em.find(classParameter, id)
         delete(u)
+    }
+
+    override fun <T: TepidId> updateOrCreateIfNotExist(obj: T) {
+        obj._id ?: return (create(obj))
+        dbOpTransaction({e->"Error putting modifications {\"object\":\"$obj\", \"error\":\"$e\"}"}){
+            em -> em.merge(obj)
+        }
     }
 }
