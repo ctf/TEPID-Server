@@ -99,16 +99,16 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
     }
 
     override fun getJobChanges(id: Id, uriInfo: UriInfo): ChangeDelta {
-        return ChangeDelta() //TODO("Implement getJobChanges")
+        throw NotImplementedError("Changes is a CouchDb specific feature")
     }
 
     override fun getJobFile(id: Id, file: String): InputStream? {
         throw NotImplementedError()
-//        return InputStream() //TODO("Implement getJobFile")
     }
 
+    @Deprecated("Only for oldMaxQuota, which is never used")
     override fun getEarliestJobTime(shortUser: ShortUser): Long {
-        return -1 //TODO("Implement getEarliestJobTime")
+        throw NotImplementedError()
     }
 }
 
