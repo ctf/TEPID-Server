@@ -207,11 +207,7 @@ class HibernateDestinationLayerTest : DbTest(){
 
     @Test
     fun testGetDestination(){
-        val testItems  = listOf(
-                FullDestination("1"),
-                FullDestination("2"),
-                FullDestination("3")
-        )
+
         persistMultiple(testItems)
 
         val retrieved = hl.getDestinations()
@@ -219,7 +215,27 @@ class HibernateDestinationLayerTest : DbTest(){
         assertEquals(testItems,retrieved)
     }
 
+    @Test
+    fun testPutDestination(){
+        val testList = testItems.toList().
+                map { it._id = UUID.randomUUID().toString(); it}
+        val testMap = testList.
+                map { it._id!! to it}.
+                toMap()
+
+        val result = hl.putDestinations(testMap)
+
+        val retrieved = hl.getDestinations()
+        assertEquals(testList, retrieved)
+    }
+
     companion object {
+        val testItems  = listOf(
+                FullDestination("1"),
+                FullDestination("2"),
+                FullDestination("3")
+        )
+
         lateinit var hc: HibernateCrud
         lateinit var hl: HibernateDestinationLayer
 
