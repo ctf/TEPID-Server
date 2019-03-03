@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.bindings.TepidDb
 import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
+import ca.mcgill.science.tepid.models.bindings.TepidId
 import ca.mcgill.science.tepid.models.data.MarqueeData
 import junit.framework.Assert.assertNull
 import org.junit.jupiter.api.AfterAll
@@ -23,6 +24,10 @@ open class DbTest {
         em.transaction.begin()
         em.persist(obj)
         em.transaction.commit()
+    }
+
+    fun<T:TepidId> persistMultiple (list:List<T>){
+        list.map { e -> e._id=UUID.randomUUID().toString(); persist(e)}
     }
 
     /*@BeforeEach
@@ -140,7 +145,7 @@ class HibernateMarqueeLayerTest : DbTest(){
     @Test
     fun testMultipleItems(){
         val testItems = listOf(MarqueeData("T1"),MarqueeData("T2"),MarqueeData("T3"))
-        testItems.map { e -> e._id=UUID.randomUUID().toString(); persist(e)}
+        persistMultiple(testItems)
 
         val retrieved = hml.getMarquees()
 
