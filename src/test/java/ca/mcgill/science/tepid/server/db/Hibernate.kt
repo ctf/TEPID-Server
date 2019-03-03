@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
 import ca.mcgill.science.tepid.models.bindings.TepidId
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.MarqueeData
+import ca.mcgill.science.tepid.models.data.PrintJob
 import junit.framework.Assert.assertNull
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -279,6 +280,27 @@ class HibernateDestinationLayerTest : DbTest(){
         fun initHelper(){
             hc = HibernateCrud(em, FullDestination::class.java)
             hl = HibernateDestinationLayer(hc)
+        }
+    }
+}
+
+class HibernateJobLayerTest : DbTest() {
+
+    companion object {
+        val testItems  = listOf(
+                PrintJob("1"),
+                PrintJob("2"),
+                PrintJob("3")
+        )
+
+        lateinit var hc: HibernateCrud<PrintJob, String?>
+        lateinit var hl: HibernateJobLayer
+
+        @JvmStatic
+        @BeforeAll
+        fun initHelper(){
+            hc = HibernateCrud(em, PrintJob::class.java)
+            hl = HibernateJobLayer(hc)
         }
     }
 }
