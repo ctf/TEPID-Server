@@ -90,7 +90,12 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
     }
 
     override fun postJob(job: PrintJob): Response {
-        return Response.ok().build() //TODO("Implement postJob")
+        try{
+            hc.create(job)
+        }catch (e : Exception){
+            return parsePersistenceErrorToResponse(e)
+        }
+        return Response.ok().build()
     }
 
     override fun getJobChanges(id: Id, uriInfo: UriInfo): ChangeDelta {
