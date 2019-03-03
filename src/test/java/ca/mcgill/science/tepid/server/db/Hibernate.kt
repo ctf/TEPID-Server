@@ -363,18 +363,50 @@ class HibernateQueueLayerTest() : DbTest() {
 
     @Test
     fun testGetQueues(){
+        persistMultiple(testItems)
+
+        val ri = hl.getQueues()
+
+        assertEquals(testItems, ri)
     }
 
     @Test
     fun testPutQueuesCreate(){
+        val ti = testItems.toList()
+        ti.map { it._id = newId()}
+
+        val response = hl.putQueues(ti)
+
+        val ri = hc.readAll()
+        assertEquals(ti.sortedBy { it.name }, ri.sortedBy { it.name })
     }
 
     @Test
     fun testPutQueuesUpdate(){
+        val ti = testItems.toList()
+        ti.map { it._id = newId()}
+        persistMultiple(ti)
+
+        ti.map { it.loadBalancer = "PerfectlyBalanced" }
+
+        val response = hl.putQueues(ti)
+
+        val ri = hc.readAll()
+        assertEquals(ti.sortedBy { it.name }, ri.sortedBy { it.name })
+        assertTrue(ri.fold(true) {res,e -> (e.loadBalancer == "PerfectlyBalanced") && res})
     }
 
     @Test
     fun testDeleteQueue(){
+        val ti = testItems.first().copy()
+        val id = newId()
+        ti._id = id
+        persist(ti)
+
+        val response = hl.deleteQueue(id)
+
+        val retrieved = hl.hc.read(id)
+        assertNull(retrieved)
     }
 
     companion object {
