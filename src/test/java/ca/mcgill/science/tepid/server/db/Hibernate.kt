@@ -92,7 +92,7 @@ class HibernateCrudTest() : DbTest(){
         val testItems = listOf(TestEntity("1"),TestEntity("2"),TestEntity("3"))
         persistMultiple(testItems)
 
-        val retrieved = pc.readAll(TestEntity::class.java)
+        val retrieved = pc.readAll()
 
         assertEquals(testItems, retrieved)
     }
@@ -134,7 +134,7 @@ class HibernateCrudTest() : DbTest(){
         em.persist(te)
         em.transaction.commit()
 
-        pc.deleteById(TestEntity::class.java, te._id)
+        pc.deleteById(te._id)
 
         val re = em.find(TestEntity::class.java, te._id)
         assertNull(re)
@@ -168,12 +168,12 @@ class HibernateCrudTest() : DbTest(){
 
 
     companion object {
-        lateinit var pc: HibernateCrud
+        lateinit var pc: HibernateCrud<TestEntity, String?>
 
         @JvmStatic
         @BeforeAll
         fun initHelper(){
-            pc = HibernateCrud(em)
+            pc = HibernateCrud(em, TestEntity::class.java)
         }
     }
 }
@@ -191,13 +191,13 @@ class HibernateMarqueeLayerTest : DbTest(){
     }
 
     companion object {
-        lateinit var hc: HibernateCrud
+        lateinit var hc: HibernateCrud<MarqueeData, String?>
         lateinit var hml: HibernateMarqueeLayer
 
         @JvmStatic
         @BeforeAll
         fun initHelper(){
-            hc = HibernateCrud(em)
+            hc = HibernateCrud(em, MarqueeData::class.java)
             hml = HibernateMarqueeLayer(hc)
         }
     }
@@ -236,13 +236,13 @@ class HibernateDestinationLayerTest : DbTest(){
                 FullDestination("3")
         )
 
-        lateinit var hc: HibernateCrud
+        lateinit var hc: HibernateCrud<FullDestination, String?>
         lateinit var hl: HibernateDestinationLayer
 
         @JvmStatic
         @BeforeAll
         fun initHelper(){
-            hc = HibernateCrud(em)
+            hc = HibernateCrud(em, FullDestination::class.java)
             hl = HibernateDestinationLayer(hc)
         }
     }

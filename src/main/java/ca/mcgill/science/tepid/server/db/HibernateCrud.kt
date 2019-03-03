@@ -1,29 +1,32 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.bindings.TepidId
+import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.Loggable
 import ca.mcgill.science.tepid.utils.WithLogging
+import javax.persistence.EntityExistsException
 import javax.persistence.EntityManager
+import javax.ws.rs.core.Response
 
-interface IHibernateCrud : Loggable {
+interface IHibernateCrud <T, P> : Loggable {
 
-    fun <T> create(obj:T)
+    fun create(obj:T)
 
-    fun <T, P> read(classParameter: Class<T> ,id:P) : T
+    fun read(id:P) : T
 
-    fun <T> readAll(classParameter: Class<T>) : List<T>
+    fun readAll() : List<T>
 
-    fun <T> update(obj:T)
+    fun update(obj:T)
 
-    fun <T> delete(obj:T)
+    fun delete(obj:T)
 
-    fun <T, P> deleteById(classParameter:Class<T>, id:P)
+    fun deleteById(id:P)
 
-    fun <T: TepidId> updateOrCreateIfNotExist(obj:T)
+    fun updateOrCreateIfNotExist(obj:T)
 
 }
 
-class HibernateCrud(val em: EntityManager): IHibernateCrud, Loggable by WithLogging() {
+class HibernateCrud <T: TepidId, P>(val em: EntityManager, val classParameter:Class<T>) : IHibernateCrud <T, P>, Loggable by WithLogging() {
 
     fun <T>dbOp(errorLogger : (e:Exception)->String, f:(em: EntityManager)->T):T{
         try {
@@ -48,21 +51,17 @@ class HibernateCrud(val em: EntityManager): IHibernateCrud, Loggable by WithLogg
         }
     }
 
-    override fun <T> create(obj:T) {
+    override fun create(obj:T) {
         return dbOpTransaction({ e -> "Error inserting object {\"object\":\"$obj\", \"error\":\"$e\"" }, { em -> em.persist(obj) })
     }
 
-    inline fun <reified T, P> read(id: P): T{
-        return read((T::class.java), id)
-    }
-
-    override fun <T,P> read(classParameter: Class<T>, id:P):T{
+    override fun read(id:P):T{
         return dbOp(
                 { e -> "Error reading object {\"class\":\"$classParameter\",\"id\":\"$id\", \"error\":\"$e\"" },
                 {em -> em.find(classParameter, id)})
     }
 
-    override fun <T> readAll(classParameter: Class<T>): List<T> {
+    override fun readAll(): List<T> {
         return dbOp(
             {e -> "Error reading all objects {\"class\":\"$classParameter\", \"error\":\"$e\""},
             {
@@ -71,11 +70,11 @@ class HibernateCrud(val em: EntityManager): IHibernateCrud, Loggable by WithLogg
         )
     }
 
-    override fun <T> update(obj:T) {
+    override fun update(obj:T) {
         dbOpTransaction<Unit>({ e -> "Error updating object {\"object\":\"$obj\", \"error\":\"$e\"" },{ em -> em.merge(obj) })
     }
 
-    override fun <T> delete(obj: T) {
+    override fun delete(obj: T) {
 
         dbOpTransaction({ e ->
             "Error deleting object {\"object\":\"$obj\", \"error\":\"$e\"}"
@@ -85,12 +84,12 @@ class HibernateCrud(val em: EntityManager): IHibernateCrud, Loggable by WithLogg
         })
     }
 
-    override fun <T, P> deleteById(classParameter: Class<T>, id: P) {
+    override fun deleteById(id: P) {
         val u = em.find(classParameter, id)
         delete(u)
     }
 
-    override fun <T: TepidId> updateOrCreateIfNotExist(obj: T) {
+    override fun updateOrCreateIfNotExist(obj: T) {
         obj._id ?: return (create(obj))
         dbOpTransaction({e->"Error putting modifications {\"object\":\"$obj\", \"error\":\"$e\"}"}){
             em -> em.merge(obj)
