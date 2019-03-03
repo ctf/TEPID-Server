@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.utils.Loggable
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.persistence.EntityExistsException
 import javax.persistence.EntityManager
+import javax.persistence.EntityNotFoundException
 import javax.ws.rs.core.Response
 
 interface IHibernateCrud <T, P> : Loggable {
@@ -94,5 +95,14 @@ class HibernateCrud <T: TepidId, P>(val em: EntityManager, val classParameter:Cl
         dbOpTransaction({e->"Error putting modifications {\"object\":\"$obj\", \"error\":\"$e\"}"}){
             em -> em.merge(obj)
         }
+    }
+}
+
+fun parsePersistenceErrorToResponse(e: Exception): Response{
+    return when (e::class) {
+        EntityNotFoundException::class -> Response.Status.NOT_FOUND.text("Not found")
+        IllegalArgumentException::class -> Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")
+        EntityExistsException::class -> Response.Status.CONFLICT.text("Entity Exists; ${e::class.java.simpleName} occurred")
+        else -> Response.Status.INTERNAL_SERVER_ERROR.text("")
     }
 }
