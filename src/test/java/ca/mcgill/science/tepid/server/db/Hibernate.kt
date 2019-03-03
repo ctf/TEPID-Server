@@ -427,3 +427,41 @@ class HibernateQueueLayerTest() : DbTest() {
         }
     }
 }
+
+class HibernateSessionLayerTest() : DbTest() {
+
+    @Test
+    fun testGetSessionIdsForUser(){
+        persistMultiple(testUsers)
+        persistMultiple(testItems)
+
+        val ri = hl.getSessionIdsForUser(testUsers[0].shortUser!!)
+
+        assertEquals(2, ri.size)
+        assertTrue{ri.contains(testItems[0]._id)}
+        assertTrue{ri.contains(testItems[2]._id)}
+    }
+
+    companion object {
+        val testUsers = listOf(
+                FullUser(shortUser = "USER1"),
+                FullUser(shortUser = "USER2")
+        )
+
+        val testItems  = listOf(
+                FullSession(user = testUsers[0], expiration = 100),
+                FullSession(user = testUsers[1], expiration = 200),
+                FullSession(user = testUsers[0], expiration = 300)
+        )
+
+        lateinit var hc: HibernateCrud<FullSession, String?>
+        lateinit var hl: HibernateSessionLayer
+
+        @JvmStatic
+        @BeforeAll
+        fun initHelper(){
+            hc = HibernateCrud(em, FullSession::class.java)
+            hl = HibernateSessionLayer(hc)
+        }
+    }
+}
