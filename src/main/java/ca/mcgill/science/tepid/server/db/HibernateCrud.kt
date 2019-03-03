@@ -13,7 +13,7 @@ interface IHibernateCrud <T, P> : Loggable {
 
     fun create(obj:T)
 
-    fun read(id:P) : T
+    fun read(id:P) : T?
 
     fun readAll() : List<T>
 
@@ -56,7 +56,7 @@ class HibernateCrud <T: TepidId, P>(val em: EntityManager, val classParameter:Cl
         return dbOpTransaction({ e -> "Error inserting object {\"object\":\"$obj\", \"error\":\"$e\"" }, { em -> em.persist(obj) })
     }
 
-    override fun read(id:P):T{
+    override fun read(id:P):T?{
         return dbOp(
                 { e -> "Error reading object {\"class\":\"$classParameter\",\"id\":\"$id\", \"error\":\"$e\"" },
                 {em -> em.find(classParameter, id)})
@@ -66,7 +66,7 @@ class HibernateCrud <T: TepidId, P>(val em: EntityManager, val classParameter:Cl
         return dbOp(
             {e -> "Error reading all objects {\"class\":\"$classParameter\", \"error\":\"$e\""},
             {
-                em -> em.createQuery("SELECT c FROM ${classParameter.simpleName} c", classParameter).resultList ?: emptyList<T>()
+                em -> em.createQuery("SELECT c FROM ${classParameter.simpleName} c", classParameter).resultList ?: emptyList()
             }
         )
     }

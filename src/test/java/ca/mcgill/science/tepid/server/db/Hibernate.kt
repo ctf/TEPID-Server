@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import java.util.*
 import javax.persistence.*
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 @Entity
 data class TestEntity(
@@ -82,7 +83,7 @@ class HibernateCrudTest() : DbTest(){
         em.persist(te)
         em.transaction.commit()
 
-        val re:TestEntity = pc.read(te._id)
+        val re = pc.read(te._id)
 
         assertEquals(te, re)
     }
@@ -244,6 +245,7 @@ class HibernateDestinationLayerTest : DbTest(){
         }
 
         val retrieved = hl.hc.read(id)
+        assertNotNull(retrieved)
         assertEquals(retrieved.name, newName)
         assertEquals(response.status, 200)
     }
