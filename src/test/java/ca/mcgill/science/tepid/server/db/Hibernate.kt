@@ -325,6 +325,19 @@ class HibernateJobLayerTest : DbTest() {
         assertEquals("NEWNAME", ri.name)
         assertEquals(ti, ri)
     }
+
+    @Test
+    fun testPostJob(){
+        val ti = testItems.first().copy()
+        val id = newId()
+        ti._id = id
+
+        hl.postJob(ti)
+
+        val ri = hl.hc.read(id)
+        assertEquals(ti, ri)
+    }
+
     companion object {
         val testItems  = listOf(
                 PrintJob("1", userIdentification = "USER1", queueName = "Queue1"),
