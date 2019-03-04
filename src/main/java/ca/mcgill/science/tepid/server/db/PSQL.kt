@@ -196,8 +196,10 @@ class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLaye
     }
 
     override fun getTotalPrintedCount(shortUser: ShortUser): Int {
-        throw NotImplementedError()
-//        return Int() //TODO("Implement getTotalPrintedCount")
+        return (hc.em.
+                createQuery("SELECT SUM(c.pages)+2*SUM(c.colorPages) FROM PrintJob c WHERE c.userIdentification = :userId AND c.refunded = FALSE").
+                setParameter("userId", shortUser).
+                singleResult as Long).toInt()
     }
 
 }
