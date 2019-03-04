@@ -3,21 +3,14 @@ package ca.mcgill.science.tepid.server.db
 import ca.mcgill.science.tepid.models.bindings.TepidDb
 import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
 import ca.mcgill.science.tepid.models.bindings.TepidId
-import ca.mcgill.science.tepid.models.data.FullDestination
-import ca.mcgill.science.tepid.models.data.MarqueeData
-import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.models.data.PrintQueue
-import junit.framework.Assert.assertNull
+import ca.mcgill.science.tepid.models.data.*
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.util.*
 import javax.persistence.*
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
-import kotlin.test.fail
+import kotlin.test.*
 
 @Entity
 data class TestEntity(
@@ -462,6 +455,42 @@ class HibernateSessionLayerTest() : DbTest() {
         fun initHelper(){
             hc = HibernateCrud(em, FullSession::class.java)
             hl = HibernateSessionLayer(hc)
+        }
+    }
+}
+
+class HibernateUserLayerTest() : DbTest() {
+
+    @Test
+    fun testIsAdminConfiguredTrue(){
+        persist(testItems[0])
+
+        val ri = hl.isAdminConfigured()
+
+        assertTrue (ri)
+    }
+
+    @Test
+    fun testIsAdminConfiguredFalse(){
+        val ri = hl.isAdminConfigured()
+
+        assertFalse (ri)
+    }
+
+    companion object {
+        val testItems  = listOf(
+                FullUser(shortUser = "USER1"),
+                FullUser(shortUser = "USER2")
+        )
+
+        lateinit var hc: HibernateCrud<FullUser, String?>
+        lateinit var hl: HibernateUserLayer
+
+        @JvmStatic
+        @BeforeAll
+        fun initHelper(){
+            hc = HibernateCrud(em, FullUser::class.java)
+            hl = HibernateUserLayer(hc)
         }
     }
 }
