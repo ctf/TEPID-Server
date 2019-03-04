@@ -25,7 +25,12 @@ open class DbTest {
     }
 
     fun<T:TepidId> persistMultiple (list:List<T>){
-        list.map { e -> e._id=newId(); persist(e)}
+        list.toList().map { e ->
+            em.detach(e)
+//            e._id = e._id ?: newId()
+            e._id = newId()
+            persist(e)
+        }
     }
 
     internal fun newId() = UUID.randomUUID().toString()
@@ -391,8 +396,11 @@ class HibernateQueueLayerTest() : DbTest() {
 
     @Test
     fun testPutQueuesCreate(){
-        val ti = testItems.toList()
-        ti.map { it._id = newId()}
+        val ti = testItems.map {
+            em.detach(it)
+            it._id = newId()
+            it
+        }
 
         val response = hl.putQueues(ti)
 
