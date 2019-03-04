@@ -174,5 +174,30 @@ class HibernateSessionLayer(val hc : HibernateCrud<FullSession, String?>) : DbSe
         }
         return mapper.writeValueAsString(if(failures.isEmpty()) "Success" else failures)
     }
+}
+
+class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLayer{
+    override fun putUser(user: FullUser): Response {
+        try{
+            hc.updateOrCreateIfNotExist(user)
+        }catch (e : Exception){
+            return parsePersistenceErrorToResponse(e)
+        }
+        return Response.ok().build()
+    }
+
+    override fun getUserOrNull(sam: Sam): FullUser? {
+        return hc.read(sam)
+    }
+
+    override fun isAdminConfigured(): Boolean {
+        return (hc.em.
+                createQuery("SELECT COUNT(c) FROM FullUser c").singleResult as Long > 0)
+    }
+
+    override fun getTotalPrintedCount(shortUser: ShortUser): Int {
+        throw NotImplementedError()
+//        return Int() //TODO("Implement getTotalPrintedCount")
+    }
 
 }
