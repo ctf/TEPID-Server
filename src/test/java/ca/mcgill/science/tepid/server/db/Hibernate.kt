@@ -477,7 +477,25 @@ class HibernateUserLayerTest() : DbTest() {
         assertFalse (ri)
     }
 
+    @Test
+    fun testGetTotalPrintedCount(){
+        persistMultiple(testItems)
+        persistMultiple(testPrints)
+
+        val ri = hl.getTotalPrintedCount(testItems[0].shortUser!!)
+
+        assertEquals(140, ri)
+    }
+
     companion object {
+        val testPrints = listOf(
+                PrintJob(name="1", pages = 29, colorPages = 11, userIdentification = "USER1", isRefunded = false),
+                PrintJob(name="1", pages = 31, colorPages = 13, userIdentification = "USER1", isRefunded = true),
+                PrintJob(name="1", pages = 37, colorPages = 17, userIdentification = "USER2", isRefunded = true),
+                PrintJob(name="1", pages = 41, colorPages = 19, userIdentification = "USER2", isRefunded = false),
+                PrintJob(name="1", pages = 43, colorPages = 23, userIdentification = "USER1", isRefunded = false)
+        )
+
         val testItems  = listOf(
                 FullUser(shortUser = "USER1"),
                 FullUser(shortUser = "USER2")
