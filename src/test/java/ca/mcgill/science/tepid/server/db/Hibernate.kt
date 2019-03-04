@@ -4,9 +4,7 @@ import ca.mcgill.science.tepid.models.bindings.TepidDb
 import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
 import ca.mcgill.science.tepid.models.bindings.TepidId
 import ca.mcgill.science.tepid.models.data.*
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Test
 import java.util.*
 import javax.persistence.*
@@ -31,6 +29,12 @@ open class DbTest {
     }
 
     internal fun newId() = UUID.randomUUID().toString()
+
+    internal fun <T> truncate(classParameter: Class<T>){
+        em.transaction.begin()
+        em.createQuery("DELETE FROM ${classParameter.simpleName} e").executeUpdate()
+        em.transaction.commit()
+    }
 
     /*@BeforeEach
     fun initialiseDb(){
@@ -167,6 +171,11 @@ class HibernateCrudTest() : DbTest(){
         assertEquals(te, reUpdate)
     }
 
+    @AfterEach
+    fun truncateUsed(){
+        val u = listOf(TestEntity::class.java)
+        u.forEach { truncate(it) }
+    }
 
     companion object {
         lateinit var pc: HibernateCrud<TestEntity, String?>
@@ -191,6 +200,12 @@ class HibernateMarqueeLayerTest : DbTest(){
         assertEquals(testItems, retrieved)
     }
 
+    @AfterEach
+    fun truncateUsed(){
+        val u = listOf(MarqueeData::class.java)
+        u.forEach { truncate(it) }
+    }
+
     companion object {
         lateinit var hc: HibernateCrud<MarqueeData, String?>
         lateinit var hml: HibernateMarqueeLayer
@@ -208,7 +223,6 @@ class HibernateDestinationLayerTest : DbTest(){
 
     @Test
     fun testGetDestination(){
-
         persistMultiple(testItems)
 
         val retrieved = hl.getDestinations()
@@ -232,7 +246,7 @@ class HibernateDestinationLayerTest : DbTest(){
 
     @Test
     fun testUpdateDestinationWithResponse(){
-        val testItem = testItems.first()
+        val testItem = testItems.first().copy()
         val id = "testUpdateDestinationWithResponse"
         val newName = "A NEW NAME"
         testItem._id = id
@@ -252,7 +266,7 @@ class HibernateDestinationLayerTest : DbTest(){
 
     @Test
     fun testDeleteDestination(){
-        val testItem = testItems.first()
+        val testItem = testItems.first().copy()
         val id = "testDeleteDestination"
         testItem._id = id
         persist(testItem)
@@ -262,6 +276,12 @@ class HibernateDestinationLayerTest : DbTest(){
         val retrieved = hl.hc.read(id)
 
         assertNull(retrieved)
+    }
+
+    @AfterEach
+    fun truncateUsed(){
+        val u = listOf(FullDestination::class.java)
+        u.forEach { truncate(it) }
     }
 
     companion object {
@@ -308,7 +328,7 @@ class HibernateJobLayerTest : DbTest() {
 
     @Test
     fun testUpdateJob(){
-        val ti = testItems.first()
+        val ti = testItems.first().copy()
         val id = newId()
         ti._id = id
         persist(ti)
@@ -330,6 +350,12 @@ class HibernateJobLayerTest : DbTest() {
 
         val ri = hl.hc.read(id)
         assertEquals(ti, ri)
+    }
+
+    @AfterEach
+    fun truncateUsed(){
+        val u = listOf(PrintJob::class.java)
+        u.forEach { truncate(it) }
     }
 
     companion object {
@@ -402,6 +428,12 @@ class HibernateQueueLayerTest() : DbTest() {
         assertNull(retrieved)
     }
 
+    @AfterEach
+    fun truncateUsed(){
+        val u = listOf(PrintQueue::class.java)
+        u.forEach { truncate(it) }
+    }
+
     companion object {
         val testItems  = listOf(
                 PrintQueue(name = "1"),
@@ -433,6 +465,12 @@ class HibernateSessionLayerTest() : DbTest() {
         assertEquals(2, ri.size)
         assertTrue{ri.contains(testItems[0]._id)}
         assertTrue{ri.contains(testItems[2]._id)}
+    }
+
+    @AfterEach
+    fun truncateUsed(){
+        val u = listOf(FullSession::class.java, FullUser::class.java)
+        u.forEach { truncate(it) }
     }
 
     companion object {
@@ -485,6 +523,12 @@ class HibernateUserLayerTest() : DbTest() {
         val ri = hl.getTotalPrintedCount(testItems[0].shortUser!!)
 
         assertEquals(140, ri)
+    }
+
+    @AfterEach
+    fun truncateUsed(){
+        val u = listOf(PrintJob::class.java, FullUser::class.java)
+        u.forEach { truncate(it) }
     }
 
     companion object {
