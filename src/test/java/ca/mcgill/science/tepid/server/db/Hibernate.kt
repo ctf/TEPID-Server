@@ -39,6 +39,8 @@ open class DbTest {
 
     internal fun <T> truncate(classParameter: Class<T>){
         em.transaction.begin()
+        em.flush()
+        em.clear()
         em.createQuery("DELETE FROM ${classParameter.simpleName} e").executeUpdate()
         em.transaction.commit()
     }
