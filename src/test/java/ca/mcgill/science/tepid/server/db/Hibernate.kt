@@ -425,7 +425,8 @@ class HibernateQueueLayerTest() : DbTest() {
 
     @Test
     fun testDeleteQueue(){
-        val ti = testItems.first().copy()
+        val ti = testItems.first()
+        em.detach(ti)
         val id = newId()
         ti._id = id
         persist(ti)
