@@ -91,9 +91,14 @@ class HibernateCrud <T: TepidId, P>(val em: EntityManager, val classParameter:Cl
     }
 
     override fun updateOrCreateIfNotExist(obj: T) {
-        obj._id ?: return (create(obj))
-        dbOpTransaction({e->"Error putting modifications {\"object\":\"$obj\", \"error\":\"$e\"}"}){
-            em -> em.merge(obj)
+        obj._id ?: return (create(obj))     // has no ID, needs to be created
+        try {
+            em.getReference(classParameter, obj._id)
+            dbOpTransaction({e->"Error putting modifications {\"object\":\"$obj\", \"error\":\"$e\"}"}){
+                em -> em.merge(obj)
+            }
+        } catch (e : EntityNotFoundException) {
+            return (create(obj)) // has ID, ID not in DB
         }
     }
 }
