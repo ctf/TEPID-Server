@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.mapper
 import java.io.InputStream
+import java.util.*
 import javax.persistence.EntityNotFoundException
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
@@ -58,11 +59,13 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
 
     override fun getJobsByQueue(queue: String, maxAge: Long, sortOrder: Order, limit: Int): List<PrintJob> {
         val sort = if(sortOrder == Order.ASCENDING) "ASC" else "DESC"
+        val startTime = if(maxAge > 0) Date().time - maxAge else 0
         return hc.em.
-                createQuery("SELECT c FROM PrintJob c WHERE c.queueName = :queueName ORDER BY c.started $sort", PrintJob::class.java).
+                createQuery("SELECT c FROM PrintJob c WHERE c.queueName = :queueName AND c.started > :startTime ORDER BY c.started $sort", PrintJob::class.java).
                 setParameter("queueName", queue).
+                setParameter("startTime", startTime).
+                setMaxResults(if(limit==-1) Int.MAX_VALUE else limit).
                 resultList
-        // TODO("limit")
     }
 
     override fun getJobsByUser(sam: Sam, sortOrder: Order): List<PrintJob> {
