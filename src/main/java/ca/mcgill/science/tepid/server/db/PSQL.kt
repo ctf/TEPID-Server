@@ -5,9 +5,19 @@ import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.mapper
 import java.io.InputStream
 import java.util.*
+import javax.persistence.EntityManager
 import javax.persistence.EntityNotFoundException
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
+
+
+class HibernateDbLayer(val em: EntityManager) : DbLayer,
+        DbDestinationLayer by HibernateDestinationLayer(HibernateCrud(em, FullDestination::class.java)),
+        DbJobLayer by HibernateJobLayer(HibernateCrud(em, PrintJob::class.java)),
+        DbQueueLayer by HibernateQueueLayer(HibernateCrud(em, PrintQueue::class.java)),
+        DbMarqueeLayer by HibernateMarqueeLayer(HibernateCrud(em, MarqueeData::class.java)),
+        DbSessionLayer by HibernateSessionLayer(HibernateCrud(em, FullSession::class.java)),
+        DbUserLayer by HibernateUserLayer(HibernateCrud(em, FullUser::class.java))
 
 
 class HibernateDestinationLayer(val hc : HibernateCrud<FullDestination, String?>) : DbDestinationLayer{
