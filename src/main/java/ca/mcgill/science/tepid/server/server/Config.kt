@@ -1,6 +1,9 @@
 package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.About
+import ca.mcgill.science.tepid.server.db.CouchDbLayer
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.HibernateDbLayer
 import ca.mcgill.science.tepid.server.printing.GS
 import ca.mcgill.science.tepid.server.printing.GSException
 import ca.mcgill.science.tepid.server.util.Utils
@@ -9,6 +12,8 @@ import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.LoggerContext
 import java.util.*
+import javax.persistence.EntityManagerFactory
+import javax.persistence.Persistence
 
 /**
  * Created by Allan Wang on 27/01/2017.
@@ -33,11 +38,12 @@ object Config : WithLogging() {
     val TEPID_URL_TESTING: String
 
     /*
-     * Couchdb data
+     * DB data
      */
     val DB_URL: String
     val DB_USERNAME: String
     val DB_PASSWORD: String
+    var emf : EntityManagerFactory? = null
     /*
      * Barcode data
      */
@@ -179,6 +185,21 @@ object Config : WithLogging() {
                 creationTimestamp = CREATION_TIMESTAMP)
 
         log.trace("Completed setting configs")
+
+        log.trace("Initialising subsystems")
+
+        when (PropsDB.DB_TYPE){
+            "CouchDB" -> DB = CouchDbLayer()
+            "Hibernate" -> {
+                val emf = Persistence.createEntityManagerFactory("tepid-pu")
+                DB = HibernateDbLayer(emf.createEntityManager())
+            }
+            else -> log.fatal("DB type not set")
+        }
+        log.trace("Db initialised to ${PropsDB.DB_TYPE}")
+
+        log.trace("Completed initialising subsystems")
+
     }
 
     fun setLoggingLevel(level: Level) {
