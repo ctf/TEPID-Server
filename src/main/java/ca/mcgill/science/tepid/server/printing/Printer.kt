@@ -138,7 +138,7 @@ object Printer : WithLogging() {
                     val destination = j2.destination
                             ?: throw PrintException(PrintError.INVALID_DESTINATION)
 
-                    val dest = CouchDb.path(destination).getJson<FullDestination>()
+                    val dest = DB.getDestination(destination)
                     if (sendToSMB(tmp, dest, debug)) {
                         DB.updateJob(id){
                             printed = System.currentTimeMillis()
