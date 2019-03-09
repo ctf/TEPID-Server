@@ -9,6 +9,7 @@ import ca.mcgill.science.tepid.server.db.*;
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer;
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer.LoadBalancerResults;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import kotlin.Unit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -57,18 +58,21 @@ public class QueueManager {
         }
     }
 
-    public PrintJob assignDestination(PrintJob j) {
-        LoadBalancerResults results = this.loadBalancer.processJob(j);
-        if (results == null) {
-            j.fail(PrintError.INVALID_DESTINATION);
-            log.info("LoadBalancer did not assign a destination {\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\'}", j.getId(), this.queueConfig.getName());
-        } else {
-            j.setDestination(results.destination);
-            j.setEta(results.eta);
-            log.info(j.getId() + " setting destination (" + results.destination + ")");
-        }
-        couchdb.path(j.getId()).request(MediaType.TEXT_PLAIN).put(Entity.entity(j, MediaType.APPLICATION_JSON));
-        return couchdb.path(j.getId()).request(MediaType.APPLICATION_JSON).get(PrintJob.class);
+    public PrintJob assignDestination(PrintJob job) {
+        db.updateJob(job.getId(), (j) -> {
+            LoadBalancerResults results = this.loadBalancer.processJob(j);
+            if (results == null) {
+                j.fail(PrintError.INVALID_DESTINATION);
+                log.info("LoadBalancer did not assign a destination {\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\'}", j.getId(), this.queueConfig.getName());
+            } else {
+                j.setDestination(results.destination);
+                j.setEta(results.eta);
+                log.info(j.getId() + " setting destination (" + results.destination + ")");
+            }
+            return Unit.INSTANCE;
+        });
+
+        return db.getJob(job.getId());
     }
 
     //TODO check use of args
