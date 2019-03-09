@@ -105,6 +105,8 @@ interface DbJobLayer {
 
 interface DbQueueLayer {
 
+    fun getQueue(id:Id): PrintQueue
+
     fun getQueues(): List<PrintQueue>
 
     fun putQueues(queues: Collection<PrintQueue>): Response
