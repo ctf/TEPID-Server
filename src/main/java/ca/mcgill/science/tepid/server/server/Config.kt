@@ -1,6 +1,8 @@
 package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.About
+import ca.mcgill.science.tepid.server.db.CouchDbLayer
+import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.printing.GS
 import ca.mcgill.science.tepid.server.printing.GSException
 import ca.mcgill.science.tepid.server.util.Utils
@@ -188,6 +190,8 @@ object Config : WithLogging() {
                 tag = TAG,
                 creationTime = CREATION_TIME,
                 creationTimestamp = CREATION_TIMESTAMP)
+
+        DB = CouchDbLayer()
 
         log.trace("Completed setting configs")
     }

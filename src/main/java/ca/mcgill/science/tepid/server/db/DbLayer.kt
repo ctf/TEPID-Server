@@ -6,7 +6,7 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
 
 // todo bind layer
-var DB: DbLayer = CouchDbLayer()
+lateinit var DB: DbLayer
 
 // TODO deleteDestination should return Response instead of String
 // TODO, all outputs returning response should likely return models that can then be wrapped inside a response
