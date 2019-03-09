@@ -7,7 +7,9 @@ import ca.mcgill.science.tepid.models.data.ChangeDelta
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.auth.SessionManager
-import ca.mcgill.science.tepid.server.db.*
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.Order
+import ca.mcgill.science.tepid.server.db.isSuccessful
 import ca.mcgill.science.tepid.server.printing.Printer
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -58,7 +60,7 @@ class Jobs {
         j.userIdentification = session.user.shortUser
         j.deleteDataOn = j.getJobExpiration()
         log.debug("Starting new print job ${j.name} for ${session.user.longUser}...")
-        return CouchDb.target.postJson(j)
+        return DB.postJob(j)
     }
 
     /**
