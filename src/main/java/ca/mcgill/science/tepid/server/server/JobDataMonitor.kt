@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.server
 
-import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.server.db.CouchDb
+import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.putJson
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.io.File
@@ -12,7 +12,7 @@ class JobDataMonitor : Runnable {
         log.trace("Deleting expired job data.")
         val now = System.currentTimeMillis()
         try {
-            CouchDb.getViewRows<PrintJob>("storedJobs").forEach { j ->
+            DB.getStoredJobs().forEach { j ->
                 if (j.deleteDataOn < System.currentTimeMillis()) {
                     val filePath = j.file
                     if (filePath != null) {

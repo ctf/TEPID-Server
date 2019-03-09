@@ -63,6 +63,10 @@ class CouchDbLayer : DbLayer {
                 query("key" to "\"$sam\"")
             }.sortAs(sortOrder)
 
+    override fun getStoredJobs(): List<PrintJob> {
+        return CouchDb.getViewRows<PrintJob>("storedJobs")
+    }
+
     override fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob? =
             CouchDb.update(id, updater)
 

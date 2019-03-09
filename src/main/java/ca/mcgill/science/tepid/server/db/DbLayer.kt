@@ -86,6 +86,8 @@ interface DbJobLayer {
 
     fun getJobsByUser(sam: Sam, sortOrder: Order = Order.DESCENDING): List<PrintJob>
 
+    fun getStoredJobs(): List<PrintJob>
+
     /**
      * Updates the job, and returns the new job if successful
      */
