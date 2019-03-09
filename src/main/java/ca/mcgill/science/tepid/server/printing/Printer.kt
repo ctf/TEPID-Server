@@ -87,7 +87,7 @@ object Printer : WithLogging() {
                 log.info("Updating job $id with path $file")
                 received = System.currentTimeMillis()
             }
-            
+
             submit(id) {
 
                 /*

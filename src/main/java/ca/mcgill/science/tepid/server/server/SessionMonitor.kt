@@ -2,7 +2,7 @@ package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.server.db.CouchDb
-import ca.mcgill.science.tepid.server.db.postJson
+import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 
@@ -11,6 +11,7 @@ class SessionMonitor : Runnable {
     override fun run() {
         log.info("Removing expired sessions from database.")
         try {
+            var numberRemoved = 0
             val sessions = CouchDb.getViewRows<FullSession>("sessions")
             val nf = JsonNodeFactory.instance
             val root = nf.objectNode()
@@ -18,15 +19,11 @@ class SessionMonitor : Runnable {
             sessions.filter {
                 !it.isValid()
             }.forEach {
-                val node = nf.objectNode()
-                        .put("_id", it._id)
-                        .put("_rev", it._rev)
-                        .put("_deleted", true)
-                docs.add(node)
+                val id = it._id ?: return@forEach
+                DB.deleteSession(id)
+                numberRemoved += 1
             }
-            log.info("Removal successful") // todo delete later?
-            if (docs.size() > 0)
-                CouchDb.path("_bulk_docs").postJson(root)
+            log.info("Removed $numberRemoved sessions successfully")
         } catch (e: Exception) {
             log.error("General failure", e)
         }
