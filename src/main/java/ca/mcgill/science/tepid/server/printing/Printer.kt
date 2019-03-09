@@ -5,15 +5,17 @@ import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.CouchDb
+import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.getJson
 import ca.mcgill.science.tepid.server.db.putJson
-import ca.mcgill.science.tepid.server.db.query
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.copyFrom
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.tukaani.xz.XZInputStream
-import java.io.*
+import java.io.File
+import java.io.FileInputStream
+import java.io.InputStream
 import java.util.concurrent.*
 
 /**
@@ -206,10 +208,7 @@ object Printer : WithLogging() {
     fun clearOldJobs() {
         synchronized(lock) {
             try {
-                val jobs = CouchDb.getViewRows<PrintJob>("oldJobs") {
-                    query("endkey" to System.currentTimeMillis() - 1800000)
-                }
-
+                val jobs = DB.getOldJobs()
                 jobs.forEach { j ->
                     j.fail("Timed out")
                     val id = j._id ?: return@forEach

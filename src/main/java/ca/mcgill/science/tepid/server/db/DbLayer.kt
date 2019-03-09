@@ -101,6 +101,8 @@ interface DbJobLayer {
      * Defaults to -1 if not found
      */
     fun getEarliestJobTime(shortUser: ShortUser): Long
+
+    fun getOldJobs(): List<PrintJob>
 }
 
 interface DbQueueLayer {

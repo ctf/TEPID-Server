@@ -86,6 +86,12 @@ class CouchDbLayer : DbLayer {
                     .query("key" to "\"$shortUser\"").getObject().get("rows")
                     ?.get(0)?.get("value")?.get("earliestJob")?.asLong(-1L) ?: -1L
 
+    override fun getOldJobs(): List<PrintJob> {
+        return CouchDb.getViewRows<PrintJob>("oldJobs") {
+            query("endkey" to System.currentTimeMillis() - 1800000)
+        }
+    }
+
 
     override fun getQueue(id: Id): PrintQueue {
         return CouchDb.path(id).request(MediaType.APPLICATION_JSON).get(PrintQueue::class.java)
