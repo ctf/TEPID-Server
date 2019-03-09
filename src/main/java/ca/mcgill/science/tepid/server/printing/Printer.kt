@@ -210,10 +210,11 @@ object Printer : WithLogging() {
             try {
                 val jobs = DB.getOldJobs()
                 jobs.forEach { j ->
-                    j.fail("Timed out")
-                    val id = j._id ?: return@forEach
-                    CouchDb.path(id).putJson(j)
-                    cancel(id)
+                    DB.updateJob(j.getId()){
+                        fail("Timed out")
+                        val id = _id ?: return@updateJob // TODO: if ID is null, how did we get here?
+                        cancel(id)
+                    }
                 }
             } catch (e: Exception) {
                 log.error("General failure", e)
