@@ -37,7 +37,7 @@ public class QueueManager {
     }
 
     public static PrintJob assignDestination(String id) {
-        PrintJob j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob.class);
+        PrintJob j = db.getJob(id);
         return getInstance(j.getQueueName()).assignDestination(j);
     }
 
