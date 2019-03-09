@@ -4,6 +4,8 @@ import ca.mcgill.science.tepid.models.data.Destination;
 import ca.mcgill.science.tepid.models.data.FullDestination;
 import ca.mcgill.science.tepid.models.data.PrintJob;
 import ca.mcgill.science.tepid.server.db.CouchDb;
+import ca.mcgill.science.tepid.server.db.DbLayer;
+import ca.mcgill.science.tepid.server.db.DbLayerKt;
 import ca.mcgill.science.tepid.server.printing.QueueManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,7 +19,7 @@ public class FiftyFifty extends LoadBalancer {
 
     private final Logger log;
 
-    private final WebTarget couchdb = CouchDb.INSTANCE.getTarget();
+    public static final DbLayer db = DbLayerKt.getDB();
     private final List<FullDestination> destinations;
     private int currentDest;
     private boolean allDown = true;
