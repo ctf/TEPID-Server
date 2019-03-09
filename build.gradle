@@ -114,8 +114,9 @@ dependencies {
 
     // Hibernate
     compile "org.hibernate:hibernate-core:5.4.1.Final"
+    compile "org.hibernate:hibernate-entitymanager:5.4.1.Final"
     compile "org.hibernate:hibernate-testing:5.4.1.Final"
-    testCompile "com.h2database:h2:1.3.148"
+    compile "com.h2database:h2:1.3.148"
 
 }
 
