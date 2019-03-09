@@ -13,12 +13,14 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import java.io.InputStream
 import java.util.*
 import javax.ws.rs.client.WebTarget
+import javax.ws.rs.container.AsyncResponse
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
 
 class CouchDbLayer : DbLayer {
 
+    private val queueChangeTarget = CouchDb.path("_changes").query("filter" to "main/byQueue")
 
 
     override fun getDestination(id: Id): FullDestination {
@@ -99,6 +101,37 @@ class CouchDbLayer : DbLayer {
 
     override fun getQueue(id: Id): PrintQueue {
         return CouchDb.path(id).request(MediaType.APPLICATION_JSON).get(PrintQueue::class.java)
+    }
+
+    override fun getQueueChanges(queue: String, uriInfo: UriInfo, ar: AsyncResponse) {
+
+        // TODO remove queueChangeTarget instances?
+        var target = queueChangeTarget.query("queue" to queue)
+        val qp = uriInfo.queryParameters
+        if (qp.containsKey("feed")) target = target.queryParam("feed", qp.getFirst("feed"))
+        if (qp.containsKey("since")) target = target.queryParam("since", qp.getFirst("since"))
+        val changes = target.request().get(String::class.java)
+        if (!ar.isDone && !ar.isCancelled) {
+            CouchDb.log.info("Emitting changes of length ${changes.length}")
+            try {
+                ar.resume(changes)
+            } catch (e: Exception) {
+                CouchDb.log.error("Failed to emit queue _changes ${e.message}")
+            }
+        }
+    }
+
+    override fun getQueueChanges(uriInfo: UriInfo): String {
+        // TODO remove queueChangeTarget instances?
+        var target = queueChangeTarget
+        val qp = uriInfo.queryParameters
+        if (qp.containsKey("feed")) target = target.query("feed" to qp.getFirst("feed"))
+        var since = qp.getFirst("since").toIntOrNull() ?: -1
+        if (since < 0) {
+            since = queueChangeTarget.query("since" to 0).getObject().get("last_seq").asInt()
+        }
+        target = target.queryParam("since", since)
+        return target.getString()
     }
 
     override fun getQueues(): List<PrintQueue> =

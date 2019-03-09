@@ -3,7 +3,8 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
-import ca.mcgill.science.tepid.server.db.*
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.Order
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer
 import ca.mcgill.science.tepid.server.util.failBadRequest
 import ca.mcgill.science.tepid.server.util.failNotFound
@@ -20,9 +21,6 @@ import javax.ws.rs.core.UriInfo
 
 @Path("/queues")
 class Queues {
-
-    private val changeTarget
-        get() = CouchDb.path("_changes").query("filter" to "main/byQueue")
 
     @PUT
     @RolesAllowed(ELDER)
@@ -83,36 +81,14 @@ class Queues {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{queue}/_changes")
     fun getChanges(@PathParam("queue") queue: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse) {
-        // TODO remove changeTarget instances?
-        var target = changeTarget.query("queue" to queue)
-        val qp = uriInfo.queryParameters
-        if (qp.containsKey("feed")) target = target.queryParam("feed", qp.getFirst("feed"))
-        if (qp.containsKey("since")) target = target.queryParam("since", qp.getFirst("since"))
-        val changes = target.request().get(String::class.java)
-        if (!ar.isDone && !ar.isCancelled) {
-            log.info("Emitting changes of length ${changes.length}")
-            try {
-                ar.resume(changes)
-            } catch (e: Exception) {
-                log.error("Failed to emit queue _changes ${e.message}")
-            }
-        }
+        DB.getQueueChanges(queue, uriInfo, ar)
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/_changes")
     fun getChanges(@Context uriInfo: UriInfo): String {
-        // TODO remove
-        var target = changeTarget
-        val qp = uriInfo.queryParameters
-        if (qp.containsKey("feed")) target = target.query("feed" to qp.getFirst("feed"))
-        var since = qp.getFirst("since").toIntOrNull() ?: -1
-        if (since < 0) {
-            since = changeTarget.query("since" to 0).getObject().get("last_seq").asInt()
-        }
-        target = target.queryParam("since", since)
-        return target.getString()
+        return DB.getQueueChanges(uriInfo)
     }
 
     @GET
