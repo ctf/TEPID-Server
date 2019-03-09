@@ -7,7 +7,6 @@ import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.getJson
-import ca.mcgill.science.tepid.server.db.putJson
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.copyFrom
@@ -141,8 +140,9 @@ object Printer : WithLogging() {
 
                     val dest = CouchDb.path(destination).getJson<FullDestination>()
                     if (sendToSMB(tmp, dest, debug)) {
-                        j2.printed = System.currentTimeMillis()
-                        CouchDb.path(id).putJson(j2)
+                        DB.updateJob(id){
+                            printed = System.currentTimeMillis()
+                        }
                         log.info("${j2._id} sent to destination")
                     } else {
                         throw PrintException("Could not send to destination")
