@@ -23,7 +23,7 @@ public class QueueManager {
 
     private static final Map<String, QueueManager> instances = new HashMap<>();
     public final PrintQueue queueConfig;
-    private static final WebTarget couchdb = CouchDb.INSTANCE.getTarget();
+    public static final DbLayer db = DbLayerKt.getDB();
     ;
     private final LoadBalancer loadBalancer;
 
