@@ -5,7 +5,6 @@ import java.io.InputStream
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
 
-// todo bind layer
 lateinit var DB: DbLayer
 
 // TODO deleteDestination should return Response instead of String
@@ -55,6 +54,8 @@ interface DbLayer :
 }
 
 interface DbDestinationLayer {
+
+    fun getDestination(id: Id): FullDestination
 
     fun getDestinations(): List<FullDestination>
 

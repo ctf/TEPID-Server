@@ -11,13 +11,19 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.module.kotlin.convertValue
 import java.io.InputStream
 import java.util.*
-import javax.ws.rs.NotFoundException
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
 
 class CouchDbLayer : DbLayer {
+
+
+
+    override fun getDestination(id: Id): FullDestination {
+        return CouchDb.path(id).request(MediaType.APPLICATION_JSON).get(FullDestination::
+        class.java);
+    }
 
     override fun getDestinations(): List<FullDestination> =
             CouchDb.getViewRows("destinations")
