@@ -3,19 +3,14 @@ package ca.mcgill.science.tepid.server.printing;
 import ca.mcgill.science.tepid.models.bindings.PrintError;
 import ca.mcgill.science.tepid.models.data.PrintJob;
 import ca.mcgill.science.tepid.models.data.PrintQueue;
-import ca.mcgill.science.tepid.server.db.CouchDb;
 import ca.mcgill.science.tepid.server.db.DbLayer;
-import ca.mcgill.science.tepid.server.db.*;
+import ca.mcgill.science.tepid.server.db.DbLayerKt;
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer;
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer.LoadBalancerResults;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import kotlin.Unit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,11 +74,7 @@ public class QueueManager {
     public long getEta(String destination) {
         long maxEta = 0;
         try {
-            maxEta = couchdb
-                    .path("_design/main/_view")
-                    .path("maxEta")
-                    .request(MediaType.APPLICATION_JSON)
-                    .get(ObjectNode.class).get("rows").get(0).get("value").asLong(0);
+            maxEta = db.getEta(destination);
         } catch (Exception ignored) {
         }
         return maxEta;

@@ -8,6 +8,7 @@ import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.convertValue
 import java.io.InputStream
 import java.util.*
@@ -87,7 +88,7 @@ class CouchDbLayer : DbLayer {
 
 
     override fun getQueue(id: Id): PrintQueue {
-        return CouchDb.path($id).request(MediaType.APPLICATION_JSON).get(PrintQueue::class.java);
+        return CouchDb.path(id).request(MediaType.APPLICATION_JSON).get(PrintQueue::class.java)
     }
 
     override fun getQueues(): List<PrintQueue> =
@@ -100,6 +101,14 @@ class CouchDbLayer : DbLayer {
 
     override fun deleteQueue(id: Id): String =
             CouchDb.path(id).deleteRev()
+
+    override fun getEta(id: Id): Long {
+        return CouchDb
+                .path("_design/main/_view")
+                .path("maxEta")
+                .request(MediaType.APPLICATION_JSON)
+                .get(ObjectNode::class.java).get("rows").get(0).get("value").asLong(0);
+    }
 
     override fun getMarquees(): List<MarqueeData> =
             CouchDb.getViewRows("_design/marquee/_view", "all")
