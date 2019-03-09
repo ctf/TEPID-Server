@@ -90,6 +90,8 @@ interface DbJobLayer {
      */
     fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob?
 
+    fun updateJobWithResponse(id: Id, updater: PrintJob.() -> Unit): Response
+
     fun postJob(job: PrintJob): Response
 
     fun getJobChanges(id: Id, uriInfo: UriInfo): ChangeDelta

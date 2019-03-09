@@ -64,6 +64,10 @@ class CouchDbLayer : DbLayer {
     override fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob? =
             CouchDb.update(id, updater)
 
+    override fun updateJobWithResponse(id: Id, updater: PrintJob.() -> Unit): Response {
+        return CouchDb.updateWithResponse<PrintJob>(id, updater)
+    }
+
     override fun postJob(job: PrintJob): Response =
             CouchDb.target.postJson(job)
 

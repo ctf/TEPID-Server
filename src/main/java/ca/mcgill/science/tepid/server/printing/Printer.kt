@@ -4,7 +4,6 @@ import ca.mcgill.science.tepid.models.bindings.PrintError
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.server.auth.SessionManager
-import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.server.Config
@@ -83,12 +82,12 @@ object Printer : WithLogging() {
             val tmpXz = File("${tmpDir.absolutePath}/$id.ps.xz")
             tmpXz.copyFrom(stream)
             //let db know we have received data
-            CouchDb.updateWithResponse<PrintJob>(id) {
+            DB.updateJobWithResponse(id) {
                 file = tmpXz.absolutePath
                 log.info("Updating job $id with path $file")
                 received = System.currentTimeMillis()
             }
-
+            
             submit(id) {
 
                 /*
@@ -198,7 +197,7 @@ object Printer : WithLogging() {
      * Update job db and cancel executor
      */
     private fun failJob(id: String, error: String) {
-        CouchDb.updateWithResponse<PrintJob>(id) {
+        DB.updateJobWithResponse(id){
             fail(error)
         }
         cancel(id)
