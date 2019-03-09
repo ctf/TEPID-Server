@@ -6,7 +6,6 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.db.getJson
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.copyFrom
@@ -113,11 +112,11 @@ object Printer : WithLogging() {
                     log.trace("Job $id has ${psInfo.pages} pages, $colorPages in color")
 
                     //update page count and status in db
-                    var j2: PrintJob = CouchDb.update(id) {
+                    var j2: PrintJob = DB.updateJob(id){
                         this.pages = psInfo.pages
                         this.colorPages = colorPages
                         this.processed = System.currentTimeMillis()
-                    } ?: throw PrintException("Could not update")
+                    }?: throw PrintException("Could not update")
 
                     //check if user has color printing enabled
                     log.trace("Testing for color {'job':'{}'}", j2.getId())
