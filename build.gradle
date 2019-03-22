@@ -84,6 +84,8 @@ dependencies {
     compile "javax.servlet:javax.servlet-api:4.0.0"
     compile "javax.ws.rs:javax.ws.rs-api:2.1"
     compile "org.apache.commons:commons-email:1.5"
+    compile "javax.xml.bind:jaxb-api:2.3.0"
+    compile "javax.activation:activation:1.1"
     compile "org.glassfish.hk2.external:aopalliance-repackaged:$GLASSFISH_HK2"
     compile "org.glassfish.hk2:hk2-locator:$GLASSFISH_HK2"
     compile "org.glassfish.jersey.inject:jersey-hk2:$GLASSFISH_JERSEY"
