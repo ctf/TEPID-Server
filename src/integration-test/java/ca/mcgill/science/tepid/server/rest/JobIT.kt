@@ -13,6 +13,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.unmockkAll
 import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import javax.ws.rs.container.ContainerRequestContext
@@ -25,29 +26,38 @@ class JobTest : WithLogging() {
     }
 
     lateinit var testUser: FullUser
+    lateinit var testJob: PrintJob
 
     @MockK
     lateinit var mockUserCtx: ContainerRequestContext
 
     @Before
     fun initTest() {
+
+        Config.TEST_USER;
+
         testUser = SessionManager.queryUser(Config.TEST_USER, null) ?: fail("Test User with SAM ${Config.TEST_USER} not found")
+
+        Assume.assumeTrue(Config.LDAP_ENABLED)
+        Assume.assumeTrue(Config.TEST_USER.isNotEmpty())
+        Assume.assumeTrue(Config.TEST_PASSWORD.isNotEmpty())
+        println("Running ldap tests with test user")
 
         every {
             mockUserCtx.getSession()
         } returns FullSession(user=testUser, role = USER)
+
+        testJob = PrintJob(
+                name= "TEST",
+                queueName = DB.getQueues().first().name,
+                userIdentification = testUser.shortUser
+        )
     }
 
     @After
     fun tearTest() {
         unmockkAll()
     }
-
-    val testJob = PrintJob(
-            name= "TEST",
-            queueName = DB.getQueues().first().name,
-            userIdentification = testUser.shortUser
-    )
 
     @Test
     fun testNewJob() {
