@@ -9,16 +9,20 @@ import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.utils.WithLogging
+import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import io.mockk.unmockkAll
 import org.junit.After
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import javax.ws.rs.container.ContainerRequestContext
 import kotlin.test.fail
 
+@ExtendWith(MockKExtension::class)
 class JobTest : WithLogging() {
 
     val endpoints: Jobs by lazy {
@@ -33,6 +37,8 @@ class JobTest : WithLogging() {
 
     @Before
     fun initTest() {
+
+        MockKAnnotations.init(this)
 
         Config.TEST_USER;
 
