@@ -63,7 +63,7 @@ dependencies {
     testCompile "org.jetbrains.kotlin:kotlin-test:$KOTLIN"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$KOTLIN"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit5:$KOTLIN"
-    testCompile "io.mockk:mockk:1.8.7"
+    testCompile "io.mockk:mockk:1.9"
     testCompile "org.junit.jupiter:junit-jupiter-params:5.1.0"
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN"
