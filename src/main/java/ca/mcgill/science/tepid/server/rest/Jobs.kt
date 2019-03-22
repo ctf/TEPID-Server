@@ -14,7 +14,6 @@ import ca.mcgill.science.tepid.server.printing.Printer
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ObjectNode
-import java.io.BufferedReader
 import java.io.FileInputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
@@ -61,21 +60,6 @@ class Jobs {
         j.deleteDataOn = j.getJobExpiration()
         log.debug("Starting new print job ${j.name} for ${session.user.longUser}...")
         return DB.postJob(j)
-    }
-
-    /**
-     * Returns true if monochrome was detected,
-     * or false if color was detected
-     * Defaults to monochrome
-     */
-    private fun BufferedReader.isMonochrome(): Boolean {
-        for (line in lines()) {
-            if (line.contains("/ProcessColorModel /DeviceGray"))
-                return true
-            if (line.contains("/ProcessColorModel /DeviceCMYK"))
-                return false
-        }
-        return true
     }
 
     @PUT
