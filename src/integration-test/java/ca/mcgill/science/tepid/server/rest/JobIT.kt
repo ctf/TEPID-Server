@@ -1,9 +1,8 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.bindings.USER
-import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.SessionRequest
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.server.Config
@@ -28,6 +27,9 @@ class JobTest : WithLogging() {
     val endpoints: Jobs by lazy {
         Jobs()
     }
+    val Sessions by lazy {
+        Sessions()
+    }
 
     lateinit var testUser: FullUser
     lateinit var testJob: PrintJob
@@ -49,9 +51,15 @@ class JobTest : WithLogging() {
         Assume.assumeTrue(Config.TEST_PASSWORD.isNotEmpty())
         println("Running ldap tests with test user")
 
+        val testSession = Sessions.startSession(SessionRequest(Config.TEST_USER, Config.TEST_PASSWORD, false, false))
+        val testFullSession = DB.getSessionOrNull(testSession._id!!) ?: fail("session could not be created. {" +
+                "  \"shortUser\": {$Config.TEST_USER}," +
+                "  \"sessionId\": {$testSession._id}" +
+                "}")
+
         every {
             mockUserCtx.getSession()
-        } returns FullSession(user=testUser, role = USER)
+        } returns testFullSession
 
         testJob = PrintJob(
                 name= "TEST",
