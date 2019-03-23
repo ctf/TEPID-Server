@@ -109,9 +109,9 @@ object Config : WithLogging() {
         TEPID_URL_PRODUCTION = PropsURL.SERVER_URL_PRODUCTION ?: throw RuntimeException()
         TEPID_URL_TESTING = PropsURL.WEB_URL_TESTING ?: TEPID_URL_PRODUCTION
 
-        COUCHDB_URL = PropsDB.COUCHDB_URL ?: throw RuntimeException()
-        COUCHDB_USERNAME = PropsDB.COUCHDB_USERNAME ?: throw RuntimeException()
-        COUCHDB_PASSWORD = PropsDB.COUCHDB_PASSWORD ?: throw RuntimeException()
+        COUCHDB_URL = PropsDB.URL
+        COUCHDB_USERNAME = PropsDB.USERNAME
+        COUCHDB_PASSWORD = PropsDB.PASSWORD
 
         BARCODES_URL = PropsBarcode.BARCODES_URL ?: ""
         BARCODES_USERNAME = PropsBarcode.BARCODES_DB_USERNAME ?: ""

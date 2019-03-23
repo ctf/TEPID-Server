@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.test.get
 import ca.mcgill.science.tepid.utils.Loggable
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -19,10 +19,11 @@ class JobTest : ITBase(), Loggable by WithLogging() {
 
     @Before
     fun initTest() {
+        Config.TEST_USER
         testJob = PrintJob(
                 name= "Server Test ${System.currentTimeMillis()}",
-                queueName = DB.getQueues().first().name,
-                userIdentification = testUser
+                queueName = "1B16",
+                userIdentification = server.testUser
         )
     }
 
@@ -33,8 +34,7 @@ class JobTest : ITBase(), Loggable by WithLogging() {
 
     @Test
     fun testNewJob() {
-        testApi.createNewJob(PrintJob(name="Server Test ${System.currentTimeMillis()}")).get()
-
+        server.testApi.createNewJob(testJob).get()
     }
 
 }
