@@ -5,10 +5,8 @@ import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.UserFactory
-import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.db.getJson
-import ca.mcgill.science.tepid.server.db.getViewRows
+import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -20,9 +18,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 import org.mindrot.jbcrypt.BCrypt
-import javax.ws.rs.client.Entity
-import javax.ws.rs.client.WebTarget
-import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -89,10 +84,13 @@ class MergeUsersTest {
 }
 
 class UpdateDbWithUserTest {
+
+    lateinit var mockDb:DbLayer
+
     @Before
     fun initTest() {
-        mockkObject(CouchDb)
-        mockkStatic("ca.mcgill.science.tepid.server.db.WebTargetsKt")
+        mockDb = mockk<DbLayer>(relaxed=true)
+        DB = mockDb
         testUser._rev = "1111"
     }
 
@@ -117,20 +115,15 @@ class UpdateDbWithUserTest {
             mockResponse.readEntity(ObjectNode::class.java)
         } returns mockObjectNode
 
-        val wt = mockk<WebTarget>()
         every {
-            wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
+            mockDb.putUser(ofType(FullUser::class))
         } returns mockResponse
-        every {
-            CouchDb.path(ofType(String::class))
-        } returns wt
 
         // Run Test
         SessionManager.updateDbWithUser(testUser)
 
         // Verifies the path
-        verify { CouchDb.path("u" + testSU) }
-        verify { wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON)) }
+        verify { mockDb.putUser(testUser) }
         assertEquals(testUser._rev, "2222")
     }
 
@@ -147,20 +140,15 @@ class UpdateDbWithUserTest {
             mockResponse.readEntity(ObjectNode::class.java)
         } returns mockObjectNode
 
-        val wt = mockk<WebTarget>()
         every {
-            wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
+            mockDb.putUser(ofType(FullUser::class))
         } returns mockResponse
-        every {
-            CouchDb.path(ofType(String::class))
-        } returns wt
 
         // Run Test
         SessionManager.updateDbWithUser(testUser)
 
         // Verifies the path
-        verify { CouchDb.path("u" + testSU) }
-        verify { wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON)) }
+        verify { mockDb.putUser(testUser) }
         assertEquals(testUser._rev, "1111")
     }
 
@@ -171,20 +159,17 @@ class UpdateDbWithUserTest {
             mockResponse.readEntity(ObjectNode::class.java)
         } throws RuntimeException("Testing")
 
-        val wt = mockk<WebTarget>()
         every {
-            wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
+            mockDb.putUser(ofType(FullUser::class))
         } returns mockResponse
-        every {
-            CouchDb.path(ofType(String::class))
-        } returns wt
 
         // Run Test
         SessionManager.updateDbWithUser(testUser)
 
         // Verifies the path
-        verify { CouchDb.path("u" + testSU) }
-        verify { wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON)) }
+        every {
+            mockDb.putUser(ofType(FullUser::class))
+        } returns mockResponse
         // Verifies that it was called, but that it's unchanged
         verify { mockResponse.readEntity(ObjectNode::class.java) }
         assertEquals(testUser._rev, "1111")
@@ -194,33 +179,19 @@ class UpdateDbWithUserTest {
 class QueryUserDbTest {
     var testUser = UserFactory.makeDbUser()
     var testOtherUser = UserFactory.makeLdapUser()
-    lateinit var wt: WebTarget
+    lateinit var mockDb:DbLayer
 
     @Before
     fun initTest() {
         mockkObject(Config)
         every { Config.ACCOUNT_DOMAIN } returns "config.example.com"
-        mockkObject(CouchDb)
-        mockkStatic("ca.mcgill.science.tepid.server.db.WebTargetsKt")
-
-        wt = mockk<WebTarget>()
+        mockDb = mockk<DbLayer>(relaxed=true)
+        DB = mockDb
     }
 
     @After
     fun tearTest() {
         unmockkAll()
-    }
-
-    private fun makeMocks(userListReturned: List<FullUser>) {
-        every {
-            CouchDb.path(ofType(CouchDb.CouchDbView::class))
-        } returns wt
-        every {
-            wt.queryParam(ofType(String::class), ofType(String::class))
-        } returns wt
-        every {
-            wt.getViewRows<FullUser>()
-        } returns userListReturned
     }
 
     @Test
@@ -231,99 +202,97 @@ class QueryUserDbTest {
 
     @Test
     fun testQueryUserDbByEmail() {
-        makeMocks(listOf<FullUser>(testUser, testOtherUser))
+        every{
+            mockDb.getUserOrNull(testUser.email!!)
+        } returns testUser
 
         val actual = SessionManager.queryUserDb(testUser.email)
 
-        verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser) }
-        verify { wt.queryParam("key", match { it.toString() == "\"db.EM%40config.example.com\"" }) }
+        verify { mockDb.getUserOrNull(testUser.email!!) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
     }
 
     @Test
     fun testQueryUserDbByEmailNull() {
-        makeMocks(listOf<FullUser>())
+        every {
+            mockDb.getUserOrNull(testUser.email!!)
+        } returns null
 
         val actual = SessionManager.queryUserDb(testUser.email)
 
-        verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser) }
-        verify { wt.queryParam("key", match { it.toString() == "\"db.EM%40config.example.com\"" }) }
+        verify { mockDb.getUserOrNull(testUser.email!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
     }
 
     @Test
     fun testQueryUserDbByFullUser() {
-        makeMocks(listOf<FullUser>(testUser, testOtherUser))
+        every {
+            mockDb.getUserOrNull(testUser.longUser!!)
+        } returns testUser
 
         val actual = SessionManager.queryUserDb(testUser.longUser)
 
-        verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser) }
-        verify { wt.queryParam("key", match { it.toString() == "\"db.LU%40config.example.com\"" }) }
+        verify { mockDb.getUserOrNull(testUser.longUser!!) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
     }
 
     @Test
     fun testQueryUserDbByFullUserNull() {
-        makeMocks(listOf<FullUser>())
+        every {
+            mockDb.getUserOrNull(testUser.longUser!!)
+        } returns null
 
         val actual = SessionManager.queryUserDb(testUser.longUser)
 
-        verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser) }
-        verify { wt.queryParam("key", match { it.toString() == "\"db.LU%40config.example.com\"" }) }
+        verify { mockDb.getUserOrNull(testUser.longUser!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
     }
 
     @Test
     fun testQueryUserDbByStudentId() {
-        makeMocks(listOf<FullUser>(testUser, testOtherUser))
+        every{
+            mockDb.getUserOrNull(testUser.studentId.toString())
+        } returns testUser
 
         val actual = SessionManager.queryUserDb(testUser.studentId.toString())
 
-        verify { CouchDb.path(CouchDb.CouchDbView.ByStudentId) }
-        verify { wt.queryParam("key", match { it.toString() == "3333" }) }
+        verify { mockDb.getUserOrNull(testUser.studentId.toString()) }
         assertEquals(testUser, actual, "User was not returned when searched by studentId")
     }
 
     @Test
     fun testQueryUserDbByStudentIdNull() {
-        makeMocks(listOf<FullUser>())
+        every {
+            mockDb.getUserOrNull(testUser.studentId.toString())
+        } returns null
 
         val actual = SessionManager.queryUserDb(testUser.studentId.toString())
 
-        verify { CouchDb.path(CouchDb.CouchDbView.ByStudentId) }
-        verify { wt.queryParam("key", match { it.toString() == "3333" }) }
+        verify { mockDb.getUserOrNull(testUser.studentId.toString()) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by studentId")
     }
 
     @Test
     fun testQueryUserDbByShortUser() {
         every {
-            CouchDb.path(ofType(String::class))
-        } returns wt
-        every {
-            wt.getJson(FullUser::class.java)
+            mockDb.getUserOrNull(testUser.shortUser!!)
         } returns testUser
-        makeMocks(listOf<FullUser>(testUser, testOtherUser))
 
         val actual = SessionManager.queryUserDb(testUser.shortUser)
 
-        verify { CouchDb.path("uSU") }
+        verify {mockDb.getUserOrNull(testUser.shortUser!!)}
         assertEquals(testUser, actual, "User was not returned when searched by shortUser")
     }
 
     @Test
     fun testQueryUserDbByShortUserNull() {
         every {
-            CouchDb.path(ofType(String::class))
-        } returns wt
-        every {
-            wt.getJson(FullUser::class.java)
-        } throws RuntimeException("Testing")
-        makeMocks(listOf<FullUser>())
+            mockDb.getUserOrNull(testUser.shortUser!!)
+        } returns null
 
         val actual = SessionManager.queryUserDb(testUser.shortUser)
 
-        verify { CouchDb.path("uSU") }
+        verify {mockDb.getUserOrNull(testUser.shortUser!!)}
         assertEquals(null, actual, "Null was not returned when nonexistent searched by shortUser")
     }
 }
