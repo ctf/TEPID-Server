@@ -54,7 +54,7 @@ public class QueueManager {
     }
 
     public PrintJob assignDestination(PrintJob job) {
-        db.updateJob(job.getId(), (j) -> {
+        PrintJob updatedJob = db.updateJob(job.getId(), (j) -> {
             LoadBalancerResults results = this.loadBalancer.processJob(j);
             if (results == null) {
                 j.fail(PrintError.INVALID_DESTINATION);
@@ -67,7 +67,7 @@ public class QueueManager {
             return Unit.INSTANCE;
         });
 
-        return db.getJob(job.getId());
+        return updatedJob;
     }
 
     //TODO check use of args
