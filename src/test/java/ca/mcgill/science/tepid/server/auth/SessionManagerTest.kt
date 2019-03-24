@@ -540,6 +540,8 @@ class AuthenticateTest {
         every { Config.LDAP_ENABLED } returns false
         // not necessary, but ensures that there is a password to auth against if it's derping
         testUser.password = BCrypt.hashpw(testPassword, BCrypt.gensalt())
+        every { sm.queryUserDb(testShortUser) } returns testUser
+
 
         val actual = sm.authenticate(testShortUser, testPassword)
         val expected = null
@@ -550,6 +552,7 @@ class AuthenticateTest {
     @Test
     fun testAuthenticateLdapUserNull() {
         every { Config.LDAP_ENABLED } returns true
+        every { sm.queryUserDb(testShortUser) } returns testUser
         every { Ldap.authenticate(testShortUser, testPassword) } returns null
 
         val actual = sm.authenticate(testShortUser, testPassword)
