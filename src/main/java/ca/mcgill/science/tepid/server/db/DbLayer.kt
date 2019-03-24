@@ -1,12 +1,13 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.server.server.Config
 import java.io.InputStream
 import javax.ws.rs.container.AsyncResponse
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
 
-lateinit var DB: DbLayer
+var DB: DbLayer = Config.getDb()
 
 // TODO deleteDestination should return Response instead of String
 // TODO, all outputs returning response should likely return models that can then be wrapped inside a response
