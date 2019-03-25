@@ -7,12 +7,13 @@ import ca.mcgill.science.tepid.models.data.ChangeDelta
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.auth.SessionManager
-import ca.mcgill.science.tepid.server.db.*
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.Order
+import ca.mcgill.science.tepid.server.db.isSuccessful
 import ca.mcgill.science.tepid.server.printing.Printer
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ObjectNode
-import java.io.BufferedReader
 import java.io.FileInputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
@@ -58,22 +59,7 @@ class Jobs {
         j.userIdentification = session.user.shortUser
         j.deleteDataOn = j.getJobExpiration()
         log.debug("Starting new print job ${j.name} for ${session.user.longUser}...")
-        return CouchDb.target.postJson(j)
-    }
-
-    /**
-     * Returns true if monochrome was detected,
-     * or false if color was detected
-     * Defaults to monochrome
-     */
-    private fun BufferedReader.isMonochrome(): Boolean {
-        for (line in lines()) {
-            if (line.contains("/ProcessColorModel /DeviceGray"))
-                return true
-            if (line.contains("/ProcessColorModel /DeviceCMYK"))
-                return false
-        }
-        return true
+        return DB.postJob(j)
     }
 
     @PUT

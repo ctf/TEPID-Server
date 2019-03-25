@@ -1,6 +1,9 @@
 package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.About
+import ca.mcgill.science.tepid.server.db.CouchDbLayer
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.printing.GS
 import ca.mcgill.science.tepid.server.printing.GSException
 import ca.mcgill.science.tepid.server.util.Utils
@@ -107,9 +110,9 @@ object Config : WithLogging() {
         TEPID_URL_PRODUCTION = PropsURL.SERVER_URL_PRODUCTION ?: throw RuntimeException()
         TEPID_URL_TESTING = PropsURL.WEB_URL_TESTING ?: TEPID_URL_PRODUCTION
 
-        COUCHDB_URL = PropsDB.COUCHDB_URL ?: throw RuntimeException()
-        COUCHDB_USERNAME = PropsDB.COUCHDB_USERNAME ?: throw RuntimeException()
-        COUCHDB_PASSWORD = PropsDB.COUCHDB_PASSWORD ?: throw RuntimeException()
+        COUCHDB_URL = PropsDB.URL
+        COUCHDB_USERNAME = PropsDB.USERNAME
+        COUCHDB_PASSWORD = PropsDB.PASSWORD
 
         BARCODES_URL = PropsBarcode.BARCODES_URL ?: ""
         BARCODES_USERNAME = PropsBarcode.BARCODES_DB_USERNAME ?: ""
@@ -189,6 +192,8 @@ object Config : WithLogging() {
                 creationTime = CREATION_TIME,
                 creationTimestamp = CREATION_TIMESTAMP)
 
+        DB = getDb()
+
         log.trace("Completed setting configs")
     }
 
@@ -199,6 +204,10 @@ object Config : WithLogging() {
         val loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME)
         loggerConfig.level = level
         ctx.updateLoggers()
+    }
+
+    fun getDb(): DbLayer {
+        return CouchDbLayer()
     }
 
 }
