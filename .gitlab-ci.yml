@@ -42,7 +42,7 @@ war:
   script:
   - chmod +x gradlew
   - ./gradlew war
-  - cp ./build/libs/tepid*.war ~/
+  - cp ./build/libs/tepid*.war ~/tepid.war
   artifacts:
     when: always
     paths:
@@ -52,7 +52,7 @@ staging:
   extends: .base
   stage: deploy
   script:
-  - cp ~/tepid*.war /var/lib/tomcat8/webapps/tepid.war
+  - cp ~/tepid.war /var/lib/tomcat8/webapps/
   artifacts:
     when: always
     paths:
