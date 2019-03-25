@@ -13,19 +13,14 @@ import com.fasterxml.jackson.module.kotlin.convertValue
 import java.io.InputStream
 import java.util.*
 import javax.ws.rs.client.WebTarget
-import javax.ws.rs.container.AsyncResponse
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
-import javax.ws.rs.core.UriInfo
 
 class CouchDbLayer : DbLayer {
 
-    private val queueChangeTarget = CouchDb.path("_changes").query("filter" to "main/byQueue")
-
-
     override fun getDestination(id: Id): FullDestination {
         return CouchDb.path(id).request(MediaType.APPLICATION_JSON).get(FullDestination::
-        class.java);
+        class.java)
     }
 
     override fun getDestinations(): List<FullDestination> =
@@ -77,15 +72,6 @@ class CouchDbLayer : DbLayer {
     override fun postJob(job: PrintJob): Response =
             CouchDb.target.postJson(job)
 
-    override fun getJobChanges(id: Id, uriInfo: UriInfo): ChangeDelta {
-        val changes = CouchDb.path("_changes")
-                .query("filter" to "main/byJob", "job" to id)
-                .query(uriInfo, "feed", "since")
-                .getObject().get("results").get(0)
-
-        return ChangeDelta(changes.get("id").asText())
-    }
-
     override fun getJobFile(id: Id, file: String): InputStream? =
             CouchDb.path(id, file).request().get()
                     .takeIf(Response::isSuccessful)
@@ -107,37 +93,6 @@ class CouchDbLayer : DbLayer {
         return CouchDb.path(id).request(MediaType.APPLICATION_JSON).get(PrintQueue::class.java)
     }
 
-    override fun getQueueChanges(queue: String, uriInfo: UriInfo, ar: AsyncResponse) {
-
-        // TODO remove queueChangeTarget instances?
-        var target = queueChangeTarget.query("queue" to queue)
-        val qp = uriInfo.queryParameters
-        if (qp.containsKey("feed")) target = target.queryParam("feed", qp.getFirst("feed"))
-        if (qp.containsKey("since")) target = target.queryParam("since", qp.getFirst("since"))
-        val changes = target.request().get(String::class.java)
-        if (!ar.isDone && !ar.isCancelled) {
-            CouchDb.log.info("Emitting changes of length ${changes.length}")
-            try {
-                ar.resume(changes)
-            } catch (e: Exception) {
-                CouchDb.log.error("Failed to emit queue _changes ${e.message}")
-            }
-        }
-    }
-
-    override fun getQueueChanges(uriInfo: UriInfo): String {
-        // TODO remove queueChangeTarget instances?
-        var target = queueChangeTarget
-        val qp = uriInfo.queryParameters
-        if (qp.containsKey("feed")) target = target.query("feed" to qp.getFirst("feed"))
-        var since = qp.getFirst("since").toIntOrNull() ?: -1
-        if (since < 0) {
-            since = queueChangeTarget.query("since" to 0).getObject().get("last_seq").asInt()
-        }
-        target = target.queryParam("since", since)
-        return target.getString()
-    }
-
     override fun getQueues(): List<PrintQueue> =
             CouchDb.path(CouchDb.CouchDbView.Queues).getViewRows()
 
@@ -154,7 +109,7 @@ class CouchDbLayer : DbLayer {
                 .path("_design/main/_view")
                 .path("maxEta")
                 .request(MediaType.APPLICATION_JSON)
-                .get(ObjectNode::class.java).get("rows").get(0).get("value").asLong(0);
+                .get(ObjectNode::class.java).get("rows").get(0).get("value").asLong(0)
     }
 
     override fun getMarquees(): List<MarqueeData> =
@@ -168,7 +123,7 @@ class CouchDbLayer : DbLayer {
             CouchDb.path(id).getJsonOrNull()
 
     override fun getSessionIdsForUser(shortUser: ShortUser): List<String> {
-        return CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"${shortUser}\"") }
+        return CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"$shortUser\"") }
     }
 
     override fun deleteSession(id: Id): String =

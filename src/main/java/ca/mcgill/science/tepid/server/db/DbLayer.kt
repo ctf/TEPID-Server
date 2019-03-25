@@ -3,9 +3,7 @@ package ca.mcgill.science.tepid.server.db
 import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.server.Config
 import java.io.InputStream
-import javax.ws.rs.container.AsyncResponse
 import javax.ws.rs.core.Response
-import javax.ws.rs.core.UriInfo
 
 var DB: DbLayer = Config.getDb()
 
@@ -98,8 +96,6 @@ interface DbJobLayer {
 
     fun postJob(job: PrintJob): Response
 
-    fun getJobChanges(id: Id, uriInfo: UriInfo): ChangeDelta
-
     fun getJobFile(id: Id, file: String): InputStream?
 
     /**
@@ -114,10 +110,6 @@ interface DbJobLayer {
 interface DbQueueLayer {
 
     fun getQueue(id:Id): PrintQueue
-
-    fun getQueueChanges(queue: String, uriInfo: UriInfo, ar: AsyncResponse)
-
-    fun getQueueChanges(uriInfo: UriInfo): String
 
     fun getQueues(): List<PrintQueue>
 
