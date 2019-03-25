@@ -91,11 +91,6 @@ class CouchDbLayer : DbLayer {
                     .takeIf(Response::isSuccessful)
                     ?.readEntity(InputStream::class.java)
 
-    override fun getEarliestJobTime(shortUser: String): Long =
-            CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted")
-                    .query("key" to "\"$shortUser\"").getObject().get("rows")
-                    ?.get(0)?.get("value")?.get("earliestJob")?.asLong(-1L) ?: -1L
-
     override fun getOldJobs(): List<PrintJob> {
         return CouchDb.getViewRows<PrintJob>("oldJobs") {
             query("endkey" to System.currentTimeMillis() - 1800000)
