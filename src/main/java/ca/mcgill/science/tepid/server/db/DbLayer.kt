@@ -98,12 +98,6 @@ interface DbJobLayer {
 
     fun getJobFile(id: Id, file: String): InputStream?
 
-    /**
-     * Returns earliest job in ms
-     * Defaults to -1 if not found
-     */
-    fun getEarliestJobTime(shortUser: ShortUser): Long
-
     fun getOldJobs(): List<PrintJob>
 }
 

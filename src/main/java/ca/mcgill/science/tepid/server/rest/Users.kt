@@ -15,7 +15,6 @@ import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
 import java.net.URI
 import java.net.URISyntaxException
-import java.util.*
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
 import javax.ws.rs.container.ContainerRequestContext
@@ -255,26 +254,6 @@ class Users {
                 if (shortUser == null) 0
                 else DB.getTotalPrintedCount(shortUser)
 
-        private fun oldMaxQuota(shortUser: String): Int {
-            try {
-                val ej = DB.getEarliestJobTime(shortUser)
-                if (ej == -1L) {
-                    log.debug("Old quota for new user $shortUser")
-                    return 1000
-                }
-                val d1 = Calendar.getInstance()
-                val d2 = Calendar.getInstance()
-                d1.timeInMillis = ej
-                val m1 = d1.get(Calendar.MONTH) + 1
-                val y1 = d1.get(Calendar.YEAR)
-                val m2 = d2.get(Calendar.MONTH) + 1
-                val y2 = d2.get(Calendar.YEAR)
-                return (y2 - y1) * 1000 + (if (m2 > 8 && (y1 != y2 || m1 < 8)) 1500 else 1000)
-            } catch (e: Exception) {
-                log.error("Old quota fetch failed", e)
-                return 1000
-            }
-        }
     }
 
 }
