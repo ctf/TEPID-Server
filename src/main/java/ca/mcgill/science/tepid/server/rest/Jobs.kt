@@ -3,7 +3,6 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
-import ca.mcgill.science.tepid.models.data.ChangeDelta
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.auth.SessionManager
@@ -19,9 +18,7 @@ import java.io.InputStream
 import java.util.concurrent.TimeUnit
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
-import javax.ws.rs.container.AsyncResponse
 import javax.ws.rs.container.ContainerRequestContext
-import javax.ws.rs.container.Suspended
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -72,31 +69,6 @@ class Jobs {
         if (!success)
             failBadRequest(message)
         return PutResponse(true, id, "")
-    }
-
-    @GET
-    @Path("/job/{id}/_changes")
-    @RolesAllowed(USER, CTFER, ELDER)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun getChanges(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse, @Context ctx: ContainerRequestContext) {
-        val session = ctx.getSession()
-        ar.setTimeoutHandler { ar.resume(emptyList<ChangeDelta>()) }
-        val j = DB.getJob(id)
-        if (session.role == USER && session.user.shortUser != j.userIdentification) {
-            ar.resume(Response.Status.UNAUTHORIZED.text("You cannot access this resource"))
-            return
-        }
-
-        val delta = DB.getJobChanges(id, uriInfo)
-        log.debug("Delta: $delta")
-
-        if (!ar.isDone && !ar.isCancelled) {
-            try {
-                ar.resume(listOf(delta))
-            } catch (e: Exception) {
-                log.error("Failed to emit job _changes for $id: ${e.message}")
-            }
-        }
     }
 
     @GET

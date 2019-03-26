@@ -79,20 +79,6 @@ class Queues {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/{queue}/_changes")
-    fun getChanges(@PathParam("queue") queue: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse) {
-        DB.getQueueChanges(queue, uriInfo, ar)
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/_changes")
-    fun getChanges(@Context uriInfo: UriInfo): String {
-        return DB.getQueueChanges(uriInfo)
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
     @Path("/loadbalancers")
     fun getLoadBalancers(): List<String> {
         return LoadBalancer.loadBalancers
