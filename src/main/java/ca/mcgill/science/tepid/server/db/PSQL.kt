@@ -144,11 +144,10 @@ class HibernateQueueLayer(val hc : HibernateCrud<PrintQueue, String?>) : DbQueue
 
     override fun putQueues(queues: Collection<PrintQueue>): Response {
         try{
-            queues.map { hc.updateOrCreateIfNotExist(it) }
+            return Response.ok().entity(queues.map { hc.updateOrCreateIfNotExist(it) }).build()
         }catch (e : Exception){
             return parsePersistenceErrorToResponse(e)
         }
-        return Response.ok().build()
     }
 
     override fun deleteQueue(id: Id): String {
@@ -180,11 +179,10 @@ class HibernateMarqueeLayer(val hc : HibernateCrud<MarqueeData, String?>) : DbMa
 class HibernateSessionLayer(val hc : HibernateCrud<FullSession, String?>) : DbSessionLayer {
     override fun putSession(session: FullSession): Response {
         try{
-            hc.updateOrCreateIfNotExist(session)
+            return Response.ok().entity(hc.updateOrCreateIfNotExist(session)).build()
         }catch (e : Exception){
             return parsePersistenceErrorToResponse(e)
         }
-        return Response.ok().build()
     }
 
     override fun getSessionOrNull(id: Id): FullSession? {
@@ -212,11 +210,10 @@ class HibernateSessionLayer(val hc : HibernateCrud<FullSession, String?>) : DbSe
 class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLayer{
     override fun putUser(user: FullUser): Response {
         try{
-            hc.updateOrCreateIfNotExist(user)
+            return Response.ok().entity(hc.updateOrCreateIfNotExist(user)).build()
         }catch (e : Exception){
             return parsePersistenceErrorToResponse(e)
         }
-        return Response.ok().build()
     }
 
     override fun getUserOrNull(sam: Sam): FullUser? {

@@ -108,6 +108,9 @@ interface DbQueueLayer {
 
     fun getQueues(): List<PrintQueue>
 
+    /*
+       On Success: returns Response containing the collection of PrintQueues Added
+     */
     fun putQueues(queues: Collection<PrintQueue>): Response
 
     fun deleteQueue(id: Id): String
@@ -124,6 +127,9 @@ interface DbMarqueeLayer {
 
 interface DbSessionLayer {
 
+    /*
+   On Success: returns Response containing the Session added
+    */
     fun putSession(session: FullSession): Response
 
     fun getSessionOrNull(id: Id): FullSession?
@@ -136,6 +142,9 @@ interface DbSessionLayer {
 
 interface DbUserLayer {
 
+    /*
+   On Success: returns Response containing the User added
+    */
     fun putUser(user: FullUser): Response
 
     fun getUserOrNull(sam: Sam): FullUser?
