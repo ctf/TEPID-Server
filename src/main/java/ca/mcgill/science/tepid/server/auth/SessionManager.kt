@@ -11,7 +11,6 @@ import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.isSuccessful
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
-import com.fasterxml.jackson.databind.node.ObjectNode
 import org.mindrot.jbcrypt.BCrypt
 import java.math.BigInteger
 import java.security.SecureRandom
@@ -161,12 +160,7 @@ object SessionManager : WithLogging() {
         try {
             val response = DB.putUser(user)
             if (response.isSuccessful) {
-                val responseObj = response.entity as ObjectNode
-                val newRev = responseObj.get("_rev")?.asText()
-                if (newRev != null && newRev.length > 3) {
-                    user._rev = newRev
-                    log.trace("New rev {\"user\": \"${user.shortUser}\", \"rev\":\"$newRev\"}")
-                }
+                log.trace("Updated User {\"user\": \"${user.shortUser}\"}")
             } else {
                 log.error("Updating DB with user failed: {\"user\": \"${user.shortUser}\",\"response\":\"$response\"}")
             }
