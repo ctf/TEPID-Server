@@ -128,6 +128,10 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
     override fun getJobFile(id: Id, file: String): InputStream? {
         throw NotImplementedError()
     }
+
+    override fun getOldJobs(): List<PrintJob> {
+        return hc.em.createQuery("SELECT c FROM PrintJob c WHERE c.processed = -1 AND c.failed = -1", PrintJob::class.java).resultList
+    }
 }
 
 class HibernateQueueLayer(val hc : HibernateCrud<PrintQueue, String?>) : DbQueueLayer {
