@@ -1,8 +1,6 @@
 package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.server.db.CouchDb
-import ca.mcgill.science.tepid.server.db.deleteRev
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
 import org.junit.Assume
@@ -58,15 +56,19 @@ class LdapIT : AuthIT() {
 class SessionManagerIT : AuthIT() {
 
     @Test
-    fun authenticateWithLdapUserInDb() {
-        SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, null)
-                ?: fail("Couldn't prime DB with test user ${PropsLDAPTestUser.TEST_USER}")
+    fun queryUserNotInDb() {
         SessionManager.authenticate(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD).assertEqualsTestUser()
     }
 
     @Test
     fun authenticateWithLdapUserNotInDb() {
-        CouchDb.path("u${PropsLDAPTestUser.TEST_USER}").deleteRev()
+        SessionManager.authenticate(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD).assertEqualsTestUser()
+    }
+
+    @Test
+    fun authenticateWithLdapUserInDb() {
+        SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, null)
+                ?: fail("Couldn't prime DB with test user ${PropsLDAPTestUser.TEST_USER}")
         SessionManager.authenticate(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD).assertEqualsTestUser()
     }
 
@@ -79,12 +81,6 @@ class SessionManagerIT : AuthIT() {
         SessionManager.queryUserDb(PropsLDAPTestUser.TEST_USER) ?: fail("User ${PropsLDAPTestUser.TEST_USER} not already in DB")
 
         SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD).assertEqualsTestUser()
-    }
-
-    @Test
-    fun queryUserNotInDb() {
-        CouchDb.path("u${PropsLDAPTestUser.TEST_USER}").deleteRev()
-        SessionManager.authenticate(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD).assertEqualsTestUser()
     }
 
     @Test
