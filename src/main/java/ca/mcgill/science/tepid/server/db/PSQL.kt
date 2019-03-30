@@ -90,6 +90,10 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
                 resultList
     }
 
+    override fun getStoredJobs(): List<PrintJob> {
+        return hc.em.createQuery("SELECT c FROM PrintJob c WHERE c.file != null", PrintJob::class.java).resultList
+    }
+
     override fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob? {
 
         try{
