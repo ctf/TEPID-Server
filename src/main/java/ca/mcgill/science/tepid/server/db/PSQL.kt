@@ -8,7 +8,6 @@ import java.util.*
 import javax.persistence.EntityManager
 import javax.persistence.EntityNotFoundException
 import javax.ws.rs.core.Response
-import javax.ws.rs.core.UriInfo
 
 
 class HibernateDbLayer(val em: EntityManager) : DbLayer,
@@ -163,6 +162,11 @@ class HibernateQueueLayer(val hc : HibernateCrud<PrintQueue, String?>) : DbQueue
         return mapper.writeValueAsString(if(failures.isEmpty()) "Success" else failures)
     }
 
+    override fun getEta(destinationId: Id): Long {
+        return hc.em.createQuery("SELECT max(c.eta) from PrintJob c WHERE c.destination = :destinationId").
+                setParameter("destinationId", destinationId)
+                .singleResult as Long
+    }
 }
 
 class HibernateMarqueeLayer(val hc : HibernateCrud<MarqueeData, String?>) : DbMarqueeLayer {
