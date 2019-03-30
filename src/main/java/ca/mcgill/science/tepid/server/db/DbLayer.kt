@@ -112,7 +112,7 @@ interface DbQueueLayer {
 
     fun deleteQueue(id: Id): String
 
-    fun getEta(id: Id): Long
+    fun getEta(destinationId: Id): Long
 
 }
 
