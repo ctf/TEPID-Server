@@ -191,16 +191,6 @@ object Config : WithLogging() {
 
         log.trace("Initialising subsystems")
 
-        when (PropsDB.DB_TYPE){
-            "CouchDB" -> DB = CouchDbLayer()
-            "Hibernate" -> {
-                val emf = Persistence.createEntityManagerFactory("tepid-pu")
-                DB = HibernateDbLayer(emf.createEntityManager())
-            }
-            else -> log.fatal("DB type not set")
-        }
-        log.trace("Db initialised to ${PropsDB.DB_TYPE}")
-
         log.trace("Completed initialising subsystems")
 
     }
@@ -215,6 +205,15 @@ object Config : WithLogging() {
     }
 
     fun getDb(): DbLayer {
+        when (PropsDB.DB_TYPE){
+            "CouchDB" -> return CouchDbLayer()
+            "Hibernate" -> {
+                val emf = Persistence.createEntityManagerFactory("tepid-pu")
+                return HibernateDbLayer(emf.createEntityManager())
+            }
+            else -> log.fatal("DB type not set")
+        }
+        log.trace("Db initialised to ${PropsDB.DB_TYPE}")
         return CouchDbLayer()
     }
 
