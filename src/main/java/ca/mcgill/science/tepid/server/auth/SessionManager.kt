@@ -57,7 +57,7 @@ object SessionManager : WithLogging() {
      * @param session the fullSession to be tested
      * @return true for valid, false otherwise
      */
-    internal fun isValid(session: FullSession): Boolean {
+    fun isValid(session: FullSession): Boolean {
         if (!session.isValid()) return false
         if (session.role != queryUserDb(session.user.shortUser)?.role) return false
         return true
@@ -134,7 +134,7 @@ object SessionManager : WithLogging() {
      * Merge users from LDAP and DB for their corresponding authorities
      * Returns a new users (does not mutate either input
      */
-    internal fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?): FullUser {
+    fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?): FullUser {
         // ensure that short users actually match before attempting any merge
         val ldapShortUser = ldapUser.shortUser
                 ?: throw RuntimeException("LDAP user does not have a short user. Maybe this will help {\"ldapUser\":\"$ldapUser,\"dbUser\":\"$dbUser\"}")
@@ -161,7 +161,7 @@ object SessionManager : WithLogging() {
         try {
             val response = DB.putUser(user)
             if (response.isSuccessful) {
-                val responseObj = response.readEntity(ObjectNode::class.java)
+                val responseObj = response.entity as ObjectNode
                 val newRev = responseObj.get("_rev")?.asText()
                 if (newRev != null && newRev.length > 3) {
                     user._rev = newRev

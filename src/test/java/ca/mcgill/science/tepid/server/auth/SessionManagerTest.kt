@@ -10,7 +10,6 @@ import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
 import io.mockk.*
 import org.junit.After
 import org.junit.Before
@@ -110,10 +109,7 @@ class UpdateDbWithUserTest {
                 .put("id", "utestSU")
                 .put("_rev", "2222")
 
-        val mockResponse = spyk(Response.ok().build())
-        every {
-            mockResponse.readEntity(ObjectNode::class.java)
-        } returns mockObjectNode
+        val mockResponse = spyk(Response.ok().entity(mockObjectNode).build())
 
         every {
             mockDb.putUser(ofType(FullUser::class))
@@ -135,10 +131,7 @@ class UpdateDbWithUserTest {
                 .put("id", "utestSU")
                 .put("_rev", "3333")
 
-        val mockResponse = spyk(Response.serverError().build())
-        every {
-            mockResponse.readEntity(ObjectNode::class.java)
-        } returns mockObjectNode
+        val mockResponse = spyk(Response.serverError().entity(mockObjectNode).build())
 
         every {
             mockDb.putUser(ofType(FullUser::class))
@@ -156,7 +149,7 @@ class UpdateDbWithUserTest {
     fun testUpdateUserWithException() {
         val mockResponse = spyk(Response.ok().build())
         every {
-            mockResponse.readEntity(ObjectNode::class.java)
+            mockResponse.entity
         } throws RuntimeException("Testing")
 
         every {
@@ -171,7 +164,7 @@ class UpdateDbWithUserTest {
             mockDb.putUser(ofType(FullUser::class))
         } returns mockResponse
         // Verifies that it was called, but that it's unchanged
-        verify { mockResponse.readEntity(ObjectNode::class.java) }
+        verify { mockResponse.entity }
         assertEquals(testUser._rev, "1111")
     }
 }
