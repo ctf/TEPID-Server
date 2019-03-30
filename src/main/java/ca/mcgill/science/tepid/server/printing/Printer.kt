@@ -4,16 +4,15 @@ import ca.mcgill.science.tepid.models.bindings.PrintError
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.server.auth.SessionManager
-import ca.mcgill.science.tepid.server.db.CouchDb
-import ca.mcgill.science.tepid.server.db.getJson
-import ca.mcgill.science.tepid.server.db.putJson
-import ca.mcgill.science.tepid.server.db.query
+import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.copyFrom
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.tukaani.xz.XZInputStream
-import java.io.*
+import java.io.File
+import java.io.FileInputStream
+import java.io.InputStream
 import java.util.concurrent.*
 
 /**
@@ -83,7 +82,7 @@ object Printer : WithLogging() {
             val tmpXz = File("${tmpDir.absolutePath}/$id.ps.xz")
             tmpXz.copyFrom(stream)
             //let db know we have received data
-            CouchDb.updateWithResponse<PrintJob>(id) {
+            DB.updateJobWithResponse(id) {
                 file = tmpXz.absolutePath
                 log.info("Updating job $id with path $file")
                 received = System.currentTimeMillis()
@@ -112,11 +111,11 @@ object Printer : WithLogging() {
                     log.trace("Job $id has ${psInfo.pages} pages, $colorPages in color")
 
                     //update page count and status in db
-                    var j2: PrintJob = CouchDb.update(id) {
+                    var j2: PrintJob = DB.updateJob(id){
                         this.pages = psInfo.pages
                         this.colorPages = colorPages
                         this.processed = System.currentTimeMillis()
-                    } ?: throw PrintException("Could not update")
+                    }?: throw PrintException("Could not update")
 
                     //check if user has color printing enabled
                     log.trace("Testing for color {'job':'{}'}", j2.getId())
@@ -137,10 +136,11 @@ object Printer : WithLogging() {
                     val destination = j2.destination
                             ?: throw PrintException(PrintError.INVALID_DESTINATION)
 
-                    val dest = CouchDb.path(destination).getJson<FullDestination>()
+                    val dest = DB.getDestination(destination)
                     if (sendToSMB(tmp, dest, debug)) {
-                        j2.printed = System.currentTimeMillis()
-                        CouchDb.path(id).putJson(j2)
+                        DB.updateJob(id){
+                            printed = System.currentTimeMillis()
+                        }
                         log.info("${j2._id} sent to destination")
                     } else {
                         throw PrintException("Could not send to destination")
@@ -197,7 +197,7 @@ object Printer : WithLogging() {
      * Update job db and cancel executor
      */
     private fun failJob(id: String, error: String) {
-        CouchDb.updateWithResponse<PrintJob>(id) {
+        DB.updateJobWithResponse(id){
             fail(error)
         }
         cancel(id)
@@ -206,15 +206,13 @@ object Printer : WithLogging() {
     fun clearOldJobs() {
         synchronized(lock) {
             try {
-                val jobs = CouchDb.getViewRows<PrintJob>("oldJobs") {
-                    query("endkey" to System.currentTimeMillis() - 1800000)
-                }
-
+                val jobs = DB.getOldJobs()
                 jobs.forEach { j ->
-                    j.fail("Timed out")
-                    val id = j._id ?: return@forEach
-                    CouchDb.path(id).putJson(j)
-                    cancel(id)
+                    DB.updateJob(j.getId()){
+                        fail("Timed out")
+                        val id = _id ?: return@updateJob // TODO: if ID is null, how did we get here?
+                        cancel(id)
+                    }
                 }
             } catch (e: Exception) {
                 log.error("General failure", e)

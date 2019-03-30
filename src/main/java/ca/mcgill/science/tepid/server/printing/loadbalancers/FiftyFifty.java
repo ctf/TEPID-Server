@@ -3,13 +3,12 @@ package ca.mcgill.science.tepid.server.printing.loadbalancers;
 import ca.mcgill.science.tepid.models.data.Destination;
 import ca.mcgill.science.tepid.models.data.FullDestination;
 import ca.mcgill.science.tepid.models.data.PrintJob;
-import ca.mcgill.science.tepid.server.db.CouchDb;
+import ca.mcgill.science.tepid.server.db.DbLayer;
+import ca.mcgill.science.tepid.server.db.DbLayerKt;
 import ca.mcgill.science.tepid.server.printing.QueueManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +16,7 @@ public class FiftyFifty extends LoadBalancer {
 
     private final Logger log;
 
-    private final WebTarget couchdb = CouchDb.INSTANCE.getTarget();
+    public static final DbLayer db = DbLayerKt.getDB();
     private final List<FullDestination> destinations;
     private int currentDest;
     private boolean allDown = true;
@@ -29,7 +28,7 @@ public class FiftyFifty extends LoadBalancer {
         log = LogManager.getLogger("Queue - " + qm.queueConfig.getName());
         this.destinations = new ArrayList<>(qm.queueConfig.getDestinations().size());
         for (String d : qm.queueConfig.getDestinations()) {
-            FullDestination dest = couchdb.path(d).request(MediaType.APPLICATION_JSON).get(FullDestination.class);
+            FullDestination dest = db.getDestination(d);
             destinations.add(dest);
             if (dest.getUp()) this.allDown = false;
         }
@@ -41,7 +40,7 @@ public class FiftyFifty extends LoadBalancer {
         this.allDown = true;
         destinations.clear(); // clear out the old Destination objects
         for (String d : qM.queueConfig.getDestinations()) {
-            FullDestination dest = couchdb.path(d).request(MediaType.APPLICATION_JSON).get(FullDestination.class);
+            FullDestination dest = db.getDestination(d);
             destinations.add(dest); // replace with shiny new Destination objects
 
             boolean up = dest.getUp();
@@ -69,7 +68,7 @@ public class FiftyFifty extends LoadBalancer {
         do currentDest = (currentDest + 1) % destinations.size(); while (!destinations.get(currentDest).getUp());
         LoadBalancerResults lbr = new LoadBalancerResults();
         lbr.destination = destinations.get(currentDest).getId();
-        FullDestination dest = couchdb.path(lbr.destination).request(MediaType.APPLICATION_JSON).get(FullDestination.class);
+        FullDestination dest = db.getDestination(lbr.destination);
         lbr.eta = getEta(j, dest);
         log.trace("Load balancer sending job to destination {\'LoadBalancer\':\'{}\', \'job\':\'{}\', \'destination\':\'{}\'} ", qM.queueConfig.getName(), j.get_id(), dest.getName());
         return lbr;

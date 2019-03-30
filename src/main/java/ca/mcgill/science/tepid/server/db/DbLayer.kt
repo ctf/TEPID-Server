@@ -1,12 +1,11 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.server.server.Config
 import java.io.InputStream
 import javax.ws.rs.core.Response
-import javax.ws.rs.core.UriInfo
 
-// todo bind layer
-lateinit var DB: DbLayer
+var DB: DbLayer = Config.getDb()
 
 
 // TODO deleteDestination should return Response instead of String
@@ -57,6 +56,8 @@ interface DbLayer :
 
 interface DbDestinationLayer {
 
+    fun getDestination(id: Id): FullDestination
+
     fun getDestinations(): List<FullDestination>
 
     fun putDestinations(destinations: Map<Id, FullDestination>): String
@@ -85,31 +86,33 @@ interface DbJobLayer {
 
     fun getJobsByUser(sam: Sam, sortOrder: Order = Order.DESCENDING): List<PrintJob>
 
+    fun getStoredJobs(): List<PrintJob>
+
     /**
      * Updates the job, and returns the new job if successful
      */
     fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob?
 
-    fun postJob(job: PrintJob): Response
+    fun updateJobWithResponse(id: Id, updater: PrintJob.() -> Unit): Response
 
-    fun getJobChanges(id: Id, uriInfo: UriInfo): ChangeDelta
+    fun postJob(job: PrintJob): Response
 
     fun getJobFile(id: Id, file: String): InputStream?
 
-    /**
-     * Returns earliest job in ms
-     * Defaults to -1 if not found
-     */
-    fun getEarliestJobTime(shortUser: ShortUser): Long
+    fun getOldJobs(): List<PrintJob>
 }
 
 interface DbQueueLayer {
+
+    fun getQueue(id:Id): PrintQueue
 
     fun getQueues(): List<PrintQueue>
 
     fun putQueues(queues: Collection<PrintQueue>): Response
 
     fun deleteQueue(id: Id): String
+
+    fun getEta(id: Id): Long
 
 }
 
