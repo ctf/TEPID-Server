@@ -103,6 +103,15 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
         return null
     }
 
+    override fun updateJobWithResponse(id: Id, updater: PrintJob.() -> Unit): Response {
+        try{
+            updateJob(id,updater)
+        }catch(e : Exception){
+            return parsePersistenceErrorToResponse(e)
+        }
+        return Response.ok().build()
+    }
+
     override fun postJob(job: PrintJob): Response {
         try{
             hc.create(job)
