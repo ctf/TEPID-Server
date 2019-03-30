@@ -14,7 +14,7 @@ class JobTest : ITBase(), Loggable by WithLogging() {
 
     @Before
     fun initTest() {
-        Config.TEST_USER
+        Config.DEBUG
         testJob = PrintJob(
                 name= "Server Test ${System.currentTimeMillis()}",
                 queueName = "1B16",
