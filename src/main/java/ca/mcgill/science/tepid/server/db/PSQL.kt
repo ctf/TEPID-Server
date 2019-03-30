@@ -21,6 +21,10 @@ class HibernateDbLayer(val em: EntityManager) : DbLayer,
 
 
 class HibernateDestinationLayer(val hc : HibernateCrud<FullDestination, String?>) : DbDestinationLayer{
+    override fun getDestination(id: Id): FullDestination {
+        return hc.read(id) ?: failNotFound("Could not find destination {\"ID\":\"$id\"}")
+    }
+
     override fun getDestinations(): List<FullDestination> {
         return hc.readAll()
     }
@@ -108,21 +112,16 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
         return Response.ok().build()
     }
 
-    override fun getJobChanges(id: Id, uriInfo: UriInfo): ChangeDelta {
-        throw NotImplementedError("Changes is a CouchDb specific feature")
-    }
-
     override fun getJobFile(id: Id, file: String): InputStream? {
-        throw NotImplementedError()
-    }
-
-    @Deprecated("Only for oldMaxQuota, which is never used")
-    override fun getEarliestJobTime(shortUser: ShortUser): Long {
         throw NotImplementedError()
     }
 }
 
 class HibernateQueueLayer(val hc : HibernateCrud<PrintQueue, String?>) : DbQueueLayer {
+    override fun getQueue(id: Id): PrintQueue {
+        return hc.read(id) ?: failNotFound("Could not find PrintQueue {\"ID\":\"$id\"}")
+    }
+
     override fun getQueues(): List<PrintQueue> {
         return hc.readAll()
     }
@@ -210,7 +209,7 @@ class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLaye
 
     override fun getTotalPrintedCount(shortUser: ShortUser): Int {
         return (hc.em.
-                createQuery("SELECT SUM(c.pages)+2*SUM(c.colorPages) FROM PrintJob c WHERE c.userIdentification = :userId AND c.refunded = FALSE").
+                createQuery("SELECT SUM(c.pages)+2*SUM(c.colorPages) FROM PrintJob c WHERE c.userIdentification = :userId AND c.isRefunded = FALSE").
                 setParameter("userId", shortUser).
                 singleResult as Long).toInt()
     }
