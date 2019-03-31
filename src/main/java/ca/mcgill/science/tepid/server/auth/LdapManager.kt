@@ -81,6 +81,7 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
                 faculty = attr("department"),
                 studentId = attr("employeeID").toIntOrNull() ?: -1
         )
+        out._id = "u${attr("sAMAccountName")}"
         try {
             out.activeSince = SimpleDateFormat("yyyyMMddHHmmss.SX").parse(attr("whenCreated")).time
         } catch (e: ParseException) {
