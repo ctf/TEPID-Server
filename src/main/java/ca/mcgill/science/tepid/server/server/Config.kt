@@ -205,16 +205,22 @@ object Config : WithLogging() {
     }
 
     fun getDb(): DbLayer {
-        when (PropsDB.DB_TYPE){
-            "CouchDB" -> return CouchDbLayer()
-            "Hibernate" -> {
-                val emf = Persistence.createEntityManagerFactory("tepid-pu")
-                return HibernateDbLayer(emf.createEntityManager())
+        try {
+            when (PropsDB.DB_TYPE) {
+                "CouchDB" -> return CouchDbLayer()
+                "Hibernate" -> {
+                    val emf = Persistence.createEntityManagerFactory("tepid-pu")
+                    return HibernateDbLayer(emf.createEntityManager())
+                }
+                else -> log.fatal("DB type not set")
             }
-            else -> log.fatal("DB type not set")
+            log.trace("Db initialised to ${PropsDB.DB_TYPE}")
+            return CouchDbLayer()
+        } catch (e:Exception){
+            e.printStackTrace()
+            println(e.message)
+            throw e
         }
-        log.trace("Db initialised to ${PropsDB.DB_TYPE}")
-        return CouchDbLayer()
     }
 
 }
