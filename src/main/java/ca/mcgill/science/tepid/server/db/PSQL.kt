@@ -197,6 +197,10 @@ class HibernateSessionLayer(val hc : HibernateCrud<FullSession, String?>) : DbSe
                 resultList
     }
 
+    override fun getAllSessions(): List<FullSession> {
+        return hc.readAll()
+    }
+
     override fun deleteSession(id: Id): String {
         val failures = mutableListOf<String>()
         try {

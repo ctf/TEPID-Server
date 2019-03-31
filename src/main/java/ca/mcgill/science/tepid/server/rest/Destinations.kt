@@ -21,8 +21,6 @@ import javax.ws.rs.core.MediaType
 class Destinations {
 
     /**
-     * Put destination map to CouchDb
-     *
      * @param destinations map of destinations
      * @return post result
      */

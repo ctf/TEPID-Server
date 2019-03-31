@@ -136,6 +136,8 @@ interface DbSessionLayer {
 
     fun getSessionIdsForUser(shortUser: ShortUser): List<Id>
 
+    fun getAllSessions(): List<FullSession>
+
     fun deleteSession(id: Id): String
 
 }

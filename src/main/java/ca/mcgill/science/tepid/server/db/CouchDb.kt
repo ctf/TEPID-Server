@@ -121,6 +121,10 @@ class CouchDbLayer : DbLayer {
         return CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"$shortUser\"") }
     }
 
+    override fun getAllSessions(): List<FullSession> {
+        return CouchDb.getViewRows<FullSession>("sessions")
+    }
+
     override fun deleteSession(id: Id): String =
             CouchDb.path(id).deleteRev()
 
