@@ -156,16 +156,17 @@ object SessionManager : WithLogging() {
      * with logging for failures
      */
     fun updateDbWithUser(user: FullUser) {
-        log.trace("Update db instance {\"user\":\"${user.shortUser}\"}\n")
+        val shortUser = user.shortUser ?: run {log.error("Cannot update user, shortUser is null {\"user\": \"$user\"}") ; return}
+        log.trace("Update db instance {\"user\":\"$shortUser\"}\n")
         try {
             val response = DB.putUser(user)
             if (response.isSuccessful) {
-                log.trace("Updated User {\"user\": \"${user.shortUser}\"}")
+                log.trace("Updated User {\"user\": \"$shortUser\"}")
             } else {
-                log.error("Updating DB with user failed: {\"user\": \"${user.shortUser}\",\"response\":\"$response\"}")
+                log.error("Updating DB with user failed: {\"user\": \"$shortUser\",\"response\":\"$response\"}")
             }
         } catch (e1: Exception) {
-            log.error("Error updating DB with user: {\"user\": \"${user.shortUser}\"}", e1)
+            log.error("Error updating DB with user: {\"user\": \"$shortUser\"}", e1)
         }
     }
 

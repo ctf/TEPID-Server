@@ -102,32 +102,10 @@ class UpdateDbWithUserTest {
     val testUser = FullUser(shortUser = testSU)
 
     @Test
-    fun testUpdateUser() {
-
-        val mockObjectNode = ObjectMapper().createObjectNode()
-                .put("ok", true)
-                .put("id", "utestSU")
-                .put("_rev", "2222")
-
-        val mockResponse = spyk(Response.ok().entity(mockObjectNode).build())
-
-        every {
-            mockDb.putUser(ofType(FullUser::class))
-        } returns mockResponse
-
-        // Run Test
-        SessionManager.updateDbWithUser(testUser)
-
-        // Verifies the path
-        verify { mockDb.putUser(testUser) }
-        assertEquals(testUser._rev, "2222")
-    }
-
-    @Test
     fun testUpdateUserUnsuccessfulResponse() {
 
         val mockObjectNode = ObjectMapper().createObjectNode()
-                .put("ok", true)
+                .put("ok", false)
                 .put("id", "utestSU")
                 .put("_rev", "3333")
 
@@ -160,11 +138,8 @@ class UpdateDbWithUserTest {
         SessionManager.updateDbWithUser(testUser)
 
         // Verifies the path
-        every {
-            mockDb.putUser(ofType(FullUser::class))
-        } returns mockResponse
-        // Verifies that it was called, but that it's unchanged
-        verify { mockResponse.entity }
+        verify { mockDb.putUser(testUser) }
+
         assertEquals(testUser._rev, "1111")
     }
 }
