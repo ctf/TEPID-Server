@@ -571,6 +571,18 @@ class HibernateUserLayerTest() : DbTest() {
         assertEquals(140, ri)
     }
 
+    @Test
+    fun testGetTotalPrintedCountNoJobs(){
+        val otherUser = testItems[0].copy(shortUser = "OTHERUSER")
+        persist(otherUser)
+        persistMultiple(testItems)
+        persistMultiple(testPrints)
+
+        val ri = hl.getTotalPrintedCount(otherUser.shortUser!!)
+
+        assertEquals(0, ri)
+    }
+
     @AfterEach
     fun truncateUsed(){
         val u = listOf(PrintJob::class.java, FullUser::class.java)

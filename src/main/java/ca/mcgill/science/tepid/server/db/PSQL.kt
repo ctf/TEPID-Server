@@ -236,15 +236,18 @@ class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLaye
     }
 
     override fun isAdminConfigured(): Boolean {
-        return (hc.em.
-                createQuery("SELECT COUNT(c) FROM FullUser c").singleResult as Long > 0)
+        return ((hc.em.
+                createQuery("SELECT COUNT(c) FROM FullUser c")
+                .singleResult
+                as? Long ?: 0) > 0)
     }
 
     override fun getTotalPrintedCount(shortUser: ShortUser): Int {
         return (hc.em.
                 createQuery("SELECT SUM(c.pages)+2*SUM(c.colorPages) FROM PrintJob c WHERE c.userIdentification = :userId AND c.isRefunded = FALSE").
                 setParameter("userId", shortUser).
-                singleResult as Long).toInt()
+                singleResult
+                as? Long ?: 0).toInt()
     }
 
 }
