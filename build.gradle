@@ -124,7 +124,7 @@ dependencies {
     compile "org.hibernate:hibernate-entitymanager:5.4.1.Final"
     compile "org.hibernate:hibernate-testing:5.4.1.Final"
     compile "com.h2database:h2:1.3.148"
-
+    compile "org.postgresql:postgresql:42.2.5"
 }
 
 compileKotlin {
