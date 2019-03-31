@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.mapper
 import java.io.InputStream
@@ -216,8 +217,22 @@ class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLaye
         }
     }
 
+    private val numRegex = Regex("[0-9]+")
+
     override fun getUserOrNull(sam: Sam): FullUser? {
-        return hc.read(sam)
+        try {
+            return when {
+                sam.contains(".") -> hc.em.createQuery("SELECT c FROM FullUser c WHERE c.longUser = :lu", FullUser::class.java)
+                        .setParameter("lu", "${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}")
+                        .singleResult
+                sam.matches(numRegex) -> hc.em.createQuery("SELECT c FROM FullUser c WHERE c.studentId = :id", FullUser::class.java)
+                        .setParameter("id", sam)
+                        .singleResult
+                else -> hc.read("u$sam")
+            }
+        } catch (e: Exception){
+            return null
+        }
     }
 
     override fun isAdminConfigured(): Boolean {
