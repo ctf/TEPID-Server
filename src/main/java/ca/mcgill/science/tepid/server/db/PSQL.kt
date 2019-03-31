@@ -226,7 +226,7 @@ class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLaye
                         .setParameter("lu", "${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}")
                         .singleResult
                 sam.matches(numRegex) -> hc.em.createQuery("SELECT c FROM FullUser c WHERE c.studentId = :id", FullUser::class.java)
-                        .setParameter("id", sam)
+                        .setParameter("id", sam.toInt())
                         .singleResult
                 else -> hc.read("u$sam")
             }

@@ -583,6 +583,17 @@ class HibernateUserLayerTest() : DbTest() {
         assertEquals(0, ri)
     }
 
+    @Test
+    fun testGetUserById(){
+        val otherUser = testItems[0].copy(studentId = 1337)
+        persist(otherUser)
+
+        val ri = hl.getUserOrNull(otherUser.studentId.toString()) ?: fail("User was not retrieved")
+
+        assertEquals(ri.shortUser, testItems[0].shortUser)
+
+    }
+
     @AfterEach
     fun truncateUsed(){
         val u = listOf(PrintJob::class.java, FullUser::class.java)
