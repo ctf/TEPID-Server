@@ -17,12 +17,15 @@
 
         <properties>
             <!-- Configuring JDBC properties -->
-            <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;"/>
+            <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://db:5432/tepid"/>
+            <property name="javax.persistence.jdbc.user" value="postgres" />
+            <property name="javax.persistence.jdbc.password" value="" />
 
-            <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
+
+            <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver"/>
 
             <!-- Hibernate properties -->
-            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
             <property name="hibernate.hbm2ddl.auto" value="create"/>
             <property name="hibernate.format_sql" value="false"/>
             <property name="hibernate.show_sql" value="true"/>
