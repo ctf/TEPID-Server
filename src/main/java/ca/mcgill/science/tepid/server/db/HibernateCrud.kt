@@ -33,6 +33,7 @@ class HibernateCrud <T: TepidId, P>(val em: EntityManager, val classParameter:Cl
         try {
             return f(em)
         } catch (e:Exception){
+            e.printStackTrace();
             log.error(errorLogger(e))
             throw e
         }
@@ -46,6 +47,7 @@ class HibernateCrud <T: TepidId, P>(val em: EntityManager, val classParameter:Cl
                 it.transaction.commit()
             } catch (e: Exception){
                 log.error(errorLogger(e))
+                e.printStackTrace();
                 it.transaction.rollback()
                 throw e
             }
