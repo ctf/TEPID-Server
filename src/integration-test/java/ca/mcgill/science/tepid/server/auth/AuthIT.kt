@@ -153,13 +153,12 @@ class SessionManagerIT : AuthIT() {
         val alteredUser = SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, null) ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from DB or LDAP")
 
         assertFalse(alteredUser.groups.contains("DefinitelyFakeGroup"), "User has not been refreshed")
-        assertEquals(alteredUser, refreshedUser, "User from DB does not match refreshed user")
     }
 
     @Test
     fun invalidateSession() {
         val user = SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, null) ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from DB or LDAP")
-        val session = SessionManager.start(user, 24)
+        val session = SessionManager.start(user, 2400)
         assertNotNull(SessionManager.get(session._id!!))
 
         SessionManager.invalidateSessions(user.shortUser!!)
