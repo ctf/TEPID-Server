@@ -107,8 +107,8 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
             }
         }
 
-        val groups = mutableListOf<String>()
-        val courses = mutableListOf<Course>()
+        val groups = mutableSetOf<String>()
+        val courses = mutableSetOf<Course>()
 
         ldapGroups?.forEach { (name, semester) ->
             if (semester == null) groups.add(name)

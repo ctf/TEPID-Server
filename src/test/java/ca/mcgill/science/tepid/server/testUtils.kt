@@ -12,7 +12,7 @@ object UserFactory {
         val testUser = UserFactory.generateTestUser("db").copy(
                 activeSince = 1000,
                 shortUser = SU,
-                courses = listOf(Course("dbCourseName", Season.FALL, 4444)),
+                courses = setOf(Course("dbCourseName", Season.FALL, 4444)),
                 studentId = 3333,
                 colorPrinting = true,
                 jobExpiration = 12
@@ -25,7 +25,7 @@ object UserFactory {
         val testOtherUser = UserFactory.generateTestUser("ldap").copy(
                 activeSince = 9999,
                 shortUser = SU,
-                courses = listOf(Course("ldapCourseName", Season.FALL, 2222)),
+                courses = setOf(Course("ldapCourseName", Season.FALL, 2222)),
                 studentId = 1111,
                 jobExpiration = 604800000,
                 colorPrinting = false
@@ -45,6 +45,6 @@ object UserFactory {
     }
 
     fun generateTestUser(prefix:String):FullUser{
-        return FullUser(displayName = prefix+"DN", givenName = prefix+"GN", lastName = prefix+"LN", shortUser = prefix+"SU", longUser = prefix+".LU@example.com", email = prefix+".EM@example.com", faculty = prefix+"Faculty", groups = listOf(prefix+"Groups"), courses = listOf(Course(prefix+"CourseName", Season.FALL, 4444)), studentId = 3333, colorPrinting = true, jobExpiration = 12, nick = prefix + "Nick", preferredName = listOf(prefix + "PreferredName"))
+        return FullUser(displayName = prefix+"DN", givenName = prefix+"GN", lastName = prefix+"LN", shortUser = prefix+"SU", longUser = prefix+".LU@example.com", email = prefix+".EM@example.com", faculty = prefix+"Faculty", groups = setOf(prefix+"Groups"), courses = setOf(Course(prefix+"CourseName", Season.FALL, 4444)), studentId = 3333, colorPrinting = true, jobExpiration = 12, nick = prefix + "Nick", preferredName = prefix + "PreferredName")
     }
 }
