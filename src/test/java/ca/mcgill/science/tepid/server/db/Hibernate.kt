@@ -136,6 +136,8 @@ class HibernateCrudTest() : DbTest(){
 
         pc.delete(te)
 
+        em.close()
+        em = emf.createEntityManager()
         val re = em.find(TestEntity::class.java, te._id)
         assertNull(re)
     }
@@ -150,6 +152,8 @@ class HibernateCrudTest() : DbTest(){
 
         pc.deleteById(te._id)
 
+        em.close()
+        em = emf.createEntityManager()
         val re = em.find(TestEntity::class.java, te._id)
         assertNull(re)
     }
@@ -176,6 +180,8 @@ class HibernateCrudTest() : DbTest(){
 
         pc.updateOrCreateIfNotExist(te)
 
+        em.close()
+        em = emf.createEntityManager()
         val reUpdate = em.find(TestEntity::class.java, te._id)
         assertEquals(te, reUpdate)
     }
@@ -192,7 +198,7 @@ class HibernateCrudTest() : DbTest(){
         @JvmStatic
         @BeforeAll
         fun initHelper(){
-            pc = HibernateCrud(em, TestEntity::class.java)
+            pc = HibernateCrud(emf, TestEntity::class.java)
         }
     }
 }
@@ -204,9 +210,14 @@ class HibernateMarqueeLayerTest : DbTest(){
         val testItems = listOf(MarqueeData("T1"),MarqueeData("T2"),MarqueeData("T3"))
         persistMultiple(testItems)
 
+        em.close()
+        em = emf.createEntityManager()
         val retrieved = hml.getMarquees()
 
-        assertEquals(testItems, retrieved)
+        for (i in 0 .. testItems.size-1){
+            assertEquals(testItems[i].title, retrieved[i].title)
+            assertEquals(testItems[i].entry.toString(), retrieved[i].entry.toString())
+        }
     }
 
     @AfterEach
@@ -222,7 +233,7 @@ class HibernateMarqueeLayerTest : DbTest(){
         @JvmStatic
         @BeforeAll
         fun initHelper(){
-            hc = HibernateCrud(em, MarqueeData::class.java)
+            hc = HibernateCrud(emf, MarqueeData::class.java)
             hml = HibernateMarqueeLayer(hc)
         }
     }
@@ -306,7 +317,7 @@ class HibernateDestinationLayerTest : DbTest(){
         @JvmStatic
         @BeforeAll
         fun initHelper(){
-            hc = HibernateCrud(em, FullDestination::class.java)
+            hc = HibernateCrud(emf, FullDestination::class.java)
             hl = HibernateDestinationLayer(hc)
         }
     }
@@ -378,7 +389,7 @@ class HibernateJobLayerTest : DbTest() {
 
         val ri = hl.hc.read(id) ?: fail("Not Persisted")
         assertEquals("NEWNAME", ri.name)
-        assertEquals(ti, ri)
+        assertEquals(ti.queueName, ri.queueName)
     }
 
     @Test
@@ -414,7 +425,7 @@ class HibernateJobLayerTest : DbTest() {
         @JvmStatic
         @BeforeAll
         fun initHelper(){
-            hc = HibernateCrud(em, PrintJob::class.java)
+            hc = HibernateCrud(emf, PrintJob::class.java)
             hl = HibernateJobLayer(hc)
         }
     }
@@ -428,7 +439,7 @@ class HibernateQueueLayerTest() : DbTest() {
 
         val ri = hl.getQueues()
 
-        assertEquals(testItems, ri)
+        assertEquals(testItems.toString(), ri.toString())
     }
 
     @Test
@@ -442,7 +453,7 @@ class HibernateQueueLayerTest() : DbTest() {
         val response = hl.putQueues(ti)
 
         val ri = hc.readAll()
-        assertEquals(ti.sortedBy { it.name }, ri.sortedBy { it.name })
+        assertEquals(ti.sortedBy { it.name }.toString(), ri.sortedBy { it.name }.toString())
     }
 
     @Test
@@ -456,7 +467,7 @@ class HibernateQueueLayerTest() : DbTest() {
         val response = hl.putQueues(ti)
 
         val ri = hc.readAll()
-        assertEquals(ti.sortedBy { it.name }, ri.sortedBy { it.name })
+        assertEquals(ti.sortedBy { it.name }.toString(), ri.sortedBy { it.name }.toString())
         assertTrue(ri.fold(true) {res,e -> (e.loadBalancer == "PerfectlyBalanced") && res})
     }
 
@@ -493,7 +504,7 @@ class HibernateQueueLayerTest() : DbTest() {
         @JvmStatic
         @BeforeAll
         fun initHelper(){
-            hc = HibernateCrud(em, PrintQueue::class.java)
+            hc = HibernateCrud(emf, PrintQueue::class.java)
             hl = HibernateQueueLayer(hc)
         }
     }
@@ -537,7 +548,7 @@ class HibernateSessionLayerTest() : DbTest() {
         @JvmStatic
         @BeforeAll
         fun initHelper(){
-            hc = HibernateCrud(em, FullSession::class.java)
+            hc = HibernateCrud(emf, FullSession::class.java)
             hl = HibernateSessionLayer(hc)
         }
     }
@@ -620,7 +631,7 @@ class HibernateUserLayerTest() : DbTest() {
         @JvmStatic
         @BeforeAll
         fun initHelper(){
-            hc = HibernateCrud(em, FullUser::class.java)
+            hc = HibernateCrud(emf, FullUser::class.java)
             hl = HibernateUserLayer(hc)
         }
     }
