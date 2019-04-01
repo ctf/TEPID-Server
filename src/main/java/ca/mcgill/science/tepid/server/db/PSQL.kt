@@ -6,7 +6,7 @@ import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.mapper
 import java.io.InputStream
 import java.util.*
-import javax.persistence.EntityManager
+import javax.persistence.EntityManagerFactory
 import javax.persistence.EntityNotFoundException
 import javax.ws.rs.core.Response
 
@@ -74,24 +74,27 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
     override fun getJobsByQueue(queue: String, maxAge: Long, sortOrder: Order, limit: Int): List<PrintJob> {
         val sort = if(sortOrder == Order.ASCENDING) "ASC" else "DESC"
         val startTime = if(maxAge > 0) Date().time - maxAge else 0
-        return hc.em.
-                createQuery("SELECT c FROM PrintJob c WHERE c.queueName = :queueName AND c.started > :startTime ORDER BY c.started $sort", PrintJob::class.java).
+        return hc.dbOp(){ em ->
+                em.createQuery("SELECT c FROM PrintJob c WHERE c.queueName = :queueName AND c.started > :startTime ORDER BY c.started $sort", PrintJob::class.java).
                 setParameter("queueName", queue).
                 setParameter("startTime", startTime).
                 setMaxResults(if(limit==-1) Int.MAX_VALUE else limit).
-                resultList
+                resultList}
     }
 
     override fun getJobsByUser(sam: Sam, sortOrder: Order): List<PrintJob> {
         val sort = if(sortOrder == Order.ASCENDING) "ASC" else "DESC"
-        return hc.em.
-                createQuery("SELECT c FROM PrintJob c WHERE c.userIdentification = :userId ORDER BY c.started $sort", PrintJob::class.java).
-                setParameter("userId", sam).
-                resultList
+        return hc.dbOp {em ->
+            em.createQuery("SELECT c FROM PrintJob c WHERE c.userIdentification = :userId ORDER BY c.started $sort", PrintJob::class.java)
+                    .setParameter("userId", sam)
+                    .resultList
+        }
     }
 
     override fun getStoredJobs(): List<PrintJob> {
-        return hc.em.createQuery("SELECT c FROM PrintJob c WHERE c.file != null", PrintJob::class.java).resultList
+        return hc.dbOp { em ->
+            em.createQuery("SELECT c FROM PrintJob c WHERE c.file != null", PrintJob::class.java).resultList
+        }
     }
 
     override fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob? {
@@ -130,7 +133,9 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
     }
 
     override fun getOldJobs(): List<PrintJob> {
-        return hc.em.createQuery("SELECT c FROM PrintJob c WHERE c.processed = -1 AND c.failed = -1", PrintJob::class.java).resultList
+        return hc.dbOp { em ->
+            em.createQuery("SELECT c FROM PrintJob c WHERE c.processed = -1 AND c.failed = -1", PrintJob::class.java).resultList
+        }
     }
 }
 
@@ -163,9 +168,11 @@ class HibernateQueueLayer(val hc : HibernateCrud<PrintQueue, String?>) : DbQueue
     }
 
     override fun getEta(destinationId: Id): Long {
-        return hc.em.createQuery("SELECT max(c.eta) from PrintJob c WHERE c.destination = :destinationId").
-                setParameter("destinationId", destinationId)
-                .singleResult as Long
+        return hc.dbOp { em ->
+            em.createQuery("SELECT max(c.eta) from PrintJob c WHERE c.destination = :destinationId")
+                    .setParameter("destinationId", destinationId)
+                    .singleResult as Long
+        }
     }
 }
 
@@ -191,10 +198,11 @@ class HibernateSessionLayer(val hc : HibernateCrud<FullSession, String?>) : DbSe
     }
 
     override fun getSessionIdsForUser(shortUser: ShortUser): List<Id> {
-        return hc.em.
-                createQuery("SELECT c.id FROM FullSession c WHERE c.user.shortUser = :userId", String::class.java).
-                setParameter("userId", shortUser).
-                resultList
+        return hc.dbOp { em ->
+            em.createQuery("SELECT c.id FROM FullSession c WHERE c.user.shortUser = :userId", String::class.java)
+                    .setParameter("userId", shortUser)
+                    .resultList
+        }
     }
 
     override fun getAllSessions(): List<FullSession> {
@@ -226,12 +234,16 @@ class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLaye
     override fun getUserOrNull(sam: Sam): FullUser? {
         try {
             return when {
-                sam.contains(".") -> hc.em.createQuery("SELECT c FROM FullUser c WHERE c.longUser = :lu", FullUser::class.java)
-                        .setParameter("lu", "${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}")
-                        .singleResult
-                sam.matches(numRegex) -> hc.em.createQuery("SELECT c FROM FullUser c WHERE c.studentId = :id", FullUser::class.java)
-                        .setParameter("id", sam.toInt())
-                        .singleResult
+                sam.contains(".") -> hc.dbOp { em ->
+                    em.createQuery("SELECT c FROM FullUser c WHERE c.longUser = :lu", FullUser::class.java)
+                            .setParameter("lu", "${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}")
+                            .singleResult
+                }
+                sam.matches(numRegex) -> hc.dbOp { em ->
+                    em.createQuery("SELECT c FROM FullUser c WHERE c.studentId = :id", FullUser::class.java)
+                            .setParameter("id", sam.toInt())
+                            .singleResult
+                }
                 else -> hc.read("u$sam")
             }
         } catch (e: Exception){
@@ -240,18 +252,15 @@ class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLaye
     }
 
     override fun isAdminConfigured(): Boolean {
-        return ((hc.em.
-                createQuery("SELECT COUNT(c) FROM FullUser c")
-                .singleResult
-                as? Long ?: 0) > 0)
+        return (hc.dbOp { em ->
+            em.createQuery("SELECT COUNT(c) FROM FullUser c")
+                    .singleResult
+        } as? Long ?: 0) > 0
     }
 
     override fun getTotalPrintedCount(shortUser: ShortUser): Int {
-        return (hc.em.
-                createQuery("SELECT SUM(c.pages)+2*SUM(c.colorPages) FROM PrintJob c WHERE c.userIdentification = :userId AND c.isRefunded = FALSE").
-                setParameter("userId", shortUser).
-                singleResult
-                as? Long ?: 0).toInt()
+        return (hc.dbOp { em ->
+            em.createQuery("SELECT SUM(c.pages)+2*SUM(c.colorPages) FROM PrintJob c WHERE c.userIdentification = :userId AND c.isRefunded = FALSE").setParameter("userId", shortUser).singleResult
+        } as? Long ?: 0).toInt()
     }
-
 }
