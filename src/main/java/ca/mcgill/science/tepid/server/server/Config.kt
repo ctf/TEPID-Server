@@ -210,7 +210,7 @@ object Config : WithLogging() {
                 "CouchDB" -> return CouchDbLayer()
                 "Hibernate" -> {
                     val emf = Persistence.createEntityManagerFactory("tepid-pu")
-                    return HibernateDbLayer(emf.createEntityManager())
+                    return HibernateDbLayer(emf)
                 }
                 else -> log.fatal("DB type not set")
             }

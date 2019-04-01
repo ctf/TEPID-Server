@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.utils.Loggable
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.persistence.EntityExistsException
 import javax.persistence.EntityManager
+import javax.persistence.EntityManagerFactory
 import javax.persistence.EntityNotFoundException
 import javax.ws.rs.core.Response
 
@@ -27,7 +28,7 @@ interface IHibernateCrud <T, P> : Loggable {
 
 }
 
-class HibernateCrud <T: TepidId, P>(val em: EntityManager, val classParameter:Class<T>) : IHibernateCrud <T, P>, Loggable by WithLogging() {
+class HibernateCrud <T: TepidId, P>(val emf: EntityManagerFactory, val classParameter:Class<T>) : IHibernateCrud <T, P>, Loggable by WithLogging() {
 
     fun <T>dbOp(errorLogger : (e:Exception)->String, f:(em: EntityManager)->T):T{
         try {

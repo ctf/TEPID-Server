@@ -11,13 +11,13 @@ import javax.persistence.EntityNotFoundException
 import javax.ws.rs.core.Response
 
 
-class HibernateDbLayer(val em: EntityManager) : DbLayer,
-        DbDestinationLayer by HibernateDestinationLayer(HibernateCrud(em, FullDestination::class.java)),
-        DbJobLayer by HibernateJobLayer(HibernateCrud(em, PrintJob::class.java)),
-        DbQueueLayer by HibernateQueueLayer(HibernateCrud(em, PrintQueue::class.java)),
-        DbMarqueeLayer by HibernateMarqueeLayer(HibernateCrud(em, MarqueeData::class.java)),
-        DbSessionLayer by HibernateSessionLayer(HibernateCrud(em, FullSession::class.java)),
-        DbUserLayer by HibernateUserLayer(HibernateCrud(em, FullUser::class.java))
+class HibernateDbLayer(val emf: EntityManagerFactory) : DbLayer,
+        DbDestinationLayer by HibernateDestinationLayer(HibernateCrud(emf, FullDestination::class.java)),
+        DbJobLayer by HibernateJobLayer(HibernateCrud(emf, PrintJob::class.java)),
+        DbQueueLayer by HibernateQueueLayer(HibernateCrud(emf, PrintQueue::class.java)),
+        DbMarqueeLayer by HibernateMarqueeLayer(HibernateCrud(emf, MarqueeData::class.java)),
+        DbSessionLayer by HibernateSessionLayer(HibernateCrud(emf, FullSession::class.java)),
+        DbUserLayer by HibernateUserLayer(HibernateCrud(emf, FullUser::class.java))
 
 
 class HibernateDestinationLayer(val hc : HibernateCrud<FullDestination, String?>) : DbDestinationLayer{
