@@ -30,17 +30,20 @@ interface IHibernateCrud <T, P> : Loggable {
 
 class HibernateCrud <T: TepidId, P>(val emf: EntityManagerFactory, val classParameter:Class<T>) : IHibernateCrud <T, P>, Loggable by WithLogging() {
 
-    fun <T>dbOp(errorLogger : (e:Exception)->String, f:(em: EntityManager)->T):T{
+    fun <T>dbOp(errorLogger : (e:Exception)->String = {e -> "DB error: $e"}, f:(em: EntityManager)->T):T{
+        val em = emf.createEntityManager()
         try {
             return f(em)
         } catch (e:Exception){
             e.printStackTrace();
             log.error(errorLogger(e))
             throw e
+        } finally {
+            em.close()
         }
     }
 
-    fun <T> dbOpTransaction(errorLogger : (e:Exception)->String, f:(em:EntityManager)->T){
+    fun <T> dbOpTransaction(errorLogger : (e:Exception)->String = {e -> "DB error: $e"}, f:(em:EntityManager)->T){
         dbOp(errorLogger){
             try {
                 it.transaction.begin()
@@ -84,24 +87,32 @@ class HibernateCrud <T: TepidId, P>(val emf: EntityManagerFactory, val classPara
             "Error deleting object {\"object\":\"$obj\", \"error\":\"$e\"}"
         },
                 {
-            it.remove(obj)
+            it.remove(if (it.contains(obj)) obj else it.merge(obj))
         })
     }
 
     override fun deleteById(id: P) {
-        val u = em.find(classParameter, id)
-        delete(u)
+        val em = emf.createEntityManager()
+        try {
+            val u = em.find(classParameter, id)
+            delete(u)
+        }finally {
+            em.close()
+        }
     }
 
     override fun updateOrCreateIfNotExist(obj: T) {
         obj._id ?: return (create(obj))     // has no ID, needs to be created
+        val em = emf.createEntityManager()
         try {
             em.getReference(classParameter, obj._id)
             dbOpTransaction({e->"Error putting modifications {\"object\":\"$obj\", \"error\":\"$e\"}"}){
-                em -> em.merge(obj)
+                t -> t.merge(obj)
             }
         } catch (e : EntityNotFoundException) {
             return (create(obj)) // has ID, ID not in DB
+        } finally {
+            em.close()
         }
     }
 }
