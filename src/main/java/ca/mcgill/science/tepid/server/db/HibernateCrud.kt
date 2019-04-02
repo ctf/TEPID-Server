@@ -4,10 +4,7 @@ import ca.mcgill.science.tepid.models.bindings.TepidId
 import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.Loggable
 import ca.mcgill.science.tepid.utils.WithLogging
-import javax.persistence.EntityExistsException
-import javax.persistence.EntityManager
-import javax.persistence.EntityManagerFactory
-import javax.persistence.EntityNotFoundException
+import javax.persistence.*
 import javax.ws.rs.core.Response
 
 interface IHibernateCrud <T, P> : Loggable {
@@ -63,9 +60,13 @@ class HibernateCrud <T: TepidId, P>(val emf: EntityManagerFactory, val classPara
     }
 
     override fun read(id:P):T?{
-        return dbOp(
-                { e -> "Error reading object {\"class\":\"$classParameter\",\"id\":\"$id\", \"error\":\"$e\"" },
-                {em -> em.find(classParameter, id)})
+        return try {
+            dbOp(
+                    { e -> "Error reading object {\"class\":\"$classParameter\",\"id\":\"$id\", \"error\":\"$e\"" },
+                    { em ->em.find(classParameter, id)})
+        } catch (e: NoResultException ){
+            null
+        }
     }
 
     override fun readAll(): List<T> {
