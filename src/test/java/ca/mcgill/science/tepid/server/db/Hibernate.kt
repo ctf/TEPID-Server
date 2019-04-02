@@ -524,6 +524,27 @@ class HibernateSessionLayerTest() : DbTest() {
         assertTrue{ri.contains(testItems[2]._id)}
     }
 
+    @Test
+    fun testGetSessionNull(){
+        persistMultiple(testUsers)
+        persistMultiple(testItems)
+
+        val ri = hl.getSessionOrNull("FAKEID")
+
+        assertNull(ri)
+    }
+
+    @Test
+    fun testGetSession(){
+        persistMultiple(testUsers)
+        persistMultiple(testItems)
+
+        val ri = hl.hc.read(testItems[0]._id)
+
+        assertNotNull(ri)
+
+    }
+
     @AfterEach
     fun truncateUsed(){
         val u = listOf(FullSession::class.java, FullUser::class.java)
