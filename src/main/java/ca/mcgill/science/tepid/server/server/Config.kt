@@ -209,7 +209,11 @@ object Config : WithLogging() {
             when (PropsDB.DB_TYPE) {
                 "CouchDB" -> return CouchDbLayer()
                 "Hibernate" -> {
-                    val emf = Persistence.createEntityManagerFactory("tepid-pu")
+                    val props = HashMap<String, String>()
+                    props.put("javax.persistence.jdbc.url", PropsDB.URL)
+                    props.put("javax.persistence.jdbc.user", PropsDB.USERNAME)
+                    props.put("javax.persistence.jdbc.password", PropsDB.PASSWORD)
+                    val emf = Persistence.createEntityManagerFactory("tepid-pu", props)
                     return HibernateDbLayer(emf)
                 }
                 else -> log.fatal("DB type not set")
