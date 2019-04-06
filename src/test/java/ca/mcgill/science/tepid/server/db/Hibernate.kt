@@ -16,7 +16,91 @@ import kotlin.test.*
 data class TestEntity(
         @Column(nullable = false)
         var content: String = ""
-) : @EmbeddedId TepidDb by TepidDbDelegate()
+) : TepidDb by TepidDbDelegate()
+
+@Entity
+data class fs(
+        var role: String = "",
+        @Access(AccessType.FIELD)
+        @ManyToOne(targetEntity = FullUser::class)
+        var user: FullUser?,
+        var expiration: Long = -1L,
+        var persistent: Boolean = true
+) : TepidDb by TepidDbDelegate() {
+
+    override var type: String? = "session"
+}
+
+@Entity
+data class TestForeignKey(
+/*        @Access(AccessType.FIELD)
+        @ManyToOne(fetch = FetchType.EAGER)
+        var datum : TestEntity*/
+        @Access(AccessType.FIELD)
+        @ManyToOne(targetEntity = FullUser::class)
+        var datum: FullUser?
+) : TepidDb by TepidDbDelegate()
+
+class WtfTest : DbTest(){
+
+    @Test
+    fun testGetSession(){
+        persistMultiple(testUsers)
+        persistMultiple(testItems)
+
+        val ri = hc.read(testItems[0]._id)
+
+        assertNotNull(ri)
+
+    }
+
+    @Test
+    fun testFk(){
+        val embed0 = FullUser(shortUser = "shortUname")
+        embed0._id = "TESTFU"
+        val e0 = TestForeignKey(datum = embed0)
+        e0._id = "TEST"
+
+        em.transaction.begin()
+        em.persist(embed0)
+        em.persist(e0)
+        em.transaction.commit()
+
+        val r0 = em.find(TestForeignKey::class.java,"TEST")
+
+        assertNotNull(r0)
+        assertEquals(e0, r0)
+
+
+    }
+
+    @AfterEach
+    fun truncateUsed(){
+        val u = listOf(TestForeignKey::class.java, fs::class.java, FullUser::class.java)
+        u.forEach { truncate(it) }
+    }
+
+    companion object {
+        val testUsers = listOf(
+                FullUser(shortUser = "USER1"),
+                FullUser(shortUser = "USER2")
+        )
+
+        val testItems  = listOf(
+                fs(user = testUsers[0], expiration = 100),
+                fs(user = testUsers[1], expiration = 200),
+                fs(user = testUsers[0], expiration = 300)
+        )
+
+        lateinit var hc: HibernateCrud<fs, String?>
+
+        @JvmStatic
+        @BeforeAll
+        fun initHelper(){
+            hc = HibernateCrud(DbTest.emf, fs::class.java)
+        }
+    }
+}
 
 open class DbTest {
 

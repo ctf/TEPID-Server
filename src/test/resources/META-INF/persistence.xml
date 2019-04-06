@@ -7,6 +7,8 @@
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <!-- add classes -->
         <class>ca.mcgill.science.tepid.server.db.TestEntity</class>
+        <class>ca.mcgill.science.tepid.server.db.fs</class>
+        <class>ca.mcgill.science.tepid.server.db.TestForeignKey</class>
 
 
         <class>ca.mcgill.science.tepid.models.data.FullUser</class>
