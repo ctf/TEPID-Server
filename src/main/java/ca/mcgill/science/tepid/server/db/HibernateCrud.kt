@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.models.bindings.TepidId
 import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.Loggable
 import ca.mcgill.science.tepid.utils.WithLogging
+import java.util.*
 import javax.persistence.*
 import javax.ws.rs.core.Response
 
@@ -103,7 +104,7 @@ class HibernateCrud <T: TepidId, P>(val emf: EntityManagerFactory, val classPara
     }
 
     override fun updateOrCreateIfNotExist(obj: T) {
-        obj._id ?: return (create(obj))     // has no ID, needs to be created
+        obj._id ?: return run{obj._id = UUID.randomUUID().toString(); create(obj)}     // has no ID, needs to be created
         val em = emf.createEntityManager()
         try {
             em.getReference(classParameter, obj._id)
