@@ -146,7 +146,7 @@ class SessionManagerIT : AuthIT() {
     @Test
     fun forceDbRefresh() {
         val user = SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, null) ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from DB or LDAP")
-        user.groups = listOf("DefinitelyFakeGroup")
+        user.groups = setOf("DefinitelyFakeGroup")
         SessionManager.updateDbWithUser(user)
 
         val refreshedUser = SessionManager.refreshUser(PropsLDAPTestUser.TEST_USER)

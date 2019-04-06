@@ -1,7 +1,6 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.bindings.TepidDb
-import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
 import ca.mcgill.science.tepid.models.bindings.TepidId
 import ca.mcgill.science.tepid.models.data.*
 import org.junit.jupiter.api.AfterAll
@@ -16,7 +15,7 @@ import kotlin.test.*
 data class TestEntity(
         @Column(nullable = false)
         var content: String = ""
-) : TepidDb by TepidDbDelegate()
+) : TepidDb()
 
 @Entity
 data class fs(
@@ -26,9 +25,7 @@ data class fs(
         var user: FullUser?,
         var expiration: Long = -1L,
         var persistent: Boolean = true
-) : TepidDb by TepidDbDelegate() {
-
-    override var type: String? = "session"
+) : TepidDb(type="session") {
 }
 
 @Entity
@@ -39,7 +36,7 @@ data class TestForeignKey(
         @Access(AccessType.FIELD)
         @ManyToOne(targetEntity = FullUser::class)
         var datum: FullUser?
-) : TepidDb by TepidDbDelegate()
+) : TepidDb()
 
 class WtfTest : DbTest(){
 
@@ -111,12 +108,14 @@ open class DbTest {
     }
 
     fun<T:TepidId> persistMultiple (list:List<T>){
+        em.transaction.begin()
         list.toList().map { e ->
             em.detach(e)
 //            e._id = e._id ?: newId()
             e._id = newId()
-            persist(e)
+            em.persist(e)
         }
+        em.transaction.commit()
     }
 
     internal fun newId() = UUID.randomUUID().toString()
@@ -690,6 +689,7 @@ class HibernateUserLayerTest() : DbTest() {
     @Test
     fun testGetTotalPrintedCountNoJobs(){
         val otherUser = testItems[0].copy(shortUser = "OTHERUSER")
+        otherUser._id = "uOTHERUSER"
         persist(otherUser)
         persistMultiple(testItems)
         persistMultiple(testPrints)
@@ -702,6 +702,7 @@ class HibernateUserLayerTest() : DbTest() {
     @Test
     fun testGetUserById(){
         val otherUser = testItems[0].copy(studentId = 1337)
+        otherUser._id = "TEST"
         persist(otherUser)
 
         val ri = hl.getUserOrNull(otherUser.studentId.toString()) ?: fail("User was not retrieved")
