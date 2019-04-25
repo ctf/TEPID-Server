@@ -711,6 +711,29 @@ class HibernateUserLayerTest() : DbTest() {
 
     }
 
+    @Test
+    fun testGetCourses(){
+        val u = testItems[0].copy()
+        u._id = "u${u.shortUser}"
+        val groups = listOf(
+                "Group0",
+                "Group1",
+                "Group2"
+        )
+        val courses = listOf(
+                Course("course0", Season.SUMMER, 1337),
+                Course("course1", Season.SUMMER, 1337),
+                Course("course2", Season.SUMMER, 1337)
+        )
+
+        u.groups = groups
+        u.courses = courses
+        persist(u)
+        val ri = hl.getUserOrNull(u.shortUser!!) ?: fail("Did not retieve user")
+
+        assertEquals(3, ri.groups.size)
+        assertEquals(3, ri.courses.size)
+    }
     @AfterEach
     fun truncateUsed(){
         val u = listOf(PrintJob::class.java, FullUser::class.java)
