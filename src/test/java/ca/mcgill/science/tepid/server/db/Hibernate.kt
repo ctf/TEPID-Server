@@ -128,6 +128,15 @@ open class DbTest {
         em.transaction.commit()
     }
 
+    internal fun<T> deleteAllIndividually(classParameter: Class<T>){
+        em.transaction.begin()
+        val l : List<T> = em.createQuery("SELECT c FROM ${classParameter.simpleName} c", classParameter).resultList
+        l.forEach {
+            em.remove(it)
+        }
+        em.transaction.commit()
+    }
+
     /*@BeforeEach
     fun initialiseDb(){
        val session = em.unwrap(Session::class.java);
@@ -734,10 +743,13 @@ class HibernateUserLayerTest() : DbTest() {
         assertEquals(3, ri.groups.size)
         assertEquals(3, ri.courses.size)
     }
+
     @AfterEach
     fun truncateUsed(){
-        val u = listOf(PrintJob::class.java, FullUser::class.java)
+        val u = listOf(PrintJob::class.java)
         u.forEach { truncate(it) }
+
+        deleteAllIndividually(FullUser::class.java)
     }
 
     companion object {
