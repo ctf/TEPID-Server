@@ -99,8 +99,10 @@ class WtfTest : DbTest(){
         em.merge(testContainer)
         em.transaction.commit()
 
-        val r_find = em.find(TestContainingEntity::class.java,"TEST")
-        val r_select = em.createQuery( "SELECT c from TestContainingEntity c where c._id = 'TEST'", TestContainingEntity::class.java).singleResult
+        val newEm = emf.createEntityManager()
+
+        val r_find = newEm.find(TestContainingEntity::class.java,"TEST")
+        val r_select = newEm.createQuery( "SELECT c from TestContainingEntity c where c._id = 'TEST'", TestContainingEntity::class.java).singleResult
 
         assertEquals(2, r_find!!.set0.size)
         assertEquals(2, r_find.set1.size)
