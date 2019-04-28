@@ -32,14 +32,18 @@ data class TestEntity1(
 
 @Entity
 data class TestContainingEntity(
-        @javax.persistence.Id
-        var _id: String,
         @Access(AccessType.FIELD)
         @OneToMany(targetEntity = TestEntity0::class, cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
         var set0 : MutableSet<TestEntity0>,
         @Access(AccessType.FIELD)
         @OneToMany(targetEntity = TestEntity1::class, cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
         var set1 : MutableSet<TestEntity1>
+):Idsc()
+
+@MappedSuperclass
+abstract class Idsc(
+        @javax.persistence.Id
+        var _id: String = ""
 )
 
 @Entity
@@ -97,11 +101,10 @@ class WtfTest : DbTest(){
     @Test
     fun testSetGet(){
         val testContainer = TestContainingEntity(
-                "TEST",
                 mutableSetOf(TestEntity0("00"), TestEntity0("01")),
                 mutableSetOf(TestEntity1("10"), TestEntity1("11"))
         )
-//        testContainer._id = "TEST"
+        testContainer._id = "TEST"
 
         em.transaction.begin()
 //        testContainer.set0.forEach{em.persist(it)}
