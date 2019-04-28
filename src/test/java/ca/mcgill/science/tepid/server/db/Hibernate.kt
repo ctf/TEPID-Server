@@ -18,6 +18,16 @@ data class TestEntity(
 ) : TepidDb()
 
 @Entity
+data class TestContainingEntity(
+        @Access(AccessType.FIELD)
+        @ManyToOne(targetEntity = TestEntity::class,cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
+        var set0 : MutableSet<TestEntity> = mutableSetOf(),
+        @Access(AccessType.FIELD)
+        @ManyToOne(targetEntity = TestEntity::class,cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
+        var set1 : MutableSet<TestEntity> = mutableSetOf()
+) : TepidDb()
+
+@Entity
 data class fs(
         var role: String = "",
         @Access(AccessType.FIELD)
@@ -67,6 +77,28 @@ class WtfTest : DbTest(){
 
         assertNotNull(r0)
         assertEquals(e0, r0)
+    }
+
+    @Test
+    fun testSetGet(){
+        val testContainer = TestContainingEntity(
+                mutableSetOf(TestEntity("00"), TestEntity("01")),
+                mutableSetOf(TestEntity("10"), TestEntity("11"))
+        )
+//        testContainer._id = "TEST"
+
+        em.transaction.begin()
+        em.persist(testContainer)
+        em.transaction.commit()
+
+        val r_find = em.find(TestContainingEntity::class.java,"TEST")
+        val r_select = em.createQuery( "SELECT c from TestContainingEntity c where c._id = 'TEST'", TestContainingEntity::class.java).singleResult
+
+        assertEquals(2, r_find!!.set0.size)
+        assertEquals(2, r_find.set1.size)
+        assertEquals(2, r_select!!.set0.size)
+        assertEquals(2, r_select.set1.size)
+
 
 
     }
