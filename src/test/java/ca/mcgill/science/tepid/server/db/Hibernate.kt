@@ -18,13 +18,19 @@ data class TestEntity(
 ) : TepidDb()
 
 @Entity
+data class TestEntity1(
+        @Column(nullable = false)
+        var content: String = ""
+) : TepidDb()
+
+@Entity
 data class TestContainingEntity(
         @Access(AccessType.FIELD)
-        @ManyToOne(targetEntity = TestEntity::class,cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
+        @OneToMany(targetEntity = TestEntity::class, cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
         var set0 : MutableSet<TestEntity> = mutableSetOf(),
         @Access(AccessType.FIELD)
-        @ManyToOne(targetEntity = TestEntity::class,cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
-        var set1 : MutableSet<TestEntity> = mutableSetOf()
+        @OneToMany(targetEntity = TestEntity1::class, cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
+        var set1 : MutableSet<TestEntity1> = mutableSetOf()
 ) : TepidDb()
 
 @Entity
@@ -83,12 +89,14 @@ class WtfTest : DbTest(){
     fun testSetGet(){
         val testContainer = TestContainingEntity(
                 mutableSetOf(TestEntity("00"), TestEntity("01")),
-                mutableSetOf(TestEntity("10"), TestEntity("11"))
+                mutableSetOf(TestEntity1("10"), TestEntity1("11"))
         )
-//        testContainer._id = "TEST"
+        testContainer._id = "TEST"
 
         em.transaction.begin()
-        em.persist(testContainer)
+//        testContainer.set0.forEach{em.persist(it)}
+//        testContainer.set1.forEach{em.persist(it)}
+        em.merge(testContainer)
         em.transaction.commit()
 
         val r_find = em.find(TestContainingEntity::class.java,"TEST")
@@ -98,9 +106,6 @@ class WtfTest : DbTest(){
         assertEquals(2, r_find.set1.size)
         assertEquals(2, r_select!!.set0.size)
         assertEquals(2, r_select.set1.size)
-
-
-
     }
 
     @AfterEach
