@@ -43,8 +43,23 @@ data class TestContainingEntity(
 @MappedSuperclass
 abstract class Idsc(
         @javax.persistence.Id
-        var _id: String = ""
-)
+        var _id: String? = null,
+        var _rev: String? = null,
+        var type: String? = null,
+        var schema: String? = null
+){
+
+    @JsonIgnore
+    @Transient
+    fun getId() = _id ?: ""
+    /*
+     * Helper function to retrieve a nonnull rev
+     * Defaults to an empty string
+     */
+    @JsonIgnore
+    @Transient
+    fun getRev() = _rev ?: ""
+}
 
 @Entity
 data class fs(
@@ -159,7 +174,7 @@ open class DbTest {
         em.transaction.commit()
     }
 
-    fun<T:TepidId> persistMultiple (list:List<T>){
+    fun<T:TepidDb> persistMultiple (list:List<T>){
         em.transaction.begin()
         list.toList().map { e ->
             em.detach(e)
