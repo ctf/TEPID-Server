@@ -43,6 +43,7 @@ data class TestContainingEntity(
 @MappedSuperclass
 abstract class Idsc(
         @javax.persistence.Id
+        @Column(columnDefinition = "char(36) default 'undefined'")
         var _id: String? = null,
         var _rev: String? = null,
         var type: String? = null,
