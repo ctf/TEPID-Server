@@ -18,20 +18,29 @@ data class TestEntity(
 ) : TepidDb()
 
 @Entity
-data class TestEntity1(
+data class TestEntity0(
+        @javax.persistence.Id
         @Column(nullable = false)
         var content: String = ""
-) : TepidDb()
+)
+@Entity
+data class TestEntity1(
+        @javax.persistence.Id
+        @Column(nullable = false)
+        var content: String = ""
+)
 
 @Entity
 data class TestContainingEntity(
+        @javax.persistence.Id
+        var _id: String,
         @Access(AccessType.FIELD)
-        @OneToMany(targetEntity = TestEntity::class, cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
-        var set0 : MutableSet<TestEntity> = mutableSetOf(),
+        @OneToMany(targetEntity = TestEntity0::class, cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
+        var set0 : MutableSet<TestEntity0>,
         @Access(AccessType.FIELD)
         @OneToMany(targetEntity = TestEntity1::class, cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
-        var set1 : MutableSet<TestEntity1> = mutableSetOf()
-) : TepidDb()
+        var set1 : MutableSet<TestEntity1>
+)
 
 @Entity
 data class fs(
@@ -88,10 +97,11 @@ class WtfTest : DbTest(){
     @Test
     fun testSetGet(){
         val testContainer = TestContainingEntity(
-                mutableSetOf(TestEntity("00"), TestEntity("01")),
+                "TEST",
+                mutableSetOf(TestEntity0("00"), TestEntity0("01")),
                 mutableSetOf(TestEntity1("10"), TestEntity1("11"))
         )
-        testContainer._id = "TEST"
+//        testContainer._id = "TEST"
 
         em.transaction.begin()
 //        testContainer.set0.forEach{em.persist(it)}
@@ -104,10 +114,10 @@ class WtfTest : DbTest(){
         val r_find = newEm.find(TestContainingEntity::class.java,"TEST")
         val r_select = newEm.createQuery( "SELECT c from TestContainingEntity c where c._id = 'TEST'", TestContainingEntity::class.java).singleResult
 
-        assertEquals(2, r_find!!.set0.size)
-        assertEquals(2, r_find.set1.size)
         assertEquals(2, r_select!!.set0.size)
         assertEquals(2, r_select.set1.size)
+        assertEquals(2, r_find!!.set0.size)
+        assertEquals(2, r_find.set1.size)
     }
 
     @AfterEach
