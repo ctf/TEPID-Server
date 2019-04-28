@@ -1,8 +1,8 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.bindings.TepidDb
-import ca.mcgill.science.tepid.models.bindings.TepidId
 import ca.mcgill.science.tepid.models.data.*
+import com.fasterxml.jackson.annotation.JsonIgnore
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll

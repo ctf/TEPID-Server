@@ -1,6 +1,6 @@
 package ca.mcgill.science.tepid.server.db
 
-import ca.mcgill.science.tepid.models.bindings.TepidId
+import ca.mcgill.science.tepid.models.bindings.TepidDb
 import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.Loggable
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -26,7 +26,7 @@ interface IHibernateCrud <T, P> : Loggable {
 
 }
 
-class HibernateCrud <T: TepidId, P>(val emf: EntityManagerFactory, val classParameter:Class<T>) : IHibernateCrud <T, P>, Loggable by WithLogging() {
+class HibernateCrud <T: TepidDb, P>(val emf: EntityManagerFactory, val classParameter:Class<T>) : IHibernateCrud <T, P>, Loggable by WithLogging() {
 
     fun <T>dbOp(errorLogger : (e:Exception)->String = {e -> "DB error: $e"}, f:(em: EntityManager)->T):T{
         val em = emf.createEntityManager()
