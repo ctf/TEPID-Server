@@ -47,6 +47,7 @@ data class TestContainingEntity(
 @MappedSuperclass
 abstract class Idsc(
         @javax.persistence.Id
+        @Column(length = 36)
         @GeneratedValue(generator = "FallbackUuid")
         @GenericGenerator(
                 name = "FallbackUuid",
