@@ -21,40 +21,6 @@ data class TestEntity(
         var content: String = ""
 ) : TepidDb()
 
-@MappedSuperclass
-abstract class Idsc(
-        @javax.persistence.Id
-        @Column(length = 36)
-        @GeneratedValue(generator = "FallbackUuid")
-        @GenericGenerator(
-                name = "FallbackUuid",
-                strategy = "ca.mcgill.science.tepid.server.db.TestIdGenerator"
-        )
-        var _id: String? = null,
-        var _rev: String? = null,
-        var type: String? = null,
-        var schema: String? = null
-){
-
-    @JsonIgnore
-    @Transient
-    fun getId() = _id ?: ""
-    /*
-     * Helper function to retrieve a nonnull rev
-     * Defaults to an empty string
-     */
-    @JsonIgnore
-    @Transient
-    fun getRev() = _rev ?: ""
-}
-
-class TestIdGenerator : IdentifierGenerator {
-    override fun generate(session: SharedSessionContractImplementor?, `object`: Any?): Serializable {
-        val obj = `object` as Idsc
-        return obj._id ?: UUID.randomUUID().toString()
-    }
-}
-
 @Entity
 data class fs(
         var role: String = "",
