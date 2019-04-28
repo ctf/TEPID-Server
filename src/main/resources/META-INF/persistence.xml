@@ -11,22 +11,25 @@
         <class>ca.mcgill.science.tepid.models.data.FullSession</class>
         <class>ca.mcgill.science.tepid.models.data.PrintJob</class>
         <class>ca.mcgill.science.tepid.models.data.PrintQueue</class>
+
         <class>ca.mcgill.science.tepid.models.data.DestinationTicket</class>
         <class>ca.mcgill.science.tepid.models.data.FullDestination</class>
+
         <class>ca.mcgill.science.tepid.models.data.MarqueeData</class>
+        <class>ca.mcgill.science.tepid.models.data.AdGroup</class>
+        <class>ca.mcgill.science.tepid.models.data.Course</class>
 
         <properties>
             <!-- Configuring JDBC properties -->
-            <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://db:5432/tepid"/>
-            <property name="javax.persistence.jdbc.user" value="postgres" />
+            <property name="javax.persistence.jdbc.url" value="jdbc:postgresql:tepid"/>
+            <property name="javax.persistence.jdbc.user" value="tepid" />
             <property name="javax.persistence.jdbc.password" value="" />
-
 
             <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver"/>
 
             <!-- Hibernate properties -->
-            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
-            <property name="hibernate.hbm2ddl.auto" value="create"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQL95Dialect"/>
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
             <property name="hibernate.format_sql" value="false"/>
             <property name="hibernate.show_sql" value="true"/>
 
