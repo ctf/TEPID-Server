@@ -3,10 +3,14 @@ package ca.mcgill.science.tepid.server.db
 import ca.mcgill.science.tepid.models.bindings.TepidDb
 import ca.mcgill.science.tepid.models.data.*
 import com.fasterxml.jackson.annotation.JsonIgnore
+import org.hibernate.annotations.GenericGenerator
+import org.hibernate.engine.spi.SharedSessionContractImplementor
+import org.hibernate.id.IdentifierGenerator
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import java.io.Serializable
 import java.util.*
 import javax.persistence.*
 import kotlin.test.*
@@ -43,7 +47,11 @@ data class TestContainingEntity(
 @MappedSuperclass
 abstract class Idsc(
         @javax.persistence.Id
-        @Column(columnDefinition = "char(36) default 'undefined'")
+        @GeneratedValue(generator = "FallbackUuid")
+        @GenericGenerator(
+                name = "FallbackUuid",
+                strategy = "ca.mcgill.science.tepid.server.db.TestIdGenerator"
+        )
         var _id: String? = null,
         var _rev: String? = null,
         var type: String? = null,
@@ -60,6 +68,13 @@ abstract class Idsc(
     @JsonIgnore
     @Transient
     fun getRev() = _rev ?: ""
+}
+
+class TestIdGenerator : IdentifierGenerator {
+    override fun generate(session: SharedSessionContractImplementor?, `object`: Any?): Serializable {
+        val obj = `object` as Idsc
+        return obj._id ?: UUID.randomUUID().toString()
+    }
 }
 
 @Entity
