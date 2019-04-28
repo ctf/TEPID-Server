@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.auth
 
+import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
@@ -146,13 +147,13 @@ class SessionManagerIT : AuthIT() {
     @Test
     fun forceDbRefresh() {
         val user = SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, null) ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from DB or LDAP")
-        user.groups = listOf("DefinitelyFakeGroup")
+        user.groups = setOf(AdGroup("DefinitelyFakeGroup"))
         SessionManager.updateDbWithUser(user)
 
         val refreshedUser = SessionManager.refreshUser(PropsLDAPTestUser.TEST_USER)
         val alteredUser = SessionManager.queryUser(PropsLDAPTestUser.TEST_USER, null) ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from DB or LDAP")
 
-        assertFalse(alteredUser.groups.contains("DefinitelyFakeGroup"), "User has not been refreshed")
+        assertFalse(alteredUser.groups.contains(AdGroup("DefinitelyFakeGroup")), "User has not been refreshed")
     }
 
     @Test

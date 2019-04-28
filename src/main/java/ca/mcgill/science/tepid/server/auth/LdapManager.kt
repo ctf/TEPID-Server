@@ -1,9 +1,6 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.models.data.Course
-import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Season
-import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.text.ParseException
@@ -107,11 +104,11 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
             }
         }
 
-        val groups = mutableListOf<String>()
-        val courses = mutableListOf<Course>()
+        val groups = mutableSetOf<AdGroup>()
+        val courses = mutableSetOf<Course>()
 
         ldapGroups?.forEach { (name, semester) ->
-            if (semester == null) groups.add(name)
+            if (semester == null) groups.add(AdGroup(name))
             else courses.add(Course(name, semester.season, semester.year))
         }
         out.groups = groups

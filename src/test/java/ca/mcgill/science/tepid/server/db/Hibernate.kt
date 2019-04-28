@@ -724,12 +724,12 @@ class HibernateUserLayerTest() : DbTest() {
     fun testGetCourses(){
         val u = testItems[0].copy()
         u._id = "u${u.shortUser}"
-        val groups = listOf(
-                "Group0",
-                "Group1",
-                "Group2"
+        val groups = setOf(
+                AdGroup("Group0"),
+                AdGroup("Group1"),
+                AdGroup("Group2")
         )
-        val courses = listOf(
+        val courses = setOf(
                 Course("course0", Season.SUMMER, 1337),
                 Course("course1", Season.SUMMER, 1337),
                 Course("course2", Season.SUMMER, 1337)

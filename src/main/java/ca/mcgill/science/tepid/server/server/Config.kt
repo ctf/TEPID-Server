@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.About
+import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.server.db.CouchDbLayer
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
@@ -71,10 +72,10 @@ object Config : WithLogging() {
 
     val EXCHANGE_STUDENTS_GROUP_BASE : String
     val GROUPS_LOCATION : String
-    val ELDERS_GROUP : List<String>
-    val CTFERS_GROUP : List<String>
-    val CURRENT_EXCHANGE_GROUP : String
-    val USERS_GROUP : List<String>
+    val ELDERS_GROUP : List<AdGroup>
+    val CTFERS_GROUP : List<AdGroup>
+    val CURRENT_EXCHANGE_GROUP : AdGroup
+    val USERS_GROUP : List<AdGroup>
 
 
     val HASH: String
@@ -125,14 +126,17 @@ object Config : WithLogging() {
 
         EXCHANGE_STUDENTS_GROUP_BASE = PropsLDAPGroups.EXCHANGE_STUDENTS_GROUP_BASE ?: ""
         GROUPS_LOCATION = PropsLDAPGroups.GROUPS_LOCATION ?: ""
-        ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS?.split(illegalLDAPCharacters) ?: emptyList()
-        CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS?.split(illegalLDAPCharacters) ?: emptyList()
+        ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS?.split(illegalLDAPCharacters)?.map { AdGroup(it) } ?: emptyList()
+        CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS?.split(illegalLDAPCharacters)?.map { AdGroup(it) } ?: emptyList()
         
         CURRENT_EXCHANGE_GROUP = {
             val cal = Calendar.getInstance()
-            EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
+            val groupName = EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
+            AdGroup(groupName)
         }()
-        USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS?.split(illegalLDAPCharacters))?.plus(CURRENT_EXCHANGE_GROUP) ?: emptyList()
+        USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS?.split(illegalLDAPCharacters))?.map { AdGroup(it) }
+                ?.plus(CURRENT_EXCHANGE_GROUP)
+                ?: emptyList()
 
         TEM_URL = PropsTEM.TEM_URL ?: ""
 
