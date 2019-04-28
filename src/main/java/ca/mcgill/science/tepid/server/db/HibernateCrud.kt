@@ -57,7 +57,7 @@ class HibernateCrud <T: TepidId, P>(val emf: EntityManagerFactory, val classPara
     }
 
     override fun create(obj:T) {
-        return dbOpTransaction({ e -> "Error inserting object {\"object\":\"$obj\", \"error\":\"$e\"" }, { em -> em.persist(obj) })
+        return dbOpTransaction({ e -> "Error inserting object {\"object\":\"$obj\", \"error\":\"$e\"" }, { em -> em.merge(obj) })
     }
 
     override fun read(id:P):T?{

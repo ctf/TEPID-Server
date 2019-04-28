@@ -59,8 +59,8 @@ class WtfTest : DbTest(){
         e0._id = "TEST"
 
         em.transaction.begin()
-        em.persist(embed0)
-        em.persist(e0)
+        em.merge(embed0)
+        em.merge(e0)
         em.transaction.commit()
 
         val r0 = em.find(TestForeignKey::class.java,"TEST")
@@ -103,7 +103,7 @@ open class DbTest {
 
     fun <C> persist (obj:C){
         em.transaction.begin()
-        em.persist(obj)
+        em.merge(obj)
         em.transaction.commit()
     }
 
@@ -113,7 +113,7 @@ open class DbTest {
             em.detach(e)
 //            e._id = e._id ?: newId()
             e._id = newId()
-            em.persist(e)
+            em.merge(e)
         }
         em.transaction.commit()
     }
@@ -145,6 +145,11 @@ open class DbTest {
            RunScript.execute(c, FileReader(script))
        })
     }*/
+
+    @AfterEach
+    fun rollBackOnFailure(){
+        if (em.transaction.isActive) em.transaction.rollback() // prevents transactions in failed state from persisting to other tests
+    }
 
     companion object {
         lateinit var emf: EntityManagerFactory
@@ -185,7 +190,7 @@ class HibernateCrudTest() : DbTest(){
         val te = TestEntity("TEST")
         te._id = "ID1"
         em.transaction.begin()
-        em.persist(te)
+        em.merge(te)
         em.transaction.commit()
 
         val re = pc.read(te._id)
@@ -208,8 +213,11 @@ class HibernateCrudTest() : DbTest(){
         val te = TestEntity("TEST")
         te._id = "ID2"
         em.transaction.begin()
-        em.persist(te)
+        em.merge(te)
         em.transaction.commit()
+        em.detach(te)
+        em.clear()
+
         te.content = "NEW"
 
         pc.update(te)
@@ -223,7 +231,7 @@ class HibernateCrudTest() : DbTest(){
         val te = TestEntity("TEST")
         te._id = "ID3"
         em.transaction.begin()
-        em.persist(te)
+        em.merge(te)
         em.transaction.commit()
 
         pc.delete(te)
@@ -239,7 +247,7 @@ class HibernateCrudTest() : DbTest(){
         val te = TestEntity("TEST")
         te._id = "ID4"
         em.transaction.begin()
-        em.persist(te)
+        em.merge(te)
         em.transaction.commit()
 
         pc.deleteById(te._id)
@@ -724,12 +732,12 @@ class HibernateUserLayerTest() : DbTest() {
     fun testGetCourses(){
         val u = testItems[0].copy()
         u._id = "u${u.shortUser}"
-        val groups = setOf(
+        val groups = mutableSetOf(
                 AdGroup("Group0"),
                 AdGroup("Group1"),
                 AdGroup("Group2")
         )
-        val courses = setOf(
+        val courses = mutableSetOf(
                 Course("course0", Season.SUMMER, 1337),
                 Course("course1", Season.SUMMER, 1337),
                 Course("course2", Season.SUMMER, 1337)
@@ -738,7 +746,10 @@ class HibernateUserLayerTest() : DbTest() {
         u.groups = groups
         u.courses = courses
         persist(u)
+//        em.clear()
+
         val ri = hl.getUserOrNull(u.shortUser!!) ?: fail("Did not retieve user")
+
 
         assertEquals(3, ri.groups.size)
         assertEquals(3, ri.courses.size)
@@ -746,6 +757,8 @@ class HibernateUserLayerTest() : DbTest() {
 
     @AfterEach
     fun truncateUsed(){
+        println("------End Test------")
+
         val u = listOf(PrintJob::class.java)
         u.forEach { truncate(it) }
 
@@ -774,6 +787,7 @@ class HibernateUserLayerTest() : DbTest() {
         fun initHelper(){
             hc = HibernateCrud(emf, FullUser::class.java)
             hl = HibernateUserLayer(hc)
+            println("======Begin Tests======")
         }
     }
 }
