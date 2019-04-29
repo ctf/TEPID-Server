@@ -4,10 +4,12 @@ import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.mapper
+import ca.mcgill.science.tepid.utils.PropsDB
 import java.io.InputStream
 import java.util.*
 import javax.persistence.EntityManagerFactory
 import javax.persistence.EntityNotFoundException
+import javax.persistence.Persistence
 import javax.ws.rs.core.Response
 
 
@@ -17,7 +19,18 @@ class HibernateDbLayer(val emf: EntityManagerFactory) : DbLayer,
         DbQueueLayer by HibernateQueueLayer(HibernateCrud(emf, PrintQueue::class.java)),
         DbMarqueeLayer by HibernateMarqueeLayer(HibernateCrud(emf, MarqueeData::class.java)),
         DbSessionLayer by HibernateSessionLayer(HibernateCrud(emf, FullSession::class.java)),
-        DbUserLayer by HibernateUserLayer(HibernateCrud(emf, FullUser::class.java))
+        DbUserLayer by HibernateUserLayer(HibernateCrud(emf, FullUser::class.java)){
+    companion object{
+        fun makeEntityManagerFactory(persistenceUnitName: String): EntityManagerFactory {
+            val props = HashMap<String, String>()
+            props.put("javax.persistence.jdbc.url", PropsDB.URL)
+            props.put("javax.persistence.jdbc.user", PropsDB.USERNAME)
+            props.put("javax.persistence.jdbc.password", PropsDB.PASSWORD)
+            val emf = Persistence.createEntityManagerFactory(persistenceUnitName, props)
+            return emf
+        }
+    }
+}
 
 
 class HibernateDestinationLayer(val hc : HibernateCrud<FullDestination, String?>) : DbDestinationLayer{
