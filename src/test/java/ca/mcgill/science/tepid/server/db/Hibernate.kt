@@ -2,15 +2,11 @@ package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.bindings.TepidDb
 import ca.mcgill.science.tepid.models.data.*
-import com.fasterxml.jackson.annotation.JsonIgnore
-import org.hibernate.annotations.GenericGenerator
-import org.hibernate.engine.spi.SharedSessionContractImplementor
-import org.hibernate.id.IdentifierGenerator
+import ca.mcgill.science.tepid.server.server.Config
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import java.io.Serializable
 import java.util.*
 import javax.persistence.*
 import kotlin.test.*
@@ -160,6 +156,7 @@ open class DbTest {
         @JvmStatic
         @BeforeAll
         fun initTest() {
+            Config.getDb()
             emf = Persistence.createEntityManagerFactory("hibernate-pu-test")
             em = emf.createEntityManager()
         }
