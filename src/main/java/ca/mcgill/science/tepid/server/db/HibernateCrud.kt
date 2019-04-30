@@ -10,19 +10,19 @@ import javax.ws.rs.core.Response
 
 interface IHibernateCrud <T, P> : Loggable {
 
-    fun create(obj:T)
+    fun create(obj:T): T
 
     fun read(id:P) : T?
 
     fun readAll() : List<T>
 
-    fun update(obj:T)
+    fun update(obj:T): T
 
     fun delete(obj:T)
 
     fun deleteById(id:P)
 
-    fun updateOrCreateIfNotExist(obj:T)
+    fun updateOrCreateIfNotExist(obj:T): T
 
 }
 
@@ -41,12 +41,13 @@ class HibernateCrud <T: TepidDb, P>(val emf: EntityManagerFactory, val classPara
         }
     }
 
-    fun <T> dbOpTransaction(errorLogger : (e:Exception)->String = {e -> "DB error: $e"}, f:(em:EntityManager)->T){
-        dbOp(errorLogger){
+    fun <T> dbOpTransaction(errorLogger : (e:Exception)->String = {e -> "DB error: $e"}, f:(em:EntityManager)->T):T{
+        return dbOp(errorLogger){
             try {
                 it.transaction.begin()
-                f(it)
+                val o = f(it)
                 it.transaction.commit()
+                return@dbOp o
             } catch (e: Exception){
                 log.error(errorLogger(e))
                 e.printStackTrace();
@@ -56,7 +57,7 @@ class HibernateCrud <T: TepidDb, P>(val emf: EntityManagerFactory, val classPara
         }
     }
 
-    override fun create(obj:T) {
+    override fun create(obj:T):T {
         return dbOpTransaction({ e -> "Error inserting object {\"object\":\"$obj\", \"error\":\"$e\"" }, { em -> em.merge(obj) })
     }
 
@@ -79,8 +80,8 @@ class HibernateCrud <T: TepidDb, P>(val emf: EntityManagerFactory, val classPara
         )
     }
 
-    override fun update(obj:T) {
-        dbOpTransaction<Unit>({ e -> "Error updating object {\"object\":\"$obj\", \"error\":\"$e\"" },{ em -> em.merge(obj) })
+    override fun update(obj:T): T {
+        return dbOpTransaction({ e -> "Error updating object {\"object\":\"$obj\", \"error\":\"$e\"" },{ em -> em.merge(obj); return@dbOpTransaction obj })
     }
 
     override fun delete(obj: T) {
@@ -103,12 +104,12 @@ class HibernateCrud <T: TepidDb, P>(val emf: EntityManagerFactory, val classPara
         }
     }
 
-    override fun updateOrCreateIfNotExist(obj: T) {
+    override fun updateOrCreateIfNotExist(obj: T):T {
         obj._id ?: return run{obj._id = UUID.randomUUID().toString(); create(obj)}     // has no ID, needs to be created
         val em = emf.createEntityManager()
         try {
             em.getReference(classParameter, obj._id)
-            dbOpTransaction({e->"Error putting modifications {\"object\":\"$obj\", \"error\":\"$e\"}"}){
+            return dbOpTransaction({e->"Error putting modifications {\"object\":\"$obj\", \"error\":\"$e\"}"}){
                 t -> t.merge(obj)
             }
         } catch (e : EntityNotFoundException) {
