@@ -19,7 +19,7 @@ test:
   stage: test
   script:
   - chmod +x gradlew
-  - ./gradlew test
+  - ./gradlew test -i
   artifacts:
     when: always
     reports:
@@ -30,7 +30,7 @@ integration_test:
   stage: test
   script:
   - chmod +x gradlew
-  - ./gradlew integrationTest
+  - ./gradlew integrationTest -i
   artifacts:
     when: always
     reports:
