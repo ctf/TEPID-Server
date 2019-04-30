@@ -24,7 +24,9 @@ class JobTest : ITBase(), Loggable by WithLogging() {
 
     @Test
     fun testNewJob() {
-        server.testApi.createNewJob(testJob).get()
+        server.testApi
+                .createNewJob(testJob)
+                .get()
     }
 
 }

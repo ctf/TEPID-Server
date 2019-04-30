@@ -61,10 +61,10 @@ class HibernateDestinationLayer(val hc : HibernateCrud<FullDestination, String?>
             val destination : FullDestination = hc.read(id) ?: throw EntityNotFoundException()
             updater(destination)
             hc.update(destination)
+            return Response.ok().entity(destination).build()
         }catch (e : Exception){
             return parsePersistenceErrorToResponse(e)
         }
-        return Response.ok().build()
     }
 
     override fun deleteDestination(id: Id): String {
@@ -125,20 +125,20 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
 
     override fun updateJobWithResponse(id: Id, updater: PrintJob.() -> Unit): Response {
         try{
-            updateJob(id,updater)
+            val job = updateJob(id,updater)
+            return Response.ok().entity(job).build()
         }catch(e : Exception){
             return parsePersistenceErrorToResponse(e)
         }
-        return Response.ok().build()
     }
 
     override fun postJob(job: PrintJob): Response {
         try{
             hc.create(job)
+            return Response.ok().entity(job).build()
         }catch (e : Exception){
             return parsePersistenceErrorToResponse(e)
         }
-        return Response.ok().build()
     }
 
     override fun getJobFile(id: Id, file: String): InputStream? {
