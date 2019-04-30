@@ -126,7 +126,7 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
     override fun updateJobWithResponse(id: Id, updater: PrintJob.() -> Unit): Response {
         try{
             val job = updateJob(id,updater)
-            return Response.ok().entity(job).build()
+            return Response.ok().entity(PutResponse(ok=true, id = id, rev = job?.getRev() ?: "")).build()
         }catch(e : Exception){
             return parsePersistenceErrorToResponse(e)
         }
@@ -135,7 +135,7 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
     override fun postJob(job: PrintJob): Response {
         try{
             hc.create(job)
-            return Response.ok().entity(job).build()
+            return Response.ok().entity(PutResponse(ok=true, id = job._id ?: "", rev = job.getRev())).build()
         }catch (e : Exception){
             return parsePersistenceErrorToResponse(e)
         }
@@ -236,7 +236,8 @@ class HibernateSessionLayer(val hc : HibernateCrud<FullSession, String?>) : DbSe
 class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLayer{
     override fun putUser(user: FullUser): Response {
         try{
-            return Response.ok().entity(hc.updateOrCreateIfNotExist(user)).build()
+            val updatedUser = hc.updateOrCreateIfNotExist(user)
+            return Response.ok().entity(PutResponse(ok=true, id = user.getId(), rev = user.getRev())).build()
         }catch (e : Exception){
             return parsePersistenceErrorToResponse(e)
         }
@@ -260,6 +261,7 @@ class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLaye
                 else -> hc.read("u$sam")
             }
         } catch (e: Exception){
+            // TODO: More judicious error handling
             return null
         }
     }
