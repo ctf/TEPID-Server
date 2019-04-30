@@ -116,9 +116,9 @@ open class DbTest {
         em.transaction.commit()
     }
 
-    internal fun newId() = UUID.randomUUID().toString()
+    protected fun newId() = UUID.randomUUID().toString()
 
-    internal fun <T> truncate(classParameter: Class<T>){
+    protected fun <T> truncate(classParameter: Class<T>){
         em.transaction.begin()
         em.flush()
         em.clear()
@@ -126,7 +126,7 @@ open class DbTest {
         em.transaction.commit()
     }
 
-    internal fun<T> deleteAllIndividually(classParameter: Class<T>){
+    protected fun<T> deleteAllIndividually(classParameter: Class<T>){
         em.transaction.begin()
         val l : List<T> = em.createQuery("SELECT c FROM ${classParameter.simpleName} c", classParameter).resultList
         l.forEach {
