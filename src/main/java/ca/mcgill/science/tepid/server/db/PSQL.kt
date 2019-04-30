@@ -134,8 +134,8 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
 
     override fun postJob(job: PrintJob): Response {
         try{
-            hc.create(job)
-            return Response.ok().entity(PutResponse(ok=true, id = job._id ?: "", rev = job.getRev())).build()
+            val out = hc.create(job)
+            return Response.ok().entity(PutResponse(ok=true, id = out._id ?: "", rev = out.getRev())).build()
         }catch (e : Exception){
             return parsePersistenceErrorToResponse(e)
         }
@@ -237,7 +237,7 @@ class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLaye
     override fun putUser(user: FullUser): Response {
         try{
             val updatedUser = hc.updateOrCreateIfNotExist(user)
-            return Response.ok().entity(PutResponse(ok=true, id = user.getId(), rev = user.getRev())).build()
+            return Response.ok().entity(PutResponse(ok=true, id = updatedUser.getId(), rev = updatedUser.getRev())).build()
         }catch (e : Exception){
             return parsePersistenceErrorToResponse(e)
         }
