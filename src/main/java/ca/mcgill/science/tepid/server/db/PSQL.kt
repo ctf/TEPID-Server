@@ -43,17 +43,18 @@ class HibernateDestinationLayer(val hc : HibernateCrud<FullDestination, String?>
     }
 
     override fun putDestinations(destinations: Map<Id, FullDestination>): String {
-        val failures = mutableListOf<String>()
+        val responses = mutableListOf<PutResponse>()
         destinations.map {
             try{
                 it.value._id = it.key
-                hc.updateOrCreateIfNotExist(it.value)
+                val u = hc.updateOrCreateIfNotExist(it.value)
+                responses.add(PutResponse(ok=true, id=u.getId(),rev=u.getRev()))
             }catch (e:Exception){
-                failures.add(e.message ?: "Generic Failure for ID: ${it.key}")
+                responses.add(PutResponse(ok=false, id=it.value.getId(), rev=it.value.getRev()))
             }
         }
 
-        return mapper.writeValueAsString(if(failures.isEmpty()) "Success" else failures)
+        return mapper.writeValueAsString(responses)
     }
 
     override fun updateDestinationWithResponse(id: Id, updater: FullDestination.() -> Unit): Response {
