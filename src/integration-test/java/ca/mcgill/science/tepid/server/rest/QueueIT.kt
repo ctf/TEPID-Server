@@ -14,13 +14,26 @@ class QueueTest : ITBase(), Loggable by WithLogging() {
     @Test
     fun testAddQueuesAndDestinations(){
 
-        val l = server.testApi
+        // adds the destinations
+
+        val destinationResponses = server.testApi
                 .putDestinations(mapOf("d1" to testDestinations[0], "d2" to testDestinations[1]))
                 .get()
 
-        assertFalse { l.isEmpty() }
+        assertFalse { destinationResponses.isEmpty() }
 
-        for (putResponse in l) {
+        for (putResponse in destinationResponses) {
+            assertTrue { putResponse.ok }
+        }
+
+        // adds the queues
+        val queueResponses = server.testApi
+                .putQueues(testQueues)
+                .get()
+
+        assertFalse { queueResponses.isEmpty() }
+
+        for (putResponse in queueResponses) {
             assertTrue { putResponse.ok }
         }
     }
@@ -28,7 +41,7 @@ class QueueTest : ITBase(), Loggable by WithLogging() {
 
     companion object {
         val testDestinations = listOf(FullDestination(name= "d1", up = false), FullDestination(name="d2", up = false))
-        val testQueues = listOf(PrintQueue(name="q1"), PrintQueue(name="q2"))
+        val testQueues = listOf(PrintQueue(name="q1", destinations = listOf("d1")), PrintQueue(name="q2", destinations = listOf("d1", "d2")))
     }
 
 }
