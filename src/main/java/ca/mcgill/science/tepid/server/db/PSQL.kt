@@ -155,7 +155,9 @@ class HibernateJobLayer(val hc : HibernateCrud<PrintJob, String?>) : DbJobLayer 
 
 class HibernateQueueLayer(val hc : HibernateCrud<PrintQueue, String?>) : DbQueueLayer {
     override fun getQueue(id: Id): PrintQueue {
-        return hc.read(id) ?: failNotFound("Could not find PrintQueue {\"ID\":\"$id\"}")
+        val allQueues = hc.readAll()
+        val q = allQueues.find { it._id == id} ?: failNotFound("Could not find PrintQueue {\"ID\":\"$id\"}")
+        return q
     }
 
     override fun getQueues(): List<PrintQueue> {
