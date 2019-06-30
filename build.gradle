@@ -24,7 +24,7 @@ apply plugin: 'ca.mcgill.science.tepid.commons'
 apply plugin: "io.swagger.core.v3.swagger-gradle-plugin"    // For Swagger
 apply plugin: "kotlin-jpa"                                  // For Hibernate
 
-sourceCompatibility = tepid.jvm_target
+sourceCompatibility = JavaVersion.VERSION_11
 war.baseName = 'tepid'
 
 ext {
@@ -44,7 +44,7 @@ repositories {
 
 sourceSets {
     integrationTest {
-        java.srcDir file('src/integration-test/java')
+        java.srcDirs = ['src/integration-test/java']
         resources.srcDir file('src/integration-test/resources')
         compileClasspath += sourceSets.main.output + sourceSets.test.output + configurations.testRuntimeClasspath
         runtimeClasspath += output + compileClasspath
@@ -75,7 +75,7 @@ dependencies {
     
 
 
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${tepid.kotlin}"
+    compile "org.jetbrains.kotlin:kotlin-stdlib:${tepid.kotlin}"
     compile "org.jetbrains.kotlin:kotlin-reflect:${tepid.kotlin}"
 
     compile "ca.mcgill.tepid-commons:core:$TEPID_COMMONS"
@@ -104,10 +104,7 @@ dependencies {
     compile "org.ow2.asm:asm-debug-all:5.2"
     compile "org.tukaani:xz:1.6"
     compile "com.google.code.findbugs:jsr305:3.0.2"
-
-//    compile "org.apache.tomcat:tomcat-websocket:8.5.13"
-
-    compile "io.reactivex.rxjava2:rxkotlin:${tepid.rxKotlin}"
+    
 
     compile group: 'javax.el', name: 'javax.el-api', version: '3.0.0'
     compile group: 'javax.servlet.jsp', name: 'javax.servlet.jsp-api', version: '2.3.1'
@@ -128,13 +125,10 @@ dependencies {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = tepid.jvm_target
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = tepid.jvm_target
 }
 compileIntegrationTestKotlin{
-    kotlinOptions.jvmTarget = tepid.jvm_target
 }
 
 test {
