@@ -99,7 +99,7 @@ class CouchDbLayer : DbLayer {
     override fun deleteQueue(id: Id): String =
             CouchDb.path(id).deleteRev()
 
-    override fun getEta(id: Id): Long {
+    override fun getEta(destinationId: Id): Long {
         return CouchDb
                 .path("_design/main/_view")
                 .path("maxEta")
