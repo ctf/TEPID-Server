@@ -125,6 +125,6 @@ fun parsePersistenceErrorToResponse(e: Exception): Response{
         EntityNotFoundException::class -> Response.Status.NOT_FOUND.text("Not found")
         IllegalArgumentException::class -> Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")
         EntityExistsException::class -> Response.Status.CONFLICT.text("Entity Exists; ${e::class.java.simpleName} occurred")
-        else -> Response.Status.INTERNAL_SERVER_ERROR.text("")
+        else -> Response.Status.INTERNAL_SERVER_ERROR.text("Ouch! ${e::class.java.simpleName} occurred")
     }
 }
