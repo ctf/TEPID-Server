@@ -109,6 +109,7 @@ class Users {
     @Path("/{sam}/exchange")
     @RolesAllowed(CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     fun setExchange(@PathParam("sam") sam: String, exchange: Boolean): Boolean =
             SessionManager.setExchangeStudent(sam, exchange)
 
@@ -131,6 +132,7 @@ class Users {
     @Path("/{sam}/nick")
     @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     fun setNick(@PathParam("sam") sam: String, nick: String, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.nick = if (nick.isBlank()) null else nick
         log.debug("Setting nick for ${it.shortUser} to ${it.nick}")
