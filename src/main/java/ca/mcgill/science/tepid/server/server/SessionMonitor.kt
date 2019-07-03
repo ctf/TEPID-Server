@@ -11,7 +11,7 @@ class SessionMonitor : Runnable {
             var numberRemoved = 0
             val sessions = DB.getAllSessions()
             sessions.filter {
-                !it.isValid()
+                !it.isUnexpired()
             }.forEach {
                 val id = it._id ?: return@forEach
                 DB.deleteSession(id)

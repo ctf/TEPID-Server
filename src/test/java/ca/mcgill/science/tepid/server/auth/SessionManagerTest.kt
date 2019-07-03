@@ -645,7 +645,7 @@ class SessionIsValidTest {
 
     @Test
     fun testValidSelfInvalidation() {
-        every { mockSession.isValid() } returns false
+        every { mockSession.isUnexpired() } returns false
 
         assertFalse(SessionManager.isValid(mockSession), "SessionaManger ignores a session's declaration of invalidity")
     }
@@ -654,7 +654,7 @@ class SessionIsValidTest {
     fun testValidRoleInvalidation() {
         mockSession.role = "oldRole"
 
-        every { mockSession.isValid() } returns true
+        every { mockSession.isUnexpired() } returns true
 
         assertFalse(SessionManager.isValid(mockSession), "SessionaManger ignores a mismatch between session permission and user permission")
     }

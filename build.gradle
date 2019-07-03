@@ -68,7 +68,7 @@ dependencies {
     testCompile "org.jetbrains.kotlin:kotlin-test:${tepid.kotlin}"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:${tepid.kotlin}"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit5:${tepid.kotlin}"
-    testCompile "io.mockk:mockk:1.9"
+    testCompile "io.mockk:mockk:1.9.3"
     
     testCompile "ca.mcgill.tepid-commons:retrofit:$TEPID_COMMONS"
     testCompile "ca.mcgill.tepid-commons:test:$TEPID_COMMONS"
@@ -125,10 +125,13 @@ dependencies {
 }
 
 compileKotlin {
+    kotlinOptions.jvmTarget = JVM_TARGET
 }
 compileTestKotlin {
+    kotlinOptions.jvmTarget = JVM_TARGET
 }
 compileIntegrationTestKotlin{
+    kotlinOptions.jvmTarget = JVM_TARGET
 }
 
 test {

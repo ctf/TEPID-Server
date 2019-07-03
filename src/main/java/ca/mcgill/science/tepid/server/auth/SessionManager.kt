@@ -57,7 +57,7 @@ object SessionManager : WithLogging() {
      * @return true for valid, false otherwise
      */
     fun isValid(session: FullSession): Boolean {
-        if (!session.isValid()) return false
+        if (!session.isUnexpired()) return false
         if (session.role != queryUserDb(session.user.shortUser)?.role) return false
         return true
     }
@@ -156,7 +156,7 @@ object SessionManager : WithLogging() {
      * with logging for failures
      */
     fun updateDbWithUser(user: FullUser) {
-        val shortUser = user.shortUser ?: run {log.error("Cannot update user, shortUser is null {\"user\": \"$user\"}") ; return}
+        val shortUser = user.shortUser ?:  return log.error("Cannot update user, shortUser is null {\"user\": \"$user\"}")
         log.trace("Update db instance {\"user\":\"$shortUser\"}\n")
         try {
             val response = DB.putUser(user)

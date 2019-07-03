@@ -88,8 +88,7 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
         fun getCn (ldapQuery:String): String {
             val dn = LdapName(ldapQuery)
             val cn = dn.get(dn.size()-1)
-            val i = cn.indexOf("=")
-            return cn.substring(i+1)
+            return cn.substringAfter("=")
         }
         val ldapGroups = get("memberOf")?.toList()?.mapNotNull {
             try {

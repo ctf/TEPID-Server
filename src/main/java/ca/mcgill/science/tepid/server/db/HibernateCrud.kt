@@ -8,7 +8,7 @@ import java.util.*
 import javax.persistence.*
 import javax.ws.rs.core.Response
 
-interface IHibernateCrud <T, P> : Loggable {
+interface IHibernateCrud <T: Any, P> : Loggable {
 
     fun create(obj:T): T
 
@@ -121,10 +121,10 @@ class HibernateCrud <T: TepidDb, P>(val emf: EntityManagerFactory, val classPara
 }
 
 fun parsePersistenceErrorToResponse(e: Exception): Response{
-    return when (e::class) {
-        EntityNotFoundException::class -> Response.Status.NOT_FOUND.text("Not found")
-        IllegalArgumentException::class -> Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")
-        EntityExistsException::class -> Response.Status.CONFLICT.text("Entity Exists; ${e::class.java.simpleName} occurred")
+    return when (e) {
+        is EntityNotFoundException -> Response.Status.NOT_FOUND.text("Not found")
+        is IllegalArgumentException -> Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")
+        is EntityExistsException -> Response.Status.CONFLICT.text("Entity Exists; ${e::class.java.simpleName} occurred")
         else -> Response.Status.INTERNAL_SERVER_ERROR.text("Ouch! ${e::class.java.simpleName} occurred")
     }
 }
