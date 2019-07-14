@@ -6,7 +6,6 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.logging.log4j.Logger
 import java.io.File
 import java.io.InputStream
-import java.io.OutputStream
 import java.nio.file.CopyOption
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -90,15 +89,4 @@ object Utils {
         }
     }.start()
 
-    fun copyStreams(input: InputStream, output: OutputStream, log: Logger) {
-        try {
-            input.use { `in` ->
-                output.use { out ->
-                    `in`.copyTo(out)
-                }
-            }
-        } catch (e: Exception) {
-            log.error("Copying streams failed", e)
-        }
-    }
 }
