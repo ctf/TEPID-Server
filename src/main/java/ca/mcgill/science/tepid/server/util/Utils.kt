@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.logging.log4j.Logger
 import java.io.File
 import java.io.InputStream
@@ -13,13 +12,6 @@ import java.text.SimpleDateFormat
 import java.util.*
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.container.ContainerRequestContext
-
-/**
- * Where the magic happens
- * Provides class bindings for
- * serialization & deserialization
- */
-val mapper = jacksonObjectMapper()
 
 /**
  * Attempts to retrieve a session from a container context,
