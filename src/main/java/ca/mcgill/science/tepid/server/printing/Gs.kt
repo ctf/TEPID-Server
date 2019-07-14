@@ -5,6 +5,7 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
 import java.io.IOException
+import java.util.*
 
 /**
  * Singleton holder to be used for production
@@ -26,6 +27,13 @@ interface GsContract {
      * - color page count
      */
     fun psInfo(f: File): PsData
+
+
+    /**
+     * Tests that the required GS devices are installed,
+     * so processing will work and won't fail during first invocation
+     */
+    fun testRequiredDevicesInstalled()
 
 }
 
@@ -121,6 +129,17 @@ class GsDelegate : WithLogging(), GsContract {
         val pages = coverage.size
         val color = coverage.filter { !it.monochrome }.size
         return PsData(pages, color)
+    }
+
+    override fun testRequiredDevicesInstalled() {
+        val p = run("-dNOPAUSE", "-dBATCH", "-dSAFER", "-sDEVICE=ink_cov", "-dQUIET", "-q") ?:             throw GSException("Error running process") // TODO: propagate throw from run
+
+        // https://stackoverflow.com/a/35446009/1947070
+        val s = Scanner(p.inputStream).useDelimiter("\\A")
+        val result = if (s.hasNext()) s.next() else ""
+        if (result.contains("Unknown device")) {
+            throw GSException("Could not invoke GS ink_cov device")
+        }
     }
 
     companion object {

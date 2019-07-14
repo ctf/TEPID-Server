@@ -6,8 +6,8 @@ import ca.mcgill.science.tepid.server.db.CouchDbLayer
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.db.HibernateDbLayer
-import ca.mcgill.science.tepid.server.printing.GS
 import ca.mcgill.science.tepid.server.printing.GSException
+import ca.mcgill.science.tepid.server.printing.Gs
 import ca.mcgill.science.tepid.server.util.Utils
 import ca.mcgill.science.tepid.utils.*
 import org.apache.logging.log4j.Level
@@ -15,15 +15,7 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.LoggerContext
 import java.util.*
 import javax.persistence.EntityManagerFactory
-import javax.persistence.Persistence
 
-/**
- * Created by Allan Wang on 27/01/2017.
- *
- * The following are default keys used for testing
- * They are pulled from priv.properties under the root project folder
- * If no file is found, default values will be supplied (usually empty strings)
- */
 object Config : WithLogging() {
 
     private val illegalLDAPCharacters = "[,+\"\\\\<>;=]".toRegex()
@@ -172,7 +164,7 @@ object Config : WithLogging() {
             log.error("RESOURCE_CREDENTIALS not set")
 
         try {
-            GS.testRequiredDevicesInstalled()
+            Gs.testRequiredDevicesInstalled()
         } catch (e: GSException){
             log.fatal("GS ink_cov device unavailable")
         }
