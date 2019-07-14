@@ -24,8 +24,7 @@ class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
     override fun filter(requestContext: ContainerRequestContext, responseContext: ContainerResponseContext) {
         val isSuccessful = responseContext.status in 200 until 300
         if (isSuccessful && !Config.DEBUG) return
-        val entity = responseContext.entity
-        val content: String = when (entity) {
+        val content: String = when (val entity = responseContext.entity) {
             null -> "null"
             is Throwable -> entity.localizedMessage
             is String -> entity

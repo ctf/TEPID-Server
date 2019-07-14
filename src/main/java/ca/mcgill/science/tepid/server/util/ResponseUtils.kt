@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.ErrorResponse
+import ca.mcgill.science.tepid.server.server.mapper
 import org.apache.logging.log4j.Logger
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.MediaType

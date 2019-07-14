@@ -73,7 +73,7 @@ object SessionManager : WithLogging() {
      * @param shortUser the shortUser
      */
     fun invalidateSessions(shortUser: String) {
-        DB.getSessionIdsForUser(shortUser).forEach{ SessionManager.end(it) }
+        DB.getSessionIdsForUser(shortUser).forEach{ end(it) }
     }
 
     /**

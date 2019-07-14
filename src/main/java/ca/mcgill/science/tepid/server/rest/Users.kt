@@ -22,6 +22,7 @@ import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
+import kotlin.math.max
 
 @Path("/users")
 class Users {
@@ -239,7 +240,7 @@ class Users {
                 }
             }.sum()
 
-            val quota = Math.max(newMaxQuota - totalPrinted, 0)
+            val quota = max(newMaxQuota - totalPrinted, 0)
 
             return QuotaData(shortUser = shortUser,
                     quota = quota,

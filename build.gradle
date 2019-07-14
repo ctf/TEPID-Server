@@ -77,12 +77,9 @@ dependencies {
 
     compile "org.jetbrains.kotlin:kotlin-stdlib:${tepid.kotlin}"
     compile "org.jetbrains.kotlin:kotlin-reflect:${tepid.kotlin}"
-
-    compile "ca.mcgill.tepid-commons:core:$TEPID_COMMONS"
+    
     compile "ca.mcgill.tepid-commons:models:$TEPID_COMMONS"
     compile "ca.mcgill.tepid-commons:utils:$TEPID_COMMONS"
-
-//    compile 'ca.allanwang.mcgill-data:ldap:949a32e'
 
     compile "com.fasterxml.jackson.core:jackson-annotations:${tepid.jackson}"
     compile "com.fasterxml.jackson.core:jackson-databind:${tepid.jackson}"
@@ -92,7 +89,6 @@ dependencies {
     compile "commons-beanutils:commons-beanutils:1.9.3"
     compile "javax.servlet:javax.servlet-api:4.0.0"
     compile "javax.ws.rs:javax.ws.rs-api:2.1"
-    compile "org.apache.commons:commons-email:1.5"
     compile "javax.xml.bind:jaxb-api:2.3.0"
     compile "javax.activation:activation:1.1"
     compile "org.glassfish.hk2.external:aopalliance-repackaged:$GLASSFISH_HK2"
@@ -101,16 +97,17 @@ dependencies {
     compile "org.glassfish.jersey.containers:jersey-container-servlet:$GLASSFISH_JERSEY"
     compile "org.glassfish.jersey.core:jersey-common:$GLASSFISH_JERSEY"
     compile "org.glassfish.jersey.media:jersey-media-json-jackson:$GLASSFISH_JERSEY"
-    compile "org.ow2.asm:asm-debug-all:5.2"
-    compile "org.tukaani:xz:1.6"
-    compile "com.google.code.findbugs:jsr305:3.0.2"
-    
 
-    compile group: 'javax.el', name: 'javax.el-api', version: '3.0.0'
-    compile group: 'javax.servlet.jsp', name: 'javax.servlet.jsp-api', version: '2.3.1'
+    
+    
+    compile "org.tukaani:xz:1.6"
+    
 
     // Swagger
     compile group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version:'2.0.0'
+    
+    // Swagger servlet
+    compile group: 'javax.servlet.jsp', name: 'javax.servlet.jsp-api', version: '2.3.1'
     compile group: 'io.swagger.core.v3', name: 'swagger-jaxrs2-servlet-initializer', version:'2.0.0'
     compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.8.0-beta2'
     compile group: 'org.webjars', name: 'swagger-ui', version: '3.20.5'
