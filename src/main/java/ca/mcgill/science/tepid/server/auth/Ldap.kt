@@ -13,7 +13,6 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
 
     private val ldap = LdapManager()
 
-    private val numRegex = Regex("[0-9]+")
     private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
 
     private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS

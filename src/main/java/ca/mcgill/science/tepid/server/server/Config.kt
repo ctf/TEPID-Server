@@ -147,10 +147,6 @@ object Config : WithLogging() {
          * For logging
          */
         val warnings = mutableListOf<String>()
-        fun warn(msg: String) {
-            warnings.add(msg)
-            log.warn("Warning: $msg")
-        }
 
         log.trace("Validating configs settings")
 
