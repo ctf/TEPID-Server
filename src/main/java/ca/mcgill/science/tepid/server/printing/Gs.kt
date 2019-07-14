@@ -32,7 +32,7 @@ interface GsContract {
 /**
  * Underlying delegate that exposes methods for unit testing
  */
-internal class GsDelegate : WithLogging(), GsContract {
+class GsDelegate : WithLogging(), GsContract {
     private val gsBin = if (System.getProperty("os.name").startsWith("Windows"))
         "gswin64c.exe" else "gs"
 

@@ -10,7 +10,6 @@ import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
 import io.mockk.*
 import org.junit.After
 import org.junit.Before
@@ -103,42 +102,14 @@ class UpdateDbWithUserTest {
     val testUser = FullUser(shortUser = testSU)
 
     @Test
-    fun testUpdateUser() {
-
-        val mockObjectNode = ObjectMapper().createObjectNode()
-                .put("ok", true)
-                .put("id", "utestSU")
-                .put("_rev", "2222")
-
-        val mockResponse = spyk(Response.ok().build())
-        every {
-            mockResponse.readEntity(ObjectNode::class.java)
-        } returns mockObjectNode
-
-        every {
-            mockDb.putUser(ofType(FullUser::class))
-        } returns mockResponse
-
-        // Run Test
-        SessionManager.updateDbWithUser(testUser)
-
-        // Verifies the path
-        verify { mockDb.putUser(testUser) }
-        assertEquals(testUser._rev, "2222")
-    }
-
-    @Test
     fun testUpdateUserUnsuccessfulResponse() {
 
         val mockObjectNode = ObjectMapper().createObjectNode()
-                .put("ok", true)
+                .put("ok", false)
                 .put("id", "utestSU")
                 .put("_rev", "3333")
 
-        val mockResponse = spyk(Response.serverError().build())
-        every {
-            mockResponse.readEntity(ObjectNode::class.java)
-        } returns mockObjectNode
+        val mockResponse = spyk(Response.serverError().entity(mockObjectNode).build())
 
         every {
             mockDb.putUser(ofType(FullUser::class))
@@ -156,7 +127,7 @@ class UpdateDbWithUserTest {
     fun testUpdateUserWithException() {
         val mockResponse = spyk(Response.ok().build())
         every {
-            mockResponse.readEntity(ObjectNode::class.java)
+            mockResponse.entity
         } throws RuntimeException("Testing")
 
         every {
@@ -167,11 +138,8 @@ class UpdateDbWithUserTest {
         SessionManager.updateDbWithUser(testUser)
 
         // Verifies the path
-        every {
-            mockDb.putUser(ofType(FullUser::class))
-        } returns mockResponse
-        // Verifies that it was called, but that it's unchanged
-        verify { mockResponse.readEntity(ObjectNode::class.java) }
+        verify { mockDb.putUser(testUser) }
+
         assertEquals(testUser._rev, "1111")
     }
 }
@@ -677,7 +645,7 @@ class SessionIsValidTest {
 
     @Test
     fun testValidSelfInvalidation() {
-        every { mockSession.isValid() } returns false
+        every { mockSession.isUnexpired() } returns false
 
         assertFalse(SessionManager.isValid(mockSession), "SessionaManger ignores a session's declaration of invalidity")
     }
@@ -686,7 +654,7 @@ class SessionIsValidTest {
     fun testValidRoleInvalidation() {
         mockSession.role = "oldRole"
 
-        every { mockSession.isValid() } returns true
+        every { mockSession.isUnexpired() } returns true
 
         assertFalse(SessionManager.isValid(mockSession), "SessionaManger ignores a mismatch between session permission and user permission")
     }

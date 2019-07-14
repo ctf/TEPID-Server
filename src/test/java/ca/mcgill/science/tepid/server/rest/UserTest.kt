@@ -107,44 +107,44 @@ class TestUserGetQuota : WithLogging () {
     @Test
     fun testGetQuotaUserIgnoreSummerSemester(){
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018s)), USER, 0,"Summer gives quota")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018s)), USER, 0,"Summer gives quota")
     }
 
     @Test
     fun testGetQuotaUserSemesterPre2016() {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c1066f)), USER, 0,"Ancient semester gives quota")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c1066f)), USER, 0,"Ancient semester gives quota")
     }
 
     @Test
     fun testGetQuotaUserSemester2016F () {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2016f)), USER, 500,"500 pages not give for 2016F")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2016f)), USER, 500,"500 pages not give for 2016F")
     }
 
     @Test
     fun testGetQuotaUserSemesterPost2016F () {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018f)), USER, 1000,"1000 pages not give for semester")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018f)), USER, 1000,"1000 pages not give for semester")
     }
 
     @Test
     fun testGetQuotaUserSpanMultipleSemesters () {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018f, c2018w)), USER, 2000,"multiple semesters not counted")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018f, c2018w)), USER, 2000,"multiple semesters not counted")
     }
 
     @Test
     fun testGetQuotaTotalPrintedSubtracted(){
         setPrintedPages(300)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018f)), USER, 700,"Printed pages not subtracted (you had one job)")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018f)), USER, 700,"Printed pages not subtracted (you had one job)")
     }
 
     //Tests that if there are multiple courses in the same semester they only contribute as one semester
     @Test
     fun testGetQuotaMultipleCoursesReduced(){
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018w0, c2018w)), USER, 1000,"multiple courses in same semester counted as other semesters")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018w0, c2018w)), USER, 1000,"multiple courses in same semester counted as other semesters")
     }
 
 

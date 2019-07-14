@@ -7,6 +7,7 @@ import javax.ws.rs.core.Response
 
 var DB: DbLayer = Config.getDb()
 
+
 // TODO deleteDestination should return Response instead of String
 // TODO, all outputs returning response should likely return models that can then be wrapped inside a response
 // TODO outputs should be nullable
@@ -107,11 +108,14 @@ interface DbQueueLayer {
 
     fun getQueues(): List<PrintQueue>
 
+    /*
+       On Success: returns Response containing the collection of PrintQueues Added
+     */
     fun putQueues(queues: Collection<PrintQueue>): Response
 
     fun deleteQueue(id: Id): String
 
-    fun getEta(id: Id): Long
+    fun getEta(destinationId: Id): Long
 
 }
 
@@ -123,11 +127,16 @@ interface DbMarqueeLayer {
 
 interface DbSessionLayer {
 
+    /*
+   On Success: returns Response containing the Session added
+    */
     fun putSession(session: FullSession): Response
 
     fun getSessionOrNull(id: Id): FullSession?
 
     fun getSessionIdsForUser(shortUser: ShortUser): List<Id>
+
+    fun getAllSessions(): List<FullSession>
 
     fun deleteSession(id: Id): String
 
@@ -135,6 +144,9 @@ interface DbSessionLayer {
 
 interface DbUserLayer {
 
+    /*
+   On Success: returns Response containing the User added
+    */
     fun putUser(user: FullUser): Response
 
     fun getUserOrNull(sam: Sam): FullUser?
