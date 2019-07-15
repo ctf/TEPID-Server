@@ -1,8 +1,8 @@
 package ca.mcgill.science.tepid.server.printing
 
-import ca.mcgill.science.tepid.models.bindings.PrintError
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.enums.PrintError
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.rest.Users
@@ -20,7 +20,11 @@ import java.util.concurrent.*
  */
 object Printer : WithLogging() {
 
-    class PrintException(message: String) : RuntimeException(message)
+    class PrintException(message: String) : RuntimeException(message) {
+        constructor(printError: PrintError): this(printError.display)
+    }
+
+
 
     private val executor: ExecutorService = ThreadPoolExecutor(5, 30, 10, TimeUnit.MINUTES,
             ArrayBlockingQueue<Runnable>(300, true))
