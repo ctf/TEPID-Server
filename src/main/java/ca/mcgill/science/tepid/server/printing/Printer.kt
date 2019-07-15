@@ -133,6 +133,12 @@ object Printer : WithLogging() {
                     if (Users.getQuota(user) < psInfo.pages + colorPages * 2)
                         throw PrintException(PrintError.INSUFFICIENT_QUOTA)
 
+                    //check if job is below max pages
+                    log.trace("Testing for job length {\"job\":\"{}\"}")
+                    if (j2.pages > 50) {
+                        throw PrintException(PrintError.TOO_MANY_PAGES)
+                    }
+
                     //add job to the queue
                     log.trace("Trying to assign destination {\"job\":\"{}\"}", j2.getId())
                     j2 = QueueManager.assignDestination(id)
