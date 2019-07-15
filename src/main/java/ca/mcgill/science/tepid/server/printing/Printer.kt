@@ -135,7 +135,7 @@ object Printer : WithLogging() {
 
                     //check if job is below max pages
                     log.trace("Testing for job length {\"job\":\"{}\"}")
-                    if (j2.pages > 50) {
+                    if (j2.pages > Config.MAX_PAGES_PER_JOB) {
                         throw PrintException(PrintError.TOO_MANY_PAGES)
                     }
 
