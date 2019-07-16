@@ -134,13 +134,7 @@ object Printer : WithLogging() {
                         throw PrintException(PrintError.INSUFFICIENT_QUOTA)
 
                     //check if job is below max pages
-                    log.trace("Testing for job length {\"job\":\"{}\"}")
-                    if (
-                            Config.MAX_PAGES_PER_JOB > 0                // valid max pages per job
-                            &&  j2.pages > Config.MAX_PAGES_PER_JOB
-                    ) {
-                        throw PrintException(PrintError.TOO_MANY_PAGES)
-                    }
+                    validateJobSize(j2)
 
                     //add job to the queue
                     log.trace("Trying to assign destination {\"job\":\"{}\"}", j2.getId())
@@ -177,6 +171,18 @@ object Printer : WithLogging() {
             return false to "Failed to process"
         }
     }
+
+    fun validateJobSize(j2: PrintJob) {
+        log.trace("Testing for job length {\"job\":\"{}\"}")
+        if (
+                Config.MAX_PAGES_PER_JOB > 0                // valid max pages per job
+                && j2.pages > Config.MAX_PAGES_PER_JOB
+        ) {
+            throw PrintException(PrintError.TOO_MANY_PAGES)
+        }
+        return
+    }
+
 
     internal fun sendToSMB(f: File, destination: FullDestination, debug: Boolean): Boolean {
         if (!f.isFile) {
