@@ -110,30 +110,15 @@ object Printer : WithLogging() {
 
                     //count pages
                     val psInfo = Gs.psInfo(tmp)
-                    val colorPages = psInfo.colorPages
                     log.trace("Detected ${if (psInfo.isColor) "color" else "monochrome"} for job $id in ${System.currentTimeMillis() - now} ms")
-                    log.trace("Job $id has ${psInfo.pages} pages, $colorPages in color")
+                    log.trace("Job $id has ${psInfo.pages} pages, ${psInfo.colorPages} in color")
 
-                    //update page count and status in db
-                    var j2: PrintJob = DB.updateJob(id){
-                        this.pages = psInfo.pages
-                        this.colorPages = colorPages
-                        this.processed = System.currentTimeMillis()
-                    }?: throw PrintException("Could not update")
+                    var j2: PrintJob = updatePagecount(id, psInfo)
 
-                    //check if user has color printing enabled
-                    log.trace("Testing for color {\"job\":\"{}\"}", j2.getId())
-                    if (colorPages > 0 && SessionManager.queryUser(j2.userIdentification, null)?.colorPrinting != true)
-                        throw PrintException(PrintError.COLOR_DISABLED)
+                    validateColorAvailable(j2, psInfo)
 
-                    //check if user has sufficient quota to print this job
-                    log.trace("Testing for quota {\"job\":\"{}\"}", j2.getId())
+                    validateAvailableQuota(j2, psInfo)
 
-                    val user = SessionManager.queryUser(j2.userIdentification, null)
-                    if (Users.getQuota(user) < psInfo.pages + colorPages * 2)
-                        throw PrintException(PrintError.INSUFFICIENT_QUOTA)
-
-                    //check if job is below max pages
                     validateJobSize(j2)
 
                     //add job to the queue
@@ -172,6 +157,34 @@ object Printer : WithLogging() {
         }
     }
 
+    // update page count and status in db
+    private fun updatePagecount(id: String, psInfo: PsData): PrintJob {
+        return DB.updateJob(id) {
+            this.pages = psInfo.pages
+            this.colorPages = psInfo.colorPages
+            this.processed = System.currentTimeMillis()
+        } ?: throw PrintException("Could not update")
+    }
+
+    //check if user has color printing enabled
+    private fun validateColorAvailable(j2: PrintJob, psInfo: PsData) {
+        log.trace("Testing for color {\"job\":\"{}\"}", j2.getId())
+        if (psInfo.colorPages > 0 && SessionManager.queryUser(j2.userIdentification, null)?.colorPrinting != true)
+            throw PrintException(PrintError.COLOR_DISABLED)
+        return
+    }
+
+    //check if user has sufficient quota to print this job
+    private fun validateAvailableQuota(j2: PrintJob, psInfo: PsData) {
+        log.trace("Testing for quota {\"job\":\"{}\"}", j2.getId())
+
+        val user = SessionManager.queryUser(j2.userIdentification, null)
+        if (Users.getQuota(user) < psInfo.pages + psInfo.colorPages * 2)
+            throw PrintException(PrintError.INSUFFICIENT_QUOTA)
+        return
+    }
+
+    //check if job is below max pages
     fun validateJobSize(j2: PrintJob) {
         log.trace("Testing for job length {\"job\":\"{}\"}")
         if (
