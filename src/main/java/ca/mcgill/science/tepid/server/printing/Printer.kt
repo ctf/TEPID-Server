@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.printing
 
 import ca.mcgill.science.tepid.models.data.FullDestination
+import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.enums.PrintError
 import ca.mcgill.science.tepid.server.auth.SessionManager
@@ -23,8 +24,6 @@ object Printer : WithLogging() {
     class PrintException(message: String) : RuntimeException(message) {
         constructor(printError: PrintError): this(printError.display)
     }
-
-
 
     private val executor: ExecutorService = ThreadPoolExecutor(5, 30, 10, TimeUnit.MINUTES,
             ArrayBlockingQueue<Runnable>(300, true))
@@ -114,10 +113,11 @@ object Printer : WithLogging() {
                     log.trace("Job $id has ${psInfo.pages} pages, ${psInfo.colorPages} in color")
 
                     var j2: PrintJob = updatePagecount(id, psInfo)
+                    val user = SessionManager.queryUser(j2.userIdentification, null) ?: throw Printer.PrintException("Could not retrieve user {\"job\":\"{}\"}")
 
-                    validateColorAvailable(j2, psInfo)
+                    validateColorAvailable(user, j2, psInfo)
 
-                    validateAvailableQuota(j2, psInfo)
+                    validateAvailableQuota(user, j2, psInfo)
 
                     validateJobSize(j2)
 
@@ -167,18 +167,16 @@ object Printer : WithLogging() {
     }
 
     //check if user has color printing enabled
-    private fun validateColorAvailable(j2: PrintJob, psInfo: PsData) {
-        log.trace("Testing for color {\"job\":\"{}\"}", j2.getId())
-        if (psInfo.colorPages > 0 && SessionManager.queryUser(j2.userIdentification, null)?.colorPrinting != true)
+    private fun validateColorAvailable(user: FullUser, job: PrintJob, psInfo: PsData) {
+        log.trace("Testing for color {\"job\":\"{}\"}", job.getId())
+        if (psInfo.colorPages > 0 && !user.colorPrinting)
             throw PrintException(PrintError.COLOR_DISABLED)
         return
     }
 
     //check if user has sufficient quota to print this job
-    private fun validateAvailableQuota(j2: PrintJob, psInfo: PsData) {
-        log.trace("Testing for quota {\"job\":\"{}\"}", j2.getId())
-
-        val user = SessionManager.queryUser(j2.userIdentification, null)
+    private fun validateAvailableQuota(user: FullUser,job: PrintJob, psInfo: PsData) {
+        log.trace("Testing for quota {\"job\":\"{}\"}", job.getId())
         if (Users.getQuota(user) < psInfo.pages + psInfo.colorPages * 2)
             throw PrintException(PrintError.INSUFFICIENT_QUOTA)
         return
