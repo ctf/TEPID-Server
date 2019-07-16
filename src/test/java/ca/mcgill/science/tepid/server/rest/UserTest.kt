@@ -13,11 +13,7 @@ import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.*
-import org.junit.After
-import org.junit.Before
-import org.junit.Ignore
-import org.junit.Test
-import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.*
 import javax.ws.rs.ClientErrorException
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Response
@@ -58,21 +54,6 @@ class TestUserGetQuota : WithLogging () {
         } returns (tailoredUser)
     }
 
-    @Before
-    fun initTest() {
-        mockkObject(SessionManager)
-        mockkObject(AuthenticationFilter)
-        mockkObject(Users)
-        every {
-            SessionManager.queryUser("targetUser", null)
-        } returns (FullUser())
-
-    }
-    @After
-    fun tearTest(){
-        unmockkAll()
-    }
-
     private fun setPrintedPages(printedPages:Int) {
         every {
             Users.getTotalPrinted(ofType(String::class))
@@ -91,14 +72,14 @@ class TestUserGetQuota : WithLogging () {
     }
 
     @Test
-    @Ignore
+    @Disabled
     fun testGetQuotaElder(){
         fail("Test needs an expected value (discussion item)")
         userGetQuotaTest(FullUser(role = ELDER), ELDER, 10000, "Elder is not given correct quota")
     }
 
     @Test
-    @Ignore
+    @Disabled
     fun testGetQuotaCTFer(){
         fail("Test needs an expected value (discussion item)")
         userGetQuotaTest(FullUser(role = CTFER), CTFER, 10000, "CTFER is not given correct quota")
@@ -147,6 +128,25 @@ class TestUserGetQuota : WithLogging () {
         userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018w0, c2018w)), USER, 1000,"multiple courses in same semester counted as other semesters")
     }
 
+    companion object {
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+            mockkObject(SessionManager)
+            mockkObject(AuthenticationFilter)
+            mockkObject(Users)
+            every {
+                SessionManager.queryUser("targetUser", null)
+            } returns (FullUser())
+
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearTest(){
+            unmockkAll()
+        }
+    }
 
 }
 
@@ -161,16 +161,6 @@ class getUserBySamTest : WithLogging() {
 
     lateinit var uriInfo: UriInfo
     lateinit var rc : ContainerRequestContext
-
-
-
-    @Before
-    fun initTest() {
-    }
-    @After
-    fun tearTest() {
-        unmockkAll()
-    }
 
     fun mockSession(role:String){
         uriInfo = mockk<UriInfo>()
@@ -271,5 +261,17 @@ class getUserBySamTest : WithLogging() {
     @Test
     fun getUserBySamNoneAndInvalidUser(){
         doTestUserQuery403("",null)
+    }
+
+    companion object {
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+        }
+        @JvmStatic
+        @AfterAll
+        fun tearTest() {
+            unmockkAll()
+        }
     }
 }
