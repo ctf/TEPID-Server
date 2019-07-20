@@ -22,7 +22,7 @@ import java.util.concurrent.*
 object Printer : WithLogging() {
 
     class PrintException(message: String) : RuntimeException(message) {
-        constructor(printError: PrintError): this(printError.display)
+        constructor(printError: PrintError) : this(printError.display)
     }
 
     private val executor: ExecutorService = ThreadPoolExecutor(5, 30, 10, TimeUnit.MINUTES,
@@ -113,7 +113,8 @@ object Printer : WithLogging() {
                     log.trace("Job $id has ${psInfo.pages} pages, ${psInfo.colorPages} in color")
 
                     var j2: PrintJob = updatePagecount(id, psInfo)
-                    val user = SessionManager.queryUser(j2.userIdentification, null) ?: throw Printer.PrintException("Could not retrieve user {\"job\":\"{}\"}")
+                    val user = SessionManager.queryUser(j2.userIdentification, null)
+                            ?: throw Printer.PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
 
                     validateColorAvailable(user, j2, psInfo)
 
@@ -130,7 +131,7 @@ object Printer : WithLogging() {
 
                     val dest = DB.getDestination(destination)
                     if (sendToSMB(tmp, dest, debug)) {
-                        DB.updateJob(id){
+                        DB.updateJob(id) {
                             printed = System.currentTimeMillis()
                         }
                         log.info("${j2._id} sent to destination")
@@ -171,15 +172,13 @@ object Printer : WithLogging() {
         log.trace("Testing for color {\"job\":\"{}\"}", job.getId())
         if (psInfo.colorPages > 0 && !user.colorPrinting)
             throw PrintException(PrintError.COLOR_DISABLED)
-        return
     }
 
     //check if user has sufficient quota to print this job
-    private fun validateAvailableQuota(user: FullUser,job: PrintJob, psInfo: PsData) {
+    private fun validateAvailableQuota(user: FullUser, job: PrintJob, psInfo: PsData) {
         log.trace("Testing for quota {\"job\":\"{}\"}", job.getId())
         if (Users.getQuota(user) < psInfo.pages + psInfo.colorPages * 2)
             throw PrintException(PrintError.INSUFFICIENT_QUOTA)
-        return
     }
 
     //check if job is below max pages
@@ -191,7 +190,6 @@ object Printer : WithLogging() {
         ) {
             throw PrintException(PrintError.TOO_MANY_PAGES)
         }
-        return
     }
 
 
@@ -227,7 +225,7 @@ object Printer : WithLogging() {
      * Update job db and cancel executor
      */
     private fun failJob(id: String, error: String) {
-        DB.updateJobWithResponse(id){
+        DB.updateJobWithResponse(id) {
             fail(error)
         }
         cancel(id)
@@ -238,7 +236,7 @@ object Printer : WithLogging() {
             try {
                 val jobs = DB.getOldJobs()
                 jobs.forEach { j ->
-                    DB.updateJob(j.getId()){
+                    DB.updateJob(j.getId()) {
                         fail("Timed out")
                         val id = _id ?: return@updateJob // TODO: if ID is null, how did we get here?
                         cancel(id)
