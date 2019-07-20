@@ -18,6 +18,7 @@ import javax.persistence.EntityManagerFactory
 
 object Config : WithLogging() {
 
+
     private val illegalLDAPCharacters = "[,+\"\\\\<>;=]".toRegex()
 
     /**
@@ -50,8 +51,9 @@ object Config : WithLogging() {
     val TEM_URL: String
 
     /*
-     * Boolean to enable ldap authentication
+     * LDAP and Permission Groups
      */
+
     val LDAP_ENABLED: Boolean
 
     val LDAP_SEARCH_BASE : String
@@ -69,6 +71,15 @@ object Config : WithLogging() {
     val CURRENT_EXCHANGE_GROUP : AdGroup
     val USERS_GROUP : List<AdGroup>
 
+    /*
+     * Printing configuration
+     */
+
+    val MAX_PAGES_PER_JOB: Int
+
+    /*
+     * About information
+     */
 
     val HASH: String
     val TAG: String
@@ -136,6 +147,8 @@ object Config : WithLogging() {
         TAG = PropsCreationInfo.TAG ?: ""
         CREATION_TIMESTAMP = PropsCreationInfo.CREATION_TIMESTAMP?.toLongOrNull() ?: -1
         CREATION_TIME = PropsCreationInfo.CREATION_TIME ?: ""
+
+        MAX_PAGES_PER_JOB = PropsPrinting.MAX_PAGES_PER_JOB ?: -1
 
         if (DEBUG)
             setLoggingLevel(Level.TRACE)

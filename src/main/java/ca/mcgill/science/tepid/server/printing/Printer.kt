@@ -1,8 +1,9 @@
 package ca.mcgill.science.tepid.server.printing
 
-import ca.mcgill.science.tepid.models.bindings.PrintError
 import ca.mcgill.science.tepid.models.data.FullDestination
+import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.enums.PrintError
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.rest.Users
@@ -20,7 +21,9 @@ import java.util.concurrent.*
  */
 object Printer : WithLogging() {
 
-    class PrintException(message: String) : RuntimeException(message)
+    class PrintException(message: String) : RuntimeException(message) {
+        constructor(printError: PrintError) : this(printError.display)
+    }
 
     private val executor: ExecutorService = ThreadPoolExecutor(5, 30, 10, TimeUnit.MINUTES,
             ArrayBlockingQueue<Runnable>(300, true))
@@ -106,31 +109,21 @@ object Printer : WithLogging() {
 
                     //count pages
                     val psInfo = Gs.psInfo(tmp)
-                    val colorPages = psInfo.colorPages
                     log.trace("Detected ${if (psInfo.isColor) "color" else "monochrome"} for job $id in ${System.currentTimeMillis() - now} ms")
-                    log.trace("Job $id has ${psInfo.pages} pages, $colorPages in color")
+                    log.trace("Job $id has ${psInfo.pages} pages, ${psInfo.colorPages} in color")
 
-                    //update page count and status in db
-                    var j2: PrintJob = DB.updateJob(id){
-                        this.pages = psInfo.pages
-                        this.colorPages = colorPages
-                        this.processed = System.currentTimeMillis()
-                    }?: throw PrintException("Could not update")
-
-                    //check if user has color printing enabled
-                    log.trace("Testing for color {'job':'{}'}", j2.getId())
-                    if (colorPages > 0 && SessionManager.queryUser(j2.userIdentification, null)?.colorPrinting != true)
-                        throw PrintException(PrintError.COLOR_DISABLED)
-
-                    //check if user has sufficient quota to print this job
-                    log.trace("Testing for quota {'job':'{}'}", j2.getId())
-
+                    var j2: PrintJob = updatePagecount(id, psInfo)
                     val user = SessionManager.queryUser(j2.userIdentification, null)
-                    if (Users.getQuota(user) < psInfo.pages + colorPages * 2)
-                        throw PrintException(PrintError.INSUFFICIENT_QUOTA)
+                            ?: throw Printer.PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
+
+                    validateColorAvailable(user, j2, psInfo)
+
+                    validateAvailableQuota(user, j2, psInfo)
+
+                    validateJobSize(j2)
 
                     //add job to the queue
-                    log.trace("Trying to assign destination {'job':'{}'}", j2.getId())
+                    log.trace("Trying to assign destination {\"job\":\"{}\"}", j2.getId())
                     j2 = QueueManager.assignDestination(id)
                     //todo check destination field
                     val destination = j2.destination
@@ -138,7 +131,7 @@ object Printer : WithLogging() {
 
                     val dest = DB.getDestination(destination)
                     if (sendToSMB(tmp, dest, debug)) {
-                        DB.updateJob(id){
+                        DB.updateJob(id) {
                             printed = System.currentTimeMillis()
                         }
                         log.info("${j2._id} sent to destination")
@@ -152,10 +145,10 @@ object Printer : WithLogging() {
                     failJob(id, msg)
                 } finally {
                     tmp.delete()
-                    log.trace("Successfully deleted tmp {'file':{}}", tmp.absoluteFile)
+                    log.trace("Successfully deleted tmp {\"file\":{}}", tmp.absoluteFile)
                 }
             }
-            log.trace("Returning true for {'job':'{}'}", id)
+            log.trace("Returning true for {\"job\":\"{}\"}", id)
             return true to "Successfully created request $id"
         } catch (e: Exception) {
             // todo check if this is necessary, given that the submit code is handled separately
@@ -164,6 +157,41 @@ object Printer : WithLogging() {
             return false to "Failed to process"
         }
     }
+
+    // update page count and status in db
+    private fun updatePagecount(id: String, psInfo: PsData): PrintJob {
+        return DB.updateJob(id) {
+            this.pages = psInfo.pages
+            this.colorPages = psInfo.colorPages
+            this.processed = System.currentTimeMillis()
+        } ?: throw PrintException("Could not update")
+    }
+
+    //check if user has color printing enabled
+    private fun validateColorAvailable(user: FullUser, job: PrintJob, psInfo: PsData) {
+        log.trace("Testing for color {\"job\":\"{}\"}", job.getId())
+        if (psInfo.colorPages > 0 && !user.colorPrinting)
+            throw PrintException(PrintError.COLOR_DISABLED)
+    }
+
+    //check if user has sufficient quota to print this job
+    private fun validateAvailableQuota(user: FullUser, job: PrintJob, psInfo: PsData) {
+        log.trace("Testing for quota {\"job\":\"{}\"}", job.getId())
+        if (Users.getQuota(user) < psInfo.pages + psInfo.colorPages * 2)
+            throw PrintException(PrintError.INSUFFICIENT_QUOTA)
+    }
+
+    //check if job is below max pages
+    fun validateJobSize(j2: PrintJob) {
+        log.trace("Testing for job length {\"job\":\"{}\"}")
+        if (
+                Config.MAX_PAGES_PER_JOB > 0                // valid max pages per job
+                && j2.pages > Config.MAX_PAGES_PER_JOB
+        ) {
+            throw PrintException(PrintError.TOO_MANY_PAGES)
+        }
+    }
+
 
     internal fun sendToSMB(f: File, destination: FullDestination, debug: Boolean): Boolean {
         if (!f.isFile) {
@@ -197,7 +225,7 @@ object Printer : WithLogging() {
      * Update job db and cancel executor
      */
     private fun failJob(id: String, error: String) {
-        DB.updateJobWithResponse(id){
+        DB.updateJobWithResponse(id) {
             fail(error)
         }
         cancel(id)
@@ -208,7 +236,7 @@ object Printer : WithLogging() {
             try {
                 val jobs = DB.getOldJobs()
                 jobs.forEach { j ->
-                    DB.updateJob(j.getId()){
+                    DB.updateJob(j.getId()) {
                         fail("Timed out")
                         val id = _id ?: return@updateJob // TODO: if ID is null, how did we get here?
                         cancel(id)
