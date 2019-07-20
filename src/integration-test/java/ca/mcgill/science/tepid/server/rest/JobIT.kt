@@ -89,9 +89,9 @@ class JobTest : ITBase(), Loggable by WithLogging() {
                 ?: fail("did not retrieve printed job after print")
 
         val setStatusResponse = server.testApi.setPrinterStatus(printedJob.destination
-                ?: fail("printed job did not have destination"), DestinationTicket(up = false, reason = "reprint test, put me up")).executeDirect()
+                ?: fail("printed job did not have destination"), DestinationTicket(up = false, reason = "reprint test, put me up")).execute()
 
-        if (setStatusResponse?.contains("down") != true) {
+        if (setStatusResponse?.body()?.contains("down") != true) {
             fail("destination was not marked down")
         }
 

@@ -117,7 +117,7 @@ class Jobs {
         val response = DB.postJob(reprint)
         if (!response.isSuccessful)
             throw WebApplicationException(response)
-        val content = response.readEntity(ObjectNode::class.java)
+        val content = response.entity as? ObjectNode ?: failInternal("Failed to retrieve new id")
         val newId = content.get("id")?.asText() ?: failInternal("Failed to retrieve new id")
         Utils.startCaughtThread("Reprint $id", log) {
             val (success, message) = Printer.print(newId, FileInputStream(file))
