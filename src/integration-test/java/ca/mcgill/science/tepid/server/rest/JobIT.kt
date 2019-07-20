@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.FileInputStream
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -82,6 +83,7 @@ class JobTest : ITBase(), Loggable by WithLogging() {
         assertTrue(response.ok)
 
         // turn off original destination
+        TimeUnit.MILLISECONDS.sleep(500)
 
         val printedJob = server.testApi.getJob(jobId).executeDirect()
                 ?: fail("did not retrieve printed job after print")
