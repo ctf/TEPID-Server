@@ -152,7 +152,7 @@ class Users {
     @PUT
     @Path("/{sam}/color")
     @RolesAllowed(USER, CTFER, ELDER)
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.APPLICATION_JSON)
     fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.colorPrinting = color
