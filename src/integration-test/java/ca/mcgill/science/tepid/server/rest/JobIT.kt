@@ -1,19 +1,19 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.api.addJobDataFromInput
 import ca.mcgill.science.tepid.api.executeDirect
+import ca.mcgill.science.tepid.models.data.DestinationTicket
+import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.test.TestUtils
-import ca.mcgill.science.tepid.test.get
 import ca.mcgill.science.tepid.utils.Loggable
 import ca.mcgill.science.tepid.utils.WithLogging
-import org.junit.Before
-import org.junit.Test
-import org.tukaani.xz.LZMA2Options
-import org.tukaani.xz.XZOutputStream
-import java.io.ByteArrayOutputStream
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.FileInputStream
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
@@ -21,51 +21,85 @@ class JobTest : ITBase(), Loggable by WithLogging() {
 
     lateinit var testJob: PrintJob
 
-    @Before
+    @BeforeEach
     fun initTest() {
         Config.DEBUG
+
+        server.testApi.enableColor(server.testUser, true).executeDirect()
+
+
+        server.testApi.putDestinations(mapOf("d0" to FullDestination(name = "d0", up = true), "d1" to FullDestination(name = "d1", up = true))).executeDirect()
+
+        val q =  PrintQueue(loadBalancer = "fiftyfifty", name = "q0", destinations = listOf("d0", "d1"))
+        q._id = "q0"
+        server.testApi.putQueues(listOf(q)).executeDirect()
+
         testJob = PrintJob(
-                name= "Server Test ${System.currentTimeMillis()}",
-                queueName = "1B16",
+                name = "Server Test ${System.currentTimeMillis()}",
+                queueName = "0",
                 userIdentification = server.testUser
         )
     }
 
     @Test
-    fun test() {
+    fun testPrint() {
         val testFile = "pdf-test.pdf"
-        val job = PrintJob(name = server.testUser,
-                queueName = "1B16",
-                originalHost = "Unit Test")
 
-        val user = server.testApi.getUser(server.testUser).get()
-
-
-        val putJob = server.testApi.createNewJob(job).executeDirect()
-
+        val putJob = server.testApi.createNewJob(testJob).executeDirect()
         assertTrue(putJob!!.ok, "Could not put job")
-
         val jobId = putJob.id
 
         log.debug("Sending job data for $jobId")
 
+        // print once
         val fileInStream = FileInputStream(File(
                 this::class.java.classLoader.getResource(testFile).file
         ))
 
-        val o = ByteArrayOutputStream()
-        val xzStream = XZOutputStream(o, LZMA2Options())
-
-
-
-        xzStream.write(fileInStream.readAllBytes())
-
-        val i = o.toByteArray()
-
-        val response = TestUtils.testApi.addJobData(jobId, i).executeDirect() ?: fail("null response received sending job contents")
+        val response = server.testApi.addJobDataFromInput(jobId, FileInputStream(File(this::class.java.classLoader.getResource(testFile).file))).executeDirect()
+                ?: fail("null response received sending job contents")
         println("Job sent: $response")
 
         assertTrue(response.ok)
+
+    }
+
+    @Test
+    fun testReprint() {
+        val testFile = "pdf-test.pdf"
+
+        val putJob = server.testApi.createNewJob(testJob).executeDirect()
+        assertTrue(putJob!!.ok, "Could not put job")
+        val jobId = putJob.id
+
+        log.debug("Sending job data for $jobId")
+
+        // print once
+        val response = server.testApi.addJobDataFromInput(jobId, FileInputStream(File(this::class.java.classLoader.getResource(testFile).file)))
+                .executeDirect() ?: fail("null response received sending job contents")
+        println("Job sent: $response")
+
+        assertTrue(response.ok)
+
+        // turn off original destination
+
+        val printedJob = server.testApi.getJob(jobId).executeDirect()
+                ?: fail("did not retrieve printed job after print")
+
+        val setStatusResponse = server.testApi.setPrinterStatus(printedJob.destination
+                ?: fail("printed job did not have destination"), DestinationTicket(up = false, reason = "reprint test, put me up")).executeDirect()
+
+        if (setStatusResponse?.contains("down") != true) {
+            fail("destination was not marked down")
+        }
+
+        // reprint
+        val reprintResponse = server.testApi.reprintJob(jobId).executeDirect()
+                ?: fail("did not retrieve response after reprint")
+
+        assertFalse(reprintResponse.contains("Failed"))
+        assertFalse(reprintResponse.contains(jobId))
+
 
     }
 
