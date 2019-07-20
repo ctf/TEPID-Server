@@ -2,8 +2,8 @@ package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.server.mapper
+import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.utils.PropsDB
 import java.io.InputStream
 import java.util.*
@@ -187,7 +187,7 @@ class HibernateQueueLayer(val hc : HibernateCrud<PrintQueue, String?>) : DbQueue
         return hc.dbOp { em ->
             em.createQuery("SELECT max(c.eta) from PrintJob c WHERE c.destination = :destinationId")
                     .setParameter("destinationId", destinationId)
-                    .singleResult as Long
+                    .singleResult as? Long ?: 0
         }
     }
 }
