@@ -4,17 +4,17 @@ import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
-import org.junit.Assume
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import kotlin.test.*
 
 open class AuthIT {
-    @Before
+    @BeforeAll
     fun before() {
-        Assume.assumeTrue(Config.LDAP_ENABLED)
-        Assume.assumeTrue(PropsLDAPTestUser.TEST_USER.isNotEmpty())
-        Assume.assumeTrue(PropsLDAPTestUser.TEST_PASSWORD.isNotEmpty())
+        Assumptions.assumeTrue(Config.LDAP_ENABLED)
+        Assumptions.assumeTrue(PropsLDAPTestUser.TEST_USER.isNotEmpty())
+        Assumptions.assumeTrue(PropsLDAPTestUser.TEST_PASSWORD.isNotEmpty())
         println("Running ldap tests with test user")
     }
 

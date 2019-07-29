@@ -64,7 +64,7 @@ dependencies {
     testCompile "org.junit.jupiter:junit-jupiter-params:5.1.0"
     testCompile "org.junit.jupiter:junit-jupiter-engine:5.3.1"
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
-    
+
     testCompile "org.jetbrains.kotlin:kotlin-test:${tepid.kotlin}"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:${tepid.kotlin}"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit5:${tepid.kotlin}"

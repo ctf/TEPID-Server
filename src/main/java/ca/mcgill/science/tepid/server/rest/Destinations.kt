@@ -53,7 +53,7 @@ class Destinations {
     @POST
     @Path("/{dest}")
     @RolesAllowed(CTFER, ELDER)
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     fun setStatus(@PathParam("dest") id: String, ticket: DestinationTicket, @Context crc: ContainerRequestContext): String {
         val session = crc.getSession()

@@ -12,7 +12,6 @@ import ca.mcgill.science.tepid.server.db.isSuccessful
 import ca.mcgill.science.tepid.server.printing.Printer
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
-import com.fasterxml.jackson.databind.node.ObjectNode
 import java.io.FileInputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
@@ -117,8 +116,8 @@ class Jobs {
         val response = DB.postJob(reprint)
         if (!response.isSuccessful)
             throw WebApplicationException(response)
-        val content = response.readEntity(ObjectNode::class.java)
-        val newId = content.get("id")?.asText() ?: failInternal("Failed to retrieve new id")
+        val content = response.entity as? PutResponse ?: failInternal("Failed to retrieve new id, could not get response entity")
+        val newId = content.id
         Utils.startCaughtThread("Reprint $id", log) {
             val (success, message) = Printer.print(newId, FileInputStream(file))
             if (!success)
