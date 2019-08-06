@@ -138,6 +138,8 @@ test {
 }
 
 task integrationTest(type: Test) {
+    useJUnitPlatform()
+
     dependsOn cleanIntegrationTest
     group = "verification"
 
