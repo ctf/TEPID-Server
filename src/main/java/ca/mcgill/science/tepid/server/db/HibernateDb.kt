@@ -253,7 +253,7 @@ class HibernateUserLayer(val hc : HibernateCrud<FullUser, String?>) : DbUserLaye
             return when {
                 sam.contains(".") -> hc.dbOp { em ->
                     em.createQuery("SELECT c FROM FullUser c WHERE c.longUser = :lu", FullUser::class.java)
-                            .setParameter("lu", "${sam.substringBefore("@")}%40${Config.ACCOUNT_DOMAIN}")
+                            .setParameter("lu", "${sam.substringBefore("@")}@${Config.ACCOUNT_DOMAIN}")
                             .singleResult
                 }
                 sam.matches(numRegex) -> hc.dbOp { em ->
