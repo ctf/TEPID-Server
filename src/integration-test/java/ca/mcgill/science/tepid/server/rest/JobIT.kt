@@ -29,12 +29,13 @@ class JobTest : ITBase(), Loggable by WithLogging() {
 
         val d0 = "d0".padEnd(36)
         val d1 = "d1".padEnd(36)
+        val q0 = "q0".padEnd(36)
 
 
         server.testApi.putDestinations(mapOf(d0 to FullDestination(name = d0, up = true), d1 to FullDestination(name = d1, up = true))).executeDirect()
 
         val q = PrintQueue(loadBalancer = "fiftyfifty", name = "0", destinations = listOf(d0, d1))
-        q._id = "q0"
+        q._id = q0
         server.testApi.putQueues(listOf(q)).executeDirect()
 
         testJob = PrintJob(
