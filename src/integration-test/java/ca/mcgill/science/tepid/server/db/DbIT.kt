@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.models.data.*
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import javax.persistence.EntityManager
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
@@ -60,8 +61,6 @@ class DbIT : DbTest() {
         @JvmStatic
         @BeforeAll
         fun initHelper(){
-            emf = HibernateDbLayer.makeEntityManagerFactory("tepid-pu")
-
             hc = HibernateCrud(emf, FullUser::class.java)
             hl = HibernateUserLayer(hc)
             println("======Begin Tests======")

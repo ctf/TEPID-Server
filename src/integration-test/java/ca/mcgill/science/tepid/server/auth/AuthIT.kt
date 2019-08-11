@@ -10,14 +10,6 @@ import org.junit.jupiter.api.Test
 import kotlin.test.*
 
 open class AuthIT {
-    @BeforeAll
-    fun before() {
-        Assumptions.assumeTrue(Config.LDAP_ENABLED)
-        Assumptions.assumeTrue(PropsLDAPTestUser.TEST_USER.isNotEmpty())
-        Assumptions.assumeTrue(PropsLDAPTestUser.TEST_PASSWORD.isNotEmpty())
-        println("Running ldap tests with test user")
-    }
-
     protected fun FullUser?.assertEqualsTestUser() {
         assertNotNull(this!!)
         assertEquals(PropsLDAPTestUser.TEST_USER, shortUser, "Short user mismatch. Perhaps you passed in the long user in your test?")
@@ -36,6 +28,16 @@ open class AuthIT {
                 "email" to email
         ).forEach { (tag, data) ->
             assertNotNull(data, "$tag is null for user")
+        }
+    }
+
+    companion object{
+        @BeforeAll
+        fun before() {
+            Assumptions.assumeTrue(Config.LDAP_ENABLED)
+            Assumptions.assumeTrue(PropsLDAPTestUser.TEST_USER.isNotEmpty())
+            Assumptions.assumeTrue(PropsLDAPTestUser.TEST_PASSWORD.isNotEmpty())
+            println("Running ldap tests with test user")
         }
     }
 }
