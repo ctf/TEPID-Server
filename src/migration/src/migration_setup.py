@@ -17,7 +17,7 @@ couch = None
 
 
 class DbConfig(object):
-    def __init__(self, dbUsername, dbPassword, dbUrl):
+	def __init__(self, dbUsername, dbPassword, dbUrl):
 		self.dbUsername = dbUsername
 		self.dbPassword = dbPassword
 		urlSplit = re.search('.*:\d+/', dbUrl).end()
@@ -28,25 +28,33 @@ class DbConfig(object):
 
 
 def parseConfig(filePath):
-    with open(filePath) as configFile:
-        keys = {}
-        for line in configFile:
-            if "=" in line:
-                k, v = line.split("=", 1)
-                keys[k.strip()] = v.strip()
+	with open(filePath) as configFile:
+		keys = {}
+		for line in configFile:
+			if "=" in line:
+				k, v = line.split("=", 1)
+				keys[k.strip()] = v.strip()
 
-        return DbConfig(keys["USERNAME"], keys["PASSWORD"], keys["URL"])
+		return DbConfig(keys["USERNAME"], keys["PASSWORD"], keys["URL"])
 
-def loadCouchDb(file):
-    Config = parseConfig(file)
-    client = CouchDB(user=Config.dbUsername,
-                     auth_token=Config.dbPassword,
-                     url=Config.dbUrlBase,
-                     admin_party=False,
-                     auto_renew=True)
-    client.connect()
-    session = client.session()
-    db = client[Config.dbUrlDb]
-    ddoc = DesignDocument(db, 'migrate')
-    ddoc.create()
-    return client, db, session, ddoc
+
+def loadCouchDb(Config):
+	client = CouchDB(user=Config.dbUsername,
+					 auth_token=Config.dbPassword,
+					 url=Config.dbUrlBase,
+					 admin_party=False,
+					 auto_renew=True)
+	client.connect()
+	session = client.session()
+	db = client[Config.dbUrlDb]
+	ddoc = DesignDocument(db, 'migrate')
+	# ddoc.create()
+	couch = Couch(client=client, db=db, session=session, ddoc=ddoc, Config=Config)
+
+
+def loadPsql(Config):
+	conn = psycopg2.connect(host=Config.host, port=Config.port, database=Config.dbUrlDb, user=Config.dbUsername,
+							password=Config.dbPassword)
+	cur = conn.cursor()
+
+	psql = Psql(conn=conn, Config=Config)
