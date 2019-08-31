@@ -5,7 +5,7 @@ from utils import update_schema_version
 
 
 class Migration (object):
-    def __init__(self, applicable_types: Optional[List[str]], applicable_schema_versions: Optional[List[str]], migration_function: Callable[[str], None], schema_version: str, db=migration_setup.db, ddoc=migration_setup.ddoc):
+    def __init__(self, applicable_types: Optional[List[str]], applicable_schema_versions: Optional[List[str]], migration_function: Callable[[str], None], schema_version: str, db, ddoc):
         self.applicable_types = applicable_types
         self.applicable_schema_versions = applicable_schema_versions
         self.migration_function = migration_function

@@ -2,11 +2,9 @@ import os
 import re
 from collections import namedtuple
 
-from cloudant.client import CouchDB
-from cloudant.result import Result, ResultByKey
-from cloudant.design_document import DesignDocument
-
 import psycopg2
+from cloudant.client import CouchDB
+from cloudant.design_document import DesignDocument
 
 conf_dir = os.environ["tepid_config_dir"]
 
@@ -49,7 +47,7 @@ def loadCouchDb(Config):
 	db = client[Config.dbUrlDb]
 	ddoc = DesignDocument(db, 'migrate')
 	# ddoc.create()
-	couch = Couch(client=client, db=db, session=session, ddoc=ddoc, Config=Config)
+	return Couch(client=client, db=db, session=session, ddoc=ddoc, Config=Config)
 
 
 def loadPsql(Config):
@@ -57,4 +55,4 @@ def loadPsql(Config):
 							password=Config.dbPassword)
 	cur = conn.cursor()
 
-	psql = Psql(conn=conn, Config=Config)
+	return Psql(conn=conn, Config=Config)
