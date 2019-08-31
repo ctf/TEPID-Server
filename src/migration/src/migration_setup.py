@@ -1,11 +1,20 @@
 import os
 import re
+from collections import namedtuple
 
 from cloudant.client import CouchDB
 from cloudant.result import Result, ResultByKey
 from cloudant.design_document import DesignDocument
 
-conf_dir = os.environ["tepid_config_dir"] + "\\"
+import psycopg2
+
+conf_dir = os.environ["tepid_config_dir"]
+
+Psql = namedtuple('Psql', ['conn', 'Config'])
+psql = None
+Couch = namedtuple('Couch', ['client', 'db', 'session', 'ddoc', 'Config'])
+couch = None
+
 
 class DbConfig(object):
     def __init__(self, dbUsername, dbPassword, dbUrl):
