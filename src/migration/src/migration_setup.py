@@ -18,11 +18,13 @@ couch = None
 
 class DbConfig(object):
     def __init__(self, dbUsername, dbPassword, dbUrl):
-        self.dbUsername = dbUsername
-        self.dbPassword = dbPassword
-        urlSplit = re.search('.*:\d+/', dbUrl).end()
-        self.dbUrlBase = dbUrl[:urlSplit]
-        self.dbUrlDb = dbUrl[urlSplit:]
+		self.dbUsername = dbUsername
+		self.dbPassword = dbPassword
+		urlSplit = re.search('.*:\d+/', dbUrl).end()
+		self.dbUrlBase = dbUrl[:urlSplit - 1]
+		self.dbUrlDb = dbUrl[urlSplit:]
+		portSeparator = self.dbUrlBase.rfind(':')
+		self.host, self.port = self.dbUrlBase[:portSeparator], self.dbUrlBase[portSeparator:+1]
 
 
 def parseConfig(filePath):
