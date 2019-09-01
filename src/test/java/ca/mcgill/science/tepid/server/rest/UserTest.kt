@@ -3,10 +3,7 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
-import ca.mcgill.science.tepid.models.data.Course
-import ca.mcgill.science.tepid.models.data.FullSession
-import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.SessionManager
@@ -85,6 +82,12 @@ class TestUserGetQuota : WithLogging () {
     fun testGetQuotaCTFer(){
         setPrintedPages(0)
         userGetQuotaTest(FullUser(role = CTFER, courses = setOf(c2019f)), CTFER, 250, "CTFER is not given correct quota")
+    }
+
+    @Test
+    fun testGetQuotaNUS(){
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role = USER, courses = setOf(c2019f), groups=setOf(AdGroup("520-NUS Users"))), CTFER, 1000, "NUS is not given correct quota")
     }
 
     @Test

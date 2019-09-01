@@ -1,10 +1,7 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.bindings.*
-import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Season
-import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.models.data.User
+import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
@@ -234,6 +231,12 @@ class Users {
                  * Granted that semesters are comparable,
                  * you may specify ranges (inclusive) when matching
                  */
+
+                // for NUS, which has a separate contract
+                if (user.groups.contains(AdGroup("520-NUS Users")) && semester > Semester.fall(2018)) {
+                    return@map 1000
+                }
+
                 when {
                     semester == Semester.fall(2016) -> 500         // the first semester had 500 pages only
                     (semester > Semester.fall(2016) && semester < Semester.fall(2019)) -> 1000  // semesters used to add 1000 pages to the base quota
