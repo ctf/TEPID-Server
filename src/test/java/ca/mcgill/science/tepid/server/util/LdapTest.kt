@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.auth.Ldap
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.server.Config
+import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.junit.*
 import kotlin.test.assertEquals
@@ -19,8 +20,8 @@ class LdapTest {
         @JvmStatic
         fun before() {
             Assume.assumeTrue(Config.LDAP_ENABLED)
-            Assume.assumeTrue(Config.TEST_USER.isNotEmpty())
-            Assume.assumeTrue(Config.TEST_PASSWORD.isNotEmpty())
+            Assume.assumeTrue(PropsLDAPTestUser.TEST_USER.isNotEmpty())
+            Assume.assumeTrue(PropsLDAPTestUser.TEST_PASSWORD.isNotEmpty())
             println("Running ldap tests with test user")
         }
     }
@@ -28,7 +29,7 @@ class LdapTest {
     private fun FullUser?.assertEqualsTestUser() {
         assertNotNull(this)
         println(this!!)
-        assertEquals(Config.TEST_USER, shortUser, "Short user mismatch. Perhaps you passed in the long user in your test?")
+        assertEquals(PropsLDAPTestUser.TEST_USER, shortUser, "Short user mismatch. Perhaps you passed in the long user in your test?")
         val user = toUser()
         assertTrue(user.role.isNotEmpty(), "Role may not have propagated")
     }

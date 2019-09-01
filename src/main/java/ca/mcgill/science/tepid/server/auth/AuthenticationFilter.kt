@@ -87,7 +87,7 @@ class AuthenticationFilter : ContainerRequestFilter {
                         return
                     }
                     val user = SessionManager.authenticate(username, password)
-                    session = if (user != null) SessionManager.start(user, 24) else null
+                    session = if (user != null) SessionManager.start(user, 0) else null
                 }
                 else -> {
                     log.warn("Unsupported auth scheme $authScheme")

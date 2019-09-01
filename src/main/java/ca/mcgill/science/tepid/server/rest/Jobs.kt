@@ -3,24 +3,21 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
-import ca.mcgill.science.tepid.models.data.ChangeDelta
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.auth.SessionManager
-import ca.mcgill.science.tepid.server.db.*
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.Order
+import ca.mcgill.science.tepid.server.db.isSuccessful
 import ca.mcgill.science.tepid.server.printing.Printer
 import ca.mcgill.science.tepid.server.util.*
 import ca.mcgill.science.tepid.utils.WithLogging
-import com.fasterxml.jackson.databind.node.ObjectNode
-import java.io.BufferedReader
 import java.io.FileInputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
-import javax.ws.rs.container.AsyncResponse
 import javax.ws.rs.container.ContainerRequestContext
-import javax.ws.rs.container.Suspended
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -58,22 +55,7 @@ class Jobs {
         j.userIdentification = session.user.shortUser
         j.deleteDataOn = j.getJobExpiration()
         log.debug("Starting new print job ${j.name} for ${session.user.longUser}...")
-        return CouchDb.target.postJson(j)
-    }
-
-    /**
-     * Returns true if monochrome was detected,
-     * or false if color was detected
-     * Defaults to monochrome
-     */
-    private fun BufferedReader.isMonochrome(): Boolean {
-        for (line in lines()) {
-            if (line.contains("/ProcessColorModel /DeviceGray"))
-                return true
-            if (line.contains("/ProcessColorModel /DeviceCMYK"))
-                return false
-        }
-        return true
+        return DB.postJob(j)
     }
 
     @PUT
@@ -86,31 +68,6 @@ class Jobs {
         if (!success)
             failBadRequest(message)
         return PutResponse(true, id, "")
-    }
-
-    @GET
-    @Path("/job/{id}/_changes")
-    @RolesAllowed(USER, CTFER, ELDER)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun getChanges(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Suspended ar: AsyncResponse, @Context ctx: ContainerRequestContext) {
-        val session = ctx.getSession()
-        ar.setTimeoutHandler { ar.resume(emptyList<ChangeDelta>()) }
-        val j = DB.getJob(id)
-        if (session.role == USER && session.user.shortUser != j.userIdentification) {
-            ar.resume(Response.Status.UNAUTHORIZED.text("You cannot access this resource"))
-            return
-        }
-
-        val delta = DB.getJobChanges(id, uriInfo)
-        log.debug("Delta: $delta")
-
-        if (!ar.isDone && !ar.isCancelled) {
-            try {
-                ar.resume(listOf(delta))
-            } catch (e: Exception) {
-                log.error("Failed to emit job _changes for $id: ${e.message}")
-            }
-        }
     }
 
     @GET
@@ -159,8 +116,8 @@ class Jobs {
         val response = DB.postJob(reprint)
         if (!response.isSuccessful)
             throw WebApplicationException(response)
-        val content = response.readEntity(ObjectNode::class.java)
-        val newId = content.get("id")?.asText() ?: failInternal("Failed to retrieve new id")
+        val content = response.entity as? PutResponse ?: failInternal("Failed to retrieve new id, could not get response entity")
+        val newId = content.id
         Utils.startCaughtThread("Reprint $id", log) {
             val (success, message) = Printer.print(newId, FileInputStream(file))
             if (!success)

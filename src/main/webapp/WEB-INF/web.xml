@@ -5,35 +5,59 @@
          id="WebApp_ID" version="3.0">
     <display-name>TEPID Server</display-name>
 
-<filter>                                                                                                     
-        <filter-name>CorsFilter</filter-name>     
-        <async-supported>true</async-supported>                                                                  
+    <!--CORS filter-->
+    <filter>
+        <filter-name>CorsFilter</filter-name>
+        <async-supported>true</async-supported>
         <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
-        <init-param>                         
+        <init-param>
             <param-name>cors.allowed.origins</param-name>
             <param-value>*</param-value>
-        </init-param>                                                      
-        <init-param>                           
-            <param-name>cors.allowed.headers</param-name>                  
-            <param-value>Content-Type,X-Requested-With,accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization</param-value>
-        </init-param>                                    
-        <init-param>                    
+        </init-param>
+        <init-param>
+            <param-name>cors.allowed.headers</param-name>
+            <param-value>
+                Content-Type,X-Requested-With,accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization
+            </param-value>
+        </init-param>
+        <init-param>
             <param-name>cors.allowed.methods</param-name>
             <param-value>GET,POST,HEAD,OPTIONS,PUT,DELETE</param-value>
-        </init-param>                                    
-        <init-param>                                                                                                   
+        </init-param>
+        <init-param>
             <param-name>cors.exposed.headers</param-name>
             <param-value>Access-Control-Allow-Origin,Access-Control-Allow-Credentials</param-value>
-        </init-param>                                    
-        <async-supported>true</async-supported>                 
+        </init-param>
+        <async-supported>true</async-supported>
     </filter>
-                                            
-    <filter-mapping>                                                                               
-        <filter-name>CorsFilter</filter-name>            
-        <url-pattern>*</url-pattern>                                                               
+
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <url-pattern>*</url-pattern>
     </filter-mapping>
 
+    <!--Webjars Servlet-->
+    <servlet>
+        <servlet-name>WebjarsServlet</servlet-name>
+        <servlet-class>org.webjars.servlet.WebjarsServlet</servlet-class>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>WebjarsServlet</servlet-name>
+        <url-pattern>/webjars/*</url-pattern>
+    </servlet-mapping>
 
+    <!--Swagger UI JSP-->
+    <servlet>
+        <servlet-name>Swagger UI</servlet-name>
+        <jsp-file>/WEB-INF/swagger-ui.jsp</jsp-file>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Swagger UI</servlet-name>
+        <url-pattern>/swagger-ui.jsp</url-pattern>
+    </servlet-mapping>
+
+    <!--TEPID server-->
     <servlet>
         <servlet-name>TEPID REST Service</servlet-name>
         <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
@@ -41,11 +65,20 @@
         <!-- Register REST resources -->
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>ca.mcgill.science.tepid.server.auth;ca.mcgill.science.tepid.server.server;ca.mcgill.science.tepid.server.rest;com.fasterxml.jackson.jaxrs.json</param-value>
+            <param-value>
+                io.swagger.v3.jaxrs2.integration.resources
+                ca.mcgill.science.tepid.server.auth;
+                ca.mcgill.science.tepid.server.server;
+                ca.mcgill.science.tepid.server.rest;
+                com.fasterxml.jackson.jaxrs.json;
+            </param-value>
         </init-param>
         <init-param>
             <param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
-            <param-value>ca.mcgill.science.tepid.server.server.CrossDomainFilter;ca.mcgill.science.tepid.server.server.AuthTokenFilter</param-value>
+            <param-value>
+                ca.mcgill.science.tepid.server.server.CrossDomainFilter;
+                ca.mcgill.science.tepid.server.server.AuthTokenFilter
+            </param-value>
         </init-param>
         <init-param>
             <param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>
@@ -61,4 +94,5 @@
     <listener>
         <listener-class>ca.mcgill.science.tepid.server.server.BackgroundTasks</listener-class>
     </listener>
+
 </web-app>

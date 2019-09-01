@@ -3,20 +3,16 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
-import ca.mcgill.science.tepid.models.data.Course
-import ca.mcgill.science.tepid.models.data.FullSession
-import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.*
-import org.junit.After
-import org.junit.Before
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import javax.ws.rs.ClientErrorException
 import javax.ws.rs.container.ContainerRequestContext
@@ -29,6 +25,7 @@ import kotlin.test.fail
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestUserGetQuota : WithLogging () {
 
+    val c2019f = Course("2019f", Season.FALL, 2019)
     val c2018s = Course("2018s", Season.SUMMER, 2018)
     val c1066f = Course("1066f", Season.FALL, 1066)
     val c2016f = Course("2016f", Season.FALL, 2016)
@@ -58,21 +55,6 @@ class TestUserGetQuota : WithLogging () {
         } returns (tailoredUser)
     }
 
-    @Before
-    fun initTest() {
-        mockkObject(SessionManager)
-        mockkObject(AuthenticationFilter)
-        mockkObject(Users)
-        every {
-            SessionManager.queryUser("targetUser", null)
-        } returns (FullUser())
-
-    }
-    @After
-    fun tearTest(){
-        unmockkAll()
-    }
-
     private fun setPrintedPages(printedPages:Int) {
         every {
             Users.getTotalPrinted(ofType(String::class))
@@ -91,62 +73,91 @@ class TestUserGetQuota : WithLogging () {
     }
 
     @Test
-    @Ignore
     fun testGetQuotaElder(){
-        fail("Test needs an expected value (discussion item)")
-        userGetQuotaTest(FullUser(role = ELDER), ELDER, 10000, "Elder is not given correct quota")
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role = ELDER, courses = setOf(c2019f)), ELDER, 250, "Elder is not given correct quota")
     }
 
     @Test
-    @Ignore
     fun testGetQuotaCTFer(){
-        fail("Test needs an expected value (discussion item)")
-        userGetQuotaTest(FullUser(role = CTFER), CTFER, 10000, "CTFER is not given correct quota")
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role = CTFER, courses = setOf(c2019f)), CTFER, 250, "CTFER is not given correct quota")
+    }
+
+    @Test
+    fun testGetQuotaNUS(){
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role = USER, courses = setOf(c2019f), groups=setOf(AdGroup("520-NUS Users"))), CTFER, 1000, "NUS is not given correct quota")
     }
 
     @Test
     fun testGetQuotaUserIgnoreSummerSemester(){
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018s)), USER, 0,"Summer gives quota")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018s)), USER, 0,"Summer gives quota")
     }
 
     @Test
     fun testGetQuotaUserSemesterPre2016() {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c1066f)), USER, 0,"Ancient semester gives quota")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c1066f)), USER, 0,"Ancient semester gives quota")
     }
 
     @Test
     fun testGetQuotaUserSemester2016F () {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2016f)), USER, 500,"500 pages not give for 2016F")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2016f)), USER, 500,"500 pages not given for 2016F")
     }
 
     @Test
     fun testGetQuotaUserSemesterPost2016F () {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018f)), USER, 1000,"1000 pages not give for semester")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018f)), USER, 1000,"1000 pages not given for semester")
+    }
+
+    @Test
+    fun testGetQuotaUserSemesterPost2019F () {
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2019f)), USER, 250,"250 pages not given for semester post 2019f")
     }
 
     @Test
     fun testGetQuotaUserSpanMultipleSemesters () {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018f, c2018w)), USER, 2000,"multiple semesters not counted")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018f, c2018w)), USER, 2000,"multiple semesters not counted")
     }
 
     @Test
     fun testGetQuotaTotalPrintedSubtracted(){
         setPrintedPages(300)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018f)), USER, 700,"Printed pages not subtracted (you had one job)")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018f)), USER, 700,"Printed pages not subtracted (you had one job)")
     }
 
     //Tests that if there are multiple courses in the same semester they only contribute as one semester
     @Test
     fun testGetQuotaMultipleCoursesReduced(){
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = listOf(c2018w0, c2018w)), USER, 1000,"multiple courses in same semester counted as other semesters")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018w0, c2018w)), USER, 1000,"multiple courses in same semester counted as other semesters")
     }
 
+    companion object {
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+            mockkObject(SessionManager)
+            mockkObject(AuthenticationFilter)
+            mockkObject(Users)
+            every {
+                SessionManager.queryUser("targetUser", null)
+            } returns (FullUser())
+
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearTest(){
+            unmockkAll()
+        }
+    }
 
 }
 
@@ -161,16 +172,6 @@ class getUserBySamTest : WithLogging() {
 
     lateinit var uriInfo: UriInfo
     lateinit var rc : ContainerRequestContext
-
-
-
-    @Before
-    fun initTest() {
-    }
-    @After
-    fun tearTest() {
-        unmockkAll()
-    }
 
     fun mockSession(role:String){
         uriInfo = mockk<UriInfo>()
@@ -271,5 +272,17 @@ class getUserBySamTest : WithLogging() {
     @Test
     fun getUserBySamNoneAndInvalidUser(){
         doTestUserQuery403("",null)
+    }
+
+    companion object {
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+        }
+        @JvmStatic
+        @AfterAll
+        fun tearTest() {
+            unmockkAll()
+        }
     }
 }

@@ -1,18 +1,16 @@
 package ca.mcgill.science.tepid.server.printing;
 
-import ca.mcgill.science.tepid.models.bindings.PrintError;
+import ca.mcgill.science.tepid.models.enums.PrintError;
 import ca.mcgill.science.tepid.models.data.PrintJob;
 import ca.mcgill.science.tepid.models.data.PrintQueue;
-import ca.mcgill.science.tepid.server.db.CouchDb;
+import ca.mcgill.science.tepid.server.db.DbLayer;
+import ca.mcgill.science.tepid.server.db.DbLayerKt;
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer;
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer.LoadBalancerResults;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import kotlin.Unit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +21,7 @@ public class QueueManager {
 
     private static final Map<String, QueueManager> instances = new HashMap<>();
     public final PrintQueue queueConfig;
-    private static final WebTarget couchdb = CouchDb.INSTANCE.getTarget();
+    public static final DbLayer db = DbLayerKt.getDB();
     ;
     private final LoadBalancer loadBalancer;
 
@@ -37,7 +35,7 @@ public class QueueManager {
     }
 
     public static PrintJob assignDestination(String id) {
-        PrintJob j = couchdb.path(id).request(MediaType.APPLICATION_JSON).get(PrintJob.class);
+        PrintJob j = db.getJob(id);
         return getInstance(j.getQueueName()).assignDestination(j);
     }
 
@@ -46,7 +44,7 @@ public class QueueManager {
         log.trace("Instantiate queue manager {\'queueName\':\'{}\'}", queueName);
         if (queueName == null)
             throw new RuntimeException("Could not instantiate null queue manager");
-        this.queueConfig = couchdb.path("q" + queueName).request(MediaType.APPLICATION_JSON).get(PrintQueue.class);
+        this.queueConfig = db.getQueue("q" + queueName);
         Class<? extends LoadBalancer> lb = LoadBalancer.getLoadBalancer(queueConfig.getLoadBalancer());
         try {
             this.loadBalancer = lb.getConstructor(QueueManager.class).newInstance(this);
@@ -55,29 +53,28 @@ public class QueueManager {
         }
     }
 
-    public PrintJob assignDestination(PrintJob j) {
-        LoadBalancerResults results = this.loadBalancer.processJob(j);
-        if (results == null) {
-            j.fail(PrintError.INVALID_DESTINATION);
-            log.info("LoadBalancer did not assign a destination {\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\'}", j.getId(), this.queueConfig.getName());
-        } else {
-            j.setDestination(results.destination);
-            j.setEta(results.eta);
-            log.info(j.getId() + " setting destination (" + results.destination + ")");
-        }
-        couchdb.path(j.getId()).request(MediaType.TEXT_PLAIN).put(Entity.entity(j, MediaType.APPLICATION_JSON));
-        return couchdb.path(j.getId()).request(MediaType.APPLICATION_JSON).get(PrintJob.class);
+    public PrintJob assignDestination(PrintJob job) {
+        PrintJob updatedJob = db.updateJob(job.getId(), (j) -> {
+            LoadBalancerResults results = this.loadBalancer.processJob(j);
+            if (results == null) {
+                j.fail(PrintError.INVALID_DESTINATION);
+                log.info("LoadBalancer did not assign a destination {\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\'}", j.getId(), this.queueConfig.getName());
+            } else {
+                j.setDestination(results.destination);
+                j.setEta(results.eta);
+                log.info(j.getId() + " setting destination (" + results.destination + ")");
+            }
+            return Unit.INSTANCE;
+        });
+
+        return updatedJob;
     }
 
     //TODO check use of args
     public long getEta(String destination) {
         long maxEta = 0;
         try {
-            maxEta = couchdb
-                    .path("_design/main/_view")
-                    .path("maxEta")
-                    .request(MediaType.APPLICATION_JSON)
-                    .get(ObjectNode.class).get("rows").get(0).get("value").asLong(0);
+            maxEta = db.getEta(destination);
         } catch (Exception ignored) {
         }
         return maxEta;

@@ -32,3 +32,9 @@ config/
 venv/
 
 *.pyc
+
+transaction\.log
+
+openapi\.yaml
+
+openapi\.json

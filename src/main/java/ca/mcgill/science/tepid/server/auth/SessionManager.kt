@@ -3,20 +3,14 @@ package ca.mcgill.science.tepid.server.auth
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.bindings.LOCAL
-import ca.mcgill.science.tepid.models.bindings.TepidDbDelegate
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.User
-import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.isSuccessful
-import ca.mcgill.science.tepid.server.db.query
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.server.util.mapper
 import ca.mcgill.science.tepid.utils.WithLogging
-import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.module.kotlin.readValue
 import org.mindrot.jbcrypt.BCrypt
 import java.math.BigInteger
 import java.security.SecureRandom
@@ -62,8 +56,8 @@ object SessionManager : WithLogging() {
      * @param session the fullSession to be tested
      * @return true for valid, false otherwise
      */
-    internal fun isValid(session: FullSession): Boolean {
-        if (!session.isValid()) return false
+    fun isValid(session: FullSession): Boolean {
+        if (!session.isUnexpired()) return false
         if (session.role != queryUserDb(session.user.shortUser)?.role) return false
         return true
     }
@@ -79,7 +73,7 @@ object SessionManager : WithLogging() {
      * @param shortUser the shortUser
      */
     fun invalidateSessions(shortUser: String) {
-        DB.getSessionIdsForUser(shortUser).forEach{ SessionManager.end(it) }
+        DB.getSessionIdsForUser(shortUser).forEach{ end(it) }
     }
 
     /**
@@ -139,7 +133,7 @@ object SessionManager : WithLogging() {
      * Merge users from LDAP and DB for their corresponding authorities
      * Returns a new users (does not mutate either input
      */
-    internal fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?): FullUser {
+    fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?): FullUser {
         // ensure that short users actually match before attempting any merge
         val ldapShortUser = ldapUser.shortUser
                 ?: throw RuntimeException("LDAP user does not have a short user. Maybe this will help {\"ldapUser\":\"$ldapUser,\"dbUser\":\"$dbUser\"}")
@@ -162,21 +156,17 @@ object SessionManager : WithLogging() {
      * with logging for failures
      */
     fun updateDbWithUser(user: FullUser) {
-        log.trace("Update db instance {\"user\":\"${user.shortUser}\"}\n")
+        val shortUser = user.shortUser ?:  return log.error("Cannot update user, shortUser is null {\"user\": \"$user\"}")
+        log.trace("Update db instance {\"user\":\"$shortUser\"}\n")
         try {
             val response = DB.putUser(user)
             if (response.isSuccessful) {
-                val responseObj = response.readEntity(ObjectNode::class.java)
-                val newRev = responseObj.get("_rev")?.asText()
-                if (newRev != null && newRev.length > 3) {
-                    user._rev = newRev
-                    log.trace("New rev {\"user\": \"${user.shortUser}\", \"rev\":\"$newRev\"}")
-                }
+                log.trace("Updated User {\"user\": \"$shortUser\"}")
             } else {
-                log.error("Updating DB with user failed: {\"user\": \"${user.shortUser}\",\"response\":\"$response\"}")
+                log.error("Updating DB with user failed: {\"user\": \"$shortUser\",\"response\":\"$response\"}")
             }
         } catch (e1: Exception) {
-            log.error("Error updating DB with user: {\"user\": \"${user.shortUser}\"}", e1)
+            log.error("Error updating DB with user: {\"user\": \"$shortUser\"}", e1)
         }
     }
 

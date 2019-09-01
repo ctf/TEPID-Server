@@ -1,23 +1,23 @@
 package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.About
-import ca.mcgill.science.tepid.server.printing.GS
+import ca.mcgill.science.tepid.models.data.AdGroup
+import ca.mcgill.science.tepid.server.db.CouchDbLayer
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.DbLayer
+import ca.mcgill.science.tepid.server.db.HibernateDbLayer
 import ca.mcgill.science.tepid.server.printing.GSException
+import ca.mcgill.science.tepid.server.printing.Gs
 import ca.mcgill.science.tepid.server.util.Utils
 import ca.mcgill.science.tepid.utils.*
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.LoggerContext
 import java.util.*
+import javax.persistence.EntityManagerFactory
 
-/**
- * Created by Allan Wang on 27/01/2017.
- *
- * The following are default keys used for testing
- * They are pulled from priv.properties under the root project folder
- * If no file is found, default values will be supplied (usually empty strings)
- */
 object Config : WithLogging() {
+
 
     private val illegalLDAPCharacters = "[,+\"\\\\<>;=]".toRegex()
 
@@ -33,11 +33,12 @@ object Config : WithLogging() {
     val TEPID_URL_TESTING: String
 
     /*
-     * Couchdb data
+     * DB data
      */
-    val COUCHDB_URL: String
-    val COUCHDB_USERNAME: String
-    val COUCHDB_PASSWORD: String
+    val DB_URL: String
+    val DB_USERNAME: String
+    val DB_PASSWORD: String
+    var emf : EntityManagerFactory? = null
     /*
      * Barcode data
      */
@@ -50,8 +51,9 @@ object Config : WithLogging() {
     val TEM_URL: String
 
     /*
-     * Boolean to enable ldap authentication
+     * LDAP and Permission Groups
      */
+
     val LDAP_ENABLED: Boolean
 
     val LDAP_SEARCH_BASE : String
@@ -64,22 +66,23 @@ object Config : WithLogging() {
 
     val EXCHANGE_STUDENTS_GROUP_BASE : String
     val GROUPS_LOCATION : String
-    val ELDERS_GROUP : List<String>
-    val CTFERS_GROUP : List<String>
-    val CURRENT_EXCHANGE_GROUP : String
-    val USERS_GROUP : List<String>
-
+    val ELDERS_GROUP : List<AdGroup>
+    val CTFERS_GROUP : List<AdGroup>
+    val CURRENT_EXCHANGE_GROUP : AdGroup
+    val USERS_GROUP : List<AdGroup>
 
     /*
-     * Optional arguments used to run unit tests for ldap
+     * Printing configuration
      */
-    val TEST_USER: String
-    val TEST_PASSWORD: String
+
+    val MAX_PAGES_PER_JOB: Int
+
+    /*
+     * About information
+     */
 
     val HASH: String
-
     val TAG: String
-
     val CREATION_TIMESTAMP: Long
     val CREATION_TIME: String
 
@@ -107,9 +110,9 @@ object Config : WithLogging() {
         TEPID_URL_PRODUCTION = PropsURL.SERVER_URL_PRODUCTION ?: throw RuntimeException()
         TEPID_URL_TESTING = PropsURL.WEB_URL_TESTING ?: TEPID_URL_PRODUCTION
 
-        COUCHDB_URL = PropsDB.COUCHDB_URL ?: throw RuntimeException()
-        COUCHDB_USERNAME = PropsDB.COUCHDB_USERNAME ?: throw RuntimeException()
-        COUCHDB_PASSWORD = PropsDB.COUCHDB_PASSWORD ?: throw RuntimeException()
+        DB_URL = PropsDB.URL
+        DB_USERNAME = PropsDB.USERNAME
+        DB_PASSWORD = PropsDB.PASSWORD
 
         BARCODES_URL = PropsBarcode.BARCODES_URL ?: ""
         BARCODES_USERNAME = PropsBarcode.BARCODES_DB_USERNAME ?: ""
@@ -126,24 +129,26 @@ object Config : WithLogging() {
 
         EXCHANGE_STUDENTS_GROUP_BASE = PropsLDAPGroups.EXCHANGE_STUDENTS_GROUP_BASE ?: ""
         GROUPS_LOCATION = PropsLDAPGroups.GROUPS_LOCATION ?: ""
-        ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS?.split(illegalLDAPCharacters) ?: emptyList()
-        CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS?.split(illegalLDAPCharacters) ?: emptyList()
+        ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS?.split(illegalLDAPCharacters)?.map { AdGroup(it) } ?: emptyList()
+        CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS?.split(illegalLDAPCharacters)?.map { AdGroup(it) } ?: emptyList()
         
         CURRENT_EXCHANGE_GROUP = {
             val cal = Calendar.getInstance()
-            EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
+            val groupName = EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
+            AdGroup(groupName)
         }()
-        USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS?.split(illegalLDAPCharacters))?.plus(CURRENT_EXCHANGE_GROUP) ?: emptyList()
+        USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS?.split(illegalLDAPCharacters))?.map { AdGroup(it) }
+                ?.plus(CURRENT_EXCHANGE_GROUP)
+                ?: emptyList()
 
         TEM_URL = PropsTEM.TEM_URL ?: ""
-
-        TEST_USER = PropsLDAPTestUser.TEST_USER ?: ""
-        TEST_PASSWORD = PropsLDAPTestUser.TEST_PASSWORD ?: ""
 
         HASH = PropsCreationInfo.HASH ?: ""
         TAG = PropsCreationInfo.TAG ?: ""
         CREATION_TIMESTAMP = PropsCreationInfo.CREATION_TIMESTAMP?.toLongOrNull() ?: -1
         CREATION_TIME = PropsCreationInfo.CREATION_TIME ?: ""
+
+        MAX_PAGES_PER_JOB = PropsPrinting.MAX_PAGES_PER_JOB ?: -1
 
         if (DEBUG)
             setLoggingLevel(Level.TRACE)
@@ -155,24 +160,20 @@ object Config : WithLogging() {
          * For logging
          */
         val warnings = mutableListOf<String>()
-        fun warn(msg: String) {
-            warnings.add(msg)
-            log.warn("Warning: $msg")
-        }
 
         log.trace("Validating configs settings")
 
         log.info("Debug mode: $DEBUG")
         log.info("LDAP mode: $LDAP_ENABLED")
-        if (COUCHDB_URL.isEmpty())
+        if (DB_URL.isEmpty())
             log.fatal("COUCHDB_URL not set")
-        if (COUCHDB_PASSWORD.isEmpty())
-            log.fatal("COUCHDB_PASSWORD not set")
+        if (DB_PASSWORD.isEmpty())
+            log.fatal("DB_PASSWORD not set")
         if (RESOURCE_CREDENTIALS.isEmpty())
             log.error("RESOURCE_CREDENTIALS not set")
 
         try {
-            GS.testRequiredDevicesInstalled()
+            Gs.testRequiredDevicesInstalled()
         } catch (e: GSException){
             log.fatal("GS ink_cov device unavailable")
         }
@@ -189,7 +190,14 @@ object Config : WithLogging() {
                 creationTime = CREATION_TIME,
                 creationTimestamp = CREATION_TIMESTAMP)
 
+        DB = getDb()
+
         log.trace("Completed setting configs")
+
+        log.trace("Initialising subsystems")
+
+        log.trace("Completed initialising subsystems")
+
     }
 
     fun setLoggingLevel(level: Level) {
@@ -199,6 +207,25 @@ object Config : WithLogging() {
         val loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME)
         loggerConfig.level = level
         ctx.updateLoggers()
+    }
+
+    fun getDb(): DbLayer {
+        try {
+            when (PropsDB.DB_TYPE) {
+                "CouchDB" -> return CouchDbLayer()
+                "Hibernate" -> {
+                    val emf = HibernateDbLayer.makeEntityManagerFactory("tepid-pu")
+                    return HibernateDbLayer(emf)
+                }
+                else -> log.fatal("DB type not set")
+            }
+            log.trace("Db initialised to ${PropsDB.DB_TYPE}")
+            return CouchDbLayer()
+        } catch (e:Exception){
+            e.printStackTrace()
+            println(e.message)
+            throw e
+        }
     }
 
 }

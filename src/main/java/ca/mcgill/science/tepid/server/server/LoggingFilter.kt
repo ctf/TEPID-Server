@@ -9,8 +9,6 @@ import javax.ws.rs.container.ContainerResponseFilter
 import javax.ws.rs.ext.Provider
 
 /**
- * Created by Allan Wang on 2017-11-18.
- *
  * Note that you may log requests by implementing
  * ContainerRequestFilter
  */
@@ -22,10 +20,9 @@ class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
     }
 
     override fun filter(requestContext: ContainerRequestContext, responseContext: ContainerResponseContext) {
-        val isSuccessful = responseContext.status in 200 until 300
+        val isSuccessful = responseContext.status in 200 until 400
         if (isSuccessful && !Config.DEBUG) return
-        val entity = responseContext.entity
-        val content: String = when (entity) {
+        val content: String = when (val entity = responseContext.entity) {
             null -> "null"
             is Throwable -> entity.localizedMessage
             is String -> entity

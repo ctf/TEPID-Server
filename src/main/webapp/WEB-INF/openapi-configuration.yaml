@@ -1,0 +1,6 @@
+prettyPrint: true
+openAPI:
+  info:
+    version: '1.02.00'
+    title: TEPID
+    description: 'The API for the TEPID Print server by the McGill Science Computer TaskForce. Tell us what we can do better on [github](https://github.com/ctf/tepid-server/).'

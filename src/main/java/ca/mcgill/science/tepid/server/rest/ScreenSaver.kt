@@ -1,6 +1,9 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.models.data.Destination
+import ca.mcgill.science.tepid.models.data.MarqueeData
+import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.Order
@@ -86,12 +89,12 @@ class ScreenSaver {
      */
     @GET
     @Path("destinations")
+    @Produces(MediaType.APPLICATION_JSON)
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
         return DB.getDestinations()
-                .map { it.toDestination() }
                 .mapNotNull {
                     val id = it._id ?: return@mapNotNull null
-                    id to it
+                    id to it.toDestination()
                 }
                 .toMap()
     }

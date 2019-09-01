@@ -1,10 +1,7 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.bindings.*
-import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Season
-import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.models.data.User
+import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
@@ -15,7 +12,6 @@ import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
 import java.net.URI
 import java.net.URISyntaxException
-import java.util.*
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.*
 import javax.ws.rs.container.ContainerRequestContext
@@ -23,6 +19,7 @@ import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
+import kotlin.math.max
 
 @Path("/users")
 class Users {
@@ -110,6 +107,7 @@ class Users {
     @Path("/{sam}/exchange")
     @RolesAllowed(CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     fun setExchange(@PathParam("sam") sam: String, exchange: Boolean): Boolean =
             SessionManager.setExchangeStudent(sam, exchange)
 
@@ -132,6 +130,7 @@ class Users {
     @Path("/{sam}/nick")
     @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     fun setNick(@PathParam("sam") sam: String, nick: String, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.nick = if (nick.isBlank()) null else nick
         log.debug("Setting nick for ${it.shortUser} to ${it.nick}")
@@ -141,6 +140,7 @@ class Users {
     @Path("/{sam}/jobExpiration")
     @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.jobExpiration = jobExpiration
         log.trace("Job expiration for ${it.shortUser} set to $jobExpiration")
@@ -149,7 +149,8 @@ class Users {
     @PUT
     @Path("/{sam}/color")
     @RolesAllowed(USER, CTFER, ELDER)
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.colorPrinting = color
         log.trace("Set color for ${it.shortUser} to ${it.colorPrinting}")
@@ -195,7 +196,7 @@ class Users {
     @Path("/autosuggest/{like}")
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun ldapAutoSuggest(@PathParam("like") like: String, @QueryParam("limit") limit: Int): List<User> {
+    fun ldapAutoSuggest(@PathParam("like") like: String, @QueryParam("limit") limit: Int = 10): List<User> {
         val resultsPromise = SessionManager.autoSuggest(like, limit)
         return resultsPromise.getResult(20000).map(FullUser::toUser) // todo check if we should further simplify to userquery
     }
@@ -230,13 +231,20 @@ class Users {
                  * Granted that semesters are comparable,
                  * you may specify ranges (inclusive) when matching
                  */
-                when (semester) {
-                    Semester.fall(2016) -> 500         // the first semester had 500 pages only
-                    else -> 1000                   // to date, every semester will add 1000 pages to the base quota
+
+                // for NUS, which has a separate contract
+                if (user.groups.contains(AdGroup("520-NUS Users")) && semester > Semester.fall(2018)) {
+                    return@map 1000
+                }
+
+                when {
+                    semester == Semester.fall(2016) -> 500         // the first semester had 500 pages only
+                    (semester > Semester.fall(2016) && semester < Semester.fall(2019)) -> 1000  // semesters used to add 1000 pages to the base quota
+                    else -> 250                  // then we came to our senses
                 }
             }.sum()
 
-            val quota = Math.max(newMaxQuota - totalPrinted, 0)
+            val quota = max(newMaxQuota - totalPrinted, 0)
 
             return QuotaData(shortUser = shortUser,
                     quota = quota,
@@ -255,26 +263,6 @@ class Users {
                 if (shortUser == null) 0
                 else DB.getTotalPrintedCount(shortUser)
 
-        private fun oldMaxQuota(shortUser: String): Int {
-            try {
-                val ej = DB.getEarliestJobTime(shortUser)
-                if (ej == -1L) {
-                    log.debug("Old quota for new user $shortUser")
-                    return 1000
-                }
-                val d1 = Calendar.getInstance()
-                val d2 = Calendar.getInstance()
-                d1.timeInMillis = ej
-                val m1 = d1.get(Calendar.MONTH) + 1
-                val y1 = d1.get(Calendar.YEAR)
-                val m2 = d2.get(Calendar.MONTH) + 1
-                val y2 = d2.get(Calendar.YEAR)
-                return (y2 - y1) * 1000 + (if (m2 > 8 && (y1 != y2 || m1 < 8)) 1500 else 1000)
-            } catch (e: Exception) {
-                log.error("Old quota fetch failed", e)
-                return 1000
-            }
-        }
     }
 
 }

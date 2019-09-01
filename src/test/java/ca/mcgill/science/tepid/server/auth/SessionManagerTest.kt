@@ -5,52 +5,28 @@ import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.UserFactory
-import ca.mcgill.science.tepid.server.db.CouchDb
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.db.getJson
-import ca.mcgill.science.tepid.server.db.getViewRows
+import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
 import io.mockk.*
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Suite
+import org.junit.jupiter.api.*
 import org.mindrot.jbcrypt.BCrypt
-import javax.ws.rs.client.Entity
-import javax.ws.rs.client.WebTarget
-import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-
-@RunWith(Suite::class)
-@Suite.SuiteClasses(
-        MergeUsersTest::class,
-        UpdateDbWithUserTest::class,
-        QueryUserDbTest::class,
-        AutoSuggestTest::class,
-        QueryUserTest::class,
-        AuthenticateTest::class,
-        SetExchangeStudentTest::class,
-        RefreshUserTest::class
-)
-class SessionManagerTest
-
 
 class MergeUsersTest {
 
 
     // This should never happen, but it would cause so much trouble downstream that we need to guard against it
     // I don't even have a plausible scenario for how it would happen
-    @Test(expected = RuntimeException::class)
+    @Test
     fun testMergeUserNoShortUser() {
         val dbUser: FullUser? = FullUser()
         val ldapUser = FullUser()
-        SessionManager.mergeUsers(ldapUser, dbUser)
+        Assertions.assertThrows(RuntimeException::class.java) { SessionManager.mergeUsers(ldapUser, dbUser) }
     }
 
     @Test
@@ -65,11 +41,11 @@ class MergeUsersTest {
     // It would be indicative that somehow either our database or the LDAP database had become degraded such that whatever was used to query the shortUser of a user (like an email) did not match between our database and the LDAP.
     // For example, if someone had manually changed an email in LDAP to refer to a different shortUser.
     // I see no sane way to proceed automatically in that case
-    @Test(expected = RuntimeException::class)
+    @Test()
     fun testMergeUsersNonMatchDbUser() {
         val dbUser: FullUser? = UserFactory.makeDbUser().copy(shortUser = "dbSU")
         val ldapUser = UserFactory.makeLdapUser().copy(shortUser = "ldapSU")
-        SessionManager.mergeUsers(ldapUser, dbUser)
+        Assertions.assertThrows(RuntimeException::class.java) { SessionManager.mergeUsers(ldapUser, dbUser) }
     }
 
     @Test
@@ -89,78 +65,26 @@ class MergeUsersTest {
 }
 
 class UpdateDbWithUserTest {
-    @Before
-    fun initTest() {
-        mockkObject(CouchDb)
-        mockkStatic("ca.mcgill.science.tepid.server.db.WebTargetsKt")
-        testUser._rev = "1111"
-    }
-
-    @After
-    fun tearTest() {
-        unmockkAll()
-    }
-
-    val testSU = "testSU"
-    val testUser = FullUser(shortUser = testSU)
-
-    @Test
-    fun testUpdateUser() {
-
-        val mockObjectNode = ObjectMapper().createObjectNode()
-                .put("ok", true)
-                .put("id", "utestSU")
-                .put("_rev", "2222")
-
-        val mockResponse = spyk(Response.ok().build())
-        every {
-            mockResponse.readEntity(ObjectNode::class.java)
-        } returns mockObjectNode
-
-        val wt = mockk<WebTarget>()
-        every {
-            wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
-        } returns mockResponse
-        every {
-            CouchDb.path(ofType(String::class))
-        } returns wt
-
-        // Run Test
-        SessionManager.updateDbWithUser(testUser)
-
-        // Verifies the path
-        verify { CouchDb.path("u" + testSU) }
-        verify { wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON)) }
-        assertEquals(testUser._rev, "2222")
-    }
 
     @Test
     fun testUpdateUserUnsuccessfulResponse() {
 
         val mockObjectNode = ObjectMapper().createObjectNode()
-                .put("ok", true)
+                .put("ok", false)
                 .put("id", "utestSU")
                 .put("_rev", "3333")
 
-        val mockResponse = spyk(Response.serverError().build())
-        every {
-            mockResponse.readEntity(ObjectNode::class.java)
-        } returns mockObjectNode
+        val mockResponse = spyk(Response.serverError().entity(mockObjectNode).build())
 
-        val wt = mockk<WebTarget>()
         every {
-            wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
+            mockDb.putUser(ofType(FullUser::class))
         } returns mockResponse
-        every {
-            CouchDb.path(ofType(String::class))
-        } returns wt
 
         // Run Test
         SessionManager.updateDbWithUser(testUser)
 
         // Verifies the path
-        verify { CouchDb.path("u" + testSU) }
-        verify { wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON)) }
+        verify { mockDb.putUser(testUser) }
         assertEquals(testUser._rev, "1111")
     }
 
@@ -168,60 +92,47 @@ class UpdateDbWithUserTest {
     fun testUpdateUserWithException() {
         val mockResponse = spyk(Response.ok().build())
         every {
-            mockResponse.readEntity(ObjectNode::class.java)
+            mockResponse.entity
         } throws RuntimeException("Testing")
 
-        val wt = mockk<WebTarget>()
         every {
-            wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON))
+            mockDb.putUser(ofType(FullUser::class))
         } returns mockResponse
-        every {
-            CouchDb.path(ofType(String::class))
-        } returns wt
 
         // Run Test
         SessionManager.updateDbWithUser(testUser)
 
         // Verifies the path
-        verify { CouchDb.path("u" + testSU) }
-        verify { wt.request(MediaType.APPLICATION_JSON).put(Entity.entity(testUser, MediaType.APPLICATION_JSON)) }
-        // Verifies that it was called, but that it's unchanged
-        verify { mockResponse.readEntity(ObjectNode::class.java) }
+        verify { mockDb.putUser(testUser) }
+
         assertEquals(testUser._rev, "1111")
+    }
+
+    companion object {
+        lateinit var mockDb: DbLayer
+
+        val testSU = "testSU"
+        val testUser = FullUser(shortUser = testSU)
+
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+            mockDb = mockk<DbLayer>(relaxed = true)
+            DB = mockDb
+            testUser._rev = "1111"
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearTest() {
+            unmockkAll()
+        }
     }
 }
 
 class QueryUserDbTest {
     var testUser = UserFactory.makeDbUser()
     var testOtherUser = UserFactory.makeLdapUser()
-    lateinit var wt: WebTarget
-
-    @Before
-    fun initTest() {
-        mockkObject(Config)
-        every { Config.ACCOUNT_DOMAIN } returns "config.example.com"
-        mockkObject(CouchDb)
-        mockkStatic("ca.mcgill.science.tepid.server.db.WebTargetsKt")
-
-        wt = mockk<WebTarget>()
-    }
-
-    @After
-    fun tearTest() {
-        unmockkAll()
-    }
-
-    private fun makeMocks(userListReturned: List<FullUser>) {
-        every {
-            CouchDb.path(ofType(CouchDb.CouchDbView::class))
-        } returns wt
-        every {
-            wt.queryParam(ofType(String::class), ofType(String::class))
-        } returns wt
-        every {
-            wt.getViewRows<FullUser>()
-        } returns userListReturned
-    }
 
     @Test
     fun testQueryUserDbNullSam() {
@@ -231,120 +142,130 @@ class QueryUserDbTest {
 
     @Test
     fun testQueryUserDbByEmail() {
-        makeMocks(listOf<FullUser>(testUser, testOtherUser))
+        every {
+            mockDb.getUserOrNull(testUser.email!!)
+        } returns testUser
 
         val actual = SessionManager.queryUserDb(testUser.email)
 
-        verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser) }
-        verify { wt.queryParam("key", match { it.toString() == "\"db.EM%40config.example.com\"" }) }
+        verify { mockDb.getUserOrNull(testUser.email!!) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
     }
 
     @Test
     fun testQueryUserDbByEmailNull() {
-        makeMocks(listOf<FullUser>())
+        every {
+            mockDb.getUserOrNull(testUser.email!!)
+        } returns null
 
         val actual = SessionManager.queryUserDb(testUser.email)
 
-        verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser) }
-        verify { wt.queryParam("key", match { it.toString() == "\"db.EM%40config.example.com\"" }) }
+        verify { mockDb.getUserOrNull(testUser.email!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
     }
 
     @Test
     fun testQueryUserDbByFullUser() {
-        makeMocks(listOf<FullUser>(testUser, testOtherUser))
+        every {
+            mockDb.getUserOrNull(testUser.longUser!!)
+        } returns testUser
 
         val actual = SessionManager.queryUserDb(testUser.longUser)
 
-        verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser) }
-        verify { wt.queryParam("key", match { it.toString() == "\"db.LU%40config.example.com\"" }) }
+        verify { mockDb.getUserOrNull(testUser.longUser!!) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
     }
 
     @Test
     fun testQueryUserDbByFullUserNull() {
-        makeMocks(listOf<FullUser>())
+        every {
+            mockDb.getUserOrNull(testUser.longUser!!)
+        } returns null
 
         val actual = SessionManager.queryUserDb(testUser.longUser)
 
-        verify { CouchDb.path(CouchDb.CouchDbView.ByLongUser) }
-        verify { wt.queryParam("key", match { it.toString() == "\"db.LU%40config.example.com\"" }) }
+        verify { mockDb.getUserOrNull(testUser.longUser!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
     }
 
     @Test
     fun testQueryUserDbByStudentId() {
-        makeMocks(listOf<FullUser>(testUser, testOtherUser))
+        every {
+            mockDb.getUserOrNull(testUser.studentId.toString())
+        } returns testUser
 
         val actual = SessionManager.queryUserDb(testUser.studentId.toString())
 
-        verify { CouchDb.path(CouchDb.CouchDbView.ByStudentId) }
-        verify { wt.queryParam("key", match { it.toString() == "3333" }) }
+        verify { mockDb.getUserOrNull(testUser.studentId.toString()) }
         assertEquals(testUser, actual, "User was not returned when searched by studentId")
     }
 
     @Test
     fun testQueryUserDbByStudentIdNull() {
-        makeMocks(listOf<FullUser>())
+        every {
+            mockDb.getUserOrNull(testUser.studentId.toString())
+        } returns null
 
         val actual = SessionManager.queryUserDb(testUser.studentId.toString())
 
-        verify { CouchDb.path(CouchDb.CouchDbView.ByStudentId) }
-        verify { wt.queryParam("key", match { it.toString() == "3333" }) }
+        verify { mockDb.getUserOrNull(testUser.studentId.toString()) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by studentId")
     }
 
     @Test
     fun testQueryUserDbByShortUser() {
         every {
-            CouchDb.path(ofType(String::class))
-        } returns wt
-        every {
-            wt.getJson(FullUser::class.java)
+            mockDb.getUserOrNull(testUser.shortUser!!)
         } returns testUser
-        makeMocks(listOf<FullUser>(testUser, testOtherUser))
 
         val actual = SessionManager.queryUserDb(testUser.shortUser)
 
-        verify { CouchDb.path("uSU") }
+        verify { mockDb.getUserOrNull(testUser.shortUser!!) }
         assertEquals(testUser, actual, "User was not returned when searched by shortUser")
     }
 
     @Test
     fun testQueryUserDbByShortUserNull() {
         every {
-            CouchDb.path(ofType(String::class))
-        } returns wt
-        every {
-            wt.getJson(FullUser::class.java)
-        } throws RuntimeException("Testing")
-        makeMocks(listOf<FullUser>())
+            mockDb.getUserOrNull(testUser.shortUser!!)
+        } returns null
 
         val actual = SessionManager.queryUserDb(testUser.shortUser)
 
-        verify { CouchDb.path("uSU") }
+        verify { mockDb.getUserOrNull(testUser.shortUser!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by shortUser")
+    }
+
+    companion object {
+        lateinit var mockDb: DbLayer
+
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+            mockkObject(Config)
+            every { Config.ACCOUNT_DOMAIN } returns "config.example.com"
+            mockDb = mockk<DbLayer>(relaxed = true)
+            DB = mockDb
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearTest() {
+            unmockkAll()
+        }
     }
 }
 
 class AutoSuggestTest {
+    lateinit var q: Q<List<FullUser>>
 
     var testUser = UserFactory.makeDbUser()
-    lateinit var q: Q<List<FullUser>>
     val testLike = "testLike"
     val testLimit = 15
 
-    @Before
-    fun initTest() {
+    @BeforeEach
+    fun makeTestQ(){
         q = Q.defer<List<FullUser>>()
-        mockkObject(Config)
-        mockkObject(Ldap)
-    }
-
-    @After
-    fun tearTest() {
-        unmockkAll()
     }
 
     @Test
@@ -383,22 +304,37 @@ class AutoSuggestTest {
 
 
     }
+
+    companion object {
+
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+            mockkObject(Config)
+            mockkObject(Ldap)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearTest() {
+            unmockkAll()
+        }
+    }
 }
 
 class QueryUserTest : WithLogging() {
 
     var testUser = UserFactory.makeDbUser()
-
     lateinit var sm: SessionManager
 
-    @Before
+    @BeforeEach
     fun initTest() {
         mockkObject(Config)
         mockkObject(Ldap)
         sm = spyk(SessionManager)
     }
 
-    @After
+    @AfterEach
     fun tearTest() {
         unmockkAll()
     }
@@ -473,7 +409,6 @@ class QueryUserTest : WithLogging() {
         verify { sm.updateDbWithUser(testUser) }
         assertEquals(expected, actual, "SessionManager doesn't return null if Ldap returns null")
     }
-
 }
 
 class AuthenticateTest {
@@ -485,13 +420,12 @@ class AuthenticateTest {
      */
 
     lateinit var sm: SessionManager
-    var testShortUser = "testShortUser"
-    var testPassword = "testPassword"
     lateinit var testUser: FullUser
     lateinit var testUserFromDb: FullUser
+    var testShortUser = "testShortUser"
+    var testPassword = "testPassword"
 
-
-    @Before
+    @BeforeEach
     fun initTest() {
         testUser = UserFactory.generateTestUser("test").copy(shortUser = testShortUser, colorPrinting = true)
         testUserFromDb = UserFactory.generateTestUser("db").copy(
@@ -504,7 +438,7 @@ class AuthenticateTest {
         mockkObject(Ldap)
     }
 
-    @After
+    @AfterEach
     fun tearTest() {
         unmockkAll()
     }
@@ -540,6 +474,8 @@ class AuthenticateTest {
         every { Config.LDAP_ENABLED } returns false
         // not necessary, but ensures that there is a password to auth against if it's derping
         testUser.password = BCrypt.hashpw(testPassword, BCrypt.gensalt())
+        every { sm.queryUserDb(testShortUser) } returns testUser
+
 
         val actual = sm.authenticate(testShortUser, testPassword)
         val expected = null
@@ -550,6 +486,7 @@ class AuthenticateTest {
     @Test
     fun testAuthenticateLdapUserNull() {
         every { Config.LDAP_ENABLED } returns true
+        every { sm.queryUserDb(testShortUser) } returns testUser
         every { Ldap.authenticate(testShortUser, testPassword) } returns null
 
         val actual = sm.authenticate(testShortUser, testPassword)
@@ -580,33 +517,6 @@ class AuthenticateTest {
 
 class SetExchangeStudentTest {
 
-    val testSam = "SU"
-
-    @Before
-    fun initTest() {
-        mockkObject(Ldap)
-        every { Ldap.setExchangeStudent(any(), any()) } returns true
-
-        mockkObject(SessionManager)
-        every {
-            SessionManager.queryUserDb(testSam)
-        } returns UserFactory.makeDbUser()
-        every {
-            Ldap.queryUserLdap(testSam, null)
-        } returns UserFactory.makeLdapUser()
-
-        every {
-            SessionManager.updateDbWithUser(ofType(FullUser::class))
-        } just runs
-
-        mockkObject(Config)
-    }
-
-    @After
-    fun tearTest() {
-        unmockkAll()
-    }
-
     @Test
     fun testSetExchangeStudentLdapEnabled() {
         every { Config.LDAP_ENABLED } returns true
@@ -628,35 +538,40 @@ class SetExchangeStudentTest {
         verify(inverse = true) { Ldap.setExchangeStudent(testSam, true) }
     }
 
+    companion object {
+        val testSam = "SU"
+
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+            mockkObject(Ldap)
+            every { Ldap.setExchangeStudent(any(), any()) } returns true
+
+            mockkObject(SessionManager)
+            every {
+                SessionManager.queryUserDb(testSam)
+            } returns UserFactory.makeDbUser()
+            every {
+                Ldap.queryUserLdap(testSam, null)
+            } returns UserFactory.makeLdapUser()
+
+            every {
+                SessionManager.updateDbWithUser(ofType(FullUser::class))
+            } just runs
+
+            mockkObject(Config)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearTest() {
+            unmockkAll()
+        }
+    }
+
 }
 
 class RefreshUserTest {
-
-    val testSam = "SU"
-
-    @Before
-    fun initTest() {
-        mockkObject(Ldap)
-
-        mockkObject(SessionManager)
-        every {
-            SessionManager.queryUserDb(testSam)
-        } returns UserFactory.makeDbUser()
-        every {
-            Ldap.queryUserLdap(testSam, null)
-        } returns UserFactory.makeLdapUser()
-
-        every {
-            SessionManager.updateDbWithUser(ofType(FullUser::class))
-        } just runs
-
-        mockkObject(Config)
-    }
-
-    @After
-    fun tearTest() {
-        unmockkAll()
-    }
 
     @Test
     fun testRefreshUserLdapDisabled() {
@@ -684,28 +599,43 @@ class RefreshUserTest {
             )
         }
     }
+
+    companion object {
+        val testSam = "SU"
+
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+            mockkObject(Ldap)
+
+            mockkObject(SessionManager)
+            every {
+                SessionManager.queryUserDb(testSam)
+            } returns UserFactory.makeDbUser()
+            every {
+                Ldap.queryUserLdap(testSam, null)
+            } returns UserFactory.makeLdapUser()
+
+            every {
+                SessionManager.updateDbWithUser(ofType(FullUser::class))
+            } just runs
+
+            mockkObject(Config)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearTest() {
+            unmockkAll()
+        }
+    }
 }
 
 class SessionIsValidTest {
 
-    val testUser = UserFactory.makeDbUser().copy(role = "user")
-    val testSession = FullSession("user", testUser)
-    val mockSession = spyk(testSession)
-
-    @Before
-    fun initTest() {
-        mockkObject(SessionManager)
-        every { SessionManager.queryUserDb(testUser.shortUser) } returns testUser
-    }
-
-    @After
-    fun tearTest() {
-        unmockkAll()
-    }
-
     @Test
     fun testValidSelfInvalidation() {
-        every { mockSession.isValid() } returns false
+        every { mockSession.isUnexpired() } returns false
 
         assertFalse(SessionManager.isValid(mockSession), "SessionaManger ignores a session's declaration of invalidity")
     }
@@ -714,30 +644,32 @@ class SessionIsValidTest {
     fun testValidRoleInvalidation() {
         mockSession.role = "oldRole"
 
-        every { mockSession.isValid() } returns true
+        every { mockSession.isUnexpired() } returns true
 
         assertFalse(SessionManager.isValid(mockSession), "SessionaManger ignores a mismatch between session permission and user permission")
+    }
+
+    companion object {
+        val testUser = UserFactory.makeDbUser().copy(role = "user")
+        val testSession = FullSession("user", testUser)
+        val mockSession = spyk(testSession)
+
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+            mockkObject(SessionManager)
+            every { SessionManager.queryUserDb(testUser.shortUser) } returns testUser
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearTest() {
+            unmockkAll()
+        }
     }
 }
 
 class SessionGetTest {
-
-    val testUser = UserFactory.makeDbUser().copy(role = "user")
-    val testSession = FullSession("user", testUser)
-
-    @Before
-    fun initTest() {
-        testSession._id = "testId"
-        testSession._rev = "testRev"
-        mockkObject(SessionManager)
-        every { SessionManager.queryUserDb(testUser.shortUser) } returns testUser
-        mockkObject(DB)
-    }
-
-    @After
-    fun tearTest() {
-        unmockkAll()
-    }
 
     @Test
     fun testGetInvalidSession() {
@@ -756,5 +688,26 @@ class SessionGetTest {
 
         assertEquals(testSession, SessionManager.get("testID"), "Does not return valid session")
 
+    }
+
+    companion object {
+        val testUser = UserFactory.makeDbUser().copy(role = "user")
+        val testSession = FullSession("user", testUser)
+
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+            testSession._id = "testId"
+            testSession._rev = "testRev"
+            mockkObject(SessionManager)
+            every { SessionManager.queryUserDb(testUser.shortUser) } returns testUser
+            mockkObject(DB)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearTest() {
+            unmockkAll()
+        }
     }
 }

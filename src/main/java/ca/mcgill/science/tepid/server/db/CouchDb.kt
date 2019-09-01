@@ -2,22 +2,26 @@ package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.server.Config
+import ca.mcgill.science.tepid.server.server.mapper
 import ca.mcgill.science.tepid.server.util.failBadRequest
-import ca.mcgill.science.tepid.server.util.mapper
 import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.convertValue
 import java.io.InputStream
 import java.util.*
-import javax.ws.rs.NotFoundException
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
-import javax.ws.rs.core.UriInfo
 
 class CouchDbLayer : DbLayer {
+
+    override fun getDestination(id: Id): FullDestination {
+        return CouchDb.path(id).request(MediaType.APPLICATION_JSON).get(FullDestination::
+        class.java)
+    }
 
     override fun getDestinations(): List<FullDestination> =
             CouchDb.getViewRows("destinations")
@@ -54,31 +58,35 @@ class CouchDbLayer : DbLayer {
                 query("key" to "\"$sam\"")
             }.sortAs(sortOrder)
 
+    override fun getStoredJobs(): List<PrintJob> {
+        return CouchDb.getViewRows<PrintJob>("storedJobs")
+    }
+
     override fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob? =
             CouchDb.update(id, updater)
 
+    override fun updateJobWithResponse(id: Id, updater: PrintJob.() -> Unit): Response {
+        return CouchDb.updateWithResponse<PrintJob>(id, updater)
+    }
+
     override fun postJob(job: PrintJob): Response =
             CouchDb.target.postJson(job)
-
-    override fun getJobChanges(id: Id, uriInfo: UriInfo): ChangeDelta {
-        val changes = CouchDb.path("_changes")
-                .query("filter" to "main/byJob", "job" to id)
-                .query(uriInfo, "feed", "since")
-                .getObject().get("results").get(0)
-
-        return ChangeDelta(changes.get("id").asText())
-    }
 
     override fun getJobFile(id: Id, file: String): InputStream? =
             CouchDb.path(id, file).request().get()
                     .takeIf(Response::isSuccessful)
                     ?.readEntity(InputStream::class.java)
 
-    override fun getEarliestJobTime(shortUser: String): Long =
-            CouchDb.path(CouchDb.MAIN_VIEW, "totalPrinted")
-                    .query("key" to "\"$shortUser\"").getObject().get("rows")
-                    ?.get(0)?.get("value")?.get("earliestJob")?.asLong(-1L) ?: -1L
+    override fun getOldJobs(): List<PrintJob> {
+        return CouchDb.getViewRows<PrintJob>("oldJobs") {
+            query("endkey" to System.currentTimeMillis() - 1800000)
+        }
+    }
 
+
+    override fun getQueue(id: Id): PrintQueue {
+        return CouchDb.path(id).request(MediaType.APPLICATION_JSON).get(PrintQueue::class.java)
+    }
 
     override fun getQueues(): List<PrintQueue> =
             CouchDb.path(CouchDb.CouchDbView.Queues).getViewRows()
@@ -91,6 +99,14 @@ class CouchDbLayer : DbLayer {
     override fun deleteQueue(id: Id): String =
             CouchDb.path(id).deleteRev()
 
+    override fun getEta(destinationId: Id): Long {
+        return CouchDb
+                .path("_design/main/_view")
+                .path("maxEta")
+                .request(MediaType.APPLICATION_JSON)
+                .get(ObjectNode::class.java).get("rows").get(0).get("value").asLong(0)
+    }
+
     override fun getMarquees(): List<MarqueeData> =
             CouchDb.getViewRows("_design/marquee/_view", "all")
 
@@ -102,7 +118,11 @@ class CouchDbLayer : DbLayer {
             CouchDb.path(id).getJsonOrNull()
 
     override fun getSessionIdsForUser(shortUser: ShortUser): List<String> {
-        return CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"${shortUser}\"") }
+        return CouchDb.getViewRows<String>("sessionsByUser") { query("key" to "\"$shortUser\"") }
+    }
+
+    override fun getAllSessions(): List<FullSession> {
+        return CouchDb.getViewRows<FullSession>("sessions")
     }
 
     override fun deleteSession(id: Id): String =
