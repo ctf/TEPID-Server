@@ -5,6 +5,8 @@
 stages:
   - build
   - test
+  - staging
+  - integrationTest
   - deploy
 
 clean:
@@ -24,10 +26,20 @@ test:
     when: always
     reports:
       junit: [build/test-results/test/TEST-*.xml]
-  
-integration_test:
+
+staging:
   extends: .base
-  stage: test
+  stage: staging
+  script:
+    - cp ~/tepid.war /var/lib/tomcat8/webapps/
+  artifacts:
+    when: always
+    paths:
+      - ~/tepid*.war
+
+integrationTest:
+  extends: .base
+  stage: integrationTest
   script:
   - chmod +x gradlew
   - ./gradlew integrationTest -i
@@ -47,13 +59,3 @@ war:
     when: always
     paths:
     - ./build/libs/tepid*.war
-    
-staging:
-  extends: .base
-  stage: deploy
-  script:
-  - cp ~/tepid.war /var/lib/tomcat8/webapps/
-  artifacts:
-    when: always
-    paths:
-    - ~/tepid*.war
