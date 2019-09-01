@@ -13,7 +13,10 @@ import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.*
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import javax.ws.rs.ClientErrorException
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Response
@@ -25,6 +28,7 @@ import kotlin.test.fail
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestUserGetQuota : WithLogging () {
 
+    val c2019f = Course("2019f", Season.FALL, 2019)
     val c2018s = Course("2018s", Season.SUMMER, 2018)
     val c1066f = Course("1066f", Season.FALL, 1066)
     val c2016f = Course("2016f", Season.FALL, 2016)
@@ -72,16 +76,12 @@ class TestUserGetQuota : WithLogging () {
     }
 
     @Test
-    @Disabled
     fun testGetQuotaElder(){
-        fail("Test needs an expected value (discussion item)")
         userGetQuotaTest(FullUser(role = ELDER), ELDER, 10000, "Elder is not given correct quota")
     }
 
     @Test
-    @Disabled
     fun testGetQuotaCTFer(){
-        fail("Test needs an expected value (discussion item)")
         userGetQuotaTest(FullUser(role = CTFER), CTFER, 10000, "CTFER is not given correct quota")
     }
 
@@ -100,13 +100,19 @@ class TestUserGetQuota : WithLogging () {
     @Test
     fun testGetQuotaUserSemester2016F () {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2016f)), USER, 500,"500 pages not give for 2016F")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2016f)), USER, 500,"500 pages not given for 2016F")
     }
 
     @Test
     fun testGetQuotaUserSemesterPost2016F () {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018f)), USER, 1000,"1000 pages not give for semester")
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018f)), USER, 1000,"1000 pages not given for semester")
+    }
+
+    @Test
+    fun testGetQuotaUserSemesterPost2019F () {
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2019f)), USER, 250,"250 pages not given for semester post 2019f")
     }
 
     @Test

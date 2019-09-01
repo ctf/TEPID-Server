@@ -234,9 +234,10 @@ class Users {
                  * Granted that semesters are comparable,
                  * you may specify ranges (inclusive) when matching
                  */
-                when (semester) {
-                    Semester.fall(2016) -> 500         // the first semester had 500 pages only
-                    else -> 1000                   // to date, every semester will add 1000 pages to the base quota
+                when {
+                    semester == Semester.fall(2016) -> 500         // the first semester had 500 pages only
+                    (semester > Semester.fall(2016) && semester < Semester.fall(2019)) -> 1000  // semesters used to add 1000 pages to the base quota
+                    else -> 250                  // then we came to our senses
                 }
             }.sum()
 
