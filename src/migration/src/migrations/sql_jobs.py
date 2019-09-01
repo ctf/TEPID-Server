@@ -4,7 +4,7 @@ from utils import getQuotedOrNull
 
 def add_sql_jobs_migration_views(ddoc):
 	ddoc.add_view('migrate_jobs_00_01_00_to_sql', """function (doc){
-	if (doc.type==="job") {emit(doc._id);}
+	if ((doc.type==="job")&&(doc.schema!="00-01-02")) {emit(doc._id);}
 	 }"""
 				  )
 	ddoc.save()
@@ -21,6 +21,6 @@ migration_users_to_sql = Migration(
 	['job'],
 	None,
 	migrate_jobs_to_sql,
-	['00-01-00'],
+	'00-01-02',
 	db,
 	ddoc)
