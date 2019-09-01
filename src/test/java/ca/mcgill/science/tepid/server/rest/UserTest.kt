@@ -77,12 +77,14 @@ class TestUserGetQuota : WithLogging () {
 
     @Test
     fun testGetQuotaElder(){
-        userGetQuotaTest(FullUser(role = ELDER), ELDER, 10000, "Elder is not given correct quota")
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role = ELDER, courses = setOf(c2019f)), ELDER, 250, "Elder is not given correct quota")
     }
 
     @Test
     fun testGetQuotaCTFer(){
-        userGetQuotaTest(FullUser(role = CTFER), CTFER, 10000, "CTFER is not given correct quota")
+        setPrintedPages(0)
+        userGetQuotaTest(FullUser(role = CTFER, courses = setOf(c2019f)), CTFER, 250, "CTFER is not given correct quota")
     }
 
     @Test
