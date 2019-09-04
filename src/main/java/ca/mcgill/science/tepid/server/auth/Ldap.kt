@@ -11,7 +11,7 @@ import javax.naming.directory.*
 
 object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
 
-    private val ldap = LdapManager()
+    private val ldapManager = LdapManager()
 
     private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
 
@@ -32,7 +32,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
             log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
             Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
         }
-        val user = ldap.queryUser(sam, auth)
+        val user = ldapManager.queryUser(sam, auth)
         user?.updateUserNameInformation()
         return user
     }
@@ -41,7 +41,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         val q = Q.defer<List<FullUser>>()
         object : Thread("LDAP AutoSuggest: " + like) {
             override fun run() {
-                val out = ldap.autoSuggest(like, auth, limit)
+                val out = ldapManager.autoSuggest(like, auth, limit)
                 q.resolve(out)
             }
         }.start()
@@ -55,12 +55,12 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
 
         val shortUser = if (sam.matches(shortUserRegex)) sam else SessionManager.queryUser(sam, null)?.shortUser
-                ?: ldap.autoSuggest(sam, auth, 1).getOrNull(0)?.shortUser
+                ?: ldapManager.autoSuggest(sam, auth, 1).getOrNull(0)?.shortUser
         if (shortUser == null) return null
 
         log.info("Authenticating {\"sam\":\"$sam\", \"shortUser\":\"$shortUser\"}")
 
-        return ldap.queryUser(shortUser, shortUser to pw)
+        return ldapManager.queryUser(shortUser, shortUser to pw)
     }
 
 
@@ -73,7 +73,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         val longUser = sam.contains(".")
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchFilter = "(&(objectClass=user)(" + (if (longUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (longUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
-        val ctx = ldap.bindLdap(auth) ?: return false
+        val ctx = ldapManager.bindLdap(auth) ?: return false
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
         var searchResult: SearchResult? = null
@@ -96,7 +96,7 @@ object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
         mods[0] = ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod)
         return try {
             ctx.modifyAttributes(groupDn, mods)
-            log.info("${if(exchange)"Added $sam to" else "Removed $sam from"} exchange students.")
+            log.info("${if (exchange) "Added $sam to" else "Removed $sam from"} exchange students.")
             exchange
         } catch (e: NamingException) {
             if (e.message!!.contains("LDAP: error code 53")) {
