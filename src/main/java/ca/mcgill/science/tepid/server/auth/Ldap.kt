@@ -11,7 +11,9 @@ import javax.naming.directory.*
 
 object Ldap : WithLogging() {
 
-    private val ldapManager = LdapManager()
+    private val ldapManager: LdapContract = LdapManager()
+
+    private val ldapConnector = LdapConnector();
 
     private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
 
@@ -73,7 +75,7 @@ object Ldap : WithLogging() {
         val longUser = sam.contains(".")
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchFilter = "(&(objectClass=user)(" + (if (longUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (longUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
-        val ctx = ldapManager.ldapConnector.bindLdap(auth) ?: return false
+        val ctx = ldapConnector.bindLdap(auth) ?: return false
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
         var searchResult: SearchResult? = null

@@ -23,7 +23,7 @@ interface LdapContract {
 
 open class LdapManager : LdapContract {
 
-    val ldapConnector = LdapConnector();
+    private val ldapConnector = LdapConnector();
 
     private companion object : WithLogging() {
 
