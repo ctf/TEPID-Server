@@ -6,11 +6,9 @@ import ca.mcgill.science.tepid.utils.WithLogging
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
-import javax.naming.Context.*
 import javax.naming.NamingException
 import javax.naming.directory.Attributes
 import javax.naming.directory.SearchControls
-import javax.naming.ldap.InitialLdapContext
 import javax.naming.ldap.LdapContext
 import javax.naming.ldap.LdapName
 
@@ -24,6 +22,8 @@ interface LdapContract {
 }
 
 open class LdapManager : LdapContract {
+
+    val ldapConnector = LdapConnector();
 
     private companion object : WithLogging() {
 
@@ -48,7 +48,7 @@ open class LdapManager : LdapContract {
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchName = if (username.contains(".")) "userPrincipalName=$username${Config.ACCOUNT_DOMAIN}" else "sAMAccountName=$username"
         val searchFilter = "(&(objectClass=user)($searchName))"
-        val ctx = bindLdap(auth) ?: return null
+        val ctx = ldapConnector.bindLdap(auth) ?: return null
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
         val results = ctx.search(ldapSearchBase, searchFilter, searchControls)
@@ -118,41 +118,11 @@ open class LdapManager : LdapContract {
         return out
     }
 
-    /**
-     * Defines the environment necessary for [InitialLdapContext]
-     */
-    private fun createAuthMap(user: String, password: String) = Hashtable<String, String>().apply {
-        put(SECURITY_AUTHENTICATION, "simple")
-        put(INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-        put(PROVIDER_URL, Config.PROVIDER_URL)
-        put(SECURITY_PRINCIPAL, Config.SECURITY_PRINCIPAL_PREFIX+ user)
-        put(SECURITY_CREDENTIALS, password)
-        put("com.sun.jndi.ldap.read.timeout", "5000")
-        put("com.sun.jndi.ldap.connect.timeout", "500")
-    }
-
-    fun bindLdap(auth: Pair<String, String>) = bindLdap(auth.first, auth.second)
-
-    /**
-     * Create [LdapContext] for given credentials
-     */
-
-    fun bindLdap(user: String, password: String): LdapContext? {
-        log.trace("Attempting bind to LDAP: {'PROVIDER_URL':'${Config.PROVIDER_URL}', 'SECURITY_PRINCIPAL':'${Config.SECURITY_PRINCIPAL_PREFIX+ user}'}")
-        try {
-            val auth = createAuthMap(user, password)
-            return InitialLdapContext(auth, null)
-        } catch (e: Exception) {
-            log.error("Failed to bind to LDAP {\"user\":\"$user\"}", e)
-            return null
-        }
-    }
-
     override fun autoSuggest(like: String, auth: Pair<String, String>, limit: Int): List<FullUser> {
         try {
             val ldapSearchBase = Config.LDAP_SEARCH_BASE
             val searchFilter = "(&(objectClass=user)(|(userPrincipalName=$like*)(samaccountname=$like*)))"
-            val ctx = bindLdap(auth) ?: return emptyList()
+            val ctx = ldapConnector.bindLdap(auth) ?: return emptyList()
             val searchControls = SearchControls()
             searchControls.searchScope = SearchControls.SUBTREE_SCOPE
             val results = ctx.search(ldapSearchBase, searchFilter, searchControls)
