@@ -12,6 +12,7 @@ import javax.naming.directory.*
 object Ldap : WithLogging() {
 
     private val ldapManager = LdapManager()
+    private val autoSuggest = AutoSuggest();
 
     private val ldapConnector = LdapConnector();
 
@@ -43,7 +44,7 @@ object Ldap : WithLogging() {
         val q = Q.defer<List<FullUser>>()
         object : Thread("LDAP AutoSuggest: " + like) {
             override fun run() {
-                val out = ldapManager.autoSuggest(like, auth, limit)
+                val out = autoSuggest.autoSuggest(like, auth, limit)
                 q.resolve(out)
             }
         }.start()
@@ -57,7 +58,7 @@ object Ldap : WithLogging() {
         log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
 
         val shortUser = if (sam.matches(shortUserRegex)) sam else SessionManager.queryUser(sam, null)?.shortUser
-                ?: ldapManager.autoSuggest(sam, auth, 1).getOrNull(0)?.shortUser
+                ?: autoSuggest.autoSuggest(sam, auth, 1).getOrNull(0)?.shortUser
         if (shortUser == null) return null
 
         log.info("Authenticating {\"sam\":\"$sam\", \"shortUser\":\"$shortUser\"}")
