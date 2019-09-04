@@ -11,7 +11,7 @@ import javax.naming.directory.*
 
 object Ldap : WithLogging() {
 
-    private val ldapManager: LdapContract = LdapManager()
+    private val ldapManager = LdapManager()
 
     private val ldapConnector = LdapConnector();
 

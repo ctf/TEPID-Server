@@ -16,12 +16,8 @@ import javax.naming.ldap.LdapName
  * Collection of functions that can be exposed
  * Use this to hide unneeded functions
  */
-interface LdapContract {
-    fun queryUser(username: String?, auth: Pair<String, String>): FullUser?
-    fun autoSuggest(like: String, auth: Pair<String, String>, limit: Int): List<FullUser>
-}
 
-open class LdapManager : LdapContract {
+open class LdapManager {
 
     private val ldapConnector = LdapConnector();
 
@@ -43,7 +39,7 @@ open class LdapManager : LdapContract {
      * However, if a different auth is provided (eg from our science account),
      * the studentId cannot be queried
      */
-    override fun queryUser(username: String?, auth: Pair<String, String>): FullUser? {
+    fun queryUser(username: String?, auth: Pair<String, String>): FullUser? {
         if (username == null) return null
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchName = if (username.contains(".")) "userPrincipalName=$username${Config.ACCOUNT_DOMAIN}" else "sAMAccountName=$username"
@@ -118,7 +114,7 @@ open class LdapManager : LdapContract {
         return out
     }
 
-    override fun autoSuggest(like: String, auth: Pair<String, String>, limit: Int): List<FullUser> {
+    fun autoSuggest(like: String, auth: Pair<String, String>, limit: Int): List<FullUser> {
         try {
             val ldapSearchBase = Config.LDAP_SEARCH_BASE
             val searchFilter = "(&(objectClass=user)(|(userPrincipalName=$like*)(samaccountname=$like*)))"
