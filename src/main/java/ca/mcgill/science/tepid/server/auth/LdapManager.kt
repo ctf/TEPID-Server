@@ -23,7 +23,7 @@ interface LdapContract {
     fun autoSuggest(like: String, auth: Pair<String, String>, limit: Int): List<FullUser>
 }
 
-open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate() {
+open class LdapManager : LdapContract {
 
     private companion object : WithLogging() {
 
@@ -90,7 +90,7 @@ open class LdapManager : LdapContract, LdapHelperContract by LdapHelperDelegate(
             val cn = dn.get(dn.size()-1)
             return cn.substringAfter("=")
         }
-        val ldapGroups = get("memberOf")?.toList()?.mapNotNull {
+        val ldapGroups = LdapHelper.AttributeToList(get("memberOf")).mapNotNull {
             try {
                 val cn = getCn(it)
                 val groupValues = semesterRegex.find(it.toLowerCase(Locale.CANADA))?.groupValues

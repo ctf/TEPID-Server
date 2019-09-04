@@ -9,7 +9,7 @@ import java.util.*
 import javax.naming.NamingException
 import javax.naming.directory.*
 
-object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
+object Ldap : WithLogging() {
 
     private val ldapManager = LdapManager()
 
