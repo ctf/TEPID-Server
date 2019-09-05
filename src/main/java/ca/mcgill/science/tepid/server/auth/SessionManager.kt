@@ -24,6 +24,7 @@ import java.security.SecureRandom
  */
 
 object SessionManager : WithLogging() {
+    val autoSuggest = AutoSuggest()
 
     private const val HOUR_IN_MILLIS = 60 * 60 * 1000
     private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
@@ -196,7 +197,7 @@ object SessionManager : WithLogging() {
             emptyPromise.resolve(emptyList())
             return emptyPromise.promise
         }
-        return Ldap.autoSuggest(like, limit)
+        return autoSuggest.autoSuggest(like, limit)
     }
 
     /**

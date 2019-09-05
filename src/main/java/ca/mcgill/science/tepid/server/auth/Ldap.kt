@@ -1,7 +1,5 @@
 package ca.mcgill.science.tepid.server.auth
 
-import `in`.waffl.q.Promise
-import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -12,6 +10,7 @@ import javax.naming.directory.*
 object Ldap : WithLogging() {
 
     private val ldapManager = LdapManager()
+
     private val autoSuggest = AutoSuggest();
 
     private val ldapConnector = LdapConnector();
@@ -40,17 +39,6 @@ object Ldap : WithLogging() {
         return user
     }
 
-    fun autoSuggest(like: String, limit: Int): Promise<List<FullUser>> {
-        val q = Q.defer<List<FullUser>>()
-        object : Thread("LDAP AutoSuggest: " + like) {
-            override fun run() {
-                val out = autoSuggest.autoSuggest(like, auth, limit)
-                q.resolve(out)
-            }
-        }.start()
-        return q.promise
-    }
-
     /**
      * Returns user data, but guarantees a pass through ldap
      */
@@ -58,7 +46,7 @@ object Ldap : WithLogging() {
         log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
 
         val shortUser = if (sam.matches(shortUserRegex)) sam else SessionManager.queryUser(sam, null)?.shortUser
-                ?: autoSuggest.autoSuggest(sam, auth, 1).getOrNull(0)?.shortUser
+                ?: autoSuggest.queryLdap(sam, auth, 1).getOrNull(0)?.shortUser // TODO: pull this up higher
         if (shortUser == null) return null
 
         log.info("Authenticating {\"sam\":\"$sam\", \"shortUser\":\"$shortUser\"}")

@@ -1,5 +1,7 @@
 package ca.mcgill.science.tepid.server.auth
 
+import `in`.waffl.q.Promise
+import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -10,7 +12,20 @@ class AutoSuggest {
 
     private val ldapConnector = LdapConnector()
 
-    fun autoSuggest(like: String, auth: Pair<String, String>, limit: Int): List<FullUser> {
+    private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
+
+    fun autoSuggest(like: String, limit: Int): Promise<List<FullUser>> {
+        val q = Q.defer<List<FullUser>>()
+        object : Thread("LDAP AutoSuggest: " + like) {
+            override fun run() {
+                val out = queryLdap(like, auth, limit)
+                q.resolve(out)
+            }
+        }.start()
+        return q.promise
+    }
+
+    fun queryLdap(like: String, auth: Pair<String, String>, limit: Int): List<FullUser> {
         try {
             val ldapSearchBase = Config.LDAP_SEARCH_BASE
             val searchFilter = "(&(objectClass=user)(|(userPrincipalName=$like*)(samaccountname=$like*)))"
