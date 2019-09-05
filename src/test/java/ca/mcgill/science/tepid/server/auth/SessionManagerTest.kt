@@ -1,6 +1,5 @@
 package ca.mcgill.science.tepid.server.auth
 
-import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
@@ -246,72 +245,6 @@ class QueryUserDbTest {
             every { Config.ACCOUNT_DOMAIN } returns "config.example.com"
             mockDb = mockk<DbLayer>(relaxed = true)
             DB = mockDb
-        }
-
-        @JvmStatic
-        @AfterAll
-        fun tearTest() {
-            unmockkAll()
-        }
-    }
-}
-
-class AutoSuggestTest {
-    lateinit var q: Q<List<FullUser>>
-
-    var testUser = UserFactory.makeDbUser()
-    val testLike = "testLike"
-    val testLimit = 15
-
-    @BeforeEach
-    fun makeTestQ(){
-        q = Q.defer<List<FullUser>>()
-    }
-
-    @Test
-    fun testAutoSuggestLdapEnabled() {
-        q.resolve(listOf(testUser))
-        val p = q.promise
-
-        every {
-            Config.LDAP_ENABLED
-        } returns true
-
-
-        every {
-            Ldap.autoSuggest(any(), any())
-        } returns q.promise
-
-        val actual = SessionManager.autoSuggest(testLike, testLimit)
-
-        verify { Ldap.autoSuggest(testLike, testLimit) }
-        assertEquals(p, actual, "Expected promise not returned")
-    }
-
-    @Test
-    fun testAutoSuggestLdapNotEnabled() {
-        q.resolve(emptyList())
-        val p = q.promise
-
-        every {
-            Config.LDAP_ENABLED
-        } returns false
-
-        val actual = SessionManager.autoSuggest(testLike, testLimit)
-
-        verify { Ldap wasNot Called }
-        assertEquals(p.result, actual.result, "Expected promise not returned")
-
-
-    }
-
-    companion object {
-
-        @JvmStatic
-        @BeforeAll
-        fun initTest() {
-            mockkObject(Config)
-            mockkObject(Ldap)
         }
 
         @JvmStatic
