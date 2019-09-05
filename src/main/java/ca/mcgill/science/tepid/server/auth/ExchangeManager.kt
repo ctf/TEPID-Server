@@ -26,7 +26,7 @@ object ExchangeManager : WithLogging() {
         if (Config.LDAP_ENABLED) {
             log.info("Setting exchange status {\"sam\":\"$sam\", \"exchange_status\":\"$exchange\"}")
             val success = setExchangeStudentLdap(sam, exchange)
-            SessionManager.refreshUser(sam)
+            AuthenticationManager.refreshUser(sam)
             return success
         } else return false
     }

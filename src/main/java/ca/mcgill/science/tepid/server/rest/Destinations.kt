@@ -57,7 +57,7 @@ class Destinations {
     @Consumes(MediaType.APPLICATION_JSON)
     fun setStatus(@PathParam("dest") id: String, ticket: DestinationTicket, @Context crc: ContainerRequestContext): String {
         val session = crc.getSession()
-        ticket.user = session.user.toUser()
+        ticket.user = session.user .toUser()
         val successText = "$id marked as ${if (ticket.up) "up" else "down"}"
         val response = DB.updateDestinationWithResponse(id) {
             up = ticket.up

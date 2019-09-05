@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PutResponse
+import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.Order
@@ -40,7 +41,7 @@ class Jobs {
     }
 
     private fun PrintJob.getJobExpiration() =
-            System.currentTimeMillis() + (SessionManager.queryUserDb(userIdentification)?.jobExpiration
+            System.currentTimeMillis() + (AuthenticationManager.queryUserDb(userIdentification)?.jobExpiration
                     ?: TimeUnit.DAYS.toMillis(7))
 
     @POST

@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.auth
 import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
@@ -25,14 +26,14 @@ class MergeUsersTest {
     fun testMergeUserNoShortUser() {
         val dbUser: FullUser? = FullUser()
         val ldapUser = FullUser()
-        Assertions.assertThrows(RuntimeException::class.java) { SessionManager.mergeUsers(ldapUser, dbUser) }
+        Assertions.assertThrows(RuntimeException::class.java) { AuthenticationManager.mergeUsers(ldapUser, dbUser) }
     }
 
     @Test
     fun testMergeUsersNonMatchNullDbUser() {
         val dbUser: FullUser? = null
         val ldapUser = UserFactory.makeLdapUser()
-        val actual = SessionManager.mergeUsers(ldapUser, dbUser)
+        val actual = AuthenticationManager.mergeUsers(ldapUser, dbUser)
         assertEquals(UserFactory.makeLdapUser(), actual)
     }
 
@@ -44,19 +45,19 @@ class MergeUsersTest {
     fun testMergeUsersNonMatchDbUser() {
         val dbUser: FullUser? = UserFactory.makeDbUser().copy(shortUser = "dbSU")
         val ldapUser = UserFactory.makeLdapUser().copy(shortUser = "ldapSU")
-        Assertions.assertThrows(RuntimeException::class.java) { SessionManager.mergeUsers(ldapUser, dbUser) }
+        Assertions.assertThrows(RuntimeException::class.java) { AuthenticationManager.mergeUsers(ldapUser, dbUser) }
     }
 
     @Test
     fun testMergeUsers() {
-        val actual = SessionManager.mergeUsers(UserFactory.makeLdapUser(), UserFactory.makeDbUser())
+        val actual = AuthenticationManager.mergeUsers(UserFactory.makeLdapUser(), UserFactory.makeDbUser())
         assertEquals(UserFactory.makeMergedUser(), actual)
     }
 
     @Test
     fun testMergeUsersNoStudentIdInLdapUser() {
         val ldapUser = UserFactory.makeLdapUser().copy(studentId = -1)
-        val actual = SessionManager.mergeUsers(ldapUser, UserFactory.makeDbUser())
+        val actual = AuthenticationManager.mergeUsers(ldapUser, UserFactory.makeDbUser())
         val expected = UserFactory.makeMergedUser().copy(studentId = UserFactory.makeDbUser().studentId)
         assertEquals(expected, actual)
     }
@@ -80,7 +81,7 @@ class UpdateDbWithUserTest {
         } returns mockResponse
 
         // Run Test
-        SessionManager.updateDbWithUser(testUser)
+        AuthenticationManager.updateDbWithUser(testUser)
 
         // Verifies the path
         verify { mockDb.putUser(testUser) }
@@ -99,7 +100,7 @@ class UpdateDbWithUserTest {
         } returns mockResponse
 
         // Run Test
-        SessionManager.updateDbWithUser(testUser)
+        AuthenticationManager.updateDbWithUser(testUser)
 
         // Verifies the path
         verify { mockDb.putUser(testUser) }
@@ -135,7 +136,7 @@ class QueryUserDbTest {
 
     @Test
     fun testQueryUserDbNullSam() {
-        val actual = SessionManager.queryUserDb(null)
+        val actual = AuthenticationManager.queryUserDb(null)
         assertEquals(null, actual, "Result was not null")
     }
 
@@ -145,7 +146,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.email!!)
         } returns testUser
 
-        val actual = SessionManager.queryUserDb(testUser.email)
+        val actual = AuthenticationManager.queryUserDb(testUser.email)
 
         verify { mockDb.getUserOrNull(testUser.email!!) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
@@ -157,7 +158,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.email!!)
         } returns null
 
-        val actual = SessionManager.queryUserDb(testUser.email)
+        val actual = AuthenticationManager.queryUserDb(testUser.email)
 
         verify { mockDb.getUserOrNull(testUser.email!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
@@ -169,7 +170,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.longUser!!)
         } returns testUser
 
-        val actual = SessionManager.queryUserDb(testUser.longUser)
+        val actual = AuthenticationManager.queryUserDb(testUser.longUser)
 
         verify { mockDb.getUserOrNull(testUser.longUser!!) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
@@ -181,7 +182,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.longUser!!)
         } returns null
 
-        val actual = SessionManager.queryUserDb(testUser.longUser)
+        val actual = AuthenticationManager.queryUserDb(testUser.longUser)
 
         verify { mockDb.getUserOrNull(testUser.longUser!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
@@ -193,7 +194,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.studentId.toString())
         } returns testUser
 
-        val actual = SessionManager.queryUserDb(testUser.studentId.toString())
+        val actual = AuthenticationManager.queryUserDb(testUser.studentId.toString())
 
         verify { mockDb.getUserOrNull(testUser.studentId.toString()) }
         assertEquals(testUser, actual, "User was not returned when searched by studentId")
@@ -205,7 +206,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.studentId.toString())
         } returns null
 
-        val actual = SessionManager.queryUserDb(testUser.studentId.toString())
+        val actual = AuthenticationManager.queryUserDb(testUser.studentId.toString())
 
         verify { mockDb.getUserOrNull(testUser.studentId.toString()) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by studentId")
@@ -217,7 +218,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.shortUser!!)
         } returns testUser
 
-        val actual = SessionManager.queryUserDb(testUser.shortUser)
+        val actual = AuthenticationManager.queryUserDb(testUser.shortUser)
 
         verify { mockDb.getUserOrNull(testUser.shortUser!!) }
         assertEquals(testUser, actual, "User was not returned when searched by shortUser")
@@ -229,7 +230,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.shortUser!!)
         } returns null
 
-        val actual = SessionManager.queryUserDb(testUser.shortUser)
+        val actual = AuthenticationManager.queryUserDb(testUser.shortUser)
 
         verify { mockDb.getUserOrNull(testUser.shortUser!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by shortUser")
@@ -258,13 +259,13 @@ class QueryUserDbTest {
 class QueryUserTest : WithLogging() {
 
     var testUser = UserFactory.makeDbUser()
-    lateinit var sm: SessionManager
+    lateinit var am: AuthenticationManager
 
     @BeforeEach
     fun initTest() {
         mockkObject(Config)
         mockkObject(Ldap)
-        sm = spyk(SessionManager)
+        am = spyk(AuthenticationManager)
     }
 
     @AfterEach
@@ -274,7 +275,7 @@ class QueryUserTest : WithLogging() {
 
     @Test
     fun testQueryUserSamNull() {
-        val actual = sm.queryUser(null, null)
+        val actual = am.queryUser(null, null)
         val expected = null
 
         assertEquals(expected, actual, "Null is not returned when SAM is null")
@@ -282,9 +283,9 @@ class QueryUserTest : WithLogging() {
 
     @Test
     fun testQueryUserDbHit() {
-        every { sm.queryUserDb("SU") } returns testUser
+        every { am.queryUserDb("SU") } returns testUser
 
-        val actual = sm.queryUser("SU", null)
+        val actual = am.queryUser("SU", null)
         val expected = testUser
 
         assertEquals(expected, actual, "User from DB is not returned when found")
@@ -293,9 +294,9 @@ class QueryUserTest : WithLogging() {
     @Test
     fun testQueryUserDbMissLdapDisabled() {
         every { Config.LDAP_ENABLED } returns false
-        every { sm.queryUserDb("SU") } returns null
+        every { am.queryUserDb("SU") } returns null
 
-        val actual = sm.queryUser("SU", null)
+        val actual = am.queryUser("SU", null)
         val expected = null
 
         assertEquals(expected, actual, "Null is not returned when DB miss and Ldap disabled")
@@ -304,43 +305,43 @@ class QueryUserTest : WithLogging() {
     @Test
     fun testQueryUserWithLdapBadSam() {
         every { Config.LDAP_ENABLED } returns true
-        every { sm.queryUserDb("db.LU@example.com") } returns null
+        every { am.queryUserDb("db.LU@example.com") } returns null
 
-        val actual = sm.queryUser("db.LU@example.com", null)
+        val actual = am.queryUser("db.LU@example.com", null)
         val expected = null
 
-        verify(inverse = true) { sm.updateDbWithUser(any()) }
-        assertEquals(expected, actual, "SessionManager doesn't return null if SAM is not shortUser")
+        verify(inverse = true) { am.updateDbWithUser(any()) }
+        assertEquals(expected, actual, "AuthenticationManager doesn't return null if SAM is not shortUser")
 
     }
 
     @Test
     fun testQueryUserWithLdapLdapUserNull() {
         every { Config.LDAP_ENABLED } returns true
-        every { sm.queryUserDb("SU") } returns null
+        every { am.queryUserDb("SU") } returns null
         every { Ldap.queryUserLdap(any(), null) } returns null
 
-        val actual = sm.queryUser("SU", null)
+        val actual = am.queryUser("SU", null)
         val expected = null
 
-        verify(inverse = true) { sm.updateDbWithUser(any()) }
-        assertEquals(expected, actual, "SessionManager doesn't return null if Ldap returns null")
+        verify(inverse = true) { am.updateDbWithUser(any()) }
+        assertEquals(expected, actual, "AuthenticationManager doesn't return null if Ldap returns null")
     }
 
 
     @Test
     fun testQueryUserWithLdap() {
         every { Config.LDAP_ENABLED } returns true
-        every { sm.queryUserDb("SU") } returns null
-        every { sm.updateDbWithUser(any()) } just runs
+        every { am.queryUserDb("SU") } returns null
+        every { am.updateDbWithUser(any()) } just runs
         every { Ldap.queryUserLdap(any(), null) } returns testUser
 
 
-        val actual = sm.queryUser("SU", null)
+        val actual = am.queryUser("SU", null)
         val expected = testUser
 
-        verify { sm.updateDbWithUser(testUser) }
-        assertEquals(expected, actual, "SessionManager doesn't return null if Ldap returns null")
+        verify { am.updateDbWithUser(testUser) }
+        assertEquals(expected, actual, "AuthenticationManager doesn't return null if Ldap returns null")
     }
 }
 
@@ -352,7 +353,7 @@ class AuthenticateTest {
      * Basically, if this is something which needs testing, the actual function has logic which breaks the general description
      */
 
-    lateinit var sm: SessionManager
+    lateinit var sm: AuthenticationManager
     lateinit var testUser: FullUser
     lateinit var testUserFromDb: FullUser
     var testShortUser = "testShortUser"
@@ -367,7 +368,7 @@ class AuthenticateTest {
                 colorPrinting = false
         )
         mockkObject(Config)
-        sm = spyk(SessionManager)
+        sm = spyk(AuthenticationManager)
         mockkObject(Ldap)
     }
 
@@ -437,7 +438,7 @@ class AuthenticateTest {
         every { sm.updateDbWithUser(any()) } just runs
 
         val actual = sm.authenticate(testShortUser, testPassword)
-        val expected = SessionManager.mergeUsers(testUser, testUserFromDb)
+        val expected = AuthenticationManager.mergeUsers(testUser, testUserFromDb)
 
         verify { Ldap.authenticate(testShortUser, testPassword) }
         verify { sm.mergeUsers(testUser, testUserFromDb) }
@@ -455,9 +456,9 @@ class SetExchangeStudentTest {
         every { Config.LDAP_ENABLED } returns true
         ExchangeManager.setExchangeStudent(testSam, true)
 
-        val targetUser = SessionManager.mergeUsers(UserFactory.makeLdapUser(), UserFactory.makeDbUser())
+        val targetUser = AuthenticationManager.mergeUsers(UserFactory.makeLdapUser(), UserFactory.makeDbUser())
         verify {
-            SessionManager.refreshUser(
+            AuthenticationManager.refreshUser(
                     targetUser.shortUser!!
             )
         }
@@ -481,9 +482,9 @@ class SetExchangeStudentTest {
             mockkObject(ExchangeManager)
             every { ExchangeManager.setExchangeStudentLdap(any(), any()) } returns true
 
-            mockkObject(SessionManager)
+            mockkObject(AuthenticationManager)
             every {
-                SessionManager.refreshUser(testSam)
+                AuthenticationManager.refreshUser(testSam)
             } returns UserFactory.makeDbUser()
             mockkObject(Config)
         }
@@ -503,7 +504,7 @@ class RefreshUserTest {
     fun testRefreshUserLdapDisabled() {
         every { Config.LDAP_ENABLED } returns false
 
-        val actual = SessionManager.refreshUser(testSam)
+        val actual = AuthenticationManager.refreshUser(testSam)
 
         assertEquals(UserFactory.makeDbUser(), actual)
     }
@@ -515,12 +516,12 @@ class RefreshUserTest {
             SessionManager.invalidateSessions(testSam)
         } just runs
 
-        val actual = SessionManager.refreshUser(testSam)
+        val actual = AuthenticationManager.refreshUser(testSam)
 
         assertEquals(UserFactory.makeMergedUser(), actual)
 
         verify {
-            SessionManager.updateDbWithUser(
+            AuthenticationManager.updateDbWithUser(
                     UserFactory.makeMergedUser()
             )
         }
@@ -535,15 +536,16 @@ class RefreshUserTest {
             mockkObject(Ldap)
 
             mockkObject(SessionManager)
+            mockkObject(AuthenticationManager)
             every {
-                SessionManager.queryUserDb(testSam)
+                AuthenticationManager.queryUserDb(testSam)
             } returns UserFactory.makeDbUser()
             every {
                 Ldap.queryUserLdap(testSam, null)
             } returns UserFactory.makeLdapUser()
 
             every {
-                SessionManager.updateDbWithUser(ofType(FullUser::class))
+                AuthenticationManager.updateDbWithUser(ofType(FullUser::class))
             } just runs
 
             mockkObject(Config)
@@ -584,7 +586,8 @@ class SessionIsValidTest {
         @BeforeAll
         fun initTest() {
             mockkObject(SessionManager)
-            every { SessionManager.queryUserDb(testUser.shortUser) } returns testUser
+            mockkObject(AuthenticationManager)
+            every { AuthenticationManager.queryUserDb(testUser.shortUser) } returns testUser
         }
 
         @JvmStatic
@@ -626,7 +629,8 @@ class SessionGetTest {
             testSession._id = "testId"
             testSession._rev = "testRev"
             mockkObject(SessionManager)
-            every { SessionManager.queryUserDb(testUser.shortUser) } returns testUser
+            mockkObject(AuthenticationManager)
+            every { AuthenticationManager.queryUserDb(testUser.shortUser) } returns testUser
             mockkObject(DB)
         }
 

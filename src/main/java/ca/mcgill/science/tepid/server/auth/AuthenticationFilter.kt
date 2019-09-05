@@ -86,7 +86,7 @@ class AuthenticationFilter : ContainerRequestFilter {
                         requestContext.abortWith(AUTH_REQUIRED)
                         return
                     }
-                    val user = SessionManager.authenticate(username, password)
+                    val user = AuthenticationManager.authenticate(username, password)
                     session = if (user != null) SessionManager.start(user, 0) else null
                 }
                 else -> {

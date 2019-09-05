@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.models.data.Destination
 import ca.mcgill.science.tepid.models.data.MarqueeData
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
+import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.Order
@@ -103,7 +104,7 @@ class ScreenSaver {
     @Path("/user/{username}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getUserInfo(@PathParam("username") username: String): String {
-        return SessionManager.queryUser(username, null)?.nick
+        return AuthenticationManager.queryUser(username, null)?.nick
                 ?: failNotFound("No nick associated with $username")
     }
 

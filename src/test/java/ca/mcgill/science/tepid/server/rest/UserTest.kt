@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
+import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -51,7 +52,7 @@ class TestUserGetQuota : WithLogging () {
 
     private fun mockUser(tailoredUser: FullUser?){
         every {
-            SessionManager.queryUser("targetUser", null)
+            AuthenticationManager.queryUser("targetUser", null)
         } returns (tailoredUser)
     }
 
@@ -147,7 +148,7 @@ class TestUserGetQuota : WithLogging () {
             mockkObject(AuthenticationFilter)
             mockkObject(Users)
             every {
-                SessionManager.queryUser("targetUser", null)
+                AuthenticationManager.queryUser("targetUser", null)
             } returns (FullUser())
 
         }
@@ -189,8 +190,9 @@ class getUserBySamTest : WithLogging() {
     }
     fun mockUserQuery(user:FullUser?){
         mockkObject(SessionManager)
+        mockkObject(AuthenticationManager)
         every {
-            SessionManager.queryUser("targetUser", null)
+            AuthenticationManager.queryUser("targetUser", null)
         } returns (user)
     }
     fun doTestUserQuery(role:String, queryResult: FullUser?, expected: FullUser?): Response {

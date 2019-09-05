@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.enums.PrintError
+import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.rest.Users
@@ -113,7 +114,7 @@ object Printer : WithLogging() {
                     log.trace("Job $id has ${psInfo.pages} pages, ${psInfo.colorPages} in color")
 
                     var j2: PrintJob = updatePagecount(id, psInfo)
-                    val user = SessionManager.queryUser(j2.userIdentification, null)
+                    val user = AuthenticationManager.queryUser(j2.userIdentification, null)
                             ?: throw Printer.PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
 
                     validateColorAvailable(user, j2, psInfo)
