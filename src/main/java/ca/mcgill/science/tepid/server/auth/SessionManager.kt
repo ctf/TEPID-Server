@@ -1,12 +1,9 @@
 package ca.mcgill.science.tepid.server.auth
 
-import `in`.waffl.q.Promise
-import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.isSuccessful
 import ca.mcgill.science.tepid.server.server.Config
@@ -20,12 +17,9 @@ import java.security.SecureRandom
  * It is analogous to PAM, in that everything which needs authentication or user querying goes through this.
  * For managing sessions, it can start, resume, and end sessions
  * For user querying, it first checks the DB cache. The cache is updated every time a query to the underlying authentication is made.
- * Since it also provides an interface with the underlying authentication, it also provides username autosuggestion and can set users as exchange.
  */
 
 object SessionManager : WithLogging() {
-    val autoSuggest = AutoSuggest()
-
     private const val HOUR_IN_MILLIS = 60 * 60 * 1000
     private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
 
@@ -182,22 +176,6 @@ object SessionManager : WithLogging() {
         dbUser?._id ?: return null
         log.trace("Found db user {\"sam\":\"$sam\",\"db_id\":\"${dbUser._id}\", \"dislayName\":\"${dbUser.displayName}\"}")
         return dbUser
-    }
-
-    /**
-     * Sends list of matching [User]s based on current query
-     *
-     * @param like  prefix
-     * @param limit max list size
-     * @return list of matching users
-     */
-    fun autoSuggest(like: String, limit: Int): Promise<List<FullUser>> {
-        if (!Config.LDAP_ENABLED) {
-            val emptyPromise = Q.defer<List<FullUser>>()
-            emptyPromise.resolve(emptyList())
-            return emptyPromise.promise
-        }
-        return autoSuggest.autoSuggest(like, limit)
     }
 
     /**

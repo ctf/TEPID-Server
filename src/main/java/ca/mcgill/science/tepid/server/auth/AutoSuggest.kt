@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.auth
 import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.naming.NamingException
@@ -14,7 +15,24 @@ class AutoSuggest {
 
     private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
 
+
+    /**
+     * Sends list of matching [User]s based on current query
+     *
+     * @param like  prefix
+     * @param limit max list size
+     * @return list of matching users
+     */
     fun autoSuggest(like: String, limit: Int): Promise<List<FullUser>> {
+        if (!Config.LDAP_ENABLED) {
+            val emptyPromise = Q.defer<List<FullUser>>()
+            emptyPromise.resolve(emptyList())
+            return emptyPromise.promise
+        }
+        return _autoSuggest(like, limit)
+    }
+
+    fun _autoSuggest(like: String, limit: Int): Promise<List<FullUser>> {
         val q = Q.defer<List<FullUser>>()
         object : Thread("LDAP AutoSuggest: " + like) {
             override fun run() {
