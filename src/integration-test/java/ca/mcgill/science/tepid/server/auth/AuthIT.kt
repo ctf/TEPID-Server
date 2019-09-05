@@ -11,7 +11,7 @@ import kotlin.test.*
 
 open class AuthIT {
     protected fun FullUser?.assertEqualsTestUser() {
-        assertNotNull(this!!)
+        assertNotNull(this)
         assertEquals(PropsLDAPTestUser.TEST_USER, shortUser, "Short user mismatch. Perhaps you passed in the long user in your test?")
         val user = toUser()
         assertTrue(user.role.isNotEmpty(), "Role may not have propagated")
@@ -19,7 +19,6 @@ open class AuthIT {
 
     private fun FullUser?.assertValidUser() {
         assertNotNull(this)
-        println(this!!)
         mapOf(
                 "givenName" to givenName,
                 "lastName" to lastName,
@@ -88,7 +87,7 @@ class SessionManagerIT : AuthIT() {
 
     @Test
     fun autosuggest() {
-        SessionManager.autoSuggest(PropsLDAPTestUser.TEST_USER, 1).getResult(20000)[0].assertEqualsTestUser()
+        AutoSuggest.autoSuggest(PropsLDAPTestUser.TEST_USER, 1).getResult(20000)[0].assertEqualsTestUser()
     }
 
     fun isExchange(testSU: String): Boolean {
@@ -99,28 +98,28 @@ class SessionManagerIT : AuthIT() {
     fun addToExchangeStudent(testSU: String) {
         println("Adding")
         assertFalse(isExchange(testSU), "Precondition failed: user $testSU is already in LDAP group")
-        assertTrue(SessionManager.setExchangeStudent(testSU, true))
+        assertTrue(ExchangeManager.setExchangeStudent(testSU, true))
         assertTrue(isExchange(testSU))
     }
 
     fun addToExchangeStudentAlreadyIn(testSU: String) {
         println("Re-adding")
         assertTrue(isExchange(testSU), "Precondition failed: user $testSU is not already in LDAP group")
-        assertTrue(SessionManager.setExchangeStudent(testSU, true))
+        assertTrue(ExchangeManager.setExchangeStudent(testSU, true))
         assertTrue(isExchange(testSU))
     }
 
     fun removeFromExchangeStudentAlreadyOut(testSU: String) {
         println("Re-removing")
         assertFalse(isExchange(testSU), "Precondition failed: user $testSU is not already out of LDAP group")
-        assertFalse(SessionManager.setExchangeStudent(testSU, false))
+        assertFalse(ExchangeManager.setExchangeStudent(testSU, false))
         assertFalse(isExchange(testSU))
     }
 
     fun removeFromExchangeStudent(testSU: String) {
         println("Removing")
         assertTrue(isExchange(testSU), "Precondition failed: user $testSU is not already in LDAP group")
-        assertFalse(SessionManager.setExchangeStudent(testSU, false))
+        assertFalse(ExchangeManager.setExchangeStudent(testSU, false))
         assertFalse(isExchange(testSU))
     }
 
