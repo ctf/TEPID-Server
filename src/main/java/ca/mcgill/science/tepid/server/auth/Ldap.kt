@@ -11,8 +11,6 @@ object Ldap : WithLogging() {
 
     private val ldapManager = LdapManager()
 
-    private val autoSuggest = AutoSuggest();
-
     private val ldapConnector = LdapConnector();
 
     private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
@@ -46,7 +44,7 @@ object Ldap : WithLogging() {
         log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
 
         val shortUser = if (sam.matches(shortUserRegex)) sam else SessionManager.queryUser(sam, null)?.shortUser
-                ?: autoSuggest.queryLdap(sam, auth, 1).getOrNull(0)?.shortUser // TODO: pull this up higher
+                ?: AutoSuggest.queryLdap(sam, auth, 1).getOrNull(0)?.shortUser // TODO: pull this up higher
         if (shortUser == null) return null
 
         log.info("Authenticating {\"sam\":\"$sam\", \"shortUser\":\"$shortUser\"}")

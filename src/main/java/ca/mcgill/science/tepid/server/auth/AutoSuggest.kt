@@ -9,7 +9,7 @@ import ca.mcgill.science.tepid.utils.WithLogging
 import javax.naming.NamingException
 import javax.naming.directory.SearchControls
 
-class AutoSuggest {
+object AutoSuggest : WithLogging() {
 
     private val ldapConnector = LdapConnector()
 
@@ -67,9 +67,5 @@ class AutoSuggest {
             log.error("Could not get autosuggest", ne)
             return emptyList()
         }
-    }
-
-    private companion object : WithLogging() {
-
     }
 }

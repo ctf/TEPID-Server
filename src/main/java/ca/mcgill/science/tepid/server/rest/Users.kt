@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.bindings.*
 import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
+import ca.mcgill.science.tepid.server.auth.AutoSuggest
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.failNotFound
@@ -197,7 +198,7 @@ class Users {
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun ldapAutoSuggest(@PathParam("like") like: String, @DefaultValue("10") @QueryParam("limit") limit: Int): List<User> {
-        val resultsPromise = SessionManager.autoSuggest(like, limit)
+        val resultsPromise = AutoSuggest.autoSuggest(like, limit)
         return resultsPromise.getResult(20000).map(FullUser::toUser) // todo check if we should further simplify to userquery
     }
 
