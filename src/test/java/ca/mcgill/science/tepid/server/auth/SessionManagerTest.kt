@@ -461,14 +461,14 @@ class SetExchangeStudentTest {
                     targetUser
             )
         }
-        verify { Ldap.setExchangeStudent(testSam, true) }
+        verify { ExchangeManager.setExchangeStudentLdap(testSam, true) }
     }
 
     @Test
     fun testSetExchangeStudentLdapDisabled() {
         every { Config.LDAP_ENABLED } returns false
         ExchangeManager.setExchangeStudent(testSam, true)
-        verify(inverse = true) { Ldap.setExchangeStudent(testSam, true) }
+        verify(inverse = true) { ExchangeManager.setExchangeStudentLdap(testSam, true) }
     }
 
     companion object {
@@ -478,7 +478,8 @@ class SetExchangeStudentTest {
         @BeforeAll
         fun initTest() {
             mockkObject(Ldap)
-            every { Ldap.setExchangeStudent(any(), any()) } returns true
+            mockkObject(ExchangeManager)
+            every { ExchangeManager.setExchangeStudentLdap(any(), any()) } returns true
 
             mockkObject(SessionManager)
             every {
