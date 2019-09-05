@@ -6,7 +6,7 @@ import java.util.*
 import javax.naming.NamingException
 import javax.naming.directory.*
 
-object ExchangeManager : WithLogging(){
+object ExchangeManager : WithLogging() {
 
     private val ldapConnector = LdapConnector();
 
@@ -26,10 +26,7 @@ object ExchangeManager : WithLogging(){
         if (Config.LDAP_ENABLED) {
             log.info("Setting exchange status {\"sam\":\"$sam\", \"exchange_status\":\"$exchange\"}")
             val success = setExchangeStudentLdap(sam, exchange)
-            val dbUser = SessionManager.queryUserDb(sam)
-            val ldapUser = Ldap.queryUserLdap(sam, null) ?: return false
-            val mergedUser = SessionManager.mergeUsers(ldapUser, dbUser)
-            SessionManager.updateDbWithUser(mergedUser)
+            SessionManager.refreshUser(sam)
             return success
         } else return false
     }

@@ -457,8 +457,8 @@ class SetExchangeStudentTest {
 
         val targetUser = SessionManager.mergeUsers(UserFactory.makeLdapUser(), UserFactory.makeDbUser())
         verify {
-            SessionManager.updateDbWithUser(
-                    targetUser
+            SessionManager.refreshUser(
+                    targetUser.shortUser!!
             )
         }
         verify { ExchangeManager.setExchangeStudentLdap(testSam, true) }
@@ -483,16 +483,8 @@ class SetExchangeStudentTest {
 
             mockkObject(SessionManager)
             every {
-                SessionManager.queryUserDb(testSam)
+                SessionManager.refreshUser(testSam)
             } returns UserFactory.makeDbUser()
-            every {
-                Ldap.queryUserLdap(testSam, null)
-            } returns UserFactory.makeLdapUser()
-
-            every {
-                SessionManager.updateDbWithUser(ofType(FullUser::class))
-            } just runs
-
             mockkObject(Config)
         }
 
