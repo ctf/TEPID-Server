@@ -3,15 +3,14 @@ package ca.mcgill.science.tepid.server.auth
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
+import javax.naming.directory.SearchControls
 
 object Ldap : WithLogging() {
 
-    private val ldapManager = LdapManager()
+    private val ldapConnector = LdapConnector();
 
     private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
-
     private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
-
 
     /**
      * Retrieve a [FullUser] from ldap
@@ -27,8 +26,33 @@ object Ldap : WithLogging() {
             log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
             Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
         }
-        val user = ldapManager.queryUser(sam, auth)
+        val user = _queryUser(sam, auth)
         user?.updateUserNameInformation()
+        return user
+    }
+
+    /**
+     * Queries [username] (short user or long user)
+     * with [auth] credentials (username to password).
+     * Resulting user is nonnull if it exists
+     *
+     * Note that [auth] may use different credentials than the [username] in question.
+     * However, if a different auth is provided (eg from our science account),
+     * the studentId cannot be queried
+     */
+    fun _queryUser(username: String?, auth: Pair<String, String>): FullUser? {
+        if (username == null) return null
+        val ldapSearchBase = Config.LDAP_SEARCH_BASE
+        val searchName = if (username.contains(".")) "userPrincipalName=$username${Config.ACCOUNT_DOMAIN}" else "sAMAccountName=$username"
+        val searchFilter = "(&(objectClass=user)($searchName))"
+        val ctx = ldapConnector.bindLdap(auth) ?: return null
+        val searchControls = SearchControls()
+        searchControls.searchScope = SearchControls.SUBTREE_SCOPE
+        val results = ctx.search(ldapSearchBase, searchFilter, searchControls)
+        val searchResultAttributes = results.nextElement()?.attributes
+        results.close()
+        val user = if (searchResultAttributes != null) LdapHelper.AttributesToUser(searchResultAttributes , ctx) else null
+        ctx.close()
         return user
     }
 
@@ -44,6 +68,6 @@ object Ldap : WithLogging() {
 
         log.info("Authenticating {\"sam\":\"$sam\", \"shortUser\":\"$shortUser\"}")
 
-        return ldapManager.queryUser(shortUser, shortUser to pw)
+        return _queryUser(shortUser, shortUser to pw)
     }
 }
