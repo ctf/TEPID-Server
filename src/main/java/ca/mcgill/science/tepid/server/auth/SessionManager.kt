@@ -178,28 +178,6 @@ object SessionManager : WithLogging() {
         return dbUser
     }
 
-    /**
-     * Sets exchange student status.
-     * Also updates user information from LDAP.
-     * This refreshes the groups and courses of a user,
-     * which allows for thier role to change
-     *
-     * @param sam      shortUser
-     * @param exchange boolean for exchange status
-     * @return updated status of the user; false if anything goes wrong
-     */
-    fun setExchangeStudent(sam: String, exchange: Boolean): Boolean {
-        if (Config.LDAP_ENABLED) {
-            log.info("Setting exchange status {\"sam\":\"$sam\", \"exchange_status\":\"$exchange\"}")
-            val success = Ldap.setExchangeStudent(sam, exchange)
-            val dbUser = queryUserDb(sam)
-            val ldapUser = Ldap.queryUserLdap(sam, null) ?: return false
-            val mergedUser = mergeUsers(ldapUser, dbUser)
-            updateDbWithUser(mergedUser)
-            return success
-        } else return false
-    }
-
     fun refreshUser(sam: String): FullUser {
         val dbUser = queryUserDb(sam)
         if (dbUser == null){

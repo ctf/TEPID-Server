@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.models.bindings.*
 import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.AutoSuggest
+import ca.mcgill.science.tepid.server.auth.ExchangeManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.failNotFound
@@ -110,7 +111,7 @@ class Users {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun setExchange(@PathParam("sam") sam: String, exchange: Boolean): Boolean =
-            SessionManager.setExchangeStudent(sam, exchange)
+            ExchangeManager.setExchangeStudent(sam, exchange)
 
     /**
      * Abstract implementation of modifying user data

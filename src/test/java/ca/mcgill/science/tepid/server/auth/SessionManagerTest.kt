@@ -453,7 +453,7 @@ class SetExchangeStudentTest {
     @Test
     fun testSetExchangeStudentLdapEnabled() {
         every { Config.LDAP_ENABLED } returns true
-        SessionManager.setExchangeStudent(testSam, true)
+        ExchangeManager.setExchangeStudent(testSam, true)
 
         val targetUser = SessionManager.mergeUsers(UserFactory.makeLdapUser(), UserFactory.makeDbUser())
         verify {
@@ -467,7 +467,7 @@ class SetExchangeStudentTest {
     @Test
     fun testSetExchangeStudentLdapDisabled() {
         every { Config.LDAP_ENABLED } returns false
-        SessionManager.setExchangeStudent(testSam, true)
+        ExchangeManager.setExchangeStudent(testSam, true)
         verify(inverse = true) { Ldap.setExchangeStudent(testSam, true) }
     }
 
