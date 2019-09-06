@@ -171,12 +171,6 @@ object Config : WithLogging() {
         if (RESOURCE_CREDENTIALS.isEmpty())
             log.error("RESOURCE_CREDENTIALS not set")
 
-        try {
-            Gs.testRequiredDevicesInstalled()
-        } catch (e: GSException){
-            log.fatal("GS ink_cov device unavailable")
-        }
-
         log.info("Build hash: $HASH")
 
         PUBLIC = About(debug = DEBUG,
@@ -189,11 +183,18 @@ object Config : WithLogging() {
                 creationTime = CREATION_TIME,
                 creationTimestamp = CREATION_TIMESTAMP)
 
-        DB = getDb()
 
         log.trace("Completed setting configs")
 
         log.trace("Initialising subsystems")
+
+        DB = getDb()
+
+        try {
+            Gs.testRequiredDevicesInstalled()
+        } catch (e: GSException){
+            log.fatal("GS ink_cov device unavailable")
+        }
 
         log.trace("Completed initialising subsystems")
 
