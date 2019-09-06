@@ -38,12 +38,12 @@ Procedure:
 
 1. Download the repo
 1. Open the project in your IDE (`import project > select folder`)
-1. Add your `priv.properties`. See the `priv.sample.properties` file for more info.
+1. Add your properties. See the tepid-commons repo for more info.
 1. Build the war file: `gradle war`. For IntelliJ, open `Gradle` on the right side, click the green gradle button, type `war`, and press enter. This builds the file holding all the Tepid data, which is used for deployment.
 
 That's it!
 
-For the most part, you won't need to build the war file. Much of testing involves simply running the unit tests or making use of integration. Whenever a commit is pushed to a non test branch (starting with `test-` or `wip-`), the files will be rebuild and deployed at `http://testpid.science.mcgill.ca/`. There is a public endpoint located at `http://testpid.science.mcgill.ca:8080/tepid/about` to see the status of the deployment.
+There's also a convenient GitlabCI pipeline set up to handle testing, staging, and building the WAR. Much of testing involves simply running the unit tests or making use of integration. Whenever a commit is pushed to a non test branch (starting with `test-` or `wip-`), the files will be rebuild and deployed at `http://testpid.science.mcgill.ca/`. There is a public endpoint located at `http://testpid.science.mcgill.ca:8443/tepid/about` to see the status of the deployment.
 
 ## Configuration
 
@@ -106,11 +106,9 @@ The method must then take in some variable labelled with `@PathParam("data")`, w
 | `@Suspended ar: AsyncResponse` | Used to handle long running responses. Instead of returning data once, an `ar` may consume data until it is done or cancelled
 | `@Context uriInfo: UriInfo` | For uri info. (<b>TODO remove as we don't seem to use it</b>)
 
-## CouchDb
+## DB
 
-All of our persistent data is stored in CouchDb. Without getting into much detail, we may navigate to a path with optional queries to get a `WebTarget`, and then retrieve, delete, or edit data from that target.
-
-A lot of the methods have been simplified and abstracted in our [`CouchDb` object](https://gitlab.science.mcgill.ca/TEPID/webserver/blob/kotlin-3/src/main/java/ca/mcgill/science/tepid/server/util/CouchDb.kt) and [`WebTarget` extensions](https://gitlab.science.mcgill.ca/TEPID/webserver/blob/kotlin-3/src/main/java/ca/mcgill/science/tepid/server/util/WebTargets.kt), so all queries should be called from there. More info can be seen in the class file.
+The DB has a neat layer for abstracting interaction. The DB uses Hibernate to interface with a variety of DB types, but we only use Postgres. 
 
 ## Misc Functionality
 
@@ -150,7 +148,7 @@ companion object : Loggable by WithLogging()
 
 ## VMs
 
-Due to the setup required, all of our full testing is done through VMs.
+Testing is done through a docker-compose deployment. The production system is still on a VM.
 
 Our main VM is at `tepid.science.mcgill.ca`, and our test VM is at `testpid.science.mcgill.ca`.
 
