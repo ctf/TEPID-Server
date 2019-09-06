@@ -6,7 +6,6 @@ import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.math.BigInteger
 import java.security.SecureRandom
-import javax.ws.rs.core.Response
 
 /**
  * SessionManager is responsible for managing sessions and dealing with the underlying authentication.
