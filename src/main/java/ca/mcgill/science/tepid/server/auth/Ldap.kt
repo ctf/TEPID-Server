@@ -17,7 +17,7 @@ object Ldap : WithLogging() {
      * [sam] must be a valid short user or long user
      * The resource account will be used as auth if [pw] is null
      */
-    fun queryUserLdap(sam: String, pw: String?): FullUser? {
+    fun queryUser(sam: String, pw: String?): FullUser? {
         if (!Config.LDAP_ENABLED) return null
         val auth = if (pw != null && shortUserRegex.matches(sam)) {
             log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"$sam\"}")
@@ -26,7 +26,7 @@ object Ldap : WithLogging() {
             log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
             Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
         }
-        val user = _queryUser(sam, auth)
+        val user = queryUserLdap(sam, auth)
         user?.updateUserNameInformation()
         return user
     }
@@ -40,7 +40,7 @@ object Ldap : WithLogging() {
      * However, if a different auth is provided (eg from our science account),
      * the studentId cannot be queried
      */
-    fun _queryUser(username: String?, auth: Pair<String, String>): FullUser? {
+    fun queryUserLdap(username: String?, auth: Pair<String, String>): FullUser? {
         if (username == null) return null
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchName = if (username.contains(".")) "userPrincipalName=$username${Config.ACCOUNT_DOMAIN}" else "sAMAccountName=$username"
@@ -68,6 +68,6 @@ object Ldap : WithLogging() {
 
         log.info("Authenticating {\"sam\":\"$sam\", \"shortUser\":\"$shortUser\"}")
 
-        return _queryUser(shortUser, shortUser to pw)
+        return queryUserLdap(shortUser, shortUser to pw)
     }
 }

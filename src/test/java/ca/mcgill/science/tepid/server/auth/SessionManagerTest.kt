@@ -3,7 +3,6 @@ package ca.mcgill.science.tepid.server.auth
 import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
@@ -319,7 +318,7 @@ class QueryUserTest : WithLogging() {
     fun testQueryUserWithLdapLdapUserNull() {
         every { Config.LDAP_ENABLED } returns true
         every { am.queryUserDb("SU") } returns null
-        every { Ldap.queryUserLdap(any(), null) } returns null
+        every { Ldap.queryUser(any(), null) } returns null
 
         val actual = am.queryUser("SU", null)
         val expected = null
@@ -334,7 +333,7 @@ class QueryUserTest : WithLogging() {
         every { Config.LDAP_ENABLED } returns true
         every { am.queryUserDb("SU") } returns null
         every { am.updateDbWithUser(any()) } just runs
-        every { Ldap.queryUserLdap(any(), null) } returns testUser
+        every { Ldap.queryUser(any(), null) } returns testUser
 
 
         val actual = am.queryUser("SU", null)
@@ -541,7 +540,7 @@ class RefreshUserTest {
                 AuthenticationManager.queryUserDb(testSam)
             } returns UserFactory.makeDbUser()
             every {
-                Ldap.queryUserLdap(testSam, null)
+                Ldap.queryUser(testSam, null)
             } returns UserFactory.makeLdapUser()
 
             every {

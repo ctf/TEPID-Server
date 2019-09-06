@@ -56,7 +56,7 @@ object AuthenticationManager : WithLogging() {
 
         if (Config.LDAP_ENABLED) {
             if (!sam.matches(shortUserRegex)) return null // cannot query without short user
-            val ldapUser = Ldap.queryUserLdap(sam, pw) ?: return null
+            val ldapUser = Ldap.queryUser(sam, pw) ?: return null
 
             updateDbWithUser(ldapUser)
 
@@ -130,7 +130,7 @@ object AuthenticationManager : WithLogging() {
                     ?: throw RuntimeException("Could not fetch user from anywhere {\"sam\":\"$sam\"}")
         }
         if (Config.LDAP_ENABLED) {
-            val ldapUser = Ldap.queryUserLdap(sam, null)
+            val ldapUser = Ldap.queryUser(sam, null)
                     ?: throw RuntimeException("Could not fetch user from LDAP {\"sam\":\"$sam\"}")
             val refreshedUser = mergeUsers(ldapUser, dbUser)
             if (dbUser.role != refreshedUser.role) {
