@@ -35,7 +35,7 @@ class TestUserGetQuota : WithLogging () {
     val c2018w0 = Course("2018w other", Season.WINTER, 2018)
 
     /**
-     * Runs a test of Users.getQuota, Mockking [tailoredUser] as the user returned by SessionManager
+     * Runs a test of Users.getQuota, Mockking [tailoredUser] as the user returned by AuthenticationManager
      */
     private fun userGetQuotaTest (tailoredUser: FullUser?, expected: Int, message: String){
         mockUser(tailoredUser)
@@ -144,13 +144,12 @@ class TestUserGetQuota : WithLogging () {
         @JvmStatic
         @BeforeAll
         fun initTest() {
-            mockkObject(SessionManager)
+            mockkObject(AuthenticationManager)
             mockkObject(AuthenticationFilter)
             mockkObject(Users)
             every {
                 AuthenticationManager.queryUser("targetUser", null)
             } returns (FullUser())
-
         }
 
         @JvmStatic
