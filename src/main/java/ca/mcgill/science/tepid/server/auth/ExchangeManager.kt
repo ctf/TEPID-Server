@@ -49,6 +49,7 @@ object ExchangeManager : WithLogging() {
             searchResult = results.nextElement()
             results.close()
         } catch (e: Exception) {
+            log.error("Error getting user while modifying exchange status: {\"sam\":\"$sam\", \"cause\":\"${e.message}\"}")
         }
 
         if (searchResult == null) return false
@@ -57,23 +58,22 @@ object ExchangeManager : WithLogging() {
         val year = cal.get(Calendar.YEAR)
         val season = if (cal.get(Calendar.MONTH) < 8) "W" else "F"
         val groupDn = "CN=" + Config.EXCHANGE_STUDENTS_GROUP_BASE + "$year$season, " + Config.GROUPS_LOCATION
-        val mods = arrayOfNulls<ModificationItem>(1)
         val mod = BasicAttribute("member", userDn)
         // todo check if we should ignore modification action if the user is already in/not in the exchange group?
-        mods[0] = ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod)
+        val mods = arrayOf(ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod))
         return try {
             ctx.modifyAttributes(groupDn, mods)
             log.info("${if (exchange) "Added $sam to" else "Removed $sam from"} exchange students.")
             exchange
         } catch (e: NamingException) {
-            if (e.message!!.contains("LDAP: error code 53")) {
-                log.warn("Error removing user from Exchange: {\"sam\":\"$sam\", \"cause\":\"not in group\")")
+            if (e.message?.contains("LDAP: error code 53") == true) {
+                log.info("Error removing user from Exchange: {\"sam\":\"$sam\", \"cause\":\"not in group\"}")
                 false
             } else if (e.message!!.contains("LDAP: error code 68")) {
-                log.warn("Error adding user from Exchange: {\"sam\":\"$sam\", \"cause\":\"already in group\")")
+                log.info("Error adding user from Exchange: {\"sam\":\"$sam\", \"cause\":\"already in group\"}")
                 true
             } else {
-                log.warn("Error adding to exchange students. {\"sam\":\"$sam\", \"userDN\":\"$userDn\",\"groupDN\":\"$groupDn\", \"cause\":null}")
+                log.error("Error adding to exchange students. {\"sam\":\"$sam\", \"userDN\":\"$userDn\",\"groupDN\":\"$groupDn\", \"cause\":null}")
                 e.printStackTrace()
                 false
             }

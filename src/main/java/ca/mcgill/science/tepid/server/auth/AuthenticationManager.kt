@@ -104,8 +104,8 @@ object AuthenticationManager : WithLogging() {
             } else {
                 log.error("Updating DB with user failed: {\"user\": \"$shortUser\",\"response\":\"$response\"}")
             }
-        } catch (e1: Exception) {
-            log.error("Error updating DB with user: {\"user\": \"$shortUser\"}", e1)
+        } catch (e: Exception) {
+            log.error("Error updating DB with user: {\"user\": \"$shortUser\"}", e)
         }
     }
 
