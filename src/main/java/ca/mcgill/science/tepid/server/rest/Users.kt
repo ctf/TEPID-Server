@@ -134,6 +134,7 @@ class Users {
     fun setNick(@PathParam("sam") sam: String, nick: String, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
         it.nick = if (nick.isBlank()) null else nick
         log.debug("Setting nick for ${it.shortUser} to ${it.nick}")
+        it.updateUserNameInformation()
     }
 
     @PUT
