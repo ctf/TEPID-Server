@@ -8,7 +8,7 @@ import javax.naming.directory.*
 
 object ExchangeManager : WithLogging() {
 
-    private val ldapConnector = LdapConnector();
+    private val ldapConnector = LdapConnector()
 
     private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
 

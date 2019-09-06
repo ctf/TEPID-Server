@@ -7,7 +7,7 @@ import javax.naming.directory.SearchControls
 
 object Ldap : WithLogging() {
 
-    private val ldapConnector = LdapConnector();
+    private val ldapConnector = LdapConnector()
 
     private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
     private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
@@ -50,7 +50,7 @@ object Ldap : WithLogging() {
         val results = ctx.search(ldapSearchBase, searchFilter, searchControls)
         val searchResultAttributes = results.nextElement()?.attributes
         results.close()
-        val user = if (searchResultAttributes != null) LdapHelper.AttributesToUser(searchResultAttributes , ctx) else null
+        val user = if (searchResultAttributes != null) LdapHelper.AttributesToUser(searchResultAttributes, ctx) else null
         ctx.close()
         user?.updateUserNameInformation()
         return user

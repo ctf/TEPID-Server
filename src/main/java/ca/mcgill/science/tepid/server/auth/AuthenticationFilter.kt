@@ -111,7 +111,6 @@ class AuthenticationFilter : ContainerRequestFilter {
     }
 
 
-
     companion object : WithLogging() {
         private const val AUTHORIZATION_PROPERTY = "Authorization"
         private const val BASIC = "Basic"
@@ -135,8 +134,8 @@ class AuthenticationFilter : ContainerRequestFilter {
          * Note that this differs from the full user role,
          * which may include being a local admin
          */
-        fun getCtfRole(user: FullUser) : String {
-            if (user.authType == LOCAL){
+        fun getCtfRole(user: FullUser): String {
+            if (user.authType == LOCAL) {
                 return if (user.role == ADMIN) ELDER else USER
             }
             if (user.authType == null || user.authType != LOCAL) {

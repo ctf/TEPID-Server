@@ -47,11 +47,12 @@ class LdapHelper {
 
             }
 
-            fun getCn (ldapQuery:String): String {
+            fun getCn(ldapQuery: String): String {
                 val dn = LdapName(ldapQuery)
-                val cn = dn.get(dn.size()-1)
+                val cn = dn.get(dn.size() - 1)
                 return cn.substringAfter("=")
             }
+
             val ldapGroups = LdapHelper.AttributeToList(attributes.get("memberOf")).mapNotNull {
                 try {
                     val cn = getCn(it)
@@ -68,7 +69,7 @@ class LdapHelper {
             val groups = mutableSetOf<AdGroup>()
             val courses = mutableSetOf<Course>()
 
-            ldapGroups?.forEach { (name, semester) ->
+            ldapGroups.forEach { (name, semester) ->
                 if (semester == null) groups.add(AdGroup(name))
                 else courses.add(Course(name, semester.season, semester.year))
             }

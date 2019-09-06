@@ -1,14 +1,9 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.models.bindings.LOCAL
-import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.db.isSuccessful
-import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
-import org.mindrot.jbcrypt.BCrypt
 import java.math.BigInteger
 import java.security.SecureRandom
 
@@ -67,6 +62,6 @@ object SessionManager : WithLogging() {
      * @param shortUser the shortUser
      */
     fun invalidateSessions(shortUser: String) {
-        DB.getSessionIdsForUser(shortUser).forEach{ end(it) }
+        DB.getSessionIdsForUser(shortUser).forEach { end(it) }
     }
 }
