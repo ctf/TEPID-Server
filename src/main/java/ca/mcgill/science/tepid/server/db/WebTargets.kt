@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.server.mapper
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.apache.logging.log4j.LogManager
@@ -78,30 +77,10 @@ fun WebTarget.getObject(): ObjectNode = request().get(ObjectNode::class.java)
 fun WebTarget.getString(): String = request(MediaType.TEXT_PLAIN).get(String::class.java)
 
 /**
- * Attempt to retrieve the "_rev" attribute from the given target
- * Returns an empty string if nothing is found
- */
-fun WebTarget.getRev(): String = getObject().get("_rev")?.asText() ?: ""
-
-/**
  * Get json in the format of the supplied class
  */
 inline fun <reified T : Any> WebTarget.getJson(): T =
         mapper.readValue(getString())
-
-fun <T> WebTarget.getJson(classParameter: Class<T>): T =
-        mapper.readValue<T>(getString(), classParameter)
-
-/**
- * Call [getJson] but with an exception check
- * Note that this is expensive, and should only be used if the target
- * is expected to be potentially invalid
- */
-inline fun <reified T : Any> WebTarget.getJsonOrNull(): T? = try {
-    getJson(T::class.java)
-} catch (e: Exception) {
-    null
-}
 
 /**
  * Retrieve a list of the defined class from the WebTarget.
@@ -116,27 +95,6 @@ fun <T> WebTarget.getViewRows(classParameter : Class<T>): List<T> {
     val rows = getObject().get("rows") ?: return emptyList<T>()
     return rows.mapNotNull { it?.get("value") }.map { mapper.treeToValue(it, classParameter) }
 }
-
-/*
- * -----------------------------------------
- * Post
- * -----------------------------------------
- */
-
-fun JsonNode.postJson(path: String): String =
-        CouchDb.path(path)
-                .request(MediaType.TEXT_PLAIN)
-                .post(Entity.entity(this, MediaType.APPLICATION_JSON))
-                .readEntity(String::class.java)
-
-/**
- * Submit a post request at the current target with the supplied [data]
- * and retrieve the result as a [String]
- */
-fun <T : Any> WebTarget.postJson(data: T): Response =
-        request(MediaType.TEXT_PLAIN)
-                .post(Entity.entity(data, MediaType.APPLICATION_JSON))
-
 
 /*
  * -----------------------------------------
@@ -157,18 +115,6 @@ inline fun <reified T : Any> WebTarget.putJson(data: T): Response =
  * Delete
  * -----------------------------------------
  */
-
-/**
- * Deletes revision code at the current web target
- */
-fun WebTarget.deleteRev(): String {
-    val rev = getRev()
-    val result = queryParam("rev", rev)
-            .request(MediaType.TEXT_PLAIN).delete()
-            .readEntity(String::class.java)
-    _log.trace("deleteRev: $rev, $result")
-    return result
-}
 
 val Response.isSuccessful: Boolean
     get() = status in 200 until 300
