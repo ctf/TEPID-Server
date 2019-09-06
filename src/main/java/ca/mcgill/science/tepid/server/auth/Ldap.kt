@@ -27,7 +27,6 @@ object Ldap : WithLogging() {
             Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
         }
         val user = queryUserLdap(sam, auth)
-        user?.updateUserNameInformation()
         return user
     }
 
@@ -53,6 +52,7 @@ object Ldap : WithLogging() {
         results.close()
         val user = if (searchResultAttributes != null) LdapHelper.AttributesToUser(searchResultAttributes , ctx) else null
         ctx.close()
+        user?.updateUserNameInformation()
         return user
     }
 
