@@ -50,7 +50,7 @@ object Ldap : WithLogging() {
         val results = ctx.search(ldapSearchBase, searchFilter, searchControls)
         val searchResultAttributes = results.nextElement()?.attributes
         results.close()
-        val user = if (searchResultAttributes != null) LdapHelper.AttributesToUser(searchResultAttributes, ctx) else null
+        val user = searchResultAttributes?.let { LdapHelper.AttributesToUser(searchResultAttributes, ctx) }
         ctx.close()
         user?.updateUserNameInformation()
         return user

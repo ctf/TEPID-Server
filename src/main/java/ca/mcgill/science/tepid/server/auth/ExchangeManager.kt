@@ -37,9 +37,9 @@ object ExchangeManager : WithLogging() {
      * @return updated status of the user; false if anything goes wrong
      */
     fun setExchangeStudentLdap(sam: String, exchange: Boolean): Boolean {
-        val longUser = sam.contains(".")
+        val isLongUser = sam.contains(".")
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
-        val searchFilter = "(&(objectClass=user)(" + (if (longUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (longUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
+        val searchFilter = "(&(objectClass=user)(" + (if (isLongUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (isLongUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
         val ctx = ldapConnector.bindLdap(auth) ?: return false
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
