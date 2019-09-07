@@ -13,9 +13,11 @@ class Migration(object):
 		self.db = db
 		self.ddoc = ddoc
 		self.ddoc.fetch()
+
 	def make(self, doc: str):
 		self.migration_function(doc)
 		update_schema_version(doc, self.schema_version)
+
 	def apply_on_view(self, view_name):
 		view = self.ddoc.get_view(view_name)()
 		total_to_migrate = view['total_rows']
