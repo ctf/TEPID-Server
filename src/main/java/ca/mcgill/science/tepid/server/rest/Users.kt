@@ -2,8 +2,7 @@ package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.bindings.*
 import ca.mcgill.science.tepid.models.data.*
-import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
-import ca.mcgill.science.tepid.server.auth.SessionManager
+import ca.mcgill.science.tepid.server.auth.*
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.getSession
@@ -45,7 +44,7 @@ class Users {
 
         when (session.role) {
             USER -> {
-                val queriedUser = SessionManager.queryUser(sam, pw)
+                val queriedUser = AuthenticationManager.queryUser(sam, pw)
                 if (queriedUser == null || session.user.shortUser != queriedUser.shortUser) {
                     return Response.Status.FORBIDDEN.text("You cannot access this resource")
                 }
@@ -54,7 +53,7 @@ class Users {
                 returnedUser = queriedUser
             }
             CTFER, ELDER -> {
-                val queriedUser = SessionManager.queryUser(sam, pw)
+                val queriedUser = AuthenticationManager.queryUser(sam, pw)
                 if (queriedUser == null) {
                     log.warn("Could not find user {}.", sam)
                     throw NotFoundException(Response.status(404).entity("Could not find user " + sam).type(MediaType.TEXT_PLAIN).build())
@@ -109,7 +108,7 @@ class Users {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun setExchange(@PathParam("sam") sam: String, exchange: Boolean): Boolean =
-            SessionManager.setExchangeStudent(sam, exchange)
+            ExchangeManager.setExchangeStudent(sam, exchange)
 
     /**
      * Abstract implementation of modifying user data
@@ -118,7 +117,7 @@ class Users {
      */
     private inline fun putUserData(sam: String, ctx: ContainerRequestContext, action: (user: FullUser) -> Unit): Response {
         val session = ctx.getSession()
-        val user = SessionManager.queryUser(sam, null) ?: return Response.Status.NOT_FOUND.text("User $sam not found")
+        val user = AuthenticationManager.queryUser(sam, null) ?: return Response.Status.NOT_FOUND.text("User $sam not found")
         if (session.role == USER && session.user.shortUser != user.shortUser)
             return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
         action(user)
@@ -166,7 +165,7 @@ class Users {
         return if (session.role == USER && session.user.shortUser != shortUser)
             -1
         else {
-            val user = SessionManager.queryUser(shortUser, null)
+            val user = AuthenticationManager.queryUser(shortUser, null)
             getQuota(user)
         }
     }
@@ -176,7 +175,7 @@ class Users {
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun getQuotaDebug(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): QuotaData {
-        val user = SessionManager.queryUser(shortUser, null)
+        val user = AuthenticationManager.queryUser(shortUser, null)
         return getQuotaData(user) ?: failNotFound("Could not calculate quota")
     }
 
@@ -186,7 +185,7 @@ class Users {
     @Produces(MediaType.TEXT_PLAIN)
     fun forceRefresh(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext) {
         try {
-            SessionManager.refreshUser(shortUser)
+            AuthenticationManager.refreshUser(shortUser)
             SessionManager.invalidateSessions(shortUser)
         } catch (e: Exception) {
             throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
@@ -198,7 +197,7 @@ class Users {
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun ldapAutoSuggest(@PathParam("like") like: String, @DefaultValue("10") @QueryParam("limit") limit: Int): List<User> {
-        val resultsPromise = SessionManager.autoSuggest(like, limit)
+        val resultsPromise = AutoSuggest.autoSuggest(like, limit)
         return resultsPromise.getResult(20000).map(FullUser::toUser) // todo check if we should further simplify to userquery
     }
 

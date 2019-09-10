@@ -39,6 +39,8 @@ staging:
 
 integrationTest:
   extends: .base
+  when: delayed
+  start_in: 1 minutes
   stage: integrationTest
   script:
   - chmod +x gradlew

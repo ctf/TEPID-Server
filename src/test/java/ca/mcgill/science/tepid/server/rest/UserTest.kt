@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
+import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -34,7 +35,7 @@ class TestUserGetQuota : WithLogging () {
     val c2018w0 = Course("2018w other", Season.WINTER, 2018)
 
     /**
-     * Runs a test of Users.getQuota, Mockking [tailoredUser] as the user returned by SessionManager
+     * Runs a test of Users.getQuota, Mockking [tailoredUser] as the user returned by AuthenticationManager
      */
     private fun userGetQuotaTest (tailoredUser: FullUser?, expected: Int, message: String){
         mockUser(tailoredUser)
@@ -51,7 +52,7 @@ class TestUserGetQuota : WithLogging () {
 
     private fun mockUser(tailoredUser: FullUser?){
         every {
-            SessionManager.queryUser("targetUser", null)
+            AuthenticationManager.queryUser("targetUser", null)
         } returns (tailoredUser)
     }
 
@@ -143,13 +144,12 @@ class TestUserGetQuota : WithLogging () {
         @JvmStatic
         @BeforeAll
         fun initTest() {
-            mockkObject(SessionManager)
+            mockkObject(AuthenticationManager)
             mockkObject(AuthenticationFilter)
             mockkObject(Users)
             every {
-                SessionManager.queryUser("targetUser", null)
+                AuthenticationManager.queryUser("targetUser", null)
             } returns (FullUser())
-
         }
 
         @JvmStatic
@@ -189,8 +189,9 @@ class getUserBySamTest : WithLogging() {
     }
     fun mockUserQuery(user:FullUser?){
         mockkObject(SessionManager)
+        mockkObject(AuthenticationManager)
         every {
-            SessionManager.queryUser("targetUser", null)
+            AuthenticationManager.queryUser("targetUser", null)
         } returns (user)
     }
     fun doTestUserQuery(role:String, queryResult: FullUser?, expected: FullUser?): Response {

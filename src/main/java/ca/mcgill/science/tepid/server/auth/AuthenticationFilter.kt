@@ -86,7 +86,7 @@ class AuthenticationFilter : ContainerRequestFilter {
                         requestContext.abortWith(AUTH_REQUIRED)
                         return
                     }
-                    val user = SessionManager.authenticate(username, password)
+                    val user = AuthenticationManager.authenticate(username, password)
                     session = if (user != null) SessionManager.start(user, 0) else null
                 }
                 else -> {
@@ -109,7 +109,6 @@ class AuthenticationFilter : ContainerRequestFilter {
             requestContext.setProperty(SESSION, session)
         }
     }
-
 
 
     companion object : WithLogging() {
@@ -135,8 +134,8 @@ class AuthenticationFilter : ContainerRequestFilter {
          * Note that this differs from the full user role,
          * which may include being a local admin
          */
-        fun getCtfRole(user: FullUser) : String {
-            if (user.authType == LOCAL){
+        fun getCtfRole(user: FullUser): String {
+            if (user.authType == LOCAL) {
                 return if (user.role == ADMIN) ELDER else USER
             }
             if (user.authType == null || user.authType != LOCAL) {

@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.models.data.SessionRequest
+import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.failUnauthorized
@@ -39,7 +40,7 @@ class Sessions {
         log.trace("Received Start request for ${req.username}")
         try {
             val username = req.username.split("@")[0]
-            val user = SessionManager.authenticate(username, req.password)
+            val user = AuthenticationManager.authenticate(username, req.password)
             //persistent sessions expire in 768 hours (32 days), permanent (printing) sessions expire in 35040 hours (4 years), other sessions expire in 24 hours
             val s = if (user != null) SessionManager.start(user, if (req.permanent) 35040 else if (req.persistent) 768 else 24) else null
             if (s != null) {

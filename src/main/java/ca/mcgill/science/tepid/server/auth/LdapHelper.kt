@@ -1,33 +1,85 @@
 package ca.mcgill.science.tepid.server.auth
 
+import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.utils.WithLogging
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util.*
+import javax.naming.NamingException
 import javax.naming.directory.Attribute
 import javax.naming.directory.Attributes
+import javax.naming.ldap.LdapContext
+import javax.naming.ldap.LdapName
 
-/**
- * Some helper functions for ldap
- */
-interface LdapHelperContract {
-    fun Attributes.toList(): List<Attribute>
-    fun Attribute.toList(): List<String>
-}
+class LdapHelper {
+    companion object : WithLogging() {
+        /**
+         * Convert attribute to string list
+         */
+        fun AttributeToList(attribute: Attribute) = (0 until attribute.size()).map { attribute.get(it).toString() }
 
-class LdapHelperDelegate : LdapHelperContract {
-    /**
-     * Convert attributes to attribute list
-     */
-    override fun Attributes.toList(): List<Attribute> {
-        val ids = iDs
-        val data = mutableListOf<Attribute>()
-        while (ids.hasMore()) {
-            val id = ids.next()
-            data.add(get(id))
+        /**
+         * Make sure that the regex matches values located in [Semester]
+         */
+        private val semesterRegex: Regex by lazy { Regex("ou=(fall|winter|summer) (2[0-9]{3})[^0-9]") }
+
+        /**
+         * Creates a blank user and attempts to retrieve as many attributes
+         * as possible from the specified attributes
+         */
+        fun AttributesToUser(attributes: Attributes, ctx: LdapContext): FullUser {
+            fun attr(name: String) = attributes.get(name)?.get()?.toString() ?: ""
+            val out = FullUser(
+                    displayName = attr("displayName"),
+                    givenName = attr("givenName"),
+                    lastName = attr("sn"),
+                    shortUser = attr("sAMAccountName"),
+                    longUser = attr("userPrincipalName").toLowerCase(),
+                    email = attr("mail"),
+                    middleName = attr("middleName"),
+                    faculty = attr("department"),
+                    studentId = attr("employeeID").toIntOrNull() ?: -1
+            )
+            out._id = "u${attr("sAMAccountName")}"
+            try {
+                out.activeSince = SimpleDateFormat("yyyyMMddHHmmss.SX").parse(attr("whenCreated")).time
+            } catch (e: ParseException) {
+
+            }
+
+            fun getCn(ldapQuery: String): String {
+                val dn = LdapName(ldapQuery)
+                val cn = dn.get(dn.size() - 1)
+                return cn.substringAfter("=")
+            }
+
+            val ldapGroups = LdapHelper.AttributeToList(attributes.get("memberOf")).mapNotNull {
+                try {
+                    val cn = getCn(it)
+                    val groupValues = semesterRegex.find(it.toLowerCase(Locale.CANADA))?.groupValues
+                    val semester = if (groupValues != null) Semester(Season(groupValues[1]), groupValues[2].toInt())
+                    else null
+                    cn to semester
+                } catch (e: NamingException) {
+                    log.warn("Error instantiating LDAP Groups {\"user\":\"$out\", \"memberOF\":\"${attributes.get("memberOf")}\"}: $e")
+                    null
+                }
+            }
+
+            val groups = mutableSetOf<AdGroup>()
+            val courses = mutableSetOf<Course>()
+
+            ldapGroups.forEach { (name, semester) ->
+                if (semester == null) groups.add(AdGroup(name))
+                else courses.add(Course(name, semester.season, semester.year))
+            }
+            out.groups = groups
+            out.courses = courses
+
+            out.role = AuthenticationFilter.getCtfRole(out)
+
+            return out
         }
-        ids.close()
-        return (data)
-    }
 
-    /**
-     * Convert attribute to string list
-     */
-    override fun Attribute.toList() = (0 until size()).map { get(it).toString() }
+    }
 }
