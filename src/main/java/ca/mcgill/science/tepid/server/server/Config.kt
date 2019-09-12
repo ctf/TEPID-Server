@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.About
 import ca.mcgill.science.tepid.models.data.AdGroup
-import ca.mcgill.science.tepid.server.db.CouchDbLayer
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.db.HibernateDbLayer
@@ -166,17 +165,11 @@ object Config : WithLogging() {
         log.info("Debug mode: $DEBUG")
         log.info("LDAP mode: $LDAP_ENABLED")
         if (DB_URL.isEmpty())
-            log.fatal("COUCHDB_URL not set")
+            log.fatal("DB_URL not set")
         if (DB_PASSWORD.isEmpty())
             log.fatal("DB_PASSWORD not set")
         if (RESOURCE_CREDENTIALS.isEmpty())
             log.error("RESOURCE_CREDENTIALS not set")
-
-        try {
-            Gs.testRequiredDevicesInstalled()
-        } catch (e: GSException){
-            log.fatal("GS ink_cov device unavailable")
-        }
 
         log.info("Build hash: $HASH")
 
@@ -190,11 +183,18 @@ object Config : WithLogging() {
                 creationTime = CREATION_TIME,
                 creationTimestamp = CREATION_TIMESTAMP)
 
-        DB = getDb()
 
         log.trace("Completed setting configs")
 
         log.trace("Initialising subsystems")
+
+        DB = getDb()
+
+        try {
+            Gs.testRequiredDevicesInstalled()
+        } catch (e: GSException){
+            log.fatal("GS ink_cov device unavailable")
+        }
 
         log.trace("Completed initialising subsystems")
 
@@ -210,22 +210,7 @@ object Config : WithLogging() {
     }
 
     fun getDb(): DbLayer {
-        try {
-            when (PropsDB.DB_TYPE) {
-                "CouchDB" -> return CouchDbLayer()
-                "Hibernate" -> {
-                    val emf = HibernateDbLayer.makeEntityManagerFactory("tepid-pu")
-                    return HibernateDbLayer(emf)
-                }
-                else -> log.fatal("DB type not set")
-            }
-            log.trace("Db initialised to ${PropsDB.DB_TYPE}")
-            return CouchDbLayer()
-        } catch (e:Exception){
-            e.printStackTrace()
-            println(e.message)
-            throw e
-        }
+        val emf = HibernateDbLayer.makeEntityManagerFactory("tepid-pu")
+        return HibernateDbLayer(emf)
     }
-
 }

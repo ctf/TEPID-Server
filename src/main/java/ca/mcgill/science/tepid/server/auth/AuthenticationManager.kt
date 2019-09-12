@@ -4,10 +4,11 @@ import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.db.isSuccessful
+import ca.mcgill.science.tepid.server.util.isSuccessful
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import org.mindrot.jbcrypt.BCrypt
+import javax.ws.rs.core.Response
 
 object AuthenticationManager : WithLogging() {
 
@@ -98,7 +99,7 @@ object AuthenticationManager : WithLogging() {
                 ?: return log.error("Cannot update user, shortUser is null {\"user\": \"$user\"}")
         log.trace("Update db instance {\"user\":\"$shortUser\"}\n")
         try {
-            val response = DB.putUser(user)
+            val response: Response = DB.putUser(user)
             if (response.isSuccessful) {
                 log.trace("Updated User {\"user\": \"$shortUser\"}")
             } else {

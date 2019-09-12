@@ -19,6 +19,9 @@ class TepidException(message: String,
 fun Response.Status.text(content: Any?): Response =
         Response.status(this).entity(content).type(MediaType.TEXT_PLAIN).build()
 
+val Response.isSuccessful: Boolean
+    get() = status in 200 until 300
+
 /**
  * Helper to throw a [WebApplicationException] and log the error if a [Logger] is supplied
  * Note that Nothing is returned, as the method will always fail
