@@ -53,7 +53,7 @@ object Config : WithLogging() {
      * LDAP and Permission Groups
      */
 
-    val LDAP_ENABLED: Boolean
+    val LDAP_ENABLED = true
 
     val LDAP_SEARCH_BASE : String
     val ACCOUNT_DOMAIN : String
@@ -117,7 +117,6 @@ object Config : WithLogging() {
         BARCODES_USERNAME = PropsBarcode.BARCODES_DB_USERNAME ?: ""
         BARCODES_PASSWORD = PropsBarcode.BARCODES_DB_PASSWORD ?: ""
 
-        LDAP_ENABLED = PropsLDAP.LDAP_ENABLED?.toBoolean() ?: true
         LDAP_SEARCH_BASE = PropsLDAP.LDAP_SEARCH_BASE ?: ""
         ACCOUNT_DOMAIN = PropsLDAP.ACCOUNT_DOMAIN ?: ""
         PROVIDER_URL = PropsLDAP.PROVIDER_URL ?: ""
@@ -163,7 +162,6 @@ object Config : WithLogging() {
         log.trace("Validating configs settings")
 
         log.info("Debug mode: $DEBUG")
-        log.info("LDAP mode: $LDAP_ENABLED")
         if (DB_URL.isEmpty())
             log.fatal("DB_URL not set")
         if (DB_PASSWORD.isEmpty())
