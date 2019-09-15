@@ -363,30 +363,6 @@ class AuthenticateTest {
     }
 
     @Test
-    fun testAuthenticateAuthTypeLocalSuccess() {
-        testUser.authType = LOCAL
-        testUser.password = BCrypt.hashpw(testPassword, BCrypt.gensalt())
-        every { sm.queryUserDb(testShortUser) } returns testUser
-
-        val actual = sm.authenticate(testShortUser, testPassword)
-        val expected = testUser
-
-        assertEquals(expected, actual, "")
-    }
-
-    @Test
-    fun testAuthenticateAuthTypeLocalFailure() {
-        testUser.authType = LOCAL
-        testUser.password = BCrypt.hashpw(testPassword, BCrypt.gensalt())
-        every { sm.queryUserDb(testShortUser) } returns testUser
-
-        val actual = sm.authenticate(testShortUser, testPassword + "otherStuff")
-        val expected = null
-
-        assertEquals(expected, actual, "")
-    }
-
-    @Test
     fun testAuthenticateLdapUserNull() {
         every { sm.queryUserDb(testShortUser) } returns testUser
         every { Ldap.authenticate(testShortUser, testPassword) } returns null
