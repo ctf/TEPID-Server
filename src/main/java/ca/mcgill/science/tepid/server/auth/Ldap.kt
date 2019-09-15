@@ -18,7 +18,6 @@ object Ldap : WithLogging() {
      * The resource account will be used as auth if [pw] is null
      */
     fun queryUser(sam: String, pw: String?): FullUser? {
-        if (!Config.LDAP_ENABLED) return null
         val auth = if (pw != null && shortUserRegex.matches(sam)) {
             log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"$sam\"}")
             sam to pw
