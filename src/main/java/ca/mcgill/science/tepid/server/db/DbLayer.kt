@@ -17,15 +17,6 @@ var DB: DbLayer = Config.getDb()
  */
 typealias Id = String
 
-/**
- * String representing a:
- * - short user
- * - long user
- * - student id
- */
-typealias Sam = String
-typealias ShortUser = String
-
 enum class Order {
     ASCENDING {
         override fun <T : Comparable<T>> sort(iterable: Iterable<T>): List<T> =
