@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.Sam
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.isSuccessful
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -19,7 +20,7 @@ object AuthenticationManager : WithLogging() {
      * @param pw  password
      * @return authenticated user, or null if auth failure
      */
-    fun authenticate(sam: String, pw: String): FullUser? {
+    fun authenticate(sam: Sam, pw: String): FullUser? {
         val dbUser = queryUserDb(sam)
         log.trace("Db data found for $sam")
         var ldapUser = Ldap.authenticate(sam, pw)
@@ -38,7 +39,7 @@ object AuthenticationManager : WithLogging() {
      * @param pw  password
      * @return user if found
      */
-    fun queryUser(sam: String?, pw: String?): FullUser? {
+    fun queryUser(sam: Sam?, pw: String?): FullUser? {
         if (sam == null) return null
         log.trace("Querying user: {\"sam\":\"$sam\"}")
 
@@ -53,8 +54,6 @@ object AuthenticationManager : WithLogging() {
 
         log.trace("Found user from ldap {\"sam\":\"$sam\", \"longUser\":\"${ldapUser.longUser}\"}")
         return ldapUser
-        //finally
-        return null
     }
 
     /**
@@ -104,7 +103,7 @@ object AuthenticationManager : WithLogging() {
      * Retrieve a [FullUser] directly from the database when supplied with either a
      * short user, long user, or student id
      */
-    fun queryUserDb(sam: String?): FullUser? {
+    fun queryUserDb(sam: Sam?): FullUser? {
         sam ?: return null
         val dbUser = DB.getUserOrNull(sam)
         dbUser?._id ?: return null
@@ -112,7 +111,7 @@ object AuthenticationManager : WithLogging() {
         return dbUser
     }
 
-    fun refreshUser(sam: String): FullUser {
+    fun refreshUser(sam: Sam): FullUser {
         val dbUser = queryUserDb(sam)
         if (dbUser == null) {
             log.info("Could not fetch user from DB {\"sam\":\"$sam\"}")

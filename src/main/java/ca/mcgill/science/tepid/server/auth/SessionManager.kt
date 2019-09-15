@@ -8,10 +8,7 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 /**
- * SessionManager is responsible for managing sessions and dealing with the underlying authentication.
- * It is analogous to PAM, in that everything which needs authentication or user querying goes through this.
- * For managing sessions, it can start, resume, and end sessions
- * For user querying, it first checks the DB cache. The cache is updated every time a query to the underlying authentication is made.
+ * SessionManager is responsible for managing sessions. It doesn't do authentication. Why would it do that?
  */
 
 object SessionManager : WithLogging() {
