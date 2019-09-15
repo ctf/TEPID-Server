@@ -90,12 +90,16 @@ object Printer : WithLogging() {
             // todo test and validate
             // write compressed job to disk
             val tmpXz = File("${tmpDir.absolutePath}/$id.ps.xz")
+            // adding filepath before upload ensures that the file can get deleted even if the job fails during upload
+            DB.updateJob(id) {
+                file = tmpXz.absolutePath
+                log.info("Updating job $id with path $file")
+            }
             tmpXz.copyFrom(stream)
             // let db know we have received data
             DB.updateJobWithResponse(id) {
-                file = tmpXz.absolutePath
-                log.info("Updating job $id with path $file")
                 received = System.currentTimeMillis()
+                log.info("Job $id file received at $received")
             }
 
             submit(id) {
