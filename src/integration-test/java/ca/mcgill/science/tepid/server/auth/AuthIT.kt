@@ -33,7 +33,6 @@ open class AuthIT {
     companion object{
         @BeforeAll
         fun before() {
-            Assumptions.assumeTrue(Config.LDAP_ENABLED)
             Assumptions.assumeTrue(PropsLDAPTestUser.TEST_USER.isNotEmpty())
             Assumptions.assumeTrue(PropsLDAPTestUser.TEST_PASSWORD.isNotEmpty())
             println("Running ldap tests with test user")

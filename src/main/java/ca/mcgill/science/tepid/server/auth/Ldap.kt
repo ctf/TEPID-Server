@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.Sam
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.naming.directory.SearchControls
@@ -17,8 +18,7 @@ object Ldap : WithLogging() {
      * [sam] must be a valid short user or long user
      * The resource account will be used as auth if [pw] is null
      */
-    fun queryUser(sam: String, pw: String?): FullUser? {
-        if (!Config.LDAP_ENABLED) return null
+    fun queryUser(sam: Sam, pw: String?): FullUser? {
         val auth = if (pw != null && shortUserRegex.matches(sam)) {
             log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"$sam\"}")
             sam to pw
@@ -39,7 +39,7 @@ object Ldap : WithLogging() {
      * However, if a different auth is provided (eg from our science account),
      * the studentId cannot be queried
      */
-    fun queryUserLdap(username: String?, auth: Pair<String, String>): FullUser? {
+    fun queryUserLdap(username: Sam?, auth: Pair<String, String>): FullUser? {
         if (username == null) return null
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchName = if (username.contains(".")) "userPrincipalName=$username${Config.ACCOUNT_DOMAIN}" else "sAMAccountName=$username"
@@ -59,7 +59,7 @@ object Ldap : WithLogging() {
     /**
      * Returns user data, but guarantees a pass through ldap
      */
-    fun authenticate(sam: String, pw: String): FullUser? {
+    fun authenticate(sam: Sam, pw: String): FullUser? {
         log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
 
         val shortUser = if (sam.matches(shortUserRegex)) sam else AuthenticationManager.queryUser(sam, null)?.shortUser

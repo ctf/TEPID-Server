@@ -1,13 +1,11 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.Sam
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.isSuccessful
-import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
-import org.mindrot.jbcrypt.BCrypt
 import javax.ws.rs.core.Response
 
 object AuthenticationManager : WithLogging() {
@@ -22,21 +20,15 @@ object AuthenticationManager : WithLogging() {
      * @param pw  password
      * @return authenticated user, or null if auth failure
      */
-    fun authenticate(sam: String, pw: String): FullUser? {
+    fun authenticate(sam: Sam, pw: String): FullUser? {
         val dbUser = queryUserDb(sam)
         log.trace("Db data found for $sam")
-        return when {
-            dbUser?.authType == LOCAL -> if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
-            Config.LDAP_ENABLED -> {
-                var ldapUser = Ldap.authenticate(sam, pw)
-                if (ldapUser != null) {
-                    ldapUser = mergeUsers(ldapUser, dbUser)
-                    updateDbWithUser(ldapUser)
-                }
-                ldapUser
-            }
-            else -> null
+        var ldapUser = Ldap.authenticate(sam, pw)
+        if (ldapUser != null) {
+            ldapUser = mergeUsers(ldapUser, dbUser)
+            updateDbWithUser(ldapUser)
         }
+        return ldapUser
     }
 
 
@@ -47,7 +39,7 @@ object AuthenticationManager : WithLogging() {
      * @param pw  password
      * @return user if found
      */
-    fun queryUser(sam: String?, pw: String?): FullUser? {
+    fun queryUser(sam: Sam?, pw: String?): FullUser? {
         if (sam == null) return null
         log.trace("Querying user: {\"sam\":\"$sam\"}")
 
@@ -55,17 +47,13 @@ object AuthenticationManager : WithLogging() {
 
         if (dbUser != null) return dbUser
 
-        if (Config.LDAP_ENABLED) {
-            if (!sam.matches(shortUserRegex)) return null // cannot query without short user
-            val ldapUser = Ldap.queryUser(sam, pw) ?: return null
+        if (!sam.matches(shortUserRegex)) return null // cannot query without short user
+        val ldapUser = Ldap.queryUser(sam, pw) ?: return null
 
-            updateDbWithUser(ldapUser)
+        updateDbWithUser(ldapUser)
 
-            log.trace("Found user from ldap {\"sam\":\"$sam\", \"longUser\":\"${ldapUser.longUser}\"}")
-            return ldapUser
-        }
-        //finally
-        return null
+        log.trace("Found user from ldap {\"sam\":\"$sam\", \"longUser\":\"${ldapUser.longUser}\"}")
+        return ldapUser
     }
 
     /**
@@ -115,7 +103,7 @@ object AuthenticationManager : WithLogging() {
      * Retrieve a [FullUser] directly from the database when supplied with either a
      * short user, long user, or student id
      */
-    fun queryUserDb(sam: String?): FullUser? {
+    fun queryUserDb(sam: Sam?): FullUser? {
         sam ?: return null
         val dbUser = DB.getUserOrNull(sam)
         dbUser?._id ?: return null
@@ -123,24 +111,20 @@ object AuthenticationManager : WithLogging() {
         return dbUser
     }
 
-    fun refreshUser(sam: String): FullUser {
+    fun refreshUser(sam: Sam): FullUser {
         val dbUser = queryUserDb(sam)
         if (dbUser == null) {
             log.info("Could not fetch user from DB {\"sam\":\"$sam\"}")
             return queryUser(sam, null)
                     ?: throw RuntimeException("Could not fetch user from anywhere {\"sam\":\"$sam\"}")
         }
-        if (Config.LDAP_ENABLED) {
-            val ldapUser = Ldap.queryUser(sam, null)
-                    ?: throw RuntimeException("Could not fetch user from LDAP {\"sam\":\"$sam\"}")
-            val refreshedUser = mergeUsers(ldapUser, dbUser)
-            if (dbUser.role != refreshedUser.role) {
-                SessionManager.invalidateSessions(sam)
-            }
-            updateDbWithUser(refreshedUser)
-            return refreshedUser
-        } else {
-            return dbUser
+        val ldapUser = Ldap.queryUser(sam, null)
+                ?: throw RuntimeException("Could not fetch user from LDAP {\"sam\":\"$sam\"}")
+        val refreshedUser = mergeUsers(ldapUser, dbUser)
+        if (dbUser.role != refreshedUser.role) {
+            SessionManager.invalidateSessions(sam)
         }
+        updateDbWithUser(refreshedUser)
+        return refreshedUser
     }
 }

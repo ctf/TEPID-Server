@@ -1,8 +1,6 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.bindings.ADMIN
 import ca.mcgill.science.tepid.models.bindings.ELDER
-import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
@@ -25,27 +23,11 @@ class AuthenticationFilterTest : WithLogging() {
     }
 
     @Test
-    fun testGetCtfRoleAuthTypeLocalAndAdmin() {
-        val user = FullUser(authType=LOCAL, role=ADMIN)
-        val actual = AuthenticationFilter.getCtfRole(user)
-        val expected = ELDER
-        assertEquals(expected, actual, "Local admin not given Elder privileges")
-    }
-
-    @Test
-    fun testGetCtfRoleAuthTypeLocalAndUser(){
-        val user = FullUser(authType=LOCAL, role=USER)
-        val actual = AuthenticationFilter.getCtfRole(user)
-        val expected = USER
-        assertEquals(expected, actual, "Local user not given User privileges")
-    }
-
-    @Test
     fun testGetCtfRoleAuthTypeNull() {
         mockkObject(Config)
         every { Config.USERS_GROUP } returns listOf(AdGroup("user_group"))
 
-        val user = FullUser(authType = null, groups = setOf(AdGroup("user_group")))
+        val user = FullUser(groups = setOf(AdGroup("user_group")))
         val actual = AuthenticationFilter.getCtfRole(user)
         val expected = USER
         assertEquals(expected, actual, "authtype null not handled as non-local")
@@ -54,7 +36,7 @@ class AuthenticationFilterTest : WithLogging() {
 
     @Test
     fun testGetCtfRoleElder() {
-        val user = FullUser(groups = setOf(AdGroup("not_elder_test_group"), AdGroup("elder_test_group")), authType = "not_null") //TODO: actual auth type
+        val user = FullUser(groups = setOf(AdGroup("not_elder_test_group"), AdGroup("elder_test_group")))
         mockkObject(Config)
         every { Config.ELDERS_GROUP } returns listOf(AdGroup("other_elder_test_group"), AdGroup("elder_test_group"))
         val actual = AuthenticationFilter.getCtfRole(user)
@@ -64,7 +46,7 @@ class AuthenticationFilterTest : WithLogging() {
 
     @Test
     fun testGetCtfRoleNone() {
-        val user = FullUser(groups = setOf(AdGroup("not_a_permitted_group"), AdGroup("a_different_group")), authType = "not_null") //TODO: actual auth type
+        val user = FullUser(groups = setOf(AdGroup("not_a_permitted_group"), AdGroup("a_different_group"))) 
         mockkObject(Config)
         every { Config.ELDERS_GROUP } returns listOf(AdGroup("other_elder_test_group"), AdGroup("elder_test_group"))
         val actual = AuthenticationFilter.getCtfRole(user)

@@ -1,6 +1,5 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.UserFactory
@@ -11,7 +10,6 @@ import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.mockk.*
 import org.junit.jupiter.api.*
-import org.mindrot.jbcrypt.BCrypt
 import javax.ws.rs.core.Response
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -291,19 +289,7 @@ class QueryUserTest : WithLogging() {
     }
 
     @Test
-    fun testQueryUserDbMissLdapDisabled() {
-        every { Config.LDAP_ENABLED } returns false
-        every { am.queryUserDb("SU") } returns null
-
-        val actual = am.queryUser("SU", null)
-        val expected = null
-
-        assertEquals(expected, actual, "Null is not returned when DB miss and Ldap disabled")
-    }
-
-    @Test
     fun testQueryUserWithLdapBadSam() {
-        every { Config.LDAP_ENABLED } returns true
         every { am.queryUserDb("db.LU@example.com") } returns null
 
         val actual = am.queryUser("db.LU@example.com", null)
@@ -316,7 +302,6 @@ class QueryUserTest : WithLogging() {
 
     @Test
     fun testQueryUserWithLdapLdapUserNull() {
-        every { Config.LDAP_ENABLED } returns true
         every { am.queryUserDb("SU") } returns null
         every { Ldap.queryUser(any(), null) } returns null
 
@@ -330,7 +315,6 @@ class QueryUserTest : WithLogging() {
 
     @Test
     fun testQueryUserWithLdap() {
-        every { Config.LDAP_ENABLED } returns true
         every { am.queryUserDb("SU") } returns null
         every { am.updateDbWithUser(any()) } just runs
         every { Ldap.queryUser(any(), null) } returns testUser
@@ -377,48 +361,7 @@ class AuthenticateTest {
     }
 
     @Test
-    fun testAuthenticateAuthTypeLocalSuccess() {
-        every { Config.LDAP_ENABLED } returns true
-        testUser.authType = LOCAL
-        testUser.password = BCrypt.hashpw(testPassword, BCrypt.gensalt())
-        every { sm.queryUserDb(testShortUser) } returns testUser
-
-        val actual = sm.authenticate(testShortUser, testPassword)
-        val expected = testUser
-
-        assertEquals(expected, actual, "")
-    }
-
-    @Test
-    fun testAuthenticateAuthTypeLocalFailure() {
-        every { Config.LDAP_ENABLED } returns true
-        testUser.authType = LOCAL
-        testUser.password = BCrypt.hashpw(testPassword, BCrypt.gensalt())
-        every { sm.queryUserDb(testShortUser) } returns testUser
-
-        val actual = sm.authenticate(testShortUser, testPassword + "otherStuff")
-        val expected = null
-
-        assertEquals(expected, actual, "")
-    }
-
-    @Test
-    fun testAuthenticateLdapDisabled() {
-        every { Config.LDAP_ENABLED } returns false
-        // not necessary, but ensures that there is a password to auth against if it's derping
-        testUser.password = BCrypt.hashpw(testPassword, BCrypt.gensalt())
-        every { sm.queryUserDb(testShortUser) } returns testUser
-
-
-        val actual = sm.authenticate(testShortUser, testPassword)
-        val expected = null
-
-        assertEquals(expected, actual, "")
-    }
-
-    @Test
     fun testAuthenticateLdapUserNull() {
-        every { Config.LDAP_ENABLED } returns true
         every { sm.queryUserDb(testShortUser) } returns testUser
         every { Ldap.authenticate(testShortUser, testPassword) } returns null
 
@@ -431,7 +374,6 @@ class AuthenticateTest {
 
     @Test
     fun testAuthenticateLdap() {
-        every { Config.LDAP_ENABLED } returns true
         every { sm.queryUserDb(any()) } returns testUserFromDb
         every { Ldap.authenticate(testShortUser, testPassword) } returns testUser
         every { sm.updateDbWithUser(any()) } just runs
@@ -452,7 +394,6 @@ class SetExchangeStudentTest {
 
     @Test
     fun testSetExchangeStudentLdapEnabled() {
-        every { Config.LDAP_ENABLED } returns true
         ExchangeManager.setExchangeStudent(testSam, true)
 
         val targetUser = AuthenticationManager.mergeUsers(UserFactory.makeLdapUser(), UserFactory.makeDbUser())
@@ -462,13 +403,6 @@ class SetExchangeStudentTest {
             )
         }
         verify { ExchangeManager.setExchangeStudentLdap(testSam, true) }
-    }
-
-    @Test
-    fun testSetExchangeStudentLdapDisabled() {
-        every { Config.LDAP_ENABLED } returns false
-        ExchangeManager.setExchangeStudent(testSam, true)
-        verify(inverse = true) { ExchangeManager.setExchangeStudentLdap(testSam, true) }
     }
 
     companion object {
@@ -500,17 +434,7 @@ class SetExchangeStudentTest {
 class RefreshUserTest {
 
     @Test
-    fun testRefreshUserLdapDisabled() {
-        every { Config.LDAP_ENABLED } returns false
-
-        val actual = AuthenticationManager.refreshUser(testSam)
-
-        assertEquals(UserFactory.makeDbUser(), actual)
-    }
-
-    @Test
     fun testRefreshUserLdapEnabled() {
-        every { Config.LDAP_ENABLED } returns true
         every {
             SessionManager.invalidateSessions(testSam)
         } just runs

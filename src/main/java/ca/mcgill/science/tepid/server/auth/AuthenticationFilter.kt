@@ -1,6 +1,8 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.models.bindings.*
+import ca.mcgill.science.tepid.models.bindings.CTFER
+import ca.mcgill.science.tepid.models.bindings.ELDER
+import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Session
@@ -135,18 +137,11 @@ class AuthenticationFilter : ContainerRequestFilter {
          * which may include being a local admin
          */
         fun getCtfRole(user: FullUser): String {
-            if (user.authType == LOCAL) {
-                return if (user.role == ADMIN) ELDER else USER
-            }
-            if (user.authType == null || user.authType != LOCAL) {
-                val g = user.groups.toSet()
-                if (Config.ELDERS_GROUP.any(g::contains)) return ELDER
-                if (Config.CTFERS_GROUP.any(g::contains)) return CTFER
-                if (Config.USERS_GROUP.any(g::contains)) return USER
-                return ""
-            } else {
-                return ""
-            }
+            val g = user.groups.toSet()
+            if (Config.ELDERS_GROUP.any(g::contains)) return ELDER
+            if (Config.CTFERS_GROUP.any(g::contains)) return CTFER
+            if (Config.USERS_GROUP.any(g::contains)) return USER
+            return ""
         }
     }
 }

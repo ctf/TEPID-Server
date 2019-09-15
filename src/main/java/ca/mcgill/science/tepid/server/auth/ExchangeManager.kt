@@ -1,5 +1,7 @@
 package ca.mcgill.science.tepid.server.auth
 
+import ca.mcgill.science.tepid.models.data.Sam
+import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.*
@@ -18,17 +20,15 @@ object ExchangeManager : WithLogging() {
      * This refreshes the groups and courses of a user,
      * which allows for thier role to change
      *
-     * @param sam      shortUser
+     * @param shortUser      shortUser
      * @param exchange boolean for exchange status
      * @return updated status of the user; false if anything goes wrong
      */
-    fun setExchangeStudent(sam: String, exchange: Boolean): Boolean {
-        if (Config.LDAP_ENABLED) {
-            log.info("Setting exchange status {\"sam\":\"$sam\", \"exchange_status\":\"$exchange\"}")
-            val success = setExchangeStudentLdap(sam, exchange)
-            AuthenticationManager.refreshUser(sam)
-            return success
-        } else return false
+    fun setExchangeStudent(shortUser: ShortUser, exchange: Boolean): Boolean {
+        log.info("Setting exchange status {\"shortUser\":\"$shortUser\", \"exchange_status\":\"$exchange\"}")
+        val success = setExchangeStudentLdap(shortUser, exchange)
+        AuthenticationManager.refreshUser(shortUser)
+        return success
     }
 
     /**
@@ -36,7 +36,7 @@ object ExchangeManager : WithLogging() {
      *
      * @return updated status of the user; false if anything goes wrong
      */
-    fun setExchangeStudentLdap(sam: String, exchange: Boolean): Boolean {
+    fun setExchangeStudentLdap(sam: Sam, exchange: Boolean): Boolean {
         val isLongUser = sam.contains(".")
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchFilter = "(&(objectClass=user)(" + (if (isLongUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (isLongUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"

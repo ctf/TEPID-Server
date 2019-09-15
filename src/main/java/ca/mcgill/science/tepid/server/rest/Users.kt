@@ -1,6 +1,8 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.bindings.*
+import ca.mcgill.science.tepid.models.bindings.CTFER
+import ca.mcgill.science.tepid.models.bindings.ELDER
+import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.auth.*
 import ca.mcgill.science.tepid.server.db.DB
@@ -8,7 +10,6 @@ import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.WithLogging
-import org.mindrot.jbcrypt.BCrypt
 import java.net.URI
 import java.net.URISyntaxException
 import javax.annotation.security.RolesAllowed
@@ -75,27 +76,6 @@ class Users {
         }
         return Response.ok(returnedUser).build()
 
-    }
-
-    @PUT
-    @Path("/{sam}")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun createLocalAdmin(@PathParam("sam") shortUser: String, newAdmin: FullUser, @Context req: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
-        if (this.adminConfigured()) {
-            val session = req.getSession()
-            log.warn("Unauthorized attempt to add a local admin by {}.", session.user.longUser)
-            return Response.Status.UNAUTHORIZED.text("Local admin already exists")
-        }
-        val hashedPw = BCrypt.hashpw(newAdmin.password, BCrypt.gensalt())
-        newAdmin.shortUser = shortUser
-        newAdmin.password = hashedPw
-        newAdmin.role = ADMIN
-        newAdmin.authType = LOCAL
-        newAdmin.activeSince = System.currentTimeMillis()
-        newAdmin.displayName = "${newAdmin.givenName} ${newAdmin.lastName}"
-        newAdmin.salutation = newAdmin.givenName
-        newAdmin.longUser = newAdmin.email
-        return DB.putUser(newAdmin)
     }
 
     /**
