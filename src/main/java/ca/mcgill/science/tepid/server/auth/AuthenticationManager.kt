@@ -1,13 +1,10 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.models.bindings.LOCAL
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.isSuccessful
 import ca.mcgill.science.tepid.utils.WithLogging
-import org.mindrot.jbcrypt.BCrypt
 import javax.ws.rs.core.Response
 
 object AuthenticationManager : WithLogging() {
@@ -25,18 +22,12 @@ object AuthenticationManager : WithLogging() {
     fun authenticate(sam: String, pw: String): FullUser? {
         val dbUser = queryUserDb(sam)
         log.trace("Db data found for $sam")
-        return when {
-            dbUser?.authType == LOCAL -> if (BCrypt.checkpw(pw, dbUser.password)) dbUser else null
-            Config.LDAP_ENABLED -> {
-                var ldapUser = Ldap.authenticate(sam, pw)
-                if (ldapUser != null) {
-                    ldapUser = mergeUsers(ldapUser, dbUser)
-                    updateDbWithUser(ldapUser)
-                }
-                ldapUser
-            }
-            else -> null
+        var ldapUser = Ldap.authenticate(sam, pw)
+        if (ldapUser != null) {
+            ldapUser = mergeUsers(ldapUser, dbUser)
+            updateDbWithUser(ldapUser)
         }
+        return ldapUser
     }
 
 
