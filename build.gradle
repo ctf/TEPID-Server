@@ -6,13 +6,15 @@ buildscript {
         mavenCentral()
         maven { url "https://jitpack.io" }
         maven { url "https://plugins.gradle.org/m2/" } // for swagger
+        maven { url "https://plugins.gradle.org/m2/" } // for ktlint-gradle
         jcenter()
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$KOTLIN"
         classpath "ca.mcgill:tepid-commons:$TEPID_COMMONS"
         classpath "io.swagger.core.v3:swagger-gradle-plugin:2.0.6"      // For Swagger
-        classpath "org.jetbrains.kotlin:kotlin-noarg:$KOTLIN"   // For Hibernate
+        classpath "org.jetbrains.kotlin:kotlin-noarg:$KOTLIN"           // For Hibernate
+        classpath "org.jlleitschuh.gradle:ktlint-gradle:8.2.0"          // For ktlint-gradle
     }
 }
 
@@ -23,6 +25,7 @@ apply plugin: 'ca.mcgill.science.tepid.commons'
 
 apply plugin: "io.swagger.core.v3.swagger-gradle-plugin"    // For Swagger
 apply plugin: "kotlin-jpa"                                  // For Hibernate
+apply plugin: "org.jlleitschuh.gradle.ktlint"               // For ktlint-gradle
 
 sourceCompatibility = JavaVersion.VERSION_11
 war.baseName = 'tepid'
