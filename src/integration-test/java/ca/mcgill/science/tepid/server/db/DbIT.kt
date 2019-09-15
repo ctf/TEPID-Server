@@ -1,29 +1,31 @@
 package ca.mcgill.science.tepid.server.db
 
-import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.models.data.AdGroup
+import ca.mcgill.science.tepid.models.data.Course
+import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.Season
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import javax.persistence.EntityManager
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
 class DbIT : DbTest() {
 
-
     @Test
-    fun testGetCourses(){
+    fun testGetCourses() {
         val u = testItems[0].copy()
         u._id = "u${u.shortUser}"
         val groups = mutableSetOf(
-                AdGroup("Group0"),
-                AdGroup("Group1"),
-                AdGroup("Group2")
+            AdGroup("Group0"),
+            AdGroup("Group1"),
+            AdGroup("Group2")
         )
         val courses = mutableSetOf(
-                Course("course0", Season.SUMMER, 1337),
-                Course("course1", Season.SUMMER, 1337),
-                Course("course2", Season.SUMMER, 1337)
+            Course("course0", Season.SUMMER, 1337),
+            Course("course1", Season.SUMMER, 1337),
+            Course("course2", Season.SUMMER, 1337)
         )
 
         u.groups = groups
@@ -33,13 +35,12 @@ class DbIT : DbTest() {
 
         val ri = hl.getUserOrNull(u.shortUser!!) ?: fail("Did not retieve user")
 
-
         assertEquals(3, ri.groups.size)
         assertEquals(3, ri.courses.size)
     }
 
     @AfterEach
-    fun truncateUsed(){
+    fun truncateUsed() {
         println("------End Test------")
 
         val u = listOf(PrintJob::class.java)
@@ -50,9 +51,9 @@ class DbIT : DbTest() {
 
     companion object {
 
-        val testItems  = listOf(
-                FullUser(shortUser = "USER1"),
-                FullUser(shortUser = "USER2")
+        val testItems = listOf(
+            FullUser(shortUser = "USER1"),
+            FullUser(shortUser = "USER2")
         )
 
         lateinit var hc: HibernateCrud<FullUser, String?>
@@ -60,7 +61,7 @@ class DbIT : DbTest() {
 
         @JvmStatic
         @BeforeAll
-        fun initHelper(){
+        fun initHelper() {
             hc = HibernateCrud(emf, FullUser::class.java)
             hl = HibernateUserLayer(hc)
             println("======Begin Tests======")

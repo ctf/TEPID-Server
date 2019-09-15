@@ -12,7 +12,12 @@ import ca.mcgill.science.tepid.server.util.failUnauthorized
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.annotation.security.RolesAllowed
-import javax.ws.rs.*
+import javax.ws.rs.DELETE
+import javax.ws.rs.GET
+import javax.ws.rs.POST
+import javax.ws.rs.Path
+import javax.ws.rs.PathParam
+import javax.ws.rs.Produces
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
@@ -41,8 +46,11 @@ class Sessions {
         try {
             val username = req.username.split("@")[0]
             val user = AuthenticationManager.authenticate(username, req.password)
-            //persistent sessions expire in 768 hours (32 days), permanent (printing) sessions expire in 35040 hours (4 years), other sessions expire in 24 hours
-            val s = if (user != null) SessionManager.start(user, if (req.permanent) 35040 else if (req.persistent) 768 else 24) else null
+            // persistent sessions expire in 768 hours (32 days), permanent (printing) sessions expire in 35040 hours (4 years), other sessions expire in 24 hours
+            val s = if (user != null) SessionManager.start(
+                user,
+                if (req.permanent) 35040 else if (req.persistent) 768 else 24
+            ) else null
             if (s != null) {
                 s.persistent = req.persistent
                 return s.toSession()
@@ -72,7 +80,11 @@ class Sessions {
             SessionManager.end(id)
             return Response.ok("ok").build()
         }
-        log.warn("Unauthorized attempt to delete session of {} by user {}.", requestSession.user.shortUser, targetSession.user.shortUser)
+        log.warn(
+            "Unauthorized attempt to delete session of {} by user {}.",
+            requestSession.user.shortUser,
+            targetSession.user.shortUser
+        )
         // returns failNotFound for uniformity with the case when the session doesn't exist
         failNotFound("")
     }

@@ -7,5 +7,4 @@ class JobMonitor : Runnable {
     override fun run() {
         Printer.clearOldJobs()
     }
-
 }

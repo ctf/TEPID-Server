@@ -29,5 +29,4 @@ class BackgroundTasks : ServletContextListener {
     }
 
     private companion object : WithLogging()
-
 }

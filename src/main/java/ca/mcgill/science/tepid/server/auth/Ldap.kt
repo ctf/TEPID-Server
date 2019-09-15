@@ -42,7 +42,8 @@ object Ldap : WithLogging() {
     fun queryUserLdap(username: Sam?, auth: Pair<String, String>): FullUser? {
         if (username == null) return null
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
-        val searchName = if (username.contains(".")) "userPrincipalName=$username${Config.ACCOUNT_DOMAIN}" else "sAMAccountName=$username"
+        val searchName =
+            if (username.contains(".")) "userPrincipalName=$username${Config.ACCOUNT_DOMAIN}" else "sAMAccountName=$username"
         val searchFilter = "(&(objectClass=user)($searchName))"
         val ctx = ldapConnector.bindLdap(auth) ?: return null
         val searchControls = SearchControls()
@@ -63,7 +64,7 @@ object Ldap : WithLogging() {
         log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
 
         val shortUser = if (sam.matches(shortUserRegex)) sam else AuthenticationManager.queryUser(sam, null)?.shortUser
-                ?: AutoSuggest.queryLdap(sam, auth, 1).getOrNull(0)?.shortUser // TODO: pull this up higher
+            ?: AutoSuggest.queryLdap(sam, auth, 1).getOrNull(0)?.shortUser // TODO: pull this up higher
         if (shortUser == null) return null
 
         log.info("Authenticating {\"sam\":\"$sam\", \"shortUser\":\"$shortUser\"}")

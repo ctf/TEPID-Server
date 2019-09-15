@@ -16,7 +16,7 @@ class AuthenticationFilterTest : WithLogging() {
 
     @Test
     fun testGetCtfRoleNoGroups() {
-        val user = FullUser(groups=setOf())
+        val user = FullUser(groups = setOf())
         val actual = AuthenticationFilter.getCtfRole(user)
         val expected = ""
         assertEquals(expected, actual, "User with no groups is not given no roles")
@@ -31,7 +31,6 @@ class AuthenticationFilterTest : WithLogging() {
         val actual = AuthenticationFilter.getCtfRole(user)
         val expected = USER
         assertEquals(expected, actual, "authtype null not handled as non-local")
-
     }
 
     @Test
@@ -46,12 +45,11 @@ class AuthenticationFilterTest : WithLogging() {
 
     @Test
     fun testGetCtfRoleNone() {
-        val user = FullUser(groups = setOf(AdGroup("not_a_permitted_group"), AdGroup("a_different_group"))) 
+        val user = FullUser(groups = setOf(AdGroup("not_a_permitted_group"), AdGroup("a_different_group")))
         mockkObject(Config)
         every { Config.ELDERS_GROUP } returns listOf(AdGroup("other_elder_test_group"), AdGroup("elder_test_group"))
         val actual = AuthenticationFilter.getCtfRole(user)
         val expected = ""
         assertEquals(expected, actual, "Standard role not assigned to standard user")
     }
-
 }

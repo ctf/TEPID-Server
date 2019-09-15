@@ -15,11 +15,10 @@ object AutoSuggest : WithLogging() {
 
     private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
 
-
     /**
      * Sends list of matching [User]s based on current query
      *
-     * @param like  prefix
+     * @param like prefix
      * @param limit max list size
      * @return list of matching users
      */
@@ -51,7 +50,7 @@ object AutoSuggest : WithLogging() {
                 if (user.longUser?.split("@")?.getOrNull(0)?.indexOf(".") ?: -1 > 0)
                     out.add(user)
             }
-            //todo update; a crash here will lead to the contents not closing
+            // todo update; a crash here will lead to the contents not closing
             results.close()
             ctx.close()
             return out

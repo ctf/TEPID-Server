@@ -8,7 +8,19 @@ import ca.mcgill.science.tepid.server.db.HibernateDbLayer
 import ca.mcgill.science.tepid.server.printing.GSException
 import ca.mcgill.science.tepid.server.printing.Gs
 import ca.mcgill.science.tepid.server.util.Utils
-import ca.mcgill.science.tepid.utils.*
+import ca.mcgill.science.tepid.utils.DefaultProps
+import ca.mcgill.science.tepid.utils.FilePropLoader
+import ca.mcgill.science.tepid.utils.JarPropLoader
+import ca.mcgill.science.tepid.utils.PropsBarcode
+import ca.mcgill.science.tepid.utils.PropsCreationInfo
+import ca.mcgill.science.tepid.utils.PropsDB
+import ca.mcgill.science.tepid.utils.PropsLDAP
+import ca.mcgill.science.tepid.utils.PropsLDAPGroups
+import ca.mcgill.science.tepid.utils.PropsLDAPResource
+import ca.mcgill.science.tepid.utils.PropsPrinting
+import ca.mcgill.science.tepid.utils.PropsTEM
+import ca.mcgill.science.tepid.utils.PropsURL
+import ca.mcgill.science.tepid.utils.WithLogging
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.LoggerContext
@@ -16,7 +28,6 @@ import java.util.*
 import javax.persistence.EntityManagerFactory
 
 object Config : WithLogging() {
-
 
     private val illegalLDAPCharacters = "[,+\"\\\\<>;=]".toRegex()
 
@@ -37,7 +48,7 @@ object Config : WithLogging() {
     val DB_URL: String
     val DB_USERNAME: String
     val DB_PASSWORD: String
-    var emf : EntityManagerFactory? = null
+    var emf: EntityManagerFactory? = null
     /*
      * Barcode data
      */
@@ -55,20 +66,20 @@ object Config : WithLogging() {
 
     const val LDAP_ENABLED = true
 
-    val LDAP_SEARCH_BASE : String
-    val ACCOUNT_DOMAIN : String
-    val PROVIDER_URL : String
-    val SECURITY_PRINCIPAL_PREFIX : String
+    val LDAP_SEARCH_BASE: String
+    val ACCOUNT_DOMAIN: String
+    val PROVIDER_URL: String
+    val SECURITY_PRINCIPAL_PREFIX: String
 
-    val RESOURCE_USER : String
+    val RESOURCE_USER: String
     val RESOURCE_CREDENTIALS: String
 
-    val EXCHANGE_STUDENTS_GROUP_BASE : String
-    val GROUPS_LOCATION : String
-    val ELDERS_GROUP : List<AdGroup>
-    val CTFERS_GROUP : List<AdGroup>
-    val CURRENT_EXCHANGE_GROUP : AdGroup
-    val USERS_GROUP : List<AdGroup>
+    val EXCHANGE_STUDENTS_GROUP_BASE: String
+    val GROUPS_LOCATION: String
+    val ELDERS_GROUP: List<AdGroup>
+    val CTFERS_GROUP: List<AdGroup>
+    val CURRENT_EXCHANGE_GROUP: AdGroup
+    val USERS_GROUP: List<AdGroup>
 
     /*
      * Printing configuration
@@ -91,18 +102,20 @@ object Config : WithLogging() {
     val PUBLIC: About
 
     init {
-        //TODO: revise to use getNonNull, possibly implement a get with default
+        // TODO: revise to use getNonNull, possibly implement a get with default
 
         log.info("**********************************")
         log.info("*       Setting up Configs       *")
         log.info("**********************************")
 
-        DefaultProps.withName = {fileName -> listOf(
+        DefaultProps.withName = { fileName ->
+            listOf(
                 FilePropLoader("/etc/tepid/$fileName"),
                 FilePropLoader("webapps/tepid/$fileName"),
                 JarPropLoader("/$fileName"),
                 FilePropLoader("/config/$fileName")
-        )}
+            )
+        }
 
         DEBUG = PropsURL.TESTING?.toBoolean() ?: true
 
@@ -129,15 +142,16 @@ object Config : WithLogging() {
         GROUPS_LOCATION = PropsLDAPGroups.GROUPS_LOCATION ?: ""
         ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS?.split(illegalLDAPCharacters)?.map { AdGroup(it) } ?: emptyList()
         CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS?.split(illegalLDAPCharacters)?.map { AdGroup(it) } ?: emptyList()
-        
+
         CURRENT_EXCHANGE_GROUP = {
             val cal = Calendar.getInstance()
-            val groupName = EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
+            val groupName =
+                EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
             AdGroup(groupName)
         }()
         USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS?.split(illegalLDAPCharacters))?.map { AdGroup(it) }
-                ?.plus(CURRENT_EXCHANGE_GROUP)
-                ?: emptyList()
+            ?.plus(CURRENT_EXCHANGE_GROUP)
+            ?: emptyList()
 
         TEM_URL = PropsTEM.TEM_URL ?: ""
 
@@ -150,9 +164,9 @@ object Config : WithLogging() {
 
         if (DEBUG)
             setLoggingLevel(Level.TRACE)
-            log.trace(ELDERS_GROUP)
-            log.trace(CTFERS_GROUP)
-            log.trace(USERS_GROUP)
+        log.trace(ELDERS_GROUP)
+        log.trace(CTFERS_GROUP)
+        log.trace(USERS_GROUP)
 
         /*
          * For logging
@@ -171,16 +185,17 @@ object Config : WithLogging() {
 
         log.info("Build hash: $HASH")
 
-        PUBLIC = About(debug = DEBUG,
-                ldapEnabled = LDAP_ENABLED,
-                startTimestamp = System.currentTimeMillis(),
-                startTime = Utils.now(),
-                hash = HASH,
-                warnings = warnings,
-                tag = TAG,
-                creationTime = CREATION_TIME,
-                creationTimestamp = CREATION_TIMESTAMP)
-
+        PUBLIC = About(
+            debug = DEBUG,
+            ldapEnabled = LDAP_ENABLED,
+            startTimestamp = System.currentTimeMillis(),
+            startTime = Utils.now(),
+            hash = HASH,
+            warnings = warnings,
+            tag = TAG,
+            creationTime = CREATION_TIME,
+            creationTimestamp = CREATION_TIMESTAMP
+        )
 
         log.trace("Completed setting configs")
 
@@ -190,12 +205,11 @@ object Config : WithLogging() {
 
         try {
             Gs.testRequiredDevicesInstalled()
-        } catch (e: GSException){
+        } catch (e: GSException) {
             log.fatal("GS ink_cov device unavailable")
         }
 
         log.trace("Completed initialising subsystems")
-
     }
 
     fun setLoggingLevel(level: Level) {

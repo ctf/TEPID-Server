@@ -53,8 +53,8 @@ private class FiftyFifty : QueueLogicBase(QueueLogic.FIFTY_FIFTY) {
          * We will stop once the destination and the given index is up
          */
         val index = (1..destinations.size)
-                .map { (it + lastVisited) % destinations.size }
-                .firstOrNull { destinations[it].up } ?: return null
+            .map { (it + lastVisited) % destinations.size }
+            .firstOrNull { destinations[it].up } ?: return null
 
         lastVisited = index
 
@@ -64,5 +64,4 @@ private class FiftyFifty : QueueLogicBase(QueueLogic.FIFTY_FIFTY) {
     override fun getEta(job: PrintJob, destination: FullDestination): Long {
         return System.currentTimeMillis() + 10000 + (job.pages * 2500) // todo update
     }
-
 }

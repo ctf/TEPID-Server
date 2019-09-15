@@ -28,13 +28,11 @@ interface GsContract {
      */
     fun psInfo(f: File): PsData
 
-
     /**
      * Tests that the required GS devices are installed,
      * so processing will work and won't fail during first invocation
      */
     fun testRequiredDevicesInstalled()
-
 }
 
 /**
@@ -64,9 +62,12 @@ class GsDelegate : WithLogging(), GsContract {
     * This is undocumented in GhostScript, but they have basically the same inputs
     */
     fun gs(f: File): List<String> {
-        val gsProcess = run("-sOutputFile=%stdout%",
-                "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
-                "-sDEVICE=ink_cov", f.absolutePath) ?: throw Printer.PrintException("Internal Error processing postscript file at ${f.absolutePath}")
+        val gsProcess = run(
+            "-sOutputFile=%stdout%",
+            "-dBATCH", "-dNOPAUSE", "-dQUIET", "-q",
+            "-sDEVICE=ink_cov", f.absolutePath
+        )
+            ?: throw Printer.PrintException("Internal Error processing postscript file at ${f.absolutePath}")
         return gsProcess.inputStream.bufferedReader().useLines { it.toList() }
     }
 
@@ -85,17 +86,14 @@ class GsDelegate : WithLogging(), GsContract {
      * see for more details: https://bugs.ghostscript.com/show_bug.cgi?id=699342
      */
     fun inkCoverage(lines: List<String>): List<InkCoverage> = cmykRegex.findAll(lines.joinToString(" "))
-            .map {
-                val (_, c, y, m, k) = it.groupValues
-                InkCoverage(c.toFloat(), y.toFloat(), m.toFloat(), k.toFloat())
-            }.toList()
+        .map {
+            val (_, c, y, m, k) = it.groupValues
+            InkCoverage(c.toFloat(), y.toFloat(), m.toFloat(), k.toFloat())
+        }.toList()
 
     override fun inkCoverage(f: File): List<InkCoverage> {
         return inkCoverage(gs(f))
     }
-
-
-
 
     /**
      * Returns true if a monochrome color model is specified
@@ -112,13 +110,11 @@ class GsDelegate : WithLogging(), GsContract {
 
     override fun psInfo(f: File): PsData {
         val coverage = inkCoverage(f)
-
-
         var info = coverageToInfo(coverage)
 
         val br = BufferedReader(FileReader(f.absolutePath))
         val psMonochrome = br.hasMonochromeColorModel()
-        if (psMonochrome){
+        if (psMonochrome) {
             info = info.copy(colorPages = 0)
         }
 
@@ -132,7 +128,8 @@ class GsDelegate : WithLogging(), GsContract {
     }
 
     override fun testRequiredDevicesInstalled() {
-        val p = run("-dNOPAUSE", "-dBATCH", "-dSAFER", "-sDEVICE=ink_cov", "-dQUIET", "-q") ?:             throw GSException("Error running process") // TODO: propagate throw from run
+        val p = run("-dNOPAUSE", "-dBATCH", "-dSAFER", "-sDEVICE=ink_cov", "-dQUIET", "-q")
+            ?: throw GSException("Error running process") // TODO: propagate throw from run
 
         // https://stackoverflow.com/a/35446009/1947070
         val s = Scanner(p.inputStream).useDelimiter("\\A")
@@ -146,9 +143,9 @@ class GsDelegate : WithLogging(), GsContract {
         private const val INDICATOR_COLOR_V3 = "/ProcessColorModel /DeviceCMYK"
         private const val INDICATOR_MONOCHROME_V3 = "/ProcessColorModel /DeviceGray"
 
-
         private const val INDICATOR_COLOR_V4 = "<color-effects-type syntax=\"keyword\">color</color-effects-type>"
-        private const val INDICATOR_MONOCHROME_V4 = "<color-effects-type syntax=\"keyword\">monochrome-grayscale</color-effects-type>"
+        private const val INDICATOR_MONOCHROME_V4 =
+            "<color-effects-type syntax=\"keyword\">monochrome-grayscale</color-effects-type>"
     }
 }
 
@@ -158,9 +155,7 @@ class GsDelegate : WithLogging(), GsContract {
  * If the first three values are equal, then the page is monochrome
  */
 data class InkCoverage(val c: Float, val m: Float, val y: Float, val k: Float) {
-
     val monochrome = c == m && c == y
-
 }
 
 /**

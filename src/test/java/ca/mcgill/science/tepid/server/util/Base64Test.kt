@@ -7,15 +7,15 @@ import kotlin.test.assertEquals
 class Base64Test {
 
     private val encoders: List<(String) -> String> = listOf<(String) -> String>(
-            { Base64.encodeToString(it.toByteArray(), Base64.NO_WRAP or Base64.URL_SAFE) },
-            { java.util.Base64.getEncoder().encodeToString(it.toByteArray()) },
-            { org.glassfish.jersey.internal.util.Base64.encodeAsString(it) }
+        { Base64.encodeToString(it.toByteArray(), Base64.NO_WRAP or Base64.URL_SAFE) },
+        { java.util.Base64.getEncoder().encodeToString(it.toByteArray()) },
+        { org.glassfish.jersey.internal.util.Base64.encodeAsString(it) }
     )
 
     private val decoders: List<(String) -> String> = listOf<(String) -> ByteArray>(
-            { Base64.decode(it, Base64.NO_WRAP or Base64.URL_SAFE) },
-            { java.util.Base64.getDecoder().decode(it) },
-            { org.glassfish.jersey.internal.util.Base64.decode(it.toByteArray()) }
+        { Base64.decode(it, Base64.NO_WRAP or Base64.URL_SAFE) },
+        { java.util.Base64.getDecoder().decode(it) },
+        { org.glassfish.jersey.internal.util.Base64.decode(it.toByteArray()) }
     ).map { decoder -> { key: String -> String(decoder(key)) } }
 
     /**
@@ -39,5 +39,4 @@ class Base64Test {
         }
         println("Decoded back to $firstDecoded")
     }
-
 }

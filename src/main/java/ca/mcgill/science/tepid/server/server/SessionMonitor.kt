@@ -24,5 +24,4 @@ class SessionMonitor : Runnable {
     }
 
     private companion object : WithLogging()
-
 }

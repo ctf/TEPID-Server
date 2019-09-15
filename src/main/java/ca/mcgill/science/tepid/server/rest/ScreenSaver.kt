@@ -5,17 +5,20 @@ import ca.mcgill.science.tepid.models.data.MarqueeData
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
-import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.Order
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.*
-import javax.ws.rs.*
+import javax.ws.rs.DefaultValue
+import javax.ws.rs.GET
+import javax.ws.rs.Path
+import javax.ws.rs.PathParam
+import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
-
 
 @Path("/screensaver")
 class ScreenSaver {
@@ -38,10 +41,11 @@ class ScreenSaver {
     @GET
     @Path("queues/{queue}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun listJobs(@PathParam("queue") queue: String,
-                 @QueryParam("limit") @DefaultValue("13") limit: Int,
-                 @QueryParam("from") @DefaultValue("0") from: Long): Collection<PrintJob> =
-            DB.getJobsByQueue(queue, maxAge = Date().time - from, sortOrder = Order.DESCENDING)
+    fun listJobs(
+        @PathParam("queue") queue: String,
+        @QueryParam("limit") @DefaultValue("13") limit: Int,
+        @QueryParam("from") @DefaultValue("0") from: Long
+    ): Collection<PrintJob> = DB.getJobsByQueue(queue, maxAge = Date().time - from, sortOrder = Order.DESCENDING)
 
     /**
      * Gets the Up status for each Queue.
@@ -61,9 +65,9 @@ class ScreenSaver {
 
         val out = mutableMapOf<String, Boolean>()
 
-        queues.forEach forQueue@ { q ->
+        queues.forEach forQueue@{ q ->
             val name = q.name ?: return@forQueue
-            q.destinations.forEach forDest@ {
+            q.destinations.forEach forDest@{
                 val isUp = destinations[it]?.up ?: return@forDest
                 out[name] = isUp || out[name] ?: false
             }
@@ -93,11 +97,11 @@ class ScreenSaver {
     @Produces(MediaType.APPLICATION_JSON)
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
         return DB.getDestinations()
-                .mapNotNull {
-                    val id = it._id ?: return@mapNotNull null
-                    id to it.toDestination()
-                }
-                .toMap()
+            .mapNotNull {
+                val id = it._id ?: return@mapNotNull null
+                id to it.toDestination()
+            }
+            .toMap()
     }
 
     @GET
@@ -105,7 +109,7 @@ class ScreenSaver {
     @Produces(MediaType.APPLICATION_JSON)
     fun getUserInfo(@PathParam("username") username: String): String {
         return AuthenticationManager.queryUser(username, null)?.nick
-                ?: failNotFound("No nick associated with $username")
+            ?: failNotFound("No nick associated with $username")
     }
 
     private companion object : WithLogging()

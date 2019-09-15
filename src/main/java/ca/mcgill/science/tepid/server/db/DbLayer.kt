@@ -1,12 +1,18 @@
 package ca.mcgill.science.tepid.server.db
 
-import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.models.data.FullDestination
+import ca.mcgill.science.tepid.models.data.FullSession
+import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.MarqueeData
+import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.PrintQueue
+import ca.mcgill.science.tepid.models.data.Sam
+import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import java.io.InputStream
 import javax.ws.rs.core.Response
 
 var DB: DbLayer = Config.getDb()
-
 
 // TODO deleteDestination should return Response instead of String
 // TODO, all outputs returning response should likely return models that can then be wrapped inside a response
@@ -20,10 +26,11 @@ typealias Id = String
 enum class Order {
     ASCENDING {
         override fun <T : Comparable<T>> sort(iterable: Iterable<T>): List<T> =
-                iterable.sorted()
-    }, DESCENDING {
+            iterable.sorted()
+    },
+    DESCENDING {
         override fun <T : Comparable<T>> sort(iterable: Iterable<T>): List<T> =
-                iterable.sortedDescending()
+            iterable.sortedDescending()
     };
 
     abstract fun <T : Comparable<T>> sort(iterable: Iterable<T>): List<T>
@@ -36,13 +43,13 @@ enum class Order {
  * Each method in each of the included interfaces should still be unique with respect to all other methods.
  */
 interface DbLayer :
-        DbDestinationLayer,
-        DbJobLayer,
-        DbQueueLayer,
-        DbMarqueeLayer,
-        DbSessionLayer,
-        DbUserLayer {
-    fun <T: Comparable<T>> List<T>.sortAs(order: Order): List<T> = order.sort(this)
+    DbDestinationLayer,
+    DbJobLayer,
+    DbQueueLayer,
+    DbMarqueeLayer,
+    DbSessionLayer,
+    DbUserLayer {
+    fun <T : Comparable<T>> List<T>.sortAs(order: Order): List<T> = order.sort(this)
 }
 
 interface DbDestinationLayer {
@@ -70,10 +77,12 @@ interface DbJobLayer {
      * If [maxAge] > 0, then only jobs created before (now - [maxAge])ms will be included
      * If [limit] > 0, then only [limit] jobs will be provided
      */
-    fun getJobsByQueue(queue: String,
-                       maxAge: Long = -1,
-                       sortOrder: Order = Order.DESCENDING,
-                       limit: Int = -1): List<PrintJob>
+    fun getJobsByQueue(
+        queue: String,
+        maxAge: Long = -1,
+        sortOrder: Order = Order.DESCENDING,
+        limit: Int = -1
+    ): List<PrintJob>
 
     fun getJobsByUser(sam: Sam, sortOrder: Order = Order.DESCENDING): List<PrintJob>
 
@@ -95,7 +104,7 @@ interface DbJobLayer {
 
 interface DbQueueLayer {
 
-    fun getQueue(id:Id): PrintQueue
+    fun getQueue(id: Id): PrintQueue
 
     fun getQueues(): List<PrintQueue>
 
@@ -107,13 +116,11 @@ interface DbQueueLayer {
     fun deleteQueue(id: Id): String
 
     fun getEta(destinationId: Id): Long
-
 }
 
 interface DbMarqueeLayer {
 
     fun getMarquees(): List<MarqueeData>
-
 }
 
 interface DbSessionLayer {
@@ -130,7 +137,6 @@ interface DbSessionLayer {
     fun getAllSessions(): List<FullSession>
 
     fun deleteSession(id: Id): String
-
 }
 
 interface DbUserLayer {
@@ -146,4 +152,3 @@ interface DbUserLayer {
 
     fun getTotalPrintedCount(shortUser: ShortUser): Int
 }
-

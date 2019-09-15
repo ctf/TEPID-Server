@@ -15,9 +15,13 @@ import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
+import kotlin.test.fail
 
-class JobTest : ITBase(), Loggable by WithLogging() {
+class JobIT : ITBase(), Loggable by WithLogging() {
 
     lateinit var testJob: PrintJob
 
@@ -31,17 +35,21 @@ class JobTest : ITBase(), Loggable by WithLogging() {
         val d1 = "d1".padEnd(36)
         val q0 = "q0".padEnd(36)
 
-
-        server.testApi.putDestinations(mapOf(d0 to FullDestination(name = d0, up = true), d1 to FullDestination(name = d1, up = true))).executeDirect()
+        server.testApi.putDestinations(
+            mapOf(
+                d0 to FullDestination(name = d0, up = true),
+                d1 to FullDestination(name = d1, up = true)
+            )
+        ).executeDirect()
 
         val q = PrintQueue(loadBalancer = "fiftyfifty", name = "0", destinations = listOf(d0, d1))
         q._id = q0
         server.testApi.putQueues(listOf(q)).executeDirect()
 
         testJob = PrintJob(
-                name = "Server Test ${System.currentTimeMillis()}",
-                queueName = "0",
-                userIdentification = server.testUser
+            name = "Server Test ${System.currentTimeMillis()}",
+            queueName = "0",
+            userIdentification = server.testUser
         )
     }
 
@@ -56,16 +64,20 @@ class JobTest : ITBase(), Loggable by WithLogging() {
         log.debug("Sending job data for $jobId")
 
         // print once
-        val fileInStream = FileInputStream(File(
+        val fileInStream = FileInputStream(
+            File(
                 this::class.java.classLoader.getResource(testFile).file
-        ))
+            )
+        )
 
-        val response = server.testApi.addJobDataFromInput(jobId, FileInputStream(File(this::class.java.classLoader.getResource(testFile).file))).executeDirect()
-                ?: fail("null response received sending job contents")
+        val response = server.testApi.addJobDataFromInput(
+            jobId,
+            FileInputStream(File(this::class.java.classLoader.getResource(testFile).file))
+        ).executeDirect()
+            ?: fail("null response received sending job contents")
         println("Job sent: $response")
 
         assertTrue(response.ok)
-
     }
 
     @Test
@@ -80,8 +92,11 @@ class JobTest : ITBase(), Loggable by WithLogging() {
         log.debug("Sending job data for $jobId")
 
         // print once
-        val response = server.testApi.addJobDataFromInput(jobId, FileInputStream(File(this::class.java.classLoader.getResource(testFile).file)))
-                .executeDirect() ?: fail("null response received sending job contents")
+        val response = server.testApi.addJobDataFromInput(
+            jobId,
+            FileInputStream(File(this::class.java.classLoader.getResource(testFile).file))
+        )
+            .executeDirect() ?: fail("null response received sending job contents")
         println("Job sent: $response")
 
         assertTrue(response.ok)
@@ -90,10 +105,13 @@ class JobTest : ITBase(), Loggable by WithLogging() {
         TimeUnit.MILLISECONDS.sleep(2000)
 
         val printedJob = server.testApi.getJob(jobId).executeDirect()
-                ?: fail("did not retrieve printed job after print")
+            ?: fail("did not retrieve printed job after print")
 
-        val setStatusResponse = TestUtils.testApi.setPrinterStatus(printedJob.destination
-                ?: fail("printed job did not have destination"), DestinationTicket(up = false, reason = "reprint test, put me up")).execute()
+        val setStatusResponse = TestUtils.testApi.setPrinterStatus(
+            printedJob.destination
+                ?: fail("printed job did not have destination"),
+            DestinationTicket(up = false, reason = "reprint test, put me up")
+        ).execute()
 
         if (setStatusResponse?.body()?.contains("down") != true) {
             fail("destination was not marked down")
@@ -101,8 +119,7 @@ class JobTest : ITBase(), Loggable by WithLogging() {
 
         // reprint
         val reprintResponse = server.testApi.reprintJob(jobId).execute().body()
-                ?: fail("did not retrieve response after reprint")
-
+            ?: fail("did not retrieve response after reprint")
 
         assertFalse(reprintResponse.contains("Failed"))
 
@@ -110,9 +127,5 @@ class JobTest : ITBase(), Loggable by WithLogging() {
         assertEquals(2, foundIds.size)
         assertEquals(jobId, foundIds[0])
         assertNotEquals(jobId, foundIds[1])
-
-
     }
-
-
 }
