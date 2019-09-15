@@ -53,7 +53,7 @@ object Config : WithLogging() {
      * LDAP and Permission Groups
      */
 
-    val LDAP_ENABLED = true
+    const val LDAP_ENABLED = true
 
     val LDAP_SEARCH_BASE : String
     val ACCOUNT_DOMAIN : String

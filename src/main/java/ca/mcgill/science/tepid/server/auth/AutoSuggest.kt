@@ -24,11 +24,7 @@ object AutoSuggest : WithLogging() {
      * @return list of matching users
      */
     fun autoSuggest(like: String, limit: Int): Promise<List<FullUser>> {
-        if (!Config.LDAP_ENABLED) {
-            val emptyPromise = Q.defer<List<FullUser>>()
-            emptyPromise.resolve(emptyList())
-            return emptyPromise.promise
-        } //TODO: maybe query the DB first
+        //TODO: maybe query the DB first
         val q = Q.defer<List<FullUser>>()
         object : Thread("LDAP AutoSuggest: " + like) {
             override fun run() {

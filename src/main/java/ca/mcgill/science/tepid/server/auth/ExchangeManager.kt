@@ -23,12 +23,10 @@ object ExchangeManager : WithLogging() {
      * @return updated status of the user; false if anything goes wrong
      */
     fun setExchangeStudent(sam: String, exchange: Boolean): Boolean {
-        if (Config.LDAP_ENABLED) {
-            log.info("Setting exchange status {\"sam\":\"$sam\", \"exchange_status\":\"$exchange\"}")
-            val success = setExchangeStudentLdap(sam, exchange)
-            AuthenticationManager.refreshUser(sam)
-            return success
-        } else return false
+        log.info("Setting exchange status {\"sam\":\"$sam\", \"exchange_status\":\"$exchange\"}")
+        val success = setExchangeStudentLdap(sam, exchange)
+        AuthenticationManager.refreshUser(sam)
+        return success
     }
 
     /**
