@@ -6,24 +6,33 @@ import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
-import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.Order
-import ca.mcgill.science.tepid.server.util.isSuccessful
 import ca.mcgill.science.tepid.server.printing.Printer
-import ca.mcgill.science.tepid.server.util.*
+import ca.mcgill.science.tepid.server.util.Utils
+import ca.mcgill.science.tepid.server.util.failBadRequest
+import ca.mcgill.science.tepid.server.util.failInternal
+import ca.mcgill.science.tepid.server.util.failUnauthorized
+import ca.mcgill.science.tepid.server.util.getSession
+import ca.mcgill.science.tepid.server.util.isSuccessful
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.io.FileInputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
 import javax.annotation.security.RolesAllowed
-import javax.ws.rs.*
+import javax.ws.rs.Consumes
+import javax.ws.rs.GET
+import javax.ws.rs.POST
+import javax.ws.rs.PUT
+import javax.ws.rs.Path
+import javax.ws.rs.PathParam
+import javax.ws.rs.Produces
+import javax.ws.rs.WebApplicationException
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
-
 
 @Path("/jobs")
 class Jobs {
@@ -41,8 +50,8 @@ class Jobs {
     }
 
     private fun PrintJob.getJobExpiration() =
-            System.currentTimeMillis() + (AuthenticationManager.queryUserDb(userIdentification)?.jobExpiration
-                    ?: TimeUnit.DAYS.toMillis(7))
+        System.currentTimeMillis() + (AuthenticationManager.queryUserDb(userIdentification)?.jobExpiration
+            ?: TimeUnit.DAYS.toMillis(7))
 
     @POST
     @RolesAllowed(USER, CTFER, ELDER)
@@ -107,17 +116,18 @@ class Jobs {
         if (session.role == USER && session.user.shortUser != j.userIdentification)
             failUnauthorized("You cannot reprint someone else's job")
         val reprint = PrintJob(
-                name = j.name,
-                originalHost = "REPRINT",
-                queueName = j.queueName,
-                userIdentification = j.userIdentification,
-                deleteDataOn = j.getJobExpiration()
+            name = j.name,
+            originalHost = "REPRINT",
+            queueName = j.queueName,
+            userIdentification = j.userIdentification,
+            deleteDataOn = j.getJobExpiration()
         )
         log.debug("Reprinted ${reprint.name}")
         val response = DB.postJob(reprint)
         if (!response.isSuccessful)
             throw WebApplicationException(response)
-        val content = response.entity as? PutResponse ?: failInternal("Failed to retrieve new id, could not get response entity")
+        val content = response.entity as? PutResponse
+            ?: failInternal("Failed to retrieve new id, could not get response entity")
         val newId = content.id
         Utils.startCaughtThread("Reprint $id", log) {
             val (success, message) = Printer.print(newId, FileInputStream(file))
@@ -129,5 +139,4 @@ class Jobs {
     }
 
     private companion object : WithLogging()
-
 }

@@ -11,7 +11,15 @@ import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.io.InputStream
 import javax.annotation.security.RolesAllowed
-import javax.ws.rs.*
+import javax.ws.rs.Consumes
+import javax.ws.rs.DELETE
+import javax.ws.rs.DefaultValue
+import javax.ws.rs.GET
+import javax.ws.rs.PUT
+import javax.ws.rs.Path
+import javax.ws.rs.PathParam
+import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -32,14 +40,13 @@ class Queues {
     @Produces(MediaType.APPLICATION_JSON)
     fun getQueues(): List<PrintQueue> = DB.getQueues()
 
-
     @GET
     @Path("/{queue}")
     @Produces(MediaType.APPLICATION_JSON)
     fun listJobs(@PathParam("queue") queue: String, @QueryParam("limit") @DefaultValue("-1") limit: Int): Collection<PrintJob> {
-        //TODO limit param no longer user, should be replaced by from param in client
+        // TODO limit param no longer user, should be replaced by from param in client
         // this should get all jobs in "queue" from the past 2 days
-        val twoDaysMs =  1000 * 60 * 60 * 24 * 2L
+        val twoDaysMs = 1000 * 60 * 60 * 24 * 2L
         return DB.getJobsByQueue(queue, maxAge = twoDaysMs, sortOrder = Order.DESCENDING)
     }
 
@@ -58,7 +65,7 @@ class Queues {
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun deleteQueue(@PathParam("queue") queue: String): String =
-            DB.deleteQueue(queue)
+        DB.deleteQueue(queue)
 
     @GET
     @Path("/{queue}/{id}/{file}")
@@ -78,8 +85,8 @@ class Queues {
     @Path("/loadbalancers")
     fun getLoadBalancers(): List<String> {
         return LoadBalancer.loadBalancers
-                .filter { LoadBalancer::class.java.isAssignableFrom(it) }
-                .map { it.simpleName }
+            .filter { LoadBalancer::class.java.isAssignableFrom(it) }
+            .map { it.simpleName }
     }
 
     private companion object : WithLogging()

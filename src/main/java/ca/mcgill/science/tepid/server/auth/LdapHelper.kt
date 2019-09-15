@@ -1,6 +1,10 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.models.data.AdGroup
+import ca.mcgill.science.tepid.models.data.Course
+import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -30,21 +34,20 @@ class LdapHelper {
         fun AttributesToUser(attributes: Attributes, ctx: LdapContext): FullUser {
             fun attr(name: String) = attributes.get(name)?.get()?.toString() ?: ""
             val out = FullUser(
-                    displayName = attr("displayName"),
-                    givenName = attr("givenName"),
-                    lastName = attr("sn"),
-                    shortUser = attr("sAMAccountName"),
-                    longUser = attr("userPrincipalName").toLowerCase(),
-                    email = attr("mail"),
-                    middleName = attr("middleName"),
-                    faculty = attr("department"),
-                    studentId = attr("employeeID").toIntOrNull() ?: -1
+                displayName = attr("displayName"),
+                givenName = attr("givenName"),
+                lastName = attr("sn"),
+                shortUser = attr("sAMAccountName"),
+                longUser = attr("userPrincipalName").toLowerCase(),
+                email = attr("mail"),
+                middleName = attr("middleName"),
+                faculty = attr("department"),
+                studentId = attr("employeeID").toIntOrNull() ?: -1
             )
             out._id = "u${attr("sAMAccountName")}"
             try {
                 out.activeSince = SimpleDateFormat("yyyyMMddHHmmss.SX").parse(attr("whenCreated")).time
             } catch (e: ParseException) {
-
             }
 
             fun getCn(ldapQuery: String): String {
@@ -80,6 +83,5 @@ class LdapHelper {
 
             return out
         }
-
     }
 }

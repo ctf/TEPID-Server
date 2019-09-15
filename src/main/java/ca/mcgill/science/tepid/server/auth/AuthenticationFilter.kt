@@ -42,7 +42,7 @@ class AuthenticationFilter : ContainerRequestFilter {
             return
         }
         if (method.isAnnotationPresent(RolesAllowed::class.java)) {
-            //method roles; possible roles: user, ctfer, elder
+            // method roles; possible roles: user, ctfer, elder
             val roles = method.getAnnotation(RolesAllowed::class.java).value.toSet()
             val headers = requestContext.headers
             val authorization = headers[AUTHORIZATION_PROPERTY]
@@ -112,7 +112,6 @@ class AuthenticationFilter : ContainerRequestFilter {
         }
     }
 
-
     companion object : WithLogging() {
         private const val AUTHORIZATION_PROPERTY = "Authorization"
         private const val BASIC = "Basic"
@@ -125,7 +124,7 @@ class AuthenticationFilter : ContainerRequestFilter {
             get() = Response.Status.FORBIDDEN.text("403 You cannot access this resource")
         private inline val AUTH_REQUIRED: Response
             get() = Response.status(Response.Status.UNAUTHORIZED).entity("401 Please authenticate to access this resource")
-                    .header("WWW-Authenticate", "Basic realm=\"Restricted Resource\"").type(MediaType.TEXT_PLAIN).build()
+                .header("WWW-Authenticate", "Basic realm=\"Restricted Resource\"").type(MediaType.TEXT_PLAIN).build()
         private inline val ACCESS_FORBIDDEN: Response
             get() = Response.Status.FORBIDDEN.text("403 No access to this resource")
 

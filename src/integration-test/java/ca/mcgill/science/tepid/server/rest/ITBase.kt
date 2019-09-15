@@ -5,12 +5,11 @@ import ca.mcgill.science.tepid.test.TestUtilsDelegate
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
 import ca.mcgill.science.tepid.utils.PropsURL
 
-
 open class ITBase(val cfg: Config = Config) {
     val server = TestUtilsDelegate(
-            PropsLDAPTestUser.TEST_USER,
-            PropsLDAPTestUser.TEST_PASSWORD,
-            PropsURL.SERVER_URL_PRODUCTION!!,
-            PropsURL.TESTING!!.toBoolean()
+        PropsLDAPTestUser.TEST_USER,
+        PropsLDAPTestUser.TEST_PASSWORD,
+        PropsURL.SERVER_URL_PRODUCTION!!,
+        PropsURL.TESTING!!.toBoolean()
     )
 }

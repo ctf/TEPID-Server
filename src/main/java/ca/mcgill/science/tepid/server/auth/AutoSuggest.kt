@@ -15,16 +15,15 @@ object AutoSuggest : WithLogging() {
 
     private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
 
-
     /**
      * Sends list of matching [User]s based on current query
      *
-     * @param like  prefix
+     * @param like prefix
      * @param limit max list size
      * @return list of matching users
      */
     fun autoSuggest(like: String, limit: Int): Promise<List<FullUser>> {
-        //TODO: maybe query the DB first
+        // TODO: maybe query the DB first
         val q = Q.defer<List<FullUser>>()
         object : Thread("LDAP AutoSuggest: " + like) {
             override fun run() {
@@ -51,7 +50,7 @@ object AutoSuggest : WithLogging() {
                 if (user.longUser?.split("@")?.getOrNull(0)?.indexOf(".") ?: -1 > 0)
                     out.add(user)
             }
-            //todo update; a crash here will lead to the contents not closing
+            // todo update; a crash here will lead to the contents not closing
             results.close()
             ctx.close()
             return out

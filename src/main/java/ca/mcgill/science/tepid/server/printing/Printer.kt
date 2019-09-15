@@ -5,7 +5,6 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.enums.PrintError
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
-import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.server.Config
@@ -15,7 +14,12 @@ import org.tukaani.xz.XZInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
-import java.util.concurrent.*
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Future
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 /**
  * Handler that manages all job requests
@@ -26,8 +30,10 @@ object Printer : WithLogging() {
         constructor(printError: PrintError) : this(printError.display)
     }
 
-    private val executor: ExecutorService = ThreadPoolExecutor(5, 30, 10, TimeUnit.MINUTES,
-            ArrayBlockingQueue<Runnable>(300, true))
+    private val executor: ExecutorService = ThreadPoolExecutor(
+        5, 30, 10, TimeUnit.MINUTES,
+        ArrayBlockingQueue<Runnable>(300, true)
+    )
     private val runningTasks: MutableMap<String, Future<*>> = ConcurrentHashMap()
     private val lock: Any = Any()
 
@@ -82,10 +88,10 @@ object Printer : WithLogging() {
 
         try {
             // todo test and validate
-            //write compressed job to disk
+            // write compressed job to disk
             val tmpXz = File("${tmpDir.absolutePath}/$id.ps.xz")
             tmpXz.copyFrom(stream)
-            //let db know we have received data
+            // let db know we have received data
             DB.updateJobWithResponse(id) {
                 file = tmpXz.absolutePath
                 log.info("Updating job $id with path $file")
@@ -102,20 +108,20 @@ object Printer : WithLogging() {
                 // Generates a random file name with our prefix and suffix
                 val tmp = File.createTempFile("tepid", ".ps")
                 try {
-                    //decompress data
+                    // decompress data
                     val decompress = XZInputStream(FileInputStream(tmpXz))
                     tmp.copyFrom(decompress)
 
                     val now = System.currentTimeMillis()
 
-                    //count pages
+                    // count pages
                     val psInfo = Gs.psInfo(tmp)
                     log.trace("Detected ${if (psInfo.isColor) "color" else "monochrome"} for job $id in ${System.currentTimeMillis() - now} ms")
                     log.trace("Job $id has ${psInfo.pages} pages, ${psInfo.colorPages} in color")
 
                     var j2: PrintJob = updatePagecount(id, psInfo)
                     val user = AuthenticationManager.queryUser(j2.userIdentification, null)
-                            ?: throw Printer.PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
+                        ?: throw Printer.PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
 
                     validateColorAvailable(user, j2, psInfo)
 
@@ -123,12 +129,12 @@ object Printer : WithLogging() {
 
                     validateJobSize(j2)
 
-                    //add job to the queue
+                    // add job to the queue
                     log.trace("Trying to assign destination {\"job\":\"{}\"}", j2.getId())
                     j2 = QueueManager.assignDestination(id)
-                    //todo check destination field
+                    // todo check destination field
                     val destination = j2.destination
-                            ?: throw PrintException(PrintError.INVALID_DESTINATION)
+                        ?: throw PrintException(PrintError.INVALID_DESTINATION)
 
                     val dest = DB.getDestination(destination)
                     if (sendToSMB(tmp, dest, debug)) {
@@ -142,7 +148,7 @@ object Printer : WithLogging() {
                 } catch (e: Exception) {
                     log.error("Job $id failed", e)
                     val msg = (e as? PrintException)?.message
-                            ?: "Failed to process"
+                        ?: "Failed to process"
                     failJob(id, msg)
                 } finally {
                     tmp.delete()
@@ -168,31 +174,30 @@ object Printer : WithLogging() {
         } ?: throw PrintException("Could not update")
     }
 
-    //check if user has color printing enabled
+    // check if user has color printing enabled
     private fun validateColorAvailable(user: FullUser, job: PrintJob, psInfo: PsData) {
         log.trace("Testing for color {\"job\":\"{}\"}", job.getId())
         if (psInfo.colorPages > 0 && !user.colorPrinting)
             throw PrintException(PrintError.COLOR_DISABLED)
     }
 
-    //check if user has sufficient quota to print this job
+    // check if user has sufficient quota to print this job
     private fun validateAvailableQuota(user: FullUser, job: PrintJob, psInfo: PsData) {
         log.trace("Testing for quota {\"job\":\"{}\"}", job.getId())
         if (Users.getQuota(user) < psInfo.pages + psInfo.colorPages * 2)
             throw PrintException(PrintError.INSUFFICIENT_QUOTA)
     }
 
-    //check if job is below max pages
+    // check if job is below max pages
     fun validateJobSize(j2: PrintJob) {
         log.trace("Testing for job length {\"job\":\"{}\"}")
         if (
-                Config.MAX_PAGES_PER_JOB > 0                // valid max pages per job
-                && j2.pages > Config.MAX_PAGES_PER_JOB
+            Config.MAX_PAGES_PER_JOB > 0 && // valid max pages per job
+            j2.pages > Config.MAX_PAGES_PER_JOB
         ) {
             throw PrintException(PrintError.TOO_MANY_PAGES)
         }
     }
-
 
     internal fun sendToSMB(f: File, destination: FullDestination, debug: Boolean): Boolean {
         if (!f.isFile) {
@@ -202,7 +207,7 @@ object Printer : WithLogging() {
 
         log.trace("Sending file ${f.name} ${f.length()} to ${destination.name}")
         if (debug || destination.path?.isBlank() != false) {
-            //this is a dummy destination
+            // this is a dummy destination
             try {
                 Thread.sleep(1000)
             } catch (e: InterruptedException) {
@@ -211,8 +216,10 @@ object Printer : WithLogging() {
             return true
         }
         try {
-            val p = ProcessBuilder("smbclient", "//${destination.path}", destination.password, "-c",
-                    "print ${f.absolutePath}", "-U", destination.domain + "\\${destination.username}", "-mSMB3").start()
+            val p = ProcessBuilder(
+                "smbclient", "//${destination.path}", destination.password, "-c",
+                "print ${f.absolutePath}", "-U", destination.domain + "\\${destination.username}", "-mSMB3"
+            ).start()
             p.waitFor()
         } catch (e: Exception) {
             log.error("File ${f.name} failed", e)

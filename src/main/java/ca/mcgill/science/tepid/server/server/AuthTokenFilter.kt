@@ -21,7 +21,7 @@ class AuthTokenFilter : ContainerResponseFilter {
             val hours = req.headers.getFirst(HEADER_TIMEOUT).toInt()
             session.expiration = System.currentTimeMillis() + hours * HOUR_IN_MILLIS
         }
-        //todo perhaps do not make no timeout the default? eg do not count -1 as no expiration
+        // todo perhaps do not make no timeout the default? eg do not count -1 as no expiration
 
         // our default header is persistent, so we will check against the "false" string rather than the "true" string
         if (req.headers.containsKey(HEADER_PERSISTENT)) {
@@ -36,7 +36,5 @@ class AuthTokenFilter : ContainerResponseFilter {
         private const val HEADER_ROLE = "X-TEPID-Role"
         private const val HEADER_TIMEOUT = "X-TEPID-Session-Timeout"
         private const val HEADER_PERSISTENT = "X-TEPID-Session-Persistent"
-
     }
-
 }

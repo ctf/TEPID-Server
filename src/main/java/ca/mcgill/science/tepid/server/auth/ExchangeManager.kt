@@ -6,7 +6,11 @@ import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import java.util.*
 import javax.naming.NamingException
-import javax.naming.directory.*
+import javax.naming.directory.BasicAttribute
+import javax.naming.directory.DirContext
+import javax.naming.directory.ModificationItem
+import javax.naming.directory.SearchControls
+import javax.naming.directory.SearchResult
 
 object ExchangeManager : WithLogging() {
 
@@ -20,7 +24,7 @@ object ExchangeManager : WithLogging() {
      * This refreshes the groups and courses of a user,
      * which allows for thier role to change
      *
-     * @param shortUser      shortUser
+     * @param shortUser shortUser
      * @param exchange boolean for exchange status
      * @return updated status of the user; false if anything goes wrong
      */
@@ -39,7 +43,8 @@ object ExchangeManager : WithLogging() {
     fun setExchangeStudentLdap(sam: Sam, exchange: Boolean): Boolean {
         val isLongUser = sam.contains(".")
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
-        val searchFilter = "(&(objectClass=user)(" + (if (isLongUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (isLongUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
+        val searchFilter =
+            "(&(objectClass=user)(" + (if (isLongUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (isLongUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
         val ctx = ldapConnector.bindLdap(auth) ?: return false
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
@@ -60,7 +65,8 @@ object ExchangeManager : WithLogging() {
         val groupDn = "CN=" + Config.EXCHANGE_STUDENTS_GROUP_BASE + "$year$season, " + Config.GROUPS_LOCATION
         val mod = BasicAttribute("member", userDn)
         // todo check if we should ignore modification action if the user is already in/not in the exchange group?
-        val mods = arrayOf(ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod))
+        val mods =
+            arrayOf(ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod))
         return try {
             ctx.modifyAttributes(groupDn, mods)
             log.info("${if (exchange) "Added $sam to" else "Removed $sam from"} exchange students.")
@@ -79,6 +85,4 @@ object ExchangeManager : WithLogging() {
             }
         }
     }
-
-
 }

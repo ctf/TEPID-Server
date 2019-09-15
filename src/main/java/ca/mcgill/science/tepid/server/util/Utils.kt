@@ -22,13 +22,13 @@ import javax.ws.rs.container.ContainerRequestContext
  */
 @Throws(WebApplicationException::class)
 fun ContainerRequestContext.getSession(): FullSession =
-        getSessionSafely() ?: failUnauthorized("Invalid Session")
+    getSessionSafely() ?: failUnauthorized("Invalid Session")
 
 /**
  * Returns a session or null if none was found
  */
 fun ContainerRequestContext.getSessionSafely(): FullSession? =
-        getProperty(AuthenticationFilter.SESSION) as? FullSession
+    getProperty(AuthenticationFilter.SESSION) as? FullSession
 
 /**
  * Copies the given [input] to the file, and ensure that
@@ -36,8 +36,10 @@ fun ContainerRequestContext.getSessionSafely(): FullSession? =
  *
  * By default, we will clear the current file before the copy
  */
-fun File.copyFrom(input: InputStream,
-                  vararg options: CopyOption = arrayOf(StandardCopyOption.REPLACE_EXISTING)) {
+fun File.copyFrom(
+    input: InputStream,
+    vararg options: CopyOption = arrayOf(StandardCopyOption.REPLACE_EXISTING)
+) {
     input.use {
         Files.copy(it, toPath(), *options)
     }
@@ -71,14 +73,14 @@ object Utils {
     /**
      * Create and run a thread with try catch
      */
-    inline fun startCaughtThread(name: String, log: Logger? = null, crossinline action: () -> Unit) = object : Thread(name) {
-        override fun run() {
-            try {
-                action()
-            } catch (e: Exception) {
-                log?.error("Caught exception from thread $name: ${e.message}")
+    inline fun startCaughtThread(name: String, log: Logger? = null, crossinline action: () -> Unit) =
+        object : Thread(name) {
+            override fun run() {
+                try {
+                    action()
+                } catch (e: Exception) {
+                    log?.error("Caught exception from thread $name: ${e.message}")
+                }
             }
-        }
-    }.start()
-
+        }.start()
 }

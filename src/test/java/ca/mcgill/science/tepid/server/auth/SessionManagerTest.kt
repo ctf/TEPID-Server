@@ -8,14 +8,25 @@ import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.mockk.*
-import org.junit.jupiter.api.*
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.runs
+import io.mockk.spyk
+import io.mockk.unmockkAll
+import io.mockk.verify
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import javax.ws.rs.core.Response
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
 class MergeUsersTest {
-
 
     // This should never happen, but it would cause so much trouble downstream that we need to guard against it
     // I don't even have a plausible scenario for how it would happen
@@ -58,7 +69,6 @@ class MergeUsersTest {
         val expected = UserFactory.makeMergedUser().copy(studentId = UserFactory.makeDbUser().studentId)
         assertEquals(expected, actual)
     }
-
 }
 
 class UpdateDbWithUserTest {
@@ -67,9 +77,9 @@ class UpdateDbWithUserTest {
     fun testUpdateUserUnsuccessfulResponse() {
 
         val mockObjectNode = ObjectMapper().createObjectNode()
-                .put("ok", false)
-                .put("id", "utestSU")
-                .put("_rev", "3333")
+            .put("ok", false)
+            .put("id", "utestSU")
+            .put("_rev", "3333")
 
         val mockResponse = spyk(Response.serverError().entity(mockObjectNode).build())
 
@@ -297,7 +307,6 @@ class QueryUserTest : WithLogging() {
 
         verify(inverse = true) { am.updateDbWithUser(any()) }
         assertEquals(expected, actual, "AuthenticationManager doesn't return null if SAM is not shortUser")
-
     }
 
     @Test
@@ -312,13 +321,11 @@ class QueryUserTest : WithLogging() {
         assertEquals(expected, actual, "AuthenticationManager doesn't return null if Ldap returns null")
     }
 
-
     @Test
     fun testQueryUserWithLdap() {
         every { am.queryUserDb("SU") } returns null
         every { am.updateDbWithUser(any()) } just runs
         every { Ldap.queryUser(any(), null) } returns testUser
-
 
         val actual = am.queryUser("SU", null)
         val expected = testUser
@@ -346,9 +353,9 @@ class AuthenticateTest {
     fun initTest() {
         testUser = UserFactory.generateTestUser("test").copy(shortUser = testShortUser, colorPrinting = true)
         testUserFromDb = UserFactory.generateTestUser("db").copy(
-                shortUser = testUser.shortUser,
-                studentId = 5555,
-                colorPrinting = false
+            shortUser = testUser.shortUser,
+            studentId = 5555,
+            colorPrinting = false
         )
         mockkObject(Config)
         sm = spyk(AuthenticationManager)
@@ -399,7 +406,7 @@ class SetExchangeStudentTest {
         val targetUser = AuthenticationManager.mergeUsers(UserFactory.makeLdapUser(), UserFactory.makeDbUser())
         verify {
             AuthenticationManager.refreshUser(
-                    targetUser.shortUser!!
+                targetUser.shortUser!!
             )
         }
         verify { ExchangeManager.setExchangeStudentLdap(testSam, true) }
@@ -428,7 +435,6 @@ class SetExchangeStudentTest {
             unmockkAll()
         }
     }
-
 }
 
 class RefreshUserTest {
@@ -445,7 +451,7 @@ class RefreshUserTest {
 
         verify {
             AuthenticationManager.updateDbWithUser(
-                    UserFactory.makeMergedUser()
+                UserFactory.makeMergedUser()
             )
         }
     }
@@ -497,7 +503,10 @@ class SessionIsValidTest {
 
         every { mockSession.isUnexpired() } returns true
 
-        assertFalse(SessionManager.isValid(mockSession), "SessionaManger ignores a mismatch between session permission and user permission")
+        assertFalse(
+            SessionManager.isValid(mockSession),
+            "SessionaManger ignores a mismatch between session permission and user permission"
+        )
     }
 
     companion object {
@@ -539,7 +548,6 @@ class SessionGetTest {
         every { SessionManager.isValid(testSession) } returns true
 
         assertEquals(testSession, SessionManager.get("testID"), "Does not return valid session")
-
     }
 
     companion object {

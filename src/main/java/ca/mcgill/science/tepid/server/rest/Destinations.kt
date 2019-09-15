@@ -7,12 +7,19 @@ import ca.mcgill.science.tepid.models.data.Destination
 import ca.mcgill.science.tepid.models.data.DestinationTicket
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.util.isSuccessful
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.getSession
+import ca.mcgill.science.tepid.server.util.isSuccessful
 import ca.mcgill.science.tepid.utils.WithLogging
 import javax.annotation.security.RolesAllowed
-import javax.ws.rs.*
+import javax.ws.rs.Consumes
+import javax.ws.rs.DELETE
+import javax.ws.rs.GET
+import javax.ws.rs.POST
+import javax.ws.rs.PUT
+import javax.ws.rs.Path
+import javax.ws.rs.PathParam
+import javax.ws.rs.Produces
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
@@ -29,7 +36,7 @@ class Destinations {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun putDestinations(destinations: Map<String, FullDestination>): String =
-           DB.putDestinations(destinations)
+        DB.putDestinations(destinations)
 
     /**
      * Retrieves map of room names as [String] and their details in [Destination]
@@ -43,11 +50,11 @@ class Destinations {
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
         val session = ctx.getSession()
         return DB.getDestinations()
-                .mapNotNull {
-                    val id = it._id ?: return@mapNotNull null
-                    id to it.toDestination(session.role)
-                }
-                .toMap()
+            .mapNotNull {
+                val id = it._id ?: return@mapNotNull null
+                id to it.toDestination(session.role)
+            }
+            .toMap()
     }
 
     @POST
@@ -57,7 +64,7 @@ class Destinations {
     @Consumes(MediaType.APPLICATION_JSON)
     fun setStatus(@PathParam("dest") id: String, ticket: DestinationTicket, @Context crc: ContainerRequestContext): String {
         val session = crc.getSession()
-        ticket.user = session.user .toUser()
+        ticket.user = session.user.toUser()
         val successText = "$id marked as ${if (ticket.up) "up" else "down"}"
         val response = DB.updateDestinationWithResponse(id) {
             up = ticket.up
@@ -69,14 +76,12 @@ class Destinations {
         return successText
     }
 
-
     @DELETE
     @Path("/{dest}")
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun deleteQueue(@PathParam("dest") destination: String): String =
-            DB.deleteDestination(destination)
+        DB.deleteDestination(destination)
 
     private companion object : WithLogging()
-
 }

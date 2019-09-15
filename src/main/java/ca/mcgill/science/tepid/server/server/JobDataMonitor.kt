@@ -13,8 +13,8 @@ class JobDataMonitor : Runnable {
             DB.getStoredJobs().forEach { j ->
 
                 val id = j._id ?: return@forEach
-                DB.updateJob(id){
-                    if (deleteDataOn < System.currentTimeMillis()){
+                DB.updateJob(id) {
+                    if (deleteDataOn < System.currentTimeMillis()) {
 
                         val filePath = file
                         if (filePath != null) {
@@ -38,5 +38,4 @@ class JobDataMonitor : Runnable {
     }
 
     private companion object : WithLogging()
-
 }

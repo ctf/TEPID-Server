@@ -12,34 +12,32 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-
-class TestPrinting : WithLogging() {
+class PrintingTest : WithLogging() {
 
     @Test
-    fun tooManyPagesTestTooManyEnabled(){
-        every {Config.MAX_PAGES_PER_JOB } returns 10
+    fun tooManyPagesTestTooManyEnabled() {
+        every { Config.MAX_PAGES_PER_JOB } returns 10
 
-        val p = PrintJob(pages=1000)
-        val e = Assertions.assertThrows(Printer.PrintException::class.java)
-                {Printer.validateJobSize(p)}
+        val p = PrintJob(pages = 1000)
+        val e = Assertions.assertThrows(Printer.PrintException::class.java) { Printer.validateJobSize(p) }
 
-        Assertions.assertEquals(PrintError.TOO_MANY_PAGES.display, e.message )
+        Assertions.assertEquals(PrintError.TOO_MANY_PAGES.display, e.message)
     }
 
     @Test
-    fun tooManyPagesTestTooManyDisabled(){
-        every {Config.MAX_PAGES_PER_JOB } returns -1
+    fun tooManyPagesTestTooManyDisabled() {
+        every { Config.MAX_PAGES_PER_JOB } returns -1
 
-        val p = PrintJob(pages=1000)
+        val p = PrintJob(pages = 1000)
         Printer.validateJobSize(p)
     }
 
     @Test
-    fun tooManyPagesTestEnoughEnabled(){
+    fun tooManyPagesTestEnoughEnabled() {
 
-        every {Config.MAX_PAGES_PER_JOB } returns 50
+        every { Config.MAX_PAGES_PER_JOB } returns 50
 
-        val p = PrintJob(pages=10)
+        val p = PrintJob(pages = 10)
         Printer.validateJobSize(p)
     }
 
@@ -49,6 +47,7 @@ class TestPrinting : WithLogging() {
         fun initTest() {
             mockkObject(Config)
         }
+
         @JvmStatic
         @AfterAll
         fun tearTest() {

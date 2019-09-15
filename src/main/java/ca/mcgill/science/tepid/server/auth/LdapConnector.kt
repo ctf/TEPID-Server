@@ -25,7 +25,6 @@ class LdapConnector {
         }
     }
 
-
     private companion object : WithLogging() {
         /**
          * Defines the environment necessary for [InitialLdapContext]

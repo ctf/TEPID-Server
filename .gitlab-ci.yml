@@ -27,6 +27,14 @@ test:
     reports:
       junit: [build/test-results/test/TEST-*.xml]
 
+lint:
+  extends: .base
+  stage: test
+  script:
+    - chmod +x gradlew
+    - ./gradlew ktlintCheck
+  allow_failure: true
+
 staging:
   extends: .base
   stage: staging
