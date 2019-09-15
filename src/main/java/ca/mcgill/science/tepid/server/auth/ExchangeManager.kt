@@ -24,7 +24,7 @@ object ExchangeManager : WithLogging() {
      * This refreshes the groups and courses of a user,
      * which allows for thier role to change
      *
-     * @param shortUser      shortUser
+     * @param shortUser shortUser
      * @param exchange boolean for exchange status
      * @return updated status of the user; false if anything goes wrong
      */
