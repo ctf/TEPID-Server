@@ -13,14 +13,12 @@ clean:
   extends: .base
   stage: build
   script:
-  - chmod +x gradlew
   - ./gradlew clean
 
 test:
   extends: .base
   stage: test
   script:
-  - chmod +x gradlew
   - ./gradlew test -i
   artifacts:
     when: always
@@ -31,7 +29,6 @@ lint:
   extends: .base
   stage: test
   script:
-    - chmod +x gradlew
     - ./gradlew ktlintCheck
   allow_failure: true
 
@@ -51,7 +48,6 @@ integrationTest:
   start_in: 1 minutes
   stage: integrationTest
   script:
-  - chmod +x gradlew
   - ./gradlew integrationTest -i
   artifacts:
     when: always
@@ -62,7 +58,6 @@ war:
   extends: .base
   stage: deploy
   script:
-  - chmod +x gradlew
   - ./gradlew war
   - cp ./build/libs/tepid*.war ~/tepid.war
   artifacts:
