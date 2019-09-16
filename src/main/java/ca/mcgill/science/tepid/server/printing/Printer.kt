@@ -13,6 +13,7 @@ import ca.mcgill.science.tepid.utils.WithLogging
 import org.tukaani.xz.XZInputStream
 import java.io.File
 import java.io.FileInputStream
+import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ConcurrentHashMap
@@ -86,10 +87,11 @@ object Printer : WithLogging() {
             return false to "Failed to create tmp path"
         }
 
+        val tmpXz = File("${tmpDir.absolutePath}/$id.ps.xz")
+
         try {
             // todo test and validate
             // write compressed job to disk
-            val tmpXz = File("${tmpDir.absolutePath}/$id.ps.xz")
             // adding filepath before upload ensures that the file can get deleted even if the job fails during upload
             DB.updateJob(id) {
                 file = tmpXz.absolutePath
@@ -162,9 +164,20 @@ object Printer : WithLogging() {
             log.trace("Returning true for {\"job\":\"{}\"}", id)
             return true to "Successfully created request $id"
         } catch (e: Exception) {
-            // todo check if this is necessary, given that the submit code is handled separately
             log.error("Job $id failed", e)
             failJob(id, "Failed to process")
+
+            try {
+                if (!tmpXz.delete()) {
+                    throw IOException("Failed to delete file in cleanup of failed reception")
+                }
+                DB.updateJob(id) {
+                    file = null
+                }
+            } catch (e: Exception) {
+                log.error("Failed to delete file: ${e.message}")
+            }
+
             return false to "Failed to process"
         }
     }
