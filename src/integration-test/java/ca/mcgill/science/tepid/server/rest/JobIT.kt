@@ -102,14 +102,17 @@ class JobIT : ITBase(), Loggable by WithLogging() {
         assertTrue(response.ok)
 
         // turn off original destination
-        TimeUnit.MILLISECONDS.sleep(2000)
-
-        val printedJob = server.testApi.getJob(jobId).executeDirect()
-            ?: fail("did not retrieve printed job after print")
+        var printedJob : PrintJob? = null
+        for (i in 0..10){
+            printedJob = server.testApi.getJob(jobId).executeDirect()
+                ?: fail("did not retrieve printed job after print")
+            if (printedJob.destination != null) break
+            TimeUnit.MILLISECONDS.sleep(200)
+        }
+        val dest = printedJob?.destination ?: fail("printed job did not have destination")
 
         val setStatusResponse = TestUtils.testApi.setPrinterStatus(
-            printedJob.destination
-                ?: fail("printed job did not have destination"),
+            dest,
             DestinationTicket(up = false, reason = "reprint test, put me up")
         ).execute()
 
