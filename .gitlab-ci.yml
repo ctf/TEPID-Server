@@ -32,15 +32,21 @@ lint:
     - ./gradlew ktlintCheck
   allow_failure: true
 
+war:
+  extends: .base
+  stage: build
+  script:
+    - ./gradlew war
+    - cp ./build/libs/tepid*.war ~/tepid.war
+  artifacts:
+    when: always
+    paths:
+      - ./build/libs/tepid*.war
 staging:
   extends: .base
   stage: staging
   script:
     - cp ~/tepid.war /var/lib/tomcat8/webapps/
-  artifacts:
-    when: always
-    paths:
-      - ~/tepid*.war
 
 integrationTest:
   extends: .base
@@ -54,13 +60,4 @@ integrationTest:
     reports:
       junit: [build/test-results/integrationTest/TEST-*.xml]
 
-war:
-  extends: .base
-  stage: deploy
-  script:
-  - ./gradlew war
-  - cp ./build/libs/tepid*.war ~/tepid.war
-  artifacts:
-    when: always
-    paths:
-    - ./build/libs/tepid*.war
+
