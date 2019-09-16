@@ -65,6 +65,8 @@ staging:
   extends: .base
   stage: staging
   script:
+    - rm -r /var/lib/tomcat8/webapps/tepid.war || true
+    - rm -r /var/lib/tomcat8/webapps/tepid || true
     - cp ~/tepid.war /var/lib/tomcat8/webapps/
 
 integrationTest:

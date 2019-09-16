@@ -102,8 +102,8 @@ class JobIT : ITBase(), Loggable by WithLogging() {
         assertTrue(response.ok)
 
         // turn off original destination
-        var printedJob : PrintJob? = null
-        for (i in 0..10){
+        var printedJob: PrintJob? = null
+        for (i in 0..10) {
             printedJob = server.testApi.getJob(jobId).executeDirect()
                 ?: fail("did not retrieve printed job after print")
             if (printedJob.destination != null) break
