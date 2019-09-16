@@ -3,8 +3,8 @@
   - /^(wip|test).*$/
 
 stages:
-  - build
   - test
+  - build
   - staging
   - integrationTest
   - deploy
