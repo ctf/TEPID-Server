@@ -104,63 +104,8 @@ object Printer : WithLogging() {
                 log.info("Job $id file received at $received")
             }
 
-            submit(id) {
-
-                /*
-                 * Note that this is a runnable that will be submitted to the executor service
-                 * This block does not run in the same thread!
-                 */
-
-                // Generates a random file name with our prefix and suffix
-                val tmp = File.createTempFile("tepid", ".ps")
-                try {
-                    // decompress data
-                    val decompress = XZInputStream(FileInputStream(tmpXz))
-                    tmp.copyFrom(decompress)
-
-                    val now = System.currentTimeMillis()
-
-                    // count pages
-                    val psInfo = Gs.psInfo(tmp)
-                    log.trace("Detected ${if (psInfo.isColor) "color" else "monochrome"} for job $id in ${System.currentTimeMillis() - now} ms")
-                    log.trace("Job $id has ${psInfo.pages} pages, ${psInfo.colorPages} in color")
-
-                    var j2: PrintJob = updatePagecount(id, psInfo)
-                    val user = AuthenticationManager.queryUser(j2.userIdentification, null)
-                        ?: throw Printer.PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
-
-                    validateColorAvailable(user, j2, psInfo)
-
-                    validateAvailableQuota(user, j2, psInfo)
-
-                    validateJobSize(j2)
-
-                    // add job to the queue
-                    log.trace("Trying to assign destination {\"job\":\"{}\"}", j2.getId())
-                    j2 = QueueManager.assignDestination(id)
-                    // todo check destination field
-                    val destination = j2.destination
-                        ?: throw PrintException(PrintError.INVALID_DESTINATION)
-
-                    val dest = DB.getDestination(destination)
-                    if (sendToSMB(tmp, dest, debug)) {
-                        DB.updateJob(id) {
-                            printed = System.currentTimeMillis()
-                        }
-                        log.info("${j2._id} sent to destination")
-                    } else {
-                        throw PrintException("Could not send to destination")
-                    }
-                } catch (e: Exception) {
-                    log.error("Job $id failed", e)
-                    val msg = (e as? PrintException)?.message
-                        ?: "Failed to process"
-                    failJob(id, msg)
-                } finally {
-                    tmp.delete()
-                    log.trace("Successfully deleted tmp {\"file\":{}}", tmp.absoluteFile)
-                }
-            }
+            submit(id, validateAndSend(tmpXz, id, debug))
+            
             log.trace("Returning true for {\"job\":\"{}\"}", id)
             return true to "Successfully created request $id"
         } catch (e: Exception) {
@@ -179,6 +124,66 @@ object Printer : WithLogging() {
             }
 
             return false to "Failed to process"
+        }
+    }
+
+    private fun validateAndSend(tmpXz: File, id: String, debug: Boolean): () -> Unit {
+        return {
+
+            /*
+                 * Note that this is a runnable that will be submitted to the executor service
+                 * This block does not run in the same thread!
+                 */
+
+            // Generates a random file name with our prefix and suffix
+            val tmp = File.createTempFile("tepid", ".ps")
+            try {
+                // decompress data
+                val decompress = XZInputStream(FileInputStream(tmpXz))
+                tmp.copyFrom(decompress)
+
+                val now = System.currentTimeMillis()
+
+                // count pages
+                val psInfo = Gs.psInfo(tmp)
+                log.trace("Detected ${if (psInfo.isColor) "color" else "monochrome"} for job $id in ${System.currentTimeMillis() - now} ms")
+                log.trace("Job $id has ${psInfo.pages} pages, ${psInfo.colorPages} in color")
+
+                var j2: PrintJob = updatePagecount(id, psInfo)
+                val user = AuthenticationManager.queryUser(j2.userIdentification, null)
+                    ?: throw PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
+
+                validateColorAvailable(user, j2, psInfo)
+
+                validateAvailableQuota(user, j2, psInfo)
+
+                validateJobSize(j2)
+
+                // add job to the queue
+                log.trace("Trying to assign destination {\"job\":\"{}\"}", j2.getId())
+                j2 = QueueManager.assignDestination(id)
+                // todo check destination field
+                val destination = j2.destination
+                    ?: throw PrintException(PrintError.INVALID_DESTINATION)
+
+                val dest = DB.getDestination(destination)
+                if (sendToSMB(tmp, dest, debug)) {
+                    DB.updateJob(id) {
+                        printed = System.currentTimeMillis()
+                    }
+                    log.info("${j2._id} sent to destination")
+                } else {
+                    throw PrintException("Could not send to destination")
+                }
+            } catch (e: Exception) {
+                log.error("Job $id failed", e)
+                val msg = (e as? PrintException)?.message
+                    ?: "Failed to process"
+                failJob(id, msg)
+            } finally {
+                tmp.delete()
+                log.trace("Successfully deleted tmp {\"file\":{}}", tmp.absoluteFile)
+            }
         }
     }
 
