@@ -81,4 +81,17 @@ integrationTest:
     reports:
       junit: [build/test-results/integrationTest/TEST-*.xml]
 
+deploy:
+  extends: .base
+  stage: deploy
+  tags:
+    - docker
+  only:
+    - dev
+    - master
+  before_script:
+    - sudo -g docker docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - cd $COMPOSE_DIR
+    - sudo -g docker docker-compose up -d
 
