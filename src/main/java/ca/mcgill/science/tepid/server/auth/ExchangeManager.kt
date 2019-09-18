@@ -55,11 +55,9 @@ object ExchangeManager : WithLogging() {
         }
 
         if (searchResult == null) return false
-        val cal = Calendar.getInstance()
+
         val userDn = searchResult.nameInNamespace
-        val year = cal.get(Calendar.YEAR)
-        val season = if (cal.get(Calendar.MONTH) < 8) "W" else "F"
-        val groupDn = "CN=" + Config.EXCHANGE_STUDENTS_GROUP_BASE + "$year$season, " + Config.GROUPS_LOCATION
+        val groupDn = "CN=${Config.CURRENT_EXCHANGE_GROUP.name}, ${Config.GROUPS_LOCATION}"
         val mod = BasicAttribute("member", userDn)
         // todo check if we should ignore modification action if the user is already in/not in the exchange group?
         val mods =
