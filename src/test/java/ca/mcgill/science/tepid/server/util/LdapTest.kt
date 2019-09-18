@@ -3,12 +3,10 @@ package ca.mcgill.science.tepid.server.util
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
 import ca.mcgill.science.tepid.utils.WithLogging
-import org.junit.After
-import org.junit.Assume
-import org.junit.Before
-import org.junit.BeforeClass
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -18,11 +16,11 @@ class LdapTest {
 
     companion object {
 
-        @BeforeClass
+        @BeforeAll
         @JvmStatic
         fun before() {
-            Assume.assumeTrue(PropsLDAPTestUser.TEST_USER.isNotEmpty())
-            Assume.assumeTrue(PropsLDAPTestUser.TEST_PASSWORD.isNotEmpty())
+            assumeTrue(PropsLDAPTestUser.TEST_USER.isNotEmpty())
+            assumeTrue(PropsLDAPTestUser.TEST_PASSWORD.isNotEmpty())
             println("Running ldap tests with test user")
         }
     }
@@ -54,16 +52,9 @@ class LdapTest {
     }
 }
 
-@Ignore("NI")
-class testQueryUserLdap : WithLogging() {
-
-    @Before
-    fun initTest() {
-    }
-
-    @After
-    fun tearTest() {
-    }
+@Disabled("NI")
+class
+testQueryUserLdap : WithLogging() {
 
     @Test
     fun testQueryUserWithSuAndPw() {

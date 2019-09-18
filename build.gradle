@@ -57,12 +57,8 @@ sourceSets {
 dependencies {
     integrationTestRuntime("org.junit.jupiter:junit-jupiter-engine:5.3.1")
 
-    testCompileOnly(
-            'junit:junit:4.12'
-    )
     testRuntimeOnly(
             'org.junit.jupiter:junit-jupiter-engine:5.1.0',
-            'org.junit.vintage:junit-vintage-engine:5.1.0'
     )
     testCompile "org.junit.jupiter:junit-jupiter-params:5.1.0"
     testCompile "org.junit.jupiter:junit-jupiter-engine:5.3.1"

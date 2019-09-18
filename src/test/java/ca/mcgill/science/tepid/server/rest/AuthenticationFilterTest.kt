@@ -9,7 +9,7 @@ import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.every
 import io.mockk.mockkObject
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class AuthenticationFilterTest : WithLogging() {
