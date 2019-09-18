@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintQueue
+import ca.mcgill.science.tepid.server.ITBase
 import ca.mcgill.science.tepid.test.get
 import ca.mcgill.science.tepid.utils.Loggable
 import ca.mcgill.science.tepid.utils.WithLogging

@@ -1,4 +1,4 @@
-package ca.mcgill.science.tepid.server.rest
+package ca.mcgill.science.tepid.server
 
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.test.TestUtilsDelegate

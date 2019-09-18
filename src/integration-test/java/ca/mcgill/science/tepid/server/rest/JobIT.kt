@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.models.data.DestinationTicket
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
+import ca.mcgill.science.tepid.server.ITBase
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.test.TestUtils
 import ca.mcgill.science.tepid.utils.Loggable
