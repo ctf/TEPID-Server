@@ -37,7 +37,7 @@ object ExchangeManager : WithLogging() {
     /**
      * Adds the supplied user to the exchange group
      *
-     * @return updated status of the user; false if anything goes wrong
+     * @return updated status of the user
      */
     fun setExchangeStudentLdap(shortUser: ShortUser, exchange: Boolean): Boolean {
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
@@ -84,9 +84,8 @@ object ExchangeManager : WithLogging() {
                 log.info("Error adding user from Exchange: {\"shortUser\":\"$shortUser\", \"cause\":\"already in group\"}")
                 true
             } else {
-                log.error("Error adding to exchange students. {\"shortUser\":\"$shortUser\", \"userDN\":\"$userDn\",\"groupDN\":\"$groupDn\", \"cause\":null}")
-                e.printStackTrace()
-                false
+                log.error("Error adding to exchange students. {\"shortUser\":\"$shortUser\", \"userDN\":\"$userDn\",\"groupDN\":\"$groupDn\", \"cause\":\"${e.message}\"}")
+                throw e
             }
         }
     }
