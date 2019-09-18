@@ -105,7 +105,7 @@ object Printer : WithLogging() {
             }
 
             submit(id, validateAndSend(tmpXz, id, debug))
-            
+
             log.trace("Returning true for {\"job\":\"{}\"}", id)
             return true to "Successfully created request $id"
         } catch (e: Exception) {
@@ -127,7 +127,7 @@ object Printer : WithLogging() {
         }
     }
 
-    private fun validateAndSend(tmpXz: File, id: String, debug: Boolean): () -> Unit {
+    fun validateAndSend(tmpXz: File, id: String, debug: Boolean): () -> Unit {
         return {
 
             /*
