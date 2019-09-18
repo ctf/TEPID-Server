@@ -3,13 +3,13 @@ package ca.mcgill.science.tepid.server.auth
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
-import java.util.*
 import javax.naming.NamingException
 import javax.naming.directory.BasicAttribute
 import javax.naming.directory.DirContext
 import javax.naming.directory.ModificationItem
 import javax.naming.directory.SearchControls
 import javax.naming.directory.SearchResult
+import javax.naming.ldap.LdapContext
 
 object ExchangeManager : WithLogging() {
 
@@ -56,8 +56,18 @@ object ExchangeManager : WithLogging() {
 
         if (searchResult == null) return false
 
-        val userDn = searchResult.nameInNamespace
+        val userDn = searchResult.nameInNamespace ?: throw NamingException("userDn not found {\"shortUser\":\"$shortUser\"}")
         val groupDn = "CN=${Config.CURRENT_EXCHANGE_GROUP.name}, ${Config.GROUPS_LOCATION}"
+        return executeSetExchange(shortUser, exchange, userDn, groupDn, ctx)
+    }
+
+    private fun executeSetExchange(
+        shortUser: ShortUser,
+        exchange: Boolean,
+        userDn: String,
+        groupDn: String,
+        ctx: LdapContext
+    ): Boolean {
         val mod = BasicAttribute("member", userDn)
         // todo check if we should ignore modification action if the user is already in/not in the exchange group?
         val mods =
