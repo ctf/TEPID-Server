@@ -1,6 +1,5 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.models.data.Sam
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -40,11 +39,11 @@ object ExchangeManager : WithLogging() {
      *
      * @return updated status of the user; false if anything goes wrong
      */
-    fun setExchangeStudentLdap(sam: Sam, exchange: Boolean): Boolean {
-        val isLongUser = sam.contains(".")
+    fun setExchangeStudentLdap(shortUser: ShortUser, exchange: Boolean): Boolean {
+        val isLongUser = shortUser.contains(".")
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchFilter =
-            "(&(objectClass=user)(" + (if (isLongUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (isLongUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
+            "(&(objectClass=user)(" + (if (isLongUser) "userPrincipalName" else "sAMAccountName") + "=" + shortUser + (if (isLongUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
         val ctx = ldapConnector.bindLdap(auth) ?: return false
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
@@ -54,7 +53,7 @@ object ExchangeManager : WithLogging() {
             searchResult = results.nextElement()
             results.close()
         } catch (e: Exception) {
-            log.error("Error getting user while modifying exchange status: {\"sam\":\"$sam\", \"cause\":\"${e.message}\"}")
+            log.error("Error getting user while modifying exchange status: {\"shortUser\":\"$shortUser\", \"cause\":\"${e.message}\"}")
         }
 
         if (searchResult == null) return false
@@ -69,17 +68,17 @@ object ExchangeManager : WithLogging() {
             arrayOf(ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod))
         return try {
             ctx.modifyAttributes(groupDn, mods)
-            log.info("${if (exchange) "Added $sam to" else "Removed $sam from"} exchange students.")
+            log.info("${if (exchange) "Added $shortUser to" else "Removed $shortUser from"} exchange students.")
             exchange
         } catch (e: NamingException) {
             if (e.message?.contains("LDAP: error code 53") == true) {
-                log.info("Error removing user from Exchange: {\"sam\":\"$sam\", \"cause\":\"not in group\"}")
+                log.info("Error removing user from Exchange: {\"shortUser\":\"$shortUser\", \"cause\":\"not in group\"}")
                 false
             } else if (e.message!!.contains("LDAP: error code 68")) {
-                log.info("Error adding user from Exchange: {\"sam\":\"$sam\", \"cause\":\"already in group\"}")
+                log.info("Error adding user from Exchange: {\"shortUser\":\"$shortUser\", \"cause\":\"already in group\"}")
                 true
             } else {
-                log.error("Error adding to exchange students. {\"sam\":\"$sam\", \"userDN\":\"$userDn\",\"groupDN\":\"$groupDn\", \"cause\":null}")
+                log.error("Error adding to exchange students. {\"shortUser\":\"$shortUser\", \"userDN\":\"$userDn\",\"groupDN\":\"$groupDn\", \"cause\":null}")
                 e.printStackTrace()
                 false
             }

@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
@@ -94,7 +95,7 @@ class Users {
     }
 
     /**
-     * Attempts to add the supplied sam to the exchange group
+     * Attempts to add the supplied ShortUser to the exchange group
      * @return updated status of the user; false if anything goes wrong
      */
     @PUT
@@ -102,8 +103,8 @@ class Users {
     @RolesAllowed(CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setExchange(@PathParam("sam") sam: String, exchange: Boolean): Boolean =
-        ExchangeManager.setExchangeStudent(sam, exchange)
+    fun setExchange(@PathParam("sam") shortUser: ShortUser, exchange: Boolean): Boolean =
+        ExchangeManager.setExchangeStudent(shortUser, exchange)
 
     /**
      * Abstract implementation of modifying user data
