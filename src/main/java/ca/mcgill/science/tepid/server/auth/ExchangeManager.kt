@@ -9,7 +9,6 @@ import javax.naming.directory.DirContext
 import javax.naming.directory.ModificationItem
 import javax.naming.directory.SearchControls
 import javax.naming.directory.SearchResult
-import javax.naming.ldap.LdapContext
 
 object ExchangeManager : WithLogging() {
 
@@ -58,24 +57,24 @@ object ExchangeManager : WithLogging() {
 
         val userDn = searchResult.nameInNamespace ?: throw NamingException("userDn not found {\"shortUser\":\"$shortUser\"}")
         val groupDn = "CN=${Config.CURRENT_EXCHANGE_GROUP.name}, ${Config.GROUPS_LOCATION}"
-        return executeSetExchange(shortUser, exchange, userDn, groupDn, ctx)
-    }
 
-    private fun executeSetExchange(
-        shortUser: ShortUser,
-        exchange: Boolean,
-        userDn: String,
-        groupDn: String,
-        ctx: LdapContext
-    ): Boolean {
         val mod = BasicAttribute("member", userDn)
         // todo check if we should ignore modification action if the user is already in/not in the exchange group?
         val mods =
             arrayOf(ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod))
+
+        return parseLdapResponse(shortUser) { ctx.modifyAttributes(groupDn, mods); exchange }
+    }
+
+    private fun parseLdapResponse(
+        shortUser: ShortUser,
+        action: () -> Boolean
+    ): Boolean {
+
         return try {
-            ctx.modifyAttributes(groupDn, mods)
-            log.info("${if (exchange) "Added $shortUser to" else "Removed $shortUser from"} exchange students.")
-            exchange
+            val targetState = action()
+            log.info("${if (targetState) "Added $shortUser to" else "Removed $shortUser from"} exchange students.")
+            targetState
         } catch (e: NamingException) {
             if (e.message?.contains("LDAP: error code 53") == true) {
                 log.info("Error removing user from Exchange: {\"shortUser\":\"$shortUser\", \"cause\":\"not in group\"}")
@@ -84,7 +83,7 @@ object ExchangeManager : WithLogging() {
                 log.info("Error adding user from Exchange: {\"shortUser\":\"$shortUser\", \"cause\":\"already in group\"}")
                 true
             } else {
-                log.error("Error adding to exchange students. {\"shortUser\":\"$shortUser\", \"userDN\":\"$userDn\",\"groupDN\":\"$groupDn\", \"cause\":\"${e.message}\"}")
+                log.error("Error adding to exchange students. {\"shortUser\":\"$shortUser\", \"cause\":\"${e.message}\"}")
                 throw e
             }
         }
