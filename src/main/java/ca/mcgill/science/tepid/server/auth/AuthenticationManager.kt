@@ -11,8 +11,7 @@ import javax.ws.rs.core.Response
 object AuthenticationManager : WithLogging() {
 
     /**
-     * Authenticates user as appropriate:
-     * first with local auth (if applicable), then against LDAP (if enabled)
+     * Authenticates user against LDAP (if enabled)
      *
      * @param sam short user
      * @param pw password
@@ -21,7 +20,20 @@ object AuthenticationManager : WithLogging() {
     fun authenticate(sam: Sam, pw: String): FullUser? {
         val dbUser = queryUserDb(sam)
         log.trace("Db data found for $sam")
-        var ldapUser = Ldap.authenticate(sam, pw)
+
+
+        // >>
+        log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
+
+        val shortUser = (
+            if (sam.matches(LdapHelper.shortUserRegex)) sam
+            else queryUser(sam, null)?.shortUser
+            ?: AutoSuggest.queryLdap(sam, 1).getOrNull(0)?.shortUser)
+            ?: return null
+        // <<
+
+
+        var ldapUser = Ldap.authenticate(shortUser, pw)
         if (ldapUser != null) {
             ldapUser = mergeUsers(ldapUser, dbUser)
             updateDbWithUser(ldapUser)

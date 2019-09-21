@@ -81,15 +81,8 @@ object Ldap : WithLogging() {
     /**
      * Returns user data, but guarantees a pass through ldap
      */
-    fun authenticate(sam: Sam, pw: String): FullUser? {
-        log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
-
-        val shortUser = if (sam.matches(shortUserRegex)) sam else AuthenticationManager.queryUser(sam, null)?.shortUser
-            ?: AutoSuggest.queryLdap(sam, 1).getOrNull(0)?.shortUser // TODO: pull this up higher
-        if (shortUser == null) return null
-
-        log.info("Authenticating {\"sam\":\"$sam\", \"shortUser\":\"$shortUser\"}")
-
+    fun authenticate(shortUser: ShortUser, pw: String): FullUser? {
+        log.info("Authenticating {\"shortUser\":\"$shortUser\", \"shortUser\":\"$shortUser\"}")
         return effectBindByUser(shortUser, pw)
     }
 }
