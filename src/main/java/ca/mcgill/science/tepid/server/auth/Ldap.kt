@@ -27,11 +27,11 @@ object Ldap : WithLogging() {
             log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
             Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
         }
-        val user = queryLdap(sam, auth)
+        val user = if (sam.contains(".")) queryLdapByLongUser(sam, auth) else queryByShortUser(sam, auth)
         return user
     }
 
-    enum class searchBy(private val query: String){
+    enum class SearchBy(private val query: String) {
         sAMAccountName("sAMAccountName"),
         longUser("userPrincipalName");
 
@@ -40,18 +40,17 @@ object Ldap : WithLogging() {
         }
     }
 
-    fun queryByShortUser(username: String, auth: Pair<String, String>): FullUser?{
-        return queryLdap(username, auth)
+    fun queryByShortUser(username: String, auth: Pair<String, String>): FullUser? {
+        return queryLdap(username, auth, "${SearchBy.sAMAccountName}=$username")
     }
 
-    fun queryLdapByLongUser(username: String, auth: Pair<String, String>): FullUser?{
-        return queryLdap(username, auth)
+    fun queryLdapByLongUser(username: String, auth: Pair<String, String>): FullUser? {
+        return queryLdap(username, auth, "${SearchBy.longUser}=$username${Config.ACCOUNT_DOMAIN}")
     }
 
-    fun effectBindByUser(username: ShortUser, password: String):FullUser?{
-        return queryLdap(username, username to password)
+    fun effectBindByUser(username: ShortUser, password: String): FullUser? {
+        return queryLdap(username, username to password, "${SearchBy.sAMAccountName}=$username")
     }
-
 
     /**
      * Queries [username] (short user or long user)
@@ -62,9 +61,7 @@ object Ldap : WithLogging() {
      * However, if a different auth is provided (eg from our science account),
      * the studentId cannot be queried
      */
-    fun queryLdap(username: Sam, auth: Pair<String, String>): FullUser? {
-        val searchName =
-            if (username.contains(".")) "userPrincipalName=$username${Config.ACCOUNT_DOMAIN}" else "sAMAccountName=$username"
+    fun queryLdap(username: Sam, auth: Pair<String, String>, searchName: String): FullUser? {
         val searchFilter = "(&(objectClass=user)($searchName))"
         val ctx = ldapConnector.bindLdap(auth) ?: return null
         val searchControls = SearchControls()
@@ -90,6 +87,6 @@ object Ldap : WithLogging() {
 
         log.info("Authenticating {\"sam\":\"$sam\", \"shortUser\":\"$shortUser\"}")
 
-        return queryLdap(shortUser, shortUser to pw)
+        return effectBindByUser(shortUser, pw)
     }
 }
