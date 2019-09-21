@@ -16,6 +16,18 @@ object Ldap : WithLogging() {
 
     /**
      * Retrieve a [FullUser] from ldap
+     * The resource account will be used
+     */
+    fun queryUserWithResourceAccount(sam:Sam) = queryUser(sam, null)
+
+    /**
+     * Retrieve a [FullUser] from ldap
+     * [sam] must be a valid short user or long user
+     */
+    fun queryUserWithOtherCredentials(sam:Sam, pw:String?) = queryUser(sam, pw)
+
+    /**
+     * Retrieve a [FullUser] from ldap
      * [sam] must be a valid short user or long user
      * The resource account will be used as auth if [pw] is null
      */

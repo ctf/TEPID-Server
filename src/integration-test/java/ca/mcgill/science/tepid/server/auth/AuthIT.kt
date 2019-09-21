@@ -58,8 +58,8 @@ class LdapIT : AuthIT() {
 
     // TODO: parametrise for test user, not real data
     @Test
-    fun queryWithoutPass() {
-        Ldap.queryUser(PropsLDAPTestUser.TEST_USER, null).assertEqualsTestUser()
+    fun queryWithResourceAccount() {
+        Ldap.queryUserWithResourceAccount(PropsLDAPTestUser.TEST_USER).assertEqualsTestUser()
     }
 }
 
@@ -87,8 +87,7 @@ class SessionManagerIT : AuthIT() {
 
     @Test
     fun queryUserInDb() {
-        // TODO: add user to DB in way which does not need LDAP
-        val ldapUser = Ldap.queryUser(PropsLDAPTestUser.TEST_USER, null)
+        val ldapUser = Ldap.queryUserWithResourceAccount(PropsLDAPTestUser.TEST_USER)
             ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from LDAP")
         AuthenticationManager.updateDbWithUser(ldapUser)
         AuthenticationManager.queryUserDb(PropsLDAPTestUser.TEST_USER)
@@ -104,7 +103,7 @@ class SessionManagerIT : AuthIT() {
     }
 
     fun isExchange(testSU: String): Boolean {
-        val ldapUser = Ldap.queryUser(testSU, null) ?: fail("Couldn't get test user $testSU from LDAP")
+        val ldapUser = Ldap.queryUserWithResourceAccount(testSU) ?: fail("Couldn't get test user $testSU from LDAP")
         return Config.CURRENT_EXCHANGE_GROUP in ldapUser.groups
     }
 

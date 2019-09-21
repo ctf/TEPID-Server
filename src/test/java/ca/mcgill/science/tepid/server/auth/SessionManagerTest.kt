@@ -298,7 +298,7 @@ class QueryUserTest : WithLogging() {
     @Test
     fun testQueryUserWithLdapLdapUserNull() {
         every { am.queryUserDb("SU") } returns null
-        every { Ldap.queryUser(any(), null) } returns null
+        every { Ldap.queryUserWithResourceAccount(any()) } returns null
 
         val actual = am.queryUser("SU", null)
         val expected = null
@@ -311,7 +311,7 @@ class QueryUserTest : WithLogging() {
     fun testQueryUserWithLdap() {
         every { am.queryUserDb("SU") } returns null
         every { am.updateDbWithUser(any()) } just runs
-        every { Ldap.queryUser(any(), null) } returns testUser
+        every { Ldap.queryUserWithOtherCredentials(any(),   any()) } returns testUser
 
         val actual = am.queryUser("SU", null)
         val expected = testUser
@@ -456,7 +456,7 @@ class RefreshUserTest {
                 AuthenticationManager.queryUserDb(testSam)
             } returns UserFactory.makeDbUser()
             every {
-                Ldap.queryUser(testSam, null)
+                Ldap.queryUserWithResourceAccount(testSam)
             } returns UserFactory.makeLdapUser()
 
             every {
