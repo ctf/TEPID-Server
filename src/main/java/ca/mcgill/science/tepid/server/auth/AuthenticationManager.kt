@@ -10,8 +10,6 @@ import javax.ws.rs.core.Response
 
 object AuthenticationManager : WithLogging() {
 
-    private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
-
     /**
      * Authenticates user as appropriate:
      * first with local auth (if applicable), then against LDAP (if enabled)
@@ -46,7 +44,7 @@ object AuthenticationManager : WithLogging() {
 
         if (dbUser != null) return dbUser
 
-        if (!sam.matches(shortUserRegex)) return null // cannot query without short user
+        if (!sam.matches(LdapHelper.shortUserRegex)) return null // cannot query without short user
         val ldapUser = Ldap.queryUser(sam, pw) ?: return null
 
         updateDbWithUser(ldapUser)
