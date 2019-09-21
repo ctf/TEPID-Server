@@ -14,13 +14,13 @@ class LdapConnector {
      * Create [LdapContext] for given credentials
      */
 
-    fun bindLdap(user: String, password: String): LdapContext? {
-        log.trace("Attempting bind to LDAP: {'PROVIDER_URL':'${Config.PROVIDER_URL}', 'SECURITY_PRINCIPAL':'${Config.SECURITY_PRINCIPAL_PREFIX + user}'}")
+    fun bindLdap(shortUser: String, password: String): LdapContext? {
+        log.trace("Attempting bind to LDAP: {'PROVIDER_URL':'${Config.PROVIDER_URL}', 'SECURITY_PRINCIPAL':'${Config.SECURITY_PRINCIPAL_PREFIX + shortUser}'}")
         try {
-            val auth = createAuthMap(user, password)
+            val auth = createAuthMap(shortUser, password)
             return InitialLdapContext(auth, null)
         } catch (e: Exception) {
-            log.error("Failed to bind to LDAP {\"user\":\"$user\"}", e)
+            log.error("Failed to bind to LDAP {\"shortUser\":\"$shortUser\"}", e)
             return null
         }
     }
