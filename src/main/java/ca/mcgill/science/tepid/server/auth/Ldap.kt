@@ -39,8 +39,7 @@ object Ldap : WithLogging() {
      * However, if a different auth is provided (eg from our science account),
      * the studentId cannot be queried
      */
-    fun queryUserLdap(username: Sam?, auth: Pair<String, String>): FullUser? {
-        if (username == null) return null
+    fun queryUserLdap(username: Sam, auth: Pair<String, String>): FullUser? {
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchName =
             if (username.contains(".")) "userPrincipalName=$username${Config.ACCOUNT_DOMAIN}" else "sAMAccountName=$username"

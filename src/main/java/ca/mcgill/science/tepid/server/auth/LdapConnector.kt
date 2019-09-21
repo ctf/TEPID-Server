@@ -20,6 +20,7 @@ class LdapConnector {
             val auth = createAuthMap(shortUser, password)
             return InitialLdapContext(auth, null)
         } catch (e: Exception) {
+            // TODO: propagate up the auth stack, currently lots of `?: return null`
             log.error("Failed to bind to LDAP {\"shortUser\":\"$shortUser\"}", e)
             return null
         }
