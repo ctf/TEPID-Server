@@ -31,6 +31,9 @@ object Ldap : WithLogging() {
         return user
     }
 
+    /**
+     * Type for defining the query string used for searching by specific attributes
+     */
     enum class SearchBy(private val query: String) {
         sAMAccountName("sAMAccountName"),
         longUser("userPrincipalName");
@@ -41,15 +44,15 @@ object Ldap : WithLogging() {
     }
 
     fun queryByShortUser(username: String, auth: Pair<String, String>): FullUser? {
-        return queryLdap(username, auth, "${SearchBy.sAMAccountName}=$username")
+        return queryLdap(username, auth, SearchBy.sAMAccountName)
     }
 
     fun queryLdapByLongUser(username: String, auth: Pair<String, String>): FullUser? {
-        return queryLdap(username, auth, "${SearchBy.longUser}=$username${Config.ACCOUNT_DOMAIN}")
+        return queryLdap("$username${Config.ACCOUNT_DOMAIN}", auth, SearchBy.longUser)
     }
 
     fun effectBindByUser(username: ShortUser, password: String): FullUser? {
-        return queryLdap(username, username to password, "${SearchBy.sAMAccountName}=$username")
+        return queryLdap(username, username to password,  SearchBy.sAMAccountName)
     }
 
     /**
@@ -61,8 +64,8 @@ object Ldap : WithLogging() {
      * However, if a different auth is provided (eg from our science account),
      * the studentId cannot be queried
      */
-    fun queryLdap(username: Sam, auth: Pair<String, String>, searchName: String): FullUser? {
-        val searchFilter = "(&(objectClass=user)($searchName))"
+    fun queryLdap(userName: Sam, auth: Pair<String, String>, searchName: SearchBy): FullUser? {
+        val searchFilter = "(&(objectClass=user)($searchName=$userName))"
         val ctx = ldapConnector.bindLdap(auth) ?: return null
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
