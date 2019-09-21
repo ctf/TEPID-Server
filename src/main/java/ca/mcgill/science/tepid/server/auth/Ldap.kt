@@ -18,28 +18,27 @@ object Ldap : WithLogging() {
      * Retrieve a [FullUser] from ldap
      * The resource account will be used
      */
-    fun queryUserWithResourceAccount(sam:Sam) = queryUser(sam, null)
+    fun queryUserWithResourceAccount(sam:Sam): FullUser? {
+        log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
+        return queryUser(sam, Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS)
+    }
 
     /**
      * Retrieve a [FullUser] from ldap
      * [sam] must be a valid short user or long user
      */
-    fun queryUserWithOtherCredentials(sam:Sam, pw:String?) = queryUser(sam, pw)
+    fun queryUserWithOtherCredentials(sam:Sam, pw:String): FullUser? {
+        log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"$sam\"}")
+        return queryUser(sam, sam to pw)
+    }
 
     /**
      * Retrieve a [FullUser] from ldap
-     * [sam] must be a valid short user or long user
+     * [targetSam] must be a valid short user or long user
      * The resource account will be used as auth if [pw] is null
      */
-    fun queryUser(sam: Sam, pw: String?): FullUser? {
-        val auth = if (pw != null && shortUserRegex.matches(sam)) {
-            log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"$sam\"}")
-            sam to pw
-        } else {
-            log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
-            Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
-        }
-        val user = if (sam.contains(".")) queryLdapByLongUser(sam, auth) else queryByShortUser(sam, auth)
+    fun queryUser(targetSam: Sam, auth: Pair<String, String>): FullUser? {
+        val user = if (targetSam.contains(".")) queryLdapByLongUser(targetSam, auth) else queryByShortUser(targetSam, auth)
         return user
     }
 

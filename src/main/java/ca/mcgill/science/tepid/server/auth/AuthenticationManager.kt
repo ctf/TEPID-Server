@@ -56,7 +56,7 @@ object AuthenticationManager : WithLogging() {
         if (dbUser != null) return dbUser
 
         if (!sam.matches(LdapHelper.shortUserRegex)) return null // cannot query without short user
-        val ldapUser = Ldap.queryUserWithOtherCredentials(sam, pw) ?: return null
+        val ldapUser = (if (pw == null) Ldap.queryUserWithResourceAccount(sam) else Ldap.queryUserWithOtherCredentials(sam, pw) )?: return null
         val i = 0;
         println(i)
 
