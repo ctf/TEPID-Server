@@ -85,7 +85,7 @@ object Ldap : WithLogging() {
         log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
 
         val shortUser = if (sam.matches(shortUserRegex)) sam else AuthenticationManager.queryUser(sam, null)?.shortUser
-            ?: AutoSuggest.queryLdap(sam, auth, 1).getOrNull(0)?.shortUser // TODO: pull this up higher
+            ?: AutoSuggest.queryLdap(sam, 1).getOrNull(0)?.shortUser // TODO: pull this up higher
         if (shortUser == null) return null
 
         log.info("Authenticating {\"sam\":\"$sam\", \"shortUser\":\"$shortUser\"}")

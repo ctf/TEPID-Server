@@ -14,8 +14,6 @@ object ExchangeManager : WithLogging() {
 
     private val ldapConnector = LdapConnector()
 
-    private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
-
     /**
      * Sets exchange student status.
      * Also updates user information from LDAP.
@@ -41,7 +39,7 @@ object ExchangeManager : WithLogging() {
     fun setExchangeStudentLdap(shortUser: ShortUser, exchange: Boolean): Boolean {
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchFilter = "(&(objectClass=user)(sAMAccountName=$shortUser))"
-        val ctx = ldapConnector.bindLdap(auth.first, auth.second) ?: return false
+        val ctx = ldapConnector.bindLdap((Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS).first, (Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS).second) ?: return false
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
         var searchResult: SearchResult? = null
