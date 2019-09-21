@@ -142,18 +142,12 @@ class QueryUserDbTest {
     var testOtherUser = UserFactory.makeLdapUser()
 
     @Test
-    fun testQueryUserDbNullSam() {
-        val actual = AuthenticationManager.queryUserDb(null)
-        assertEquals(null, actual, "Result was not null")
-    }
-
-    @Test
     fun testQueryUserDbByEmail() {
         every {
             mockDb.getUserOrNull(testUser.email!!)
         } returns testUser
 
-        val actual = AuthenticationManager.queryUserDb(testUser.email)
+        val actual = AuthenticationManager.queryUserDb(testUser.email!!)
 
         verify { mockDb.getUserOrNull(testUser.email!!) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
@@ -165,7 +159,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.email!!)
         } returns null
 
-        val actual = AuthenticationManager.queryUserDb(testUser.email)
+        val actual = AuthenticationManager.queryUserDb(testUser.email!!)
 
         verify { mockDb.getUserOrNull(testUser.email!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
@@ -177,7 +171,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.longUser!!)
         } returns testUser
 
-        val actual = AuthenticationManager.queryUserDb(testUser.longUser)
+        val actual = AuthenticationManager.queryUserDb(testUser.longUser!!)
 
         verify { mockDb.getUserOrNull(testUser.longUser!!) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
@@ -189,7 +183,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.longUser!!)
         } returns null
 
-        val actual = AuthenticationManager.queryUserDb(testUser.longUser)
+        val actual = AuthenticationManager.queryUserDb(testUser.longUser!!)
 
         verify { mockDb.getUserOrNull(testUser.longUser!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
@@ -225,7 +219,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.shortUser!!)
         } returns testUser
 
-        val actual = AuthenticationManager.queryUserDb(testUser.shortUser)
+        val actual = AuthenticationManager.queryUserDb(testUser.shortUser!!)
 
         verify { mockDb.getUserOrNull(testUser.shortUser!!) }
         assertEquals(testUser, actual, "User was not returned when searched by shortUser")
@@ -237,7 +231,7 @@ class QueryUserDbTest {
             mockDb.getUserOrNull(testUser.shortUser!!)
         } returns null
 
-        val actual = AuthenticationManager.queryUserDb(testUser.shortUser)
+        val actual = AuthenticationManager.queryUserDb(testUser.shortUser!!)
 
         verify { mockDb.getUserOrNull(testUser.shortUser!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by shortUser")
@@ -278,14 +272,6 @@ class QueryUserTest : WithLogging() {
     @AfterEach
     fun tearTest() {
         unmockkAll()
-    }
-
-    @Test
-    fun testQueryUserSamNull() {
-        val actual = am.queryUser(null, null)
-        val expected = null
-
-        assertEquals(expected, actual, "Null is not returned when SAM is null")
     }
 
     @Test
@@ -519,7 +505,7 @@ class SessionIsValidTest {
         fun initTest() {
             mockkObject(SessionManager)
             mockkObject(AuthenticationManager)
-            every { AuthenticationManager.queryUserDb(testUser.shortUser) } returns testUser
+            every { AuthenticationManager.queryUserDb(testUser.shortUser!!) } returns testUser
         }
 
         @JvmStatic
@@ -561,7 +547,7 @@ class SessionGetTest {
             testSession._rev = "testRev"
             mockkObject(SessionManager)
             mockkObject(AuthenticationManager)
-            every { AuthenticationManager.queryUserDb(testUser.shortUser) } returns testUser
+            every { AuthenticationManager.queryUserDb(testUser.shortUser!!) } returns testUser
             mockkObject(DB)
         }
 

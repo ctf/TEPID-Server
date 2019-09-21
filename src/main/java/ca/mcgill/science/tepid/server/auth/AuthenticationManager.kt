@@ -48,8 +48,7 @@ object AuthenticationManager : WithLogging() {
      * @param pw password
      * @return user if found
      */
-    fun queryUser(sam: Sam?, pw: String?): FullUser? {
-        if (sam == null) return null
+    fun queryUser(sam: Sam, pw: String?): FullUser? {
         log.trace("Querying user: {\"sam\":\"$sam\"}")
 
         val dbUser = queryUserDb(sam)
@@ -111,8 +110,7 @@ object AuthenticationManager : WithLogging() {
      * Retrieve a [FullUser] directly from the database when supplied with either a
      * short user, long user, or student id
      */
-    fun queryUserDb(sam: Sam?): FullUser? {
-        sam ?: return null
+    fun queryUserDb(sam: Sam): FullUser? {
         val dbUser = DB.getUserOrNull(sam)
         dbUser?._id ?: return null
         log.trace("Found db user {\"sam\":\"$sam\",\"db_id\":\"${dbUser._id}\", \"dislayName\":\"${dbUser.displayName}\"}")

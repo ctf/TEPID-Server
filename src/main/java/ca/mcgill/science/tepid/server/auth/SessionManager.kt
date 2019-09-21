@@ -30,11 +30,7 @@ object SessionManager : WithLogging() {
     operator fun get(token: String): FullSession? {
         val session = DB.getSessionOrNull(token) ?: return null
         if (isValid(session)) return session
-        log.trace(
-            "Deleting session token {\"token\":\"$token\", \"expiration\":\"${session.expiration}\", \"now\":\"${System.currentTimeMillis()}\",\"sessionRole\":\"${session.role}\", \"userRole\":\"${AuthenticationManager.queryUserDb(
-                session.user.shortUser
-            )?.role}\"}"
-        )
+        log.trace("Deleting session token {\"token\":\"$token\", \"expiration\":\"${session.expiration}\", \"now\":\"${System.currentTimeMillis()}\"}")
         DB.deleteSession(token)
         return null
     }
@@ -47,7 +43,8 @@ object SessionManager : WithLogging() {
      */
     fun isValid(session: FullSession): Boolean {
         if (!session.isUnexpired()) return false
-        if (session.role != AuthenticationManager.queryUserDb(session.user.shortUser)?.role) return false
+        val shortUser = session.user.shortUser ?: return false
+        if (session.role != AuthenticationManager.queryUserDb(shortUser)?.role) return false
         return true
     }
 
