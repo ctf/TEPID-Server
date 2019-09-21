@@ -8,7 +8,6 @@ import javax.naming.ldap.InitialLdapContext
 import javax.naming.ldap.LdapContext
 
 class LdapConnector {
-    fun bindLdap(auth: Pair<String, String>) = bindLdap(auth.first, auth.second)
 
     /**
      * Create [LdapContext] for given credentials

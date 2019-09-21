@@ -66,7 +66,7 @@ object Ldap : WithLogging() {
      */
     fun queryLdap(userName: Sam, auth: Pair<String, String>, searchName: SearchBy): FullUser? {
         val searchFilter = "(&(objectClass=user)($searchName=$userName))"
-        val ctx = ldapConnector.bindLdap(auth) ?: return null
+        val ctx = ldapConnector.bindLdap(auth.first, auth.second) ?: return null
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
         val results = ctx.search(Config.LDAP_SEARCH_BASE, searchFilter, searchControls)

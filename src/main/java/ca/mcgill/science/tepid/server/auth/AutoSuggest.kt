@@ -38,7 +38,7 @@ object AutoSuggest : WithLogging() {
         try {
             val ldapSearchBase = Config.LDAP_SEARCH_BASE
             val searchFilter = "(&(objectClass=user)(|(userPrincipalName=$like*)(samaccountname=$like*)))"
-            val ctx = ldapConnector.bindLdap(auth) ?: return emptyList()
+            val ctx = ldapConnector.bindLdap(auth.first, auth.second) ?: return emptyList()
             val searchControls = SearchControls()
             searchControls.searchScope = SearchControls.SUBTREE_SCOPE
             val results = ctx.search(ldapSearchBase, searchFilter, searchControls)

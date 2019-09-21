@@ -20,11 +20,11 @@ object ExchangeManager : WithLogging() {
      * Sets exchange student status.
      * Also updates user information from LDAP.
      * This refreshes the groups and courses of a user,
-     * which allows for thier role to change
+     * which allows for their role to change
      *
      * @param shortUser shortUser
      * @param exchange boolean for exchange status
-     * @return updated status of the user; false if anything goes wrong
+     * @return updated status of the user
      */
     fun setExchangeStudent(shortUser: ShortUser, exchange: Boolean): Boolean {
         log.info("Setting exchange status {\"shortUser\":\"$shortUser\", \"exchange_status\":\"$exchange\"}")
@@ -41,7 +41,7 @@ object ExchangeManager : WithLogging() {
     fun setExchangeStudentLdap(shortUser: ShortUser, exchange: Boolean): Boolean {
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchFilter = "(&(objectClass=user)(sAMAccountName=$shortUser))"
-        val ctx = ldapConnector.bindLdap(auth) ?: return false
+        val ctx = ldapConnector.bindLdap(auth.first, auth.second) ?: return false
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
         var searchResult: SearchResult? = null
@@ -55,7 +55,8 @@ object ExchangeManager : WithLogging() {
 
         if (searchResult == null) return false
 
-        val userDn = searchResult.nameInNamespace ?: throw NamingException("userDn not found {\"shortUser\":\"$shortUser\"}")
+        val userDn =
+            searchResult.nameInNamespace ?: throw NamingException("userDn not found {\"shortUser\":\"$shortUser\"}")
         val groupDn = "CN=${Config.CURRENT_EXCHANGE_GROUP.name}, ${Config.GROUPS_LOCATION}"
 
         val mod = BasicAttribute("member", userDn)
