@@ -2,12 +2,12 @@ package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -25,6 +25,8 @@ import org.junit.jupiter.api.Test
 import javax.ws.rs.core.Response
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+
+val okPutResponse = Response.ok().entity(PutResponse(id="TEST")).build()
 
 class MergeUsersTest {
 
@@ -68,72 +70,6 @@ class MergeUsersTest {
         val actual = AuthenticationManager.mergeUsers(ldapUser, UserFactory.makeDbUser())
         val expected = UserFactory.makeMergedUser().copy(studentId = UserFactory.makeDbUser().studentId)
         assertEquals(expected, actual)
-    }
-}
-
-class UpdateDbWithUserTest {
-
-    @Test
-    fun testUpdateUserUnsuccessfulResponse() {
-
-        val mockObjectNode = ObjectMapper().createObjectNode()
-            .put("ok", false)
-            .put("id", "utestSU")
-            .put("_rev", "3333")
-
-        val mockResponse = spyk(Response.serverError().entity(mockObjectNode).build())
-
-        every {
-            mockDb.putUser(ofType(FullUser::class))
-        } returns mockResponse
-
-        // Run Test
-        AuthenticationManager.updateDbWithUser(testUser)
-
-        // Verifies the path
-        verify { mockDb.putUser(testUser) }
-        assertEquals(testUser._rev, "1111")
-    }
-
-    @Test
-    fun testUpdateUserWithException() {
-        val mockResponse = spyk(Response.ok().build())
-        every {
-            mockResponse.entity
-        } throws RuntimeException("Testing")
-
-        every {
-            mockDb.putUser(ofType(FullUser::class))
-        } returns mockResponse
-
-        // Run Test
-        AuthenticationManager.updateDbWithUser(testUser)
-
-        // Verifies the path
-        verify { mockDb.putUser(testUser) }
-
-        assertEquals(testUser._rev, "1111")
-    }
-
-    companion object {
-        lateinit var mockDb: DbLayer
-
-        val testSU = "testSU"
-        val testUser = FullUser(shortUser = testSU)
-
-        @JvmStatic
-        @BeforeAll
-        fun initTest() {
-            mockDb = mockk<DbLayer>(relaxed = true)
-            DB = mockDb
-            testUser._rev = "1111"
-        }
-
-        @JvmStatic
-        @AfterAll
-        fun tearTest() {
-            unmockkAll()
-        }
     }
 }
 
@@ -260,18 +196,26 @@ class QueryUserDbTest {
 class QueryUserTest : WithLogging() {
 
     var testUser = UserFactory.makeDbUser()
-    lateinit var am: AuthenticationManager
 
-    @BeforeEach
-    fun initTest() {
-        mockkObject(Config)
-        mockkObject(Ldap)
-        am = spyk(AuthenticationManager)
-    }
+    companion object{
+        lateinit var mockDb : DbLayer
+        lateinit var am: AuthenticationManager
 
-    @AfterEach
-    fun tearTest() {
-        unmockkAll()
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+            mockkObject(Config)
+            mockkObject(Ldap)
+            mockDb = mockk<DbLayer>(relaxed=true)
+            DB = mockDb
+            am = spyk(AuthenticationManager)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearTest() {
+            unmockkAll()
+        }
     }
 
     @Test
@@ -291,7 +235,7 @@ class QueryUserTest : WithLogging() {
         val actual = am.queryUser("db.LU@example.com", null)
         val expected = null
 
-        verify(inverse = true) { am.updateDbWithUser(any()) }
+        verify(inverse = true) { mockDb.putUser(any()) }
         assertEquals(expected, actual, "AuthenticationManager doesn't return null if SAM is not shortUser")
     }
 
@@ -303,20 +247,20 @@ class QueryUserTest : WithLogging() {
         val actual = am.queryUser("SU", null)
         val expected = null
 
-        verify(inverse = true) { am.updateDbWithUser(any()) }
+        verify(inverse = true) { mockDb.putUser(any()) }
         assertEquals(expected, actual, "AuthenticationManager doesn't return null if Ldap returns null")
     }
 
     @Test
     fun testQueryUserWithLdap() {
         every { am.queryUserDb("SU") } returns null
-        every { am.updateDbWithUser(any()) } just runs
-        every { Ldap.queryUserWithOtherCredentials(any(),   any()) } returns testUser
+        every { mockDb.putUser(any()) } returns okPutResponse
+        every { Ldap.queryUserWithResourceAccount(any()) } returns testUser
 
         val actual = am.queryUser("SU", null)
         val expected = testUser
 
-        verify { am.updateDbWithUser(testUser) }
+        verify { mockDb.putUser(testUser) }
         assertEquals(expected, actual, "AuthenticationManager doesn't return null if Ldap returns null")
     }
 }
@@ -330,13 +274,17 @@ class AuthenticateTest {
      */
 
     lateinit var sm: AuthenticationManager
-    lateinit var testUser: FullUser
-    lateinit var testUserFromDb: FullUser
-    var testShortUser = "testShortUser"
-    var testPassword = "testPassword"
+    private lateinit var testUser: FullUser
+    private lateinit var testUserFromDb: FullUser
+    private var testShortUser = "testShortUser"
+    private var testPassword = "testPassword"
+    lateinit var mockDb : DbLayer
+
 
     @BeforeEach
     fun initTest() {
+        mockDb = mockk<DbLayer>(relaxed = true)
+        DB = mockDb
         testUser = UserFactory.generateTestUser("test").copy(shortUser = testShortUser, colorPrinting = true)
         testUserFromDb = UserFactory.generateTestUser("db").copy(
             shortUser = testUser.shortUser,
@@ -346,6 +294,7 @@ class AuthenticateTest {
         mockkObject(Config)
         sm = spyk(AuthenticationManager)
         mockkObject(Ldap)
+
     }
 
     @AfterEach
@@ -369,14 +318,14 @@ class AuthenticateTest {
     fun testAuthenticateLdap() {
         every { sm.queryUserDb(any()) } returns testUserFromDb
         every { Ldap.authenticate(testShortUser, testPassword) } returns testUser
-        every { sm.updateDbWithUser(any()) } just runs
+        every { mockDb.putUser(any()) } returns okPutResponse
 
         val actual = sm.authenticate(testShortUser, testPassword)
         val expected = AuthenticationManager.mergeUsers(testUser, testUserFromDb)
 
         verify { Ldap.authenticate(testShortUser, testPassword) }
         verify { sm.mergeUsers(testUser, testUserFromDb) }
-        verify { sm.updateDbWithUser(expected) }
+        verify { mockDb.putUser(expected) }
         // a check that mergeUsers has merged some DB stuff into ldapUser
         assertFalse(expected.colorPrinting)
         assertEquals(expected, actual, "")
@@ -436,7 +385,7 @@ class RefreshUserTest {
         assertEquals(UserFactory.makeMergedUser(), actual)
 
         verify {
-            AuthenticationManager.updateDbWithUser(
+            mockDb.putUser(
                 UserFactory.makeMergedUser()
             )
         }
@@ -444,6 +393,8 @@ class RefreshUserTest {
 
     companion object {
         val testSam = "SU"
+        lateinit var mockDb : DbLayer
+
 
         @JvmStatic
         @BeforeAll
@@ -452,6 +403,9 @@ class RefreshUserTest {
 
             mockkObject(SessionManager)
             mockkObject(AuthenticationManager)
+            mockDb = mockk<DbLayer>(relaxed = true)
+            DB = mockDb
+
             every {
                 AuthenticationManager.queryUserDb(testSam)
             } returns UserFactory.makeDbUser()
@@ -460,10 +414,11 @@ class RefreshUserTest {
             } returns UserFactory.makeLdapUser()
 
             every {
-                AuthenticationManager.updateDbWithUser(ofType(FullUser::class))
-            } just runs
+                mockDb.putUser(ofType(FullUser::class))
+            } returns okPutResponse
 
             mockkObject(Config)
+
         }
 
         @JvmStatic
@@ -496,8 +451,8 @@ class SessionIsValidTest {
     }
 
     companion object {
-        val testUser = UserFactory.makeDbUser().copy(role = "user")
-        val testSession = FullSession("user", testUser)
+        private val testUser = UserFactory.makeDbUser().copy(role = "user")
+        private val testSession = FullSession("user", testUser)
         val mockSession = spyk(testSession)
 
         @JvmStatic

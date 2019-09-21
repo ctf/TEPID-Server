@@ -4,9 +4,7 @@ import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Sam
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.util.isSuccessful
 import ca.mcgill.science.tepid.utils.WithLogging
-import javax.ws.rs.core.Response
 
 object AuthenticationManager : WithLogging() {
 
@@ -33,12 +31,13 @@ object AuthenticationManager : WithLogging() {
         // <<
 
 
-        var ldapUser = Ldap.authenticate(shortUser, pw)
+        val ldapUser = Ldap.authenticate(shortUser, pw)
         if (ldapUser != null) {
-            ldapUser = mergeUsers(ldapUser, dbUser)
-            updateDbWithUser(ldapUser)
+            val mergedUser = mergeUsers(ldapUser, dbUser)
+            DB.putUser(mergedUser)
+            return mergedUser
         }
-        return ldapUser
+        return null
     }
 
     /**
@@ -57,10 +56,8 @@ object AuthenticationManager : WithLogging() {
 
         if (!sam.matches(LdapHelper.shortUserRegex)) return null // cannot query without short user
         val ldapUser = (if (pw == null) Ldap.queryUserWithResourceAccount(sam) else Ldap.queryUserWithOtherCredentials(sam, pw) )?: return null
-        val i = 0;
-        println(i)
 
-        updateDbWithUser(ldapUser)
+        DB.putUser(ldapUser)
 
         log.trace("Found user from ldap {\"sam\":\"$sam\", \"longUser\":\"${ldapUser.longUser}\"}")
         return ldapUser
@@ -89,26 +86,6 @@ object AuthenticationManager : WithLogging() {
     }
 
     /**
-     * Uploads a [user] to the DB,
-     * with logging for failures
-     */
-    fun updateDbWithUser(user: FullUser) {
-        val shortUser = user.shortUser
-            ?: return log.error("Cannot update user, shortUser is null {\"user\": \"$user\"}")
-        log.trace("Update db instance {\"user\":\"$shortUser\"}\n")
-        try {
-            val response: Response = DB.putUser(user)
-            if (response.isSuccessful) {
-                log.trace("Updated User {\"user\": \"$shortUser\"}")
-            } else {
-                log.error("Updating DB with user failed: {\"user\": \"$shortUser\",\"response\":\"$response\"}")
-            }
-        } catch (e: Exception) {
-            log.error("Error updating DB with user: {\"user\": \"$shortUser\"}", e)
-        }
-    }
-
-    /**
      * Retrieve a [FullUser] directly from the database when supplied with either a
      * short user, long user, or student id
      */
@@ -132,7 +109,7 @@ object AuthenticationManager : WithLogging() {
         if (dbUser.role != refreshedUser.role) {
             SessionManager.invalidateSessions(sam)
         }
-        updateDbWithUser(refreshedUser)
+        DB.putUser(refreshedUser)
         return refreshedUser
     }
 }

@@ -2,6 +2,7 @@ package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
 import org.junit.jupiter.api.Assumptions
@@ -89,7 +90,7 @@ class SessionManagerIT : AuthIT() {
     fun queryUserInDb() {
         val ldapUser = Ldap.queryUserWithResourceAccount(PropsLDAPTestUser.TEST_USER)
             ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from LDAP")
-        AuthenticationManager.updateDbWithUser(ldapUser)
+        DB.putUser(ldapUser)
         AuthenticationManager.queryUserDb(PropsLDAPTestUser.TEST_USER)
             ?: fail("User ${PropsLDAPTestUser.TEST_USER} not already in DB")
 
@@ -162,7 +163,7 @@ class SessionManagerIT : AuthIT() {
         val user = AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER, null)
             ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from DB or LDAP")
         user.groups = setOf(AdGroup("DefinitelyFakeGroup"))
-        AuthenticationManager.updateDbWithUser(user)
+        DB.putUser(user)
 
         val refreshedUser = AuthenticationManager.refreshUser(PropsLDAPTestUser.TEST_USER)
         val alteredUser = AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER, null)
