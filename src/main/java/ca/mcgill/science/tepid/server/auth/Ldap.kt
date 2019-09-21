@@ -31,6 +31,15 @@ object Ldap : WithLogging() {
         return user
     }
 
+    enum class searchBy(private val query: String){
+        sAMAccountName("sAMAccountName"),
+        longUser("userPrincipalName");
+
+        override fun toString(): String {
+            return query
+        }
+    }
+
     fun queryByShortUser(username: String, auth: Pair<String, String>): FullUser?{
         return queryLdap(username, auth)
     }
