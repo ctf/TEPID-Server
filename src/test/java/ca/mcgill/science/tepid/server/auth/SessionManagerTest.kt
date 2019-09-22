@@ -231,7 +231,7 @@ class QueryUserTest : WithLogging() {
     fun testQueryUserDbHit() {
         every { am.queryUserDb("SU") } returns testUser
 
-        val actual = am.queryUser("SU", null)
+        val actual = am.queryUser("SU")
         val expected = testUser
 
         assertEquals(expected, actual, "User from DB is not returned when found")
@@ -241,7 +241,7 @@ class QueryUserTest : WithLogging() {
     fun testQueryUserWithLdapBadSam() {
         every { am.queryUserDb("db.LU@example.com") } returns null
 
-        val actual = am.queryUser("db.LU@example.com", null)
+        val actual = am.queryUser("db.LU@example.com")
         val expected = null
 
         verify(inverse = true) { mockDb.putUser(any()) }
@@ -253,7 +253,7 @@ class QueryUserTest : WithLogging() {
         every { am.queryUserDb("SU") } returns null
         every { Ldap.queryUserWithResourceAccount(any()) } returns null
 
-        val actual = am.queryUser("SU", null)
+        val actual = am.queryUser("SU")
         val expected = null
 
         verify(inverse = true) { mockDb.putUser(any()) }
@@ -266,7 +266,7 @@ class QueryUserTest : WithLogging() {
         every { mockDb.putUser(any()) } returns okPutResponse
         every { Ldap.queryUserWithResourceAccount(any()) } returns testUser
 
-        val actual = am.queryUser("SU", null)
+        val actual = am.queryUser("SU")
         val expected = testUser
 
         verify { mockDb.putUser(testUser) }

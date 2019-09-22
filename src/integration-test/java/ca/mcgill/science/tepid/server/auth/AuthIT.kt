@@ -80,7 +80,7 @@ class SessionManagerIT : AuthIT() {
 
     @Test
     fun authenticateWithLdapUserInDb() {
-        AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER, null)
+        AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER)
             ?: fail("Couldn't prime DB with test user ${PropsLDAPTestUser.TEST_USER}")
         AuthenticationManager.authenticate(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD)
             .assertEqualsTestUser()
@@ -94,7 +94,7 @@ class SessionManagerIT : AuthIT() {
         AuthenticationManager.queryUserDb(PropsLDAPTestUser.TEST_USER)
             ?: fail("User ${PropsLDAPTestUser.TEST_USER} not already in DB")
 
-        AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD)
+        AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER)
             .assertEqualsTestUser()
     }
 
@@ -160,13 +160,13 @@ class SessionManagerIT : AuthIT() {
 
     @Test
     fun forceDbRefresh() {
-        val user = AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER, null)
+        val user = AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER)
             ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from DB or LDAP")
         user.groups = setOf(AdGroup("DefinitelyFakeGroup"))
         DB.putUser(user)
 
         val refreshedUser = AuthenticationManager.refreshUser(PropsLDAPTestUser.TEST_USER)
-        val alteredUser = AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER, null)
+        val alteredUser = AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER)
             ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from DB or LDAP")
 
         assertFalse(alteredUser.groups.contains(AdGroup("DefinitelyFakeGroup")), "User has not been refreshed")
@@ -174,7 +174,7 @@ class SessionManagerIT : AuthIT() {
 
     @Test
     fun invalidateSession() {
-        val user = AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER, null)
+        val user = AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER)
             ?: fail("Couldn't get test user ${PropsLDAPTestUser.TEST_USER} from DB or LDAP")
         val session = SessionManager.start(user, 2400)
         assertNotNull(SessionManager.get(session._id!!))

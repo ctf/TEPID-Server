@@ -151,7 +151,7 @@ object Printer : WithLogging() {
 
                 var j2: PrintJob = updatePagecount(id, psInfo)
                 val userIdentification = j2.userIdentification ?: throw PrintException("Could not retrieve userIdentification {\"job\":\"${j2.getId()}\", \"userIdentification\":\"${j2.userIdentification}\"}")
-                val user = AuthenticationManager.queryUser(userIdentification, null)
+                val user = AuthenticationManager.queryUser(userIdentification)
                     ?: throw PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
 
                 validateColorAvailable(user, j2, psInfo)

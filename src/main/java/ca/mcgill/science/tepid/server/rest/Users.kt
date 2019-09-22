@@ -63,7 +63,7 @@ class Users {
 
         when (session.role) {
             USER -> {
-                val queriedUser = AuthenticationManager.queryUser(sam, null)
+                val queriedUser = AuthenticationManager.queryUser(sam)
                 if (queriedUser == null || session.user.shortUser != queriedUser.shortUser) {
                     return Response.Status.FORBIDDEN.text("You cannot access this resource")
                 }
@@ -72,7 +72,7 @@ class Users {
                 returnedUser = queriedUser
             }
             CTFER, ELDER -> {
-                val queriedUser = AuthenticationManager.queryUser(sam, null)
+                val queriedUser = AuthenticationManager.queryUser(sam)
                 if (queriedUser == null) {
                     log.warn("Could not find user {}.", sam)
                     throw NotFoundException(Response.status(404).entity("Could not find user " + sam).type(MediaType.TEXT_PLAIN).build())
@@ -117,7 +117,7 @@ class Users {
         action: (user: FullUser) -> Unit
     ): Response {
         val session = ctx.getSession()
-        val user = AuthenticationManager.queryUser(sam, null)
+        val user = AuthenticationManager.queryUser(sam)
             ?: return Response.Status.NOT_FOUND.text("User $sam not found")
         if (session.role == USER && session.user.shortUser != user.shortUser)
             return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
@@ -168,7 +168,7 @@ class Users {
         return if (session.role == USER && session.user.shortUser != shortUser)
             -1
         else {
-            val user = AuthenticationManager.queryUser(shortUser, null)
+            val user = AuthenticationManager.queryUser(shortUser)
             getQuota(user)
         }
     }
@@ -178,7 +178,7 @@ class Users {
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun getQuotaDebug(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): QuotaData {
-        val user = AuthenticationManager.queryUser(shortUser, null)
+        val user = AuthenticationManager.queryUser(shortUser)
         return getQuotaData(user) ?: failNotFound("Could not calculate quota")
     }
 

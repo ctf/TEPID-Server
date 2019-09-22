@@ -19,17 +19,15 @@ object AuthenticationManager : WithLogging() {
         val dbUser = queryUserDb(sam)
         log.trace("Db data found for $sam")
 
-
         // >>
         log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
 
         val shortUser = (
             if (sam.matches(LdapHelper.shortUserRegex)) sam
-            else queryUser(sam, null)?.shortUser
+            else queryUser(sam)?.shortUser
             ?: AutoSuggest.queryLdap(sam, 1).getOrNull(0)?.shortUser)
             ?: return null
         // <<
-
 
         val ldapUser = Ldap.authenticate(shortUser, pw)
         if (ldapUser != null) {
@@ -47,7 +45,7 @@ object AuthenticationManager : WithLogging() {
      * @param pw password
      * @return user if found
      */
-    fun queryUser(sam: Sam, pw: String?): FullUser? {
+    fun queryUser(sam: Sam): FullUser? {
         log.trace("Querying user: {\"sam\":\"$sam\"}")
 
         val dbUser = queryUserDb(sam)
@@ -55,7 +53,7 @@ object AuthenticationManager : WithLogging() {
         if (dbUser != null) return dbUser
 
         if (!sam.matches(LdapHelper.shortUserRegex)) return null // cannot query without short user
-        val ldapUser = (if (pw == null) Ldap.queryUserWithResourceAccount(sam) else Ldap.queryUserWithOtherCredentials(sam, pw) )?: return null
+        val ldapUser = Ldap.queryUserWithResourceAccount(sam) ?: return null
 
         DB.putUser(ldapUser)
 
@@ -100,7 +98,7 @@ object AuthenticationManager : WithLogging() {
         val dbUser = queryUserDb(sam)
         if (dbUser == null) {
             log.info("Could not fetch user from DB {\"sam\":\"$sam\"}")
-            return queryUser(sam, null)
+            return queryUser(sam)
                 ?: throw RuntimeException("Could not fetch user from anywhere {\"sam\":\"$sam\"}")
         }
         val ldapUser = Ldap.queryUserWithResourceAccount(sam)
@@ -112,4 +110,6 @@ object AuthenticationManager : WithLogging() {
         DB.putUser(refreshedUser)
         return refreshedUser
     }
+
+
 }
