@@ -11,20 +11,17 @@ object Ldap : WithLogging() {
 
     private val ldapConnector = LdapConnector()
 
-    private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
-    private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
+    val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
 
     /**
      * Retrieve a [FullUser] from ldap
-     * [targetSam] must be a valid short user or long user
+     * [sam] must be a valid short user or long user
      * The resource account will be used as auth
      */
     fun queryUser(sam: Sam): FullUser? {
         log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
-        val auth1 = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
-        val user =
-            if (sam.contains(".")) queryLdapByLongUser(sam, auth1) else queryByShortUser(sam, auth1)
-        return user
+
+        return if (sam.contains(".")) queryLdapByLongUser(sam, auth) else queryByShortUser(sam, auth)
     }
 
     /**
@@ -39,24 +36,24 @@ object Ldap : WithLogging() {
         }
     }
 
-    fun queryByShortUser(username: String, auth: Pair<String, String>): FullUser? {
+    private fun queryByShortUser(username: String, auth: Pair<String, String>): FullUser? {
         return queryLdap(username, auth, SearchBy.sAMAccountName)
     }
 
-    fun queryLdapByLongUser(username: String, auth: Pair<String, String>): FullUser? {
+    private fun queryLdapByLongUser(username: String, auth: Pair<String, String>): FullUser? {
         return queryLdap("$username${Config.ACCOUNT_DOMAIN}", auth, SearchBy.longUser)
     }
 
     /**
-     * Queries [username] (short user or long user)
+     * Queries [userName] (short user or long user)
      * with [auth] credentials (username to password).
      * Resulting user is nonnull if it exists
      *
-     * Note that [auth] may use different credentials than the [username] in question.
+     * Note that [auth] may use different credentials than the [userName] in question.
      * However, if a different auth is provided (eg from our science account),
      * the studentId cannot be queried
      */
-    fun queryLdap(userName: Sam, auth: Pair<String, String>, searchName: SearchBy): FullUser? {
+    private fun queryLdap(userName: Sam, auth: Pair<String, String>, searchName: SearchBy): FullUser? {
         val searchFilter = "(&(objectClass=user)($searchName=$userName))"
         val ctx = ldapConnector.bindLdap(auth.first, auth.second) ?: return null
         val searchControls = SearchControls()

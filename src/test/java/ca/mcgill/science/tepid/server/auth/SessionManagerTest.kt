@@ -27,7 +27,7 @@ import javax.ws.rs.core.Response
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
-val okPutResponse = Response.ok().entity(PutResponse(id="TEST")).build()
+val okPutResponse = Response.ok().entity(PutResponse(id = "TEST")).build()
 
 class MergeUsersTest {
 
@@ -200,7 +200,7 @@ class QueryUserTest : WithLogging() {
 
     @BeforeEach
     fun createMockDb() {
-        mockDb = mockk<DbLayer>(relaxed=true)
+        mockDb = mockk<DbLayer>(relaxed = true)
         DB = mockDb
     }
     @AfterEach
@@ -208,8 +208,8 @@ class QueryUserTest : WithLogging() {
         unmockkObject(mockDb)
     }
 
-    companion object{
-        lateinit var mockDb : DbLayer
+    companion object {
+        lateinit var mockDb: DbLayer
         lateinit var am: AuthenticationManager
 
         @JvmStatic
@@ -287,8 +287,7 @@ class AuthenticateTest {
     private lateinit var testUserFromDb: FullUser
     private var testShortUser = "testShortUser"
     private var testPassword = "testPassword"
-    lateinit var mockDb : DbLayer
-
+    lateinit var mockDb: DbLayer
 
     @BeforeEach
     fun initTest() {
@@ -303,7 +302,6 @@ class AuthenticateTest {
         mockkObject(Config)
         sm = spyk(AuthenticationManager)
         mockkObject(Ldap)
-
     }
 
     @AfterEach
@@ -402,8 +400,7 @@ class RefreshUserTest {
 
     companion object {
         val testSam = "SU"
-        lateinit var mockDb : DbLayer
-
+        lateinit var mockDb: DbLayer
 
         @JvmStatic
         @BeforeAll
@@ -427,7 +424,6 @@ class RefreshUserTest {
             } returns okPutResponse
 
             mockkObject(Config)
-
         }
 
         @JvmStatic

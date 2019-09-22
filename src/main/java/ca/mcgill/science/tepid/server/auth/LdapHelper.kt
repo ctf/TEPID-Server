@@ -29,7 +29,6 @@ class LdapHelper {
 
         val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
 
-
         /**
          * Creates a blank user and attempts to retrieve as many attributes
          * as possible from the specified attributes

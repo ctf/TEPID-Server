@@ -25,7 +25,7 @@ object AutoSuggest : WithLogging() {
         val q = Q.defer<List<FullUser>>()
         object : Thread("LDAP AutoSuggest: " + like) {
             override fun run() {
-                val out = queryLdap(like,  limit)
+                val out = queryLdap(like, limit)
                 q.resolve(out)
             }
         }.start()

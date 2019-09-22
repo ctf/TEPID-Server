@@ -110,6 +110,4 @@ object AuthenticationManager : WithLogging() {
         DB.putUser(refreshedUser)
         return refreshedUser
     }
-
-
 }
