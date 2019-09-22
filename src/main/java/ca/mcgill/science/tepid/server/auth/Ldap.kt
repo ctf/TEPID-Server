@@ -16,20 +16,14 @@ object Ldap : WithLogging() {
 
     /**
      * Retrieve a [FullUser] from ldap
-     * The resource account will be used
-     */
-    fun queryUserWithResourceAccount(sam:Sam): FullUser? {
-        log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
-        return queryUser(sam, Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS)
-    }
-
-    /**
-     * Retrieve a [FullUser] from ldap
      * [targetSam] must be a valid short user or long user
-     * The resource account will be used as auth if [pw] is null
+     * The resource account will be used as auth
      */
-    fun queryUser(targetSam: Sam, auth: Pair<String, String>): FullUser? {
-        val user = if (targetSam.contains(".")) queryLdapByLongUser(targetSam, auth) else queryByShortUser(targetSam, auth)
+    fun queryUser(sam: Sam): FullUser? {
+        log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
+        val auth1 = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
+        val user =
+            if (sam.contains(".")) queryLdapByLongUser(sam, auth1) else queryByShortUser(sam, auth1)
         return user
     }
 
@@ -54,7 +48,7 @@ object Ldap : WithLogging() {
     }
 
     fun effectBindByUser(username: ShortUser, password: String): FullUser? {
-        return queryLdap(username, username to password,  SearchBy.sAMAccountName)
+        return queryLdap(username, username to password, SearchBy.sAMAccountName)
     }
 
     /**
