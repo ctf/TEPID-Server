@@ -25,15 +25,6 @@ object Ldap : WithLogging() {
 
     /**
      * Retrieve a [FullUser] from ldap
-     * [sam] must be a valid short user or long user
-     */
-    fun queryUserWithOtherCredentials(sam:Sam, pw:String): FullUser? {
-        log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"$sam\"}")
-        return queryUser(sam, sam to pw)
-    }
-
-    /**
-     * Retrieve a [FullUser] from ldap
      * [targetSam] must be a valid short user or long user
      * The resource account will be used as auth if [pw] is null
      */
