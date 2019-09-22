@@ -54,12 +54,23 @@ object AuthenticationManager : WithLogging() {
         if (dbUser != null) return dbUser
 
         if (!sam.matches(LdapHelper.shortUserRegex)) return null // cannot query without short user
-        val ldapUser = Ldap.queryUser(sam) ?: return null
+        val ldapUser = queryUserLdap(sam) ?: return null
 
         DB.putUser(ldapUser)
 
         log.trace("Found user from ldap {\"sam\":\"$sam\", \"longUser\":\"${ldapUser.longUser}\"}")
         return ldapUser
+    }
+
+    /**
+     * Retrieve a [FullUser] from ldap
+     * [sam] must be a valid short user or long user
+     * The resource account will be used as auth
+     */
+    fun queryUserLdap(sam: Sam): FullUser? {
+        log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
+
+        return if (sam.contains(".")) Ldap.queryByLongUser(sam) else Ldap.queryByShortUser(sam)
     }
 
     /**
@@ -97,7 +108,7 @@ object AuthenticationManager : WithLogging() {
 
     fun refreshUser(shortUser: ShortUser): FullUser {
         val dbUser = queryUser(shortUser) ?: throw RuntimeException("Could not fetch user from anywhere {\"shortUser\":\"$shortUser\"}")
-        val ldapUser = Ldap.queryUser(shortUser)
+        val ldapUser = queryUserLdap(shortUser)
             ?: throw RuntimeException("Could not fetch user from LDAP {\"shortUser\":\"$shortUser\"}")
         val refreshedUser = mergeUsers(ldapUser, dbUser)
         if (dbUser.role != refreshedUser.role) {

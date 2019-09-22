@@ -14,17 +14,6 @@ object Ldap : WithLogging() {
     val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
 
     /**
-     * Retrieve a [FullUser] from ldap
-     * [sam] must be a valid short user or long user
-     * The resource account will be used as auth
-     */
-    fun queryUser(sam: Sam): FullUser? {
-        log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
-
-        return if (sam.contains(".")) queryLdapByLongUser(sam, auth) else queryByShortUser(sam, auth)
-    }
-
-    /**
      * Type for defining the query string used for searching by specific attributes
      */
     enum class SearchBy(private val query: String) {
@@ -36,11 +25,11 @@ object Ldap : WithLogging() {
         }
     }
 
-    private fun queryByShortUser(username: String, auth: Pair<String, String>): FullUser? {
+    internal fun queryByShortUser(username: String): FullUser? {
         return queryLdap(username, auth, SearchBy.sAMAccountName)
     }
 
-    private fun queryLdapByLongUser(username: String, auth: Pair<String, String>): FullUser? {
+    internal fun queryByLongUser(username: String): FullUser? {
         return queryLdap("$username${Config.ACCOUNT_DOMAIN}", auth, SearchBy.longUser)
     }
 
