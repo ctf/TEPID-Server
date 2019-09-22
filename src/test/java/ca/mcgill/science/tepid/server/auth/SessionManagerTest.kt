@@ -15,6 +15,7 @@ import io.mockk.mockkObject
 import io.mockk.runs
 import io.mockk.spyk
 import io.mockk.unmockkAll
+import io.mockk.unmockkObject
 import io.mockk.verify
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
@@ -197,6 +198,16 @@ class QueryUserTest : WithLogging() {
 
     var testUser = UserFactory.makeDbUser()
 
+    @BeforeEach
+    fun createMockDb() {
+        mockDb = mockk<DbLayer>(relaxed=true)
+        DB = mockDb
+    }
+    @AfterEach
+    fun unmockDb() {
+        unmockkObject(mockDb)
+    }
+
     companion object{
         lateinit var mockDb : DbLayer
         lateinit var am: AuthenticationManager
@@ -206,8 +217,6 @@ class QueryUserTest : WithLogging() {
         fun initTest() {
             mockkObject(Config)
             mockkObject(Ldap)
-            mockDb = mockk<DbLayer>(relaxed=true)
-            DB = mockDb
             am = spyk(AuthenticationManager)
         }
 
