@@ -56,14 +56,14 @@ class Users {
     @Path("/{sam}")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun queryLdap(@PathParam("sam") sam: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
+    fun queryLdap(@PathParam("sam") sam: String, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getSession()
 
         val returnedUser: FullUser // an explicit return, so that nothing is accidentally returned
 
         when (session.role) {
             USER -> {
-                val queriedUser = AuthenticationManager.queryUser(sam, pw)
+                val queriedUser = AuthenticationManager.queryUser(sam, null)
                 if (queriedUser == null || session.user.shortUser != queriedUser.shortUser) {
                     return Response.Status.FORBIDDEN.text("You cannot access this resource")
                 }
@@ -72,7 +72,7 @@ class Users {
                 returnedUser = queriedUser
             }
             CTFER, ELDER -> {
-                val queriedUser = AuthenticationManager.queryUser(sam, pw)
+                val queriedUser = AuthenticationManager.queryUser(sam, null)
                 if (queriedUser == null) {
                     log.warn("Could not find user {}.", sam)
                     throw NotFoundException(Response.status(404).entity("Could not find user " + sam).type(MediaType.TEXT_PLAIN).build())
