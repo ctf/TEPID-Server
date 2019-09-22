@@ -47,10 +47,6 @@ object Ldap : WithLogging() {
         return queryLdap("$username${Config.ACCOUNT_DOMAIN}", auth, SearchBy.longUser)
     }
 
-    fun effectBindByUser(username: ShortUser, password: String): FullUser? {
-        return queryLdap(username, username to password, SearchBy.sAMAccountName)
-    }
-
     /**
      * Queries [username] (short user or long user)
      * with [auth] credentials (username to password).
@@ -79,6 +75,6 @@ object Ldap : WithLogging() {
      */
     fun authenticate(shortUser: ShortUser, pw: String): FullUser? {
         log.info("Authenticating {\"shortUser\":\"$shortUser\", \"shortUser\":\"$shortUser\"}")
-        return effectBindByUser(shortUser, pw)
+        return queryLdap(shortUser, shortUser to pw, SearchBy.sAMAccountName)
     }
 }
