@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.auth
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Sam
+import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.utils.WithLogging
 
@@ -94,18 +95,13 @@ object AuthenticationManager : WithLogging() {
         return dbUser
     }
 
-    fun refreshUser(sam: Sam): FullUser {
-        val dbUser = queryUserDb(sam)
-        if (dbUser == null) {
-            log.info("Could not fetch user from DB {\"sam\":\"$sam\"}")
-            return queryUser(sam)
-                ?: throw RuntimeException("Could not fetch user from anywhere {\"sam\":\"$sam\"}")
-        }
-        val ldapUser = Ldap.queryUser(sam)
-            ?: throw RuntimeException("Could not fetch user from LDAP {\"sam\":\"$sam\"}")
+    fun refreshUser(shortUser: ShortUser): FullUser {
+        val dbUser = queryUser(shortUser) ?: throw RuntimeException("Could not fetch user from anywhere {\"shortUser\":\"$shortUser\"}")
+        val ldapUser = Ldap.queryUser(shortUser)
+            ?: throw RuntimeException("Could not fetch user from LDAP {\"shortUser\":\"$shortUser\"}")
         val refreshedUser = mergeUsers(ldapUser, dbUser)
         if (dbUser.role != refreshedUser.role) {
-            SessionManager.invalidateSessions(sam)
+            SessionManager.invalidateSessions(shortUser)
         }
         DB.putUser(refreshedUser)
         return refreshedUser
