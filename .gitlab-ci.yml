@@ -23,6 +23,7 @@ test:
   extends: .base
   stage: test
   script:
+  - ./gradlew clean
   - ./gradlew test -i
   artifacts:
     when: always
