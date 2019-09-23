@@ -49,7 +49,6 @@ object SessionManager : WithLogging() {
     }
 
     fun end(token: String) {
-        // todo test
         DB.deleteSession(token)
     }
 

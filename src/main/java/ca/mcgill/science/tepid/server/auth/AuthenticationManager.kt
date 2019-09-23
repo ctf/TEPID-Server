@@ -12,7 +12,7 @@ object AuthenticationManager : WithLogging() {
     /**
      * Authenticates user against LDAP (if enabled)
      *
-     * @param sam short user
+     * @param sam sam
      * @param pw password
      * @return authenticated user, or null if auth failure
      */
@@ -42,7 +42,7 @@ object AuthenticationManager : WithLogging() {
     /**
      * Retrieve user from DB if available, otherwise retrieves from LDAP
      *
-     * @param sam short user
+     * @param sam sam
      * @param pw password
      * @return user if found
      */
