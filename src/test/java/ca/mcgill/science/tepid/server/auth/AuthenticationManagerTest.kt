@@ -217,7 +217,6 @@ class AuthenticateTest {
      * Basically, if this is something which needs testing, the actual function has logic which breaks the general description
      */
 
-    lateinit var sm: AuthenticationManager
     private lateinit var testUser: FullUser
     private lateinit var testUserFromDb: FullUser
     private var testShortUser = "testShortUser"
@@ -235,8 +234,7 @@ class AuthenticateTest {
             studentId = 5555,
             colorPrinting = false
         )
-        mockkObject(Config)
-        sm = spyk(AuthenticationManager)
+        mockkObject(AuthenticationManager)
         mockkObject(Ldap)
     }
 
@@ -370,9 +368,9 @@ class QueryUserTest : WithLogging() {
 
     @Test
     fun testQueryUserDbHit() {
-        every { AuthenticationManager.queryUserDb("SU") } returns testUser
+        every { am.queryUserDb("SU") } returns testUser
 
-        val actual = AuthenticationManager.queryUser("SU")
+        val actual = am.queryUser("SU")
         val expected = testUser
 
         assertEquals(expected, actual, "User from DB is not returned when found")
@@ -380,9 +378,9 @@ class QueryUserTest : WithLogging() {
 
     @Test
     fun testQueryUserWithLdapBadSam() {
-        every { AuthenticationManager.queryUserDb("db.LU@example.com") } returns null
+        every { am.queryUserDb("db.LU@example.com") } returns null
 
-        val actual = AuthenticationManager.queryUser("db.LU@example.com")
+        val actual = am.queryUser("db.LU@example.com")
         val expected = null
 
         verify(inverse = true) { mockDb.putUser(any()) }
@@ -391,10 +389,10 @@ class QueryUserTest : WithLogging() {
 
     @Test
     fun testQueryUserWithLdapLdapUserNull() {
-        every { AuthenticationManager.queryUserDb("SU") } returns null
-        every { AuthenticationManager.queryUserLdap(any()) } returns null
+        every { am.queryUserDb("SU") } returns null
+        every { am.queryUserLdap(any()) } returns null
 
-        val actual = AuthenticationManager.queryUser("SU")
+        val actual = am.queryUser("SU")
         val expected = null
 
         verify(inverse = true) { mockDb.putUser(any()) }
@@ -403,11 +401,11 @@ class QueryUserTest : WithLogging() {
 
     @Test
     fun testQueryUserWithLdap() {
-        every { AuthenticationManager.queryUserDb("SU") } returns null
+        every { am.queryUserDb("SU") } returns null
         every { mockDb.putUser(any()) } returns okPutResponse
-        every { AuthenticationManager.queryUserLdap(any()) } returns testUser
+        every { am.queryUserLdap(any()) } returns testUser
 
-        val actual = AuthenticationManager.queryUser("SU")
+        val actual = am.queryUser("SU")
         val expected = testUser
 
         verify { mockDb.putUser(testUser) }
