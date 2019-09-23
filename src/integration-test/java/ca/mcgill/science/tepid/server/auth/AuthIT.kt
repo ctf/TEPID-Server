@@ -16,6 +16,12 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 open class AuthIT {
+
+    init {
+        // ensures Config can enable the proper paths to load from
+        println("Testing against ${Config.TEPID_URL_PRODUCTION}")
+    }
+
     protected fun FullUser?.assertEqualsTestUser() {
         assertNotNull(this)
         assertEquals(
