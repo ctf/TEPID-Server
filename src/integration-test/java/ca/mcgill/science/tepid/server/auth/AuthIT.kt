@@ -3,7 +3,9 @@ package ca.mcgill.science.tepid.server.auth
 import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.HibernateCrud
 import ca.mcgill.science.tepid.server.server.Config
+import ca.mcgill.science.tepid.server.server.Config.emf
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeAll
@@ -78,8 +80,6 @@ class SessionManagerIT : AuthIT() {
             .assertEqualsTestUser()
     }
 
-
-
     @Test
     fun authenticateWithLdapUserInDb() {
         AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER)
@@ -124,5 +124,44 @@ class SessionManagerIT : AuthIT() {
         SessionManager.invalidateSessions(user.shortUser!!)
 
         assertNull(SessionManager.get(session._id!!))
+    }
+}
+
+class AuthenticateIT : AuthIT() {
+
+    @Test
+    fun authenticateWithUserNotInDb() {
+        Config.emf
+        val userDb = HibernateCrud<FullUser, String?>(emf!!, FullUser::class.java)
+        userDb.deleteById("u${PropsLDAPTestUser.TEST_USER}")
+
+        AuthenticationManager.authenticate(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD)
+            .assertEqualsTestUser()
+    }
+
+    @Test
+    fun authenticateWithShortUser() {
+        AuthenticationManager.authenticate(PropsLDAPTestUser.TEST_USER, PropsLDAPTestUser.TEST_PASSWORD)
+            .assertEqualsTestUser()
+    }
+    @Test
+    fun authenticateWithEmail() {
+        val user = AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER) ?: fail("could not get user")
+
+        AuthenticationManager.authenticate(user.email!!, PropsLDAPTestUser.TEST_PASSWORD)
+            .assertEqualsTestUser()
+    }
+
+    @Test
+    fun authenticateWithLongUser() {
+        val user = AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER) ?: fail("could not get user")
+
+        AuthenticationManager.authenticate(user.longUser!!, PropsLDAPTestUser.TEST_PASSWORD)
+            .assertEqualsTestUser()
+    }
+
+    @Test
+    fun authenticateWithIncorrectPassword() {
+        assertNull(AuthenticationManager.authenticate(PropsLDAPTestUser.TEST_USER, "PropsLDAPTestUser.TEST_PASSWORD"))
     }
 }
