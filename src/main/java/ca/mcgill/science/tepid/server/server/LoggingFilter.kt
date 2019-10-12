@@ -18,7 +18,7 @@ import javax.ws.rs.ext.Provider
 class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
 
     override fun filter(requestContext: ContainerRequestContext) {
-        MDC.put("req", UUID.randomUUID())
+        MDC.put("req", UUID.randomUUID().toString())
 //        log.trace("Request ${requestContext.uriInfo.path}")
     }
 

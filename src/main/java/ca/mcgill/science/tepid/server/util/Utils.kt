@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.server.mapper
 import org.apache.logging.log4j.kotlin.KotlinLogger
+import org.slf4j.MDC
 import java.io.File
 import java.io.InputStream
 import java.nio.file.CopyOption
@@ -48,7 +49,7 @@ fun File.copyFrom(
 
 fun logMessage(msg: String, vararg params: Pair<String, Any?>): String {
     return mapper.writeValueAsString(
-        listOf(*params, "msg" to msg).associateBy(
+        listOf(*params, "msg" to msg, "req" to MDC.get("req")).associateBy(
             { p -> p.first },
             { p -> p.second.toString() })
     )
