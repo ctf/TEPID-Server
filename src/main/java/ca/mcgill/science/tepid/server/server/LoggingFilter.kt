@@ -1,7 +1,9 @@
 package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.PutResponse
+import org.apache.log4j.MDC
 import org.apache.logging.log4j.kotlin.Logging
+import java.util.*
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.container.ContainerRequestFilter
 import javax.ws.rs.container.ContainerResponseContext
@@ -16,6 +18,7 @@ import javax.ws.rs.ext.Provider
 class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
 
     override fun filter(requestContext: ContainerRequestContext) {
+        MDC.put("req", UUID.randomUUID())
 //        log.trace("Request ${requestContext.uriInfo.path}")
     }
 
