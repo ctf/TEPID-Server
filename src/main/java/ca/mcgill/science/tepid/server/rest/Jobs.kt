@@ -15,7 +15,8 @@ import ca.mcgill.science.tepid.server.util.failInternal
 import ca.mcgill.science.tepid.server.util.failUnauthorized
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.server.util.isSuccessful
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 import java.io.FileInputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
@@ -66,7 +67,7 @@ class Jobs {
             failBadRequest("Invalid queue name ${j.queueName}")
         j.userIdentification = session.user.shortUser
         j.deleteDataOn = j.getJobExpiration()
-        log.debug("Starting new print job ${j.name} for ${session.user.longUser}...")
+        logger.debug(logMessage("starting new print job", "name" to j.name, "for" to session.user.longUser))
         return DB.postJob(j)
     }
 
@@ -75,7 +76,7 @@ class Jobs {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{id}")
     fun addJobData(input: InputStream, @PathParam("id") id: String): PutResponse {
-        log.debug("Receiving job data $id")
+        logger.debug(logMessage("receiving job data", "id" to id))
         val (success, message) = Printer.print(id, input)
         if (!success)
             failBadRequest(message)
@@ -88,7 +89,7 @@ class Jobs {
     @Produces(MediaType.APPLICATION_JSON)
     fun getJob(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Context ctx: ContainerRequestContext): PrintJob {
         val session = ctx.getSession()
-        log.trace("Queried job $id")
+        logger.trace(logMessage("queried job", "id" to id))
         val j = DB.getJob(id)
         if (session.role == USER && session.user.shortUser != j.userIdentification)
             failUnauthorized("You cannot access this resource")
@@ -102,7 +103,7 @@ class Jobs {
     fun setJobRefunded(@PathParam("id") id: String, refunded: Boolean): PutResponse {
         val result = DB.updateJob(id) {
             isRefunded = refunded
-            log.debug("Refunded job $id")
+            logger.debug(logMessage("refunded job", "id" to id))
         } ?: failInternal("Could not modify refund status")
         return PutResponse(result.isRefunded == refunded, result.getId(), result.getRev())
     }
@@ -124,21 +125,21 @@ class Jobs {
             userIdentification = j.userIdentification,
             deleteDataOn = j.getJobExpiration()
         )
-        log.debug("Reprinted ${reprint.name}")
+        logger.debug(logMessage("reprinted", "name" to reprint.name))
         val response = DB.postJob(reprint)
         if (!response.isSuccessful)
             throw WebApplicationException(response)
         val content = response.entity as? PutResponse
             ?: failInternal("Failed to retrieve new id, could not get response entity")
         val newId = content.id
-        Utils.startCaughtThread("Reprint $id", log) {
+        Utils.startCaughtThread("Reprint $id", logger) {
             val (success, message) = Printer.print(newId, FileInputStream(file))
             if (!success)
-                log.error("Failed to reprint job: $message")
+                logger.error{"Failed to reprint job: $message"}
         }
-        log.debug("Reprinted job $id, new id $newId.")
+        logger.debug(logMessage("reprinted job", "id" to id, "newId" to newId))
         return "Reprinted $id, new id $newId"
     }
 
-    private companion object : WithLogging()
+    private companion object : Logging
 }

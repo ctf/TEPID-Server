@@ -8,7 +8,7 @@ import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.Order
 import ca.mcgill.science.tepid.server.util.failNotFound
-import ca.mcgill.science.tepid.utils.WithLogging
+import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
 import javax.ws.rs.DefaultValue
 import javax.ws.rs.GET
@@ -112,5 +112,5 @@ class ScreenSaver {
             ?: failNotFound("No nick associated with $username")
     }
 
-    private companion object : WithLogging()
+    private companion object : Logging
 }

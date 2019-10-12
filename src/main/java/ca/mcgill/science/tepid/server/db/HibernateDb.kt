@@ -12,6 +12,7 @@ import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.server.mapper
 import ca.mcgill.science.tepid.server.util.failNotFound
+import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.utils.PropsDB
 import java.io.InputStream
 import java.util.*
@@ -129,7 +130,7 @@ class HibernateJobLayer(val hc: HibernateCrud<PrintJob, String?>) : DbJobLayer {
             hc.update(printJob)
             return printJob
         } catch (e: Exception) {
-            hc.log.error("Error updating printjob {\"id\":\"$id\", \"error\":\"${e.message}\"}")
+            hc.logger.error(logMessage("error updating printjob",  "id" to id, "error" to e.message))
         }
         return null
     }

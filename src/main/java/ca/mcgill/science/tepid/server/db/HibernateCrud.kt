@@ -2,8 +2,7 @@ package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.bindings.TepidDb
 import ca.mcgill.science.tepid.server.util.text
-import ca.mcgill.science.tepid.utils.Loggable
-import ca.mcgill.science.tepid.utils.WithLogging
+import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
 import javax.persistence.EntityExistsException
 import javax.persistence.EntityManager
@@ -12,7 +11,7 @@ import javax.persistence.EntityNotFoundException
 import javax.persistence.NoResultException
 import javax.ws.rs.core.Response
 
-interface IHibernateCrud<T : Any, P> : Loggable {
+interface IHibernateCrud<T : Any, P> : Logging {
 
     fun create(obj: T): T
 
@@ -29,8 +28,7 @@ interface IHibernateCrud<T : Any, P> : Loggable {
     fun updateOrCreateIfNotExist(obj: T): T
 }
 
-class HibernateCrud<T : TepidDb, P>(val emf: EntityManagerFactory, val classParameter: Class<T>) : IHibernateCrud<T, P>,
-    Loggable by WithLogging() {
+class HibernateCrud<T : TepidDb, P>(val emf: EntityManagerFactory, val classParameter: Class<T>) : IHibernateCrud<T, P> {
 
     fun <T> dbOp(errorLogger: (e: Exception) -> String = { e -> "DB error: $e" }, f: (em: EntityManager) -> T): T {
         val em = emf.createEntityManager()
@@ -38,7 +36,7 @@ class HibernateCrud<T : TepidDb, P>(val emf: EntityManagerFactory, val classPara
             return f(em)
         } catch (e: Exception) {
             e.printStackTrace()
-            log.error(errorLogger(e))
+            logger.error(errorLogger(e))
             throw e
         } finally {
             em.close()
@@ -56,7 +54,7 @@ class HibernateCrud<T : TepidDb, P>(val emf: EntityManagerFactory, val classPara
                 it.transaction.commit()
                 return@dbOp o
             } catch (e: Exception) {
-                log.error(errorLogger(e))
+                logger.error(errorLogger(e))
                 e.printStackTrace()
                 it.transaction.rollback()
                 throw e

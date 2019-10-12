@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.PutResponse
-import ca.mcgill.science.tepid.utils.WithLogging
+import org.apache.logging.log4j.kotlin.Logging
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.container.ContainerRequestFilter
 import javax.ws.rs.container.ContainerResponseContext
@@ -32,9 +32,9 @@ class LoggingFilter : ContainerRequestFilter, ContainerResponseFilter {
             else -> responseContext.entityType.typeName
         }
         val msg = "Response for ${requestContext.uriInfo.path}: ${responseContext.status}: $content"
-        if (isSuccessful) log.trace(msg)
-        else log.error(msg)
+        if (isSuccessful) logger.trace(msg)
+        else logger.error(msg)
     }
 
-    companion object : WithLogging()
+    companion object : Logging
 }

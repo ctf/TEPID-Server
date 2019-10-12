@@ -9,8 +9,6 @@ import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.server.ITBase
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.test.TestUtils
-import ca.mcgill.science.tepid.utils.Loggable
-import ca.mcgill.science.tepid.utils.WithLogging
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -22,7 +20,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-class JobIT : ITBase(), Loggable by WithLogging() {
+class JobIT : ITBase() {
 
     lateinit var testJob: PrintJob
 
@@ -62,7 +60,7 @@ class JobIT : ITBase(), Loggable by WithLogging() {
         assertTrue(putJob!!.ok, "Could not put job")
         val jobId = putJob.id
 
-        log.debug("Sending job data for $jobId")
+        logger.debug("Sending job data for $jobId")
 
         // print once
         val fileInStream = FileInputStream(
@@ -90,7 +88,7 @@ class JobIT : ITBase(), Loggable by WithLogging() {
         assertTrue(putJob!!.ok, "Could not put job")
         val jobId = putJob.id
 
-        log.debug("Sending job data for $jobId")
+        logger.debug("Sending job data for $jobId")
 
         // print once
         val response = server.testApi.addJobDataFromInput(

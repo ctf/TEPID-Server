@@ -3,16 +3,16 @@ package ca.mcgill.science.tepid.server.printing
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.enums.PrintError
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
+import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class PrintingTest : WithLogging() {
+class PrintingTest : Logging {
 
     @Test
     fun tooManyPagesTestTooManyEnabled() {

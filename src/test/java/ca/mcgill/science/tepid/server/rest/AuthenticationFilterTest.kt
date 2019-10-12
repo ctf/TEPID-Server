@@ -6,13 +6,13 @@ import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.every
 import io.mockk.mockkObject
+import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
-class AuthenticationFilterTest : WithLogging() {
+class AuthenticationFilterTest : Logging {
 
     @Test
     fun testGetCtfRoleNoGroups() {

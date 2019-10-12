@@ -18,7 +18,7 @@ import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.server.util.text
-import ca.mcgill.science.tepid.utils.WithLogging
+import org.apache.logging.log4j.kotlin.Logging
 import java.net.URI
 import java.net.URISyntaxException
 import javax.annotation.security.RolesAllowed
@@ -48,7 +48,7 @@ class Users {
     fun adminConfigured(): Boolean = try {
         DB.isAdminConfigured()
     } catch (e: Exception) {
-        log.error("localAdmin check failed", e)
+        logger.error ( "localAdmin check failed", e )
         false
     }
 
@@ -74,7 +74,7 @@ class Users {
             CTFER, ELDER -> {
                 val queriedUser = AuthenticationManager.queryUser(sam)
                 if (queriedUser == null) {
-                    log.warn("Could not find user {}.", sam)
+                    logger.warn { "Could not find user ${sam}." }
                     throw NotFoundException(Response.status(404).entity("Could not find user " + sam).type(MediaType.TEXT_PLAIN).build())
                 }
                 returnedUser = queriedUser
@@ -133,7 +133,7 @@ class Users {
     fun setNick(@PathParam("sam") sam: String, nick: String, @Context ctx: ContainerRequestContext): Response =
         putUserData(sam, ctx) {
             it.nick = if (nick.isBlank()) null else nick
-            log.debug("Setting nick for ${it.shortUser} to ${it.nick}")
+            logger.debug { "Setting nick for ${it.shortUser} to ${it.nick}" }
             it.updateUserNameInformation()
         }
 
@@ -145,7 +145,7 @@ class Users {
     fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context ctx: ContainerRequestContext): Response =
         putUserData(sam, ctx) {
             it.jobExpiration = jobExpiration
-            log.trace("Job expiration for ${it.shortUser} set to $jobExpiration")
+            logger.trace { "Job expiration for ${it.shortUser} set to $jobExpiration" }
         }
 
     @PUT
@@ -156,7 +156,7 @@ class Users {
     fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context ctx: ContainerRequestContext): Response =
         putUserData(sam, ctx) {
             it.colorPrinting = color
-            log.trace("Set color for ${it.shortUser} to ${it.colorPrinting}")
+            logger.trace { "Set color for ${it.shortUser} to ${it.colorPrinting}" }
         }
 
     @GET
@@ -205,7 +205,7 @@ class Users {
             .map(FullUser::toUser) // todo check if we should further simplify to userquery
     }
 
-    companion object : WithLogging() {
+    companion object : Logging {
 
         data class QuotaData(
             val shortUser: String,

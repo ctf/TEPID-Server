@@ -2,8 +2,8 @@ package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
-import org.apache.logging.log4j.Logger
 import ca.mcgill.science.tepid.server.server.mapper
+import org.apache.logging.log4j.kotlin.KotlinLogger
 import java.io.File
 import java.io.InputStream
 import java.nio.file.CopyOption
@@ -47,7 +47,11 @@ fun File.copyFrom(
 }
 
 fun logMessage(msg: String, vararg params: Pair<String, Any?>): String {
-    return mapper.writeValueAsString(listOf( *params, "msg" to msg).associateBy({p->p.first}, {p->p.second.toString()}))
+    return mapper.writeValueAsString(
+        listOf(*params, "msg" to msg).associateBy(
+            { p -> p.first },
+            { p -> p.second.toString() })
+    )
 }
 
 /**
@@ -78,7 +82,7 @@ object Utils {
     /**
      * Create and run a thread with try catch
      */
-    inline fun startCaughtThread(name: String, log: Logger? = null, crossinline action: () -> Unit) =
+    inline fun startCaughtThread(name: String, log: KotlinLogger? = null, crossinline action: () -> Unit) =
         object : Thread(name) {
             override fun run() {
                 try {

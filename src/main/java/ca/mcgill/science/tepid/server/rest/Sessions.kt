@@ -10,7 +10,8 @@ import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.failUnauthorized
 import ca.mcgill.science.tepid.server.util.getSession
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.DELETE
 import javax.ws.rs.GET
@@ -31,18 +32,18 @@ class Sessions {
     @Produces(MediaType.APPLICATION_JSON)
     fun getSession(@PathParam("user") user: String, @PathParam("token") token: String): Session {
         val username = user.split("@")[0]
-        log.trace("Getting session $username $token")
+        logger.trace(logMessage("Getting session",  "username" to username,  "token" to token))
         val session = SessionManager[token] ?: failUnauthorized("No session found")
         if (session.user.longUser == username || session.user.shortUser == username)
             return session.toSession()
-        log.info("Username mismatch")
+        logger.info{"Username mismatch"}
         failUnauthorized("No session found")
     }
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     fun startSession(req: SessionRequest): Session {
-        log.trace("Received Start request for ${req.username}")
+        logger.trace(logMessage("Received Start request", "for" to req.username))
         try {
             val username = req.username.split("@")[0]
             val user = AuthenticationManager.authenticate(username, req.password)
@@ -56,7 +57,7 @@ class Sessions {
                 return s.toSession()
             }
         } catch (e: Exception) {
-            log.error("Starting session failed", e)
+            logger.error("Starting session failed", e)
         }
         failUnauthorized("Failed to start session for user ${req.username}")
     }
@@ -76,15 +77,12 @@ class Sessions {
         val requestSession = ctx.getSession()
         val targetSession = SessionManager[id] ?: failNotFound("")
         if (requestSession.user.shortUser == targetSession.user.shortUser) {
-            log.info("deleting session {\"session\":\"$targetSession\"}")
+            logger.info(logMessage("deleting session", "session" to targetSession, "t" to 0))
+                //"deleting session {\"session\":\"$targetSession\"}")
             SessionManager.end(id)
             return Response.ok("ok").build()
         }
-        log.warn(
-            "Unauthorized attempt to delete session of {} by user {}.",
-            requestSession.user.shortUser,
-            targetSession.user.shortUser
-        )
+        logger.warn(logMessage("Unauthorized attempt to delete session", "of" to requestSession.user.shortUser, "by" to targetSession.user.shortUser))
         // returns failNotFound for uniformity with the case when the session doesn't exist
         failNotFound("")
     }
@@ -97,5 +95,5 @@ class Sessions {
         SessionManager.invalidateSessions(sam)
     }
 
-    private companion object : WithLogging()
+    private companion object : Logging
 }

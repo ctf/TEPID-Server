@@ -1,6 +1,6 @@
 package ca.mcgill.science.tepid.server.server
 
-import ca.mcgill.science.tepid.utils.WithLogging
+import org.apache.logging.log4j.kotlin.Logging
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -12,7 +12,7 @@ class BackgroundTasks : ServletContextListener {
     private lateinit var scheduler: ScheduledExecutorService
 
     init {
-        log.info("Starting BackgroundTasks")
+        logger.info("Starting BackgroundTasks")
     }
 
     override fun contextInitialized(event: ServletContextEvent?) {
@@ -20,13 +20,13 @@ class BackgroundTasks : ServletContextListener {
         scheduler.scheduleAtFixedRate(JobMonitor(), 0, 30, TimeUnit.MINUTES)
         scheduler.scheduleAtFixedRate(JobDataMonitor(), 0, 12, TimeUnit.HOURS)
         scheduler.scheduleAtFixedRate(SessionMonitor(), 0, 4, TimeUnit.HOURS)
-        log.info("BackgroundTasks initialized")
+        logger.info("BackgroundTasks initialized")
     }
 
     override fun contextDestroyed(event: ServletContextEvent?) {
         scheduler.shutdownNow()
-        log.info("BackgroundTasks destroyed")
+        logger.info("BackgroundTasks destroyed")
     }
 
-    private companion object : WithLogging()
+    private companion object : Logging
 }
