@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.util
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import org.apache.logging.log4j.Logger
+import ca.mcgill.science.tepid.server.server.mapper
 import java.io.File
 import java.io.InputStream
 import java.nio.file.CopyOption
@@ -43,6 +44,10 @@ fun File.copyFrom(
     input.use {
         Files.copy(it, toPath(), *options)
     }
+}
+
+fun logMessage(msg: String, vararg params: Pair<String, Any?>): String {
+    return mapper.writeValueAsString(listOf( *params, "msg" to msg).associateBy({p->p.first}, {p->p.second.toString()}))
 }
 
 /**
