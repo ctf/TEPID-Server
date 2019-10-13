@@ -25,7 +25,7 @@ object AuthenticationManager : WithLogging() {
         val shortUser = (
             if (identifier.matches(LdapHelper.shortUserRegex)) identifier
             else queryUser(identifier)?.shortUser
-            ?: AutoSuggest.queryLdap(identifier, 1).getOrNull(0)?.shortUser)
+            )
             ?: return null
 
         val ldapUser = Ldap.authenticate(shortUser, pw) ?: return null
@@ -64,7 +64,11 @@ object AuthenticationManager : WithLogging() {
     fun queryUserLdap(identifier: PersonalIdentifier): FullUser? {
         log.trace("Querying user from LDAP {\"identifier\":\"$identifier\", \"by\":\"resource\"}")
 
-        return if (identifier.contains(".")) Ldap.queryByLongUser(identifier) else Ldap.queryByShortUser(identifier)
+        return when {
+            identifier.contains("@") -> Ldap.queryByEmail(identifier)
+            identifier.contains(".") -> Ldap.queryByLongUser(identifier)
+            else -> Ldap.queryByShortUser(identifier)
+        }
     }
 
     /**
