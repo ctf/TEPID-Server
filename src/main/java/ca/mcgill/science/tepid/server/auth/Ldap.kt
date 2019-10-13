@@ -11,7 +11,7 @@ object Ldap : WithLogging() {
 
     private val ldapConnector = LdapConnector()
 
-    val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
+    private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
 
     /**
      * Type for defining the query string used for searching by specific attributes

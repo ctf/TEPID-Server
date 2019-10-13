@@ -28,12 +28,11 @@ object AuthenticationManager : WithLogging() {
             ?: AutoSuggest.queryLdap(identifier, 1).getOrNull(0)?.shortUser)
             ?: return null
 
-        val ldapUser = Ldap.authenticate(shortUser, pw)
-        if (ldapUser != null) {
-            val mergedUser = mergeUsers(ldapUser, dbUser)
-            DB.putUser(mergedUser)
-            return mergedUser
-        }
+        val ldapUser = Ldap.authenticate(shortUser, pw) ?: return null
+        val mergedUser = mergeUsers(ldapUser, dbUser)
+        DB.putUser(mergedUser)
+        return mergedUser
+    }
 
     /**
      * Retrieve user from DB if available, otherwise retrieves from LDAP
