@@ -222,8 +222,6 @@ object Config : WithLogging() {
     }
 
     fun getDb(): DbLayer {
-        val _emf = HibernateDbLayer.makeEntityManagerFactory("tepid-pu")
-        emf = _emf
-        return HibernateDbLayer(_emf)
+        return HibernateDbLayer(HibernateDbLayer.makeEntityManagerFactory("tepid-pu").also { emf = it })
     }
 }
