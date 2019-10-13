@@ -50,7 +50,8 @@ class Jobs {
     }
 
     private fun PrintJob.getJobExpiration(): Long {
-        return System.currentTimeMillis() + (AuthenticationManager.queryUserDb(userIdentification ?: "")?.jobExpiration
+        val userId = userIdentification ?: return 0
+        return System.currentTimeMillis() + (AuthenticationManager.queryUserDb(userId)?.jobExpiration
             ?: TimeUnit.DAYS.toMillis(7))
     }
 
