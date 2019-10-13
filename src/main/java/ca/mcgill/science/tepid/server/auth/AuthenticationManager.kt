@@ -2,7 +2,7 @@ package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Sam
+import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -12,23 +12,21 @@ object AuthenticationManager : WithLogging() {
     /**
      * Authenticates user against LDAP (if enabled)
      *
-     * @param sam sam
+     * @param identifier identifier
      * @param pw password
      * @return authenticated user, or null if auth failure
      */
-    fun authenticate(sam: Sam, pw: String): FullUser? {
-        val dbUser = queryUserDb(sam)
-        log.trace("Db data found for $sam")
+    fun authenticate(identifier: PersonalIdentifier, pw: String): FullUser? {
+        val dbUser = queryUserDb(identifier)
+        log.trace("Db data found for $identifier")
 
-        // >>
-        log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
+        log.debug("Authenticating against ldap {\"identifier\":\"$identifier\"}")
 
         val shortUser = (
-            if (sam.matches(LdapHelper.shortUserRegex)) sam
-            else queryUser(sam)?.shortUser
-            ?: AutoSuggest.queryLdap(sam, 1).getOrNull(0)?.shortUser)
+            if (identifier.matches(LdapHelper.shortUserRegex)) identifier
+            else queryUser(identifier)?.shortUser
+            ?: AutoSuggest.queryLdap(identifier, 1).getOrNull(0)?.shortUser)
             ?: return null
-        // <<
 
         val ldapUser = Ldap.authenticate(shortUser, pw)
         if (ldapUser != null) {
@@ -36,40 +34,38 @@ object AuthenticationManager : WithLogging() {
             DB.putUser(mergedUser)
             return mergedUser
         }
-        return null
-    }
 
     /**
      * Retrieve user from DB if available, otherwise retrieves from LDAP
      *
-     * @param sam sam
+     * @param identifier identifier
      * @param pw password
      * @return user if found
      */
-    fun queryUser(sam: Sam): FullUser? {
-        log.trace("Querying user: {\"sam\":\"$sam\"}")
+    fun queryUser(identifier: PersonalIdentifier): FullUser? {
+        log.trace("Querying user: {\"identifier\":\"$identifier\"}")
 
-        val dbUser = queryUserDb(sam)
+        val dbUser = queryUserDb(identifier)
 
         if (dbUser != null) return dbUser
 
-        val ldapUser = queryUserLdap(sam) ?: return null
+        val ldapUser = queryUserLdap(identifier) ?: return null
 
         DB.putUser(ldapUser)
 
-        log.trace("Found user from ldap {\"sam\":\"$sam\", \"longUser\":\"${ldapUser.longUser}\"}")
+        log.trace("Found user from ldap {\"identifier\":\"$identifier\", \"longUser\":\"${ldapUser.longUser}\"}")
         return ldapUser
     }
 
     /**
      * Retrieve a [FullUser] from ldap
-     * [sam] must be a valid short user or long user
+     * [identifier] must be a valid short user or long user
      * The resource account will be used as auth
      */
-    fun queryUserLdap(sam: Sam): FullUser? {
-        log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
+    fun queryUserLdap(identifier: PersonalIdentifier): FullUser? {
+        log.trace("Querying user from LDAP {\"identifier\":\"$identifier\", \"by\":\"resource\"}")
 
-        return if (sam.contains(".")) Ldap.queryByLongUser(sam) else Ldap.queryByShortUser(sam)
+        return if (identifier.contains(".")) Ldap.queryByLongUser(identifier) else Ldap.queryByShortUser(identifier)
     }
 
     /**
@@ -98,10 +94,10 @@ object AuthenticationManager : WithLogging() {
      * Retrieve a [FullUser] directly from the database when supplied with either a
      * short user, long user, or student id
      */
-    fun queryUserDb(sam: Sam): FullUser? {
-        val dbUser = DB.getUserOrNull(sam)
+    fun queryUserDb(identifier: PersonalIdentifier): FullUser? {
+        val dbUser = DB.getUserOrNull(identifier)
         dbUser?._id ?: return null
-        log.trace("Found db user {\"sam\":\"$sam\",\"db_id\":\"${dbUser._id}\", \"dislayName\":\"${dbUser.displayName}\"}")
+        log.trace("Found db user {\"identifier\":\"$identifier\",\"db_id\":\"${dbUser._id}\", \"dislayName\":\"${dbUser.displayName}\"}")
         return dbUser
     }
 

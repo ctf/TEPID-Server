@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Sam
+import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
@@ -25,7 +25,7 @@ object Ldap : WithLogging() {
         }
     }
 
-    internal fun queryByShortUser(username: String): FullUser? {
+    internal fun queryByShortUser(username: ShortUser): FullUser? {
         return queryLdap(username, auth, SearchBy.sAMAccountName)
     }
 
@@ -42,7 +42,7 @@ object Ldap : WithLogging() {
      * However, if a different auth is provided (eg from our science account),
      * the studentId cannot be queried
      */
-    private fun queryLdap(userName: Sam, auth: Pair<String, String>, searchName: SearchBy): FullUser? {
+    private fun queryLdap(userName: PersonalIdentifier, auth: Pair<String, String>, searchName: SearchBy): FullUser? {
         val searchFilter = "(&(objectClass=user)($searchName=$userName))"
         val ctx = ldapConnector.bindLdap(auth.first, auth.second) ?: return null
         val searchControls = SearchControls()
