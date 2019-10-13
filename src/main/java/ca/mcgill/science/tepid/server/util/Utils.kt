@@ -49,7 +49,19 @@ fun File.copyFrom(
 
 fun logMessage(msg: String, vararg params: Pair<String, Any?>): String {
     return mapper.writeValueAsString(
-        listOf(*params, "msg" to msg, "req" to MDC.get("req")).associateBy(
+        listOf("msg" to msg, *params, "req" to MDC.get("req")).associateBy(
+            { p -> p.first },
+            { p -> p.second.toString() })
+    )
+}
+
+fun KotlinLogger.logError(msg: String, e: Exception, vararg params: Pair<String, Any?>) {
+    this.error(logMessage(msg, *params), e)
+}
+
+fun logAnnounce(msg: String, vararg params: Pair<String, Any?>): String {
+    return mapper.writeValueAsString(
+        listOf("msg" to msg, *params).associateBy(
             { p -> p.first },
             { p -> p.second.toString() })
     )

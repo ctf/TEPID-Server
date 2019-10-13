@@ -17,6 +17,7 @@ import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.getSession
+import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.server.util.text
 import org.apache.logging.log4j.kotlin.Logging
 import java.net.URI
@@ -48,7 +49,7 @@ class Users {
     fun adminConfigured(): Boolean = try {
         DB.isAdminConfigured()
     } catch (e: Exception) {
-        logger.error ( "localAdmin check failed", e )
+        logger.error("localAdmin check failed", e)
         false
     }
 
@@ -74,7 +75,7 @@ class Users {
             CTFER, ELDER -> {
                 val queriedUser = AuthenticationManager.queryUser(sam)
                 if (queriedUser == null) {
-                    logger.warn { "Could not find user ${sam}." }
+                    logger.warn(logMessage("could not find user", "sam" to sam))
                     throw NotFoundException(Response.status(404).entity("Could not find user " + sam).type(MediaType.TEXT_PLAIN).build())
                 }
                 returnedUser = queriedUser

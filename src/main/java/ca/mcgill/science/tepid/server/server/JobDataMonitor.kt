@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.util.logMessage
+import ca.mcgill.science.tepid.server.util.logAnnounce
 import org.apache.logging.log4j.kotlin.Logging
 import java.io.File
 
@@ -22,9 +22,9 @@ class JobDataMonitor : Runnable {
                             try {
                                 val f = File(filePath)
                                 if (f.exists() && !f.delete())
-                                    logger.error(logMessage("failed to delete file", "id" to id))
+                                    logger.error(logAnnounce("failed to delete file", "id" to id))
                             } catch (e: Exception) {
-                                logger.error(logMessage("failed to delete file", "error" to e.message, "id" to id))
+                                logger.error(logAnnounce("failed to delete file", "error" to e.message, "id" to id))
                             }
                             file = null
                         }
@@ -35,7 +35,12 @@ class JobDataMonitor : Runnable {
             logger.error("general failure deleting job data", e)
         }
 
-        logger.info(logMessage("deleting expired jobs completed", "duration" to "${System.currentTimeMillis() - now} ms"))
+        logger.info(
+            logAnnounce(
+                "deleting expired jobs completed",
+                "duration" to "${System.currentTimeMillis() - now} ms"
+            )
+        )
     }
 
     private companion object : Logging

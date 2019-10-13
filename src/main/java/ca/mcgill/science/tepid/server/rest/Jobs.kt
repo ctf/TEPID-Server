@@ -135,7 +135,7 @@ class Jobs {
         Utils.startCaughtThread("Reprint $id", logger) {
             val (success, message) = Printer.print(newId, FileInputStream(file))
             if (!success)
-                logger.error{"Failed to reprint job: $message"}
+                logger.error { "Failed to reprint job: $message" }
         }
         logger.debug(logMessage("reprinted job", "id" to id, "newId" to newId))
         return "Reprinted $id, new id $newId"

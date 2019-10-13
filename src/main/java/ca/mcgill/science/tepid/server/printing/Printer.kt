@@ -9,6 +9,7 @@ import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.copyFrom
+import ca.mcgill.science.tepid.server.util.logError
 import ca.mcgill.science.tepid.server.util.logMessage
 import org.apache.logging.log4j.kotlin.Logging
 import org.tukaani.xz.XZInputStream
@@ -62,7 +63,7 @@ object Printer : Logging {
             if (future?.isDone == false)
                 future.cancel(true)
         } catch (e: Exception) {
-            logger.error(logMessage("failed to cancel job","id" to id, "error" to e))
+            logger.logError("failed to cancel job", e, "id" to id)
         }
     }
 
@@ -102,7 +103,7 @@ object Printer : Logging {
             // let db know we have received data
             DB.updateJobWithResponse(id) {
                 received = System.currentTimeMillis()
-                logger.info(logMessage("job file received", "id" to id,  "at" to received))
+                logger.info(logMessage("job file received", "id" to id, "at" to received))
             }
 
             submit(id, validateAndSend(tmpXz, id, debug))
@@ -121,7 +122,7 @@ object Printer : Logging {
                     file = null
                 }
             } catch (e: Exception) {
-                logger.error(logMessage("failed to delete file", "id" to id, "error" to e))
+                logger.logError("failed to delete file", e, "id" to id)
             }
 
             return false to "Failed to process"
@@ -147,8 +148,22 @@ object Printer : Logging {
 
                 // count pages
                 val psInfo = Gs.psInfo(tmp)
-                logger.trace(logMessage("detecting color for job", "color" to if (psInfo.isColor) "color" else "monochrome", "id" to id, "processingTime" to "${System.currentTimeMillis() - now} ms"))
-                logger.trace(logMessage("detecting job pages", "id" to id, "pages" to psInfo.pages, "colorPages" to psInfo.colorPages))
+                logger.trace(
+                    logMessage(
+                        "detecting color for job",
+                        "color" to if (psInfo.isColor) "color" else "monochrome",
+                        "id" to id,
+                        "processingTime" to "${System.currentTimeMillis() - now} ms"
+                    )
+                )
+                logger.trace(
+                    logMessage(
+                        "detecting job pages",
+                        "id" to id,
+                        "pages" to psInfo.pages,
+                        "colorPages" to psInfo.colorPages
+                    )
+                )
 
                 var j2: PrintJob = updatePagecount(id, psInfo)
                 val userIdentification = j2.userIdentification ?: throw PrintException("Could not retrieve userIdentification {\"job\":\"${j2.getId()}\", \"userIdentification\":\"${j2.userIdentification}\"}")
@@ -178,13 +193,13 @@ object Printer : Logging {
                     throw PrintException("Could not send to destination")
                 }
             } catch (e: Exception) {
-                logger.error(logMessage("job failed", "id" to id, "error" to e))
+                logger.logError("job failed", e, "id" to id)
                 val msg = (e as? PrintException)?.message
                     ?: "Failed to process"
                 failJob(id, msg)
             } finally {
                 tmp.delete()
-                logger.trace(logMessage("successfully deleted tmp file",  "id" to id, "file" to tmp.absoluteFile))
+                logger.trace(logMessage("successfully deleted tmp file", "id" to id, "file" to tmp.absoluteFile))
             }
         }
     }
@@ -200,14 +215,14 @@ object Printer : Logging {
 
     // check if user has color printing enabled
     private fun validateColorAvailable(user: FullUser, job: PrintJob, psInfo: PsData) {
-        logger.trace(logMessage("testing for color for job",  "id" to job.getId()))
+        logger.trace(logMessage("testing for color for job", "id" to job.getId()))
         if (psInfo.colorPages > 0 && !user.colorPrinting)
             throw PrintException(PrintError.COLOR_DISABLED)
     }
 
     // check if user has sufficient quota to print this job
     private fun validateAvailableQuota(user: FullUser, job: PrintJob, psInfo: PsData) {
-        logger.trace(logMessage("testing for quota for job" ,"id" to job.getId()))
+        logger.trace(logMessage("testing for quota for job", "id" to job.getId()))
         if (Users.getQuota(user) < psInfo.pages + psInfo.colorPages * 2)
             throw PrintException(PrintError.INSUFFICIENT_QUOTA)
     }
@@ -229,14 +244,21 @@ object Printer : Logging {
             return false
         }
 
-        logger.trace(logMessage("sending file", "name" to f.name, "length" to f.length(), "destination" to destination.name))
+        logger.trace(
+            logMessage(
+                "sending file",
+                "name" to f.name,
+                "length" to f.length(),
+                "destination" to destination.name
+            )
+        )
         if (debug || destination.path?.isBlank() != false) {
             // this is a dummy destination
             try {
                 Thread.sleep(1000)
             } catch (e: InterruptedException) {
             }
-            logger.info(logMessage("sent dummy job", "name" to f.name,  "destination" to destination.name))
+            logger.info(logMessage("sent dummy job", "name" to f.name, "destination" to destination.name))
             return true
         }
         try {

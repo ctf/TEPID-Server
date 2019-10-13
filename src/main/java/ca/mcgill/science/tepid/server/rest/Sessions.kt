@@ -32,11 +32,11 @@ class Sessions {
     @Produces(MediaType.APPLICATION_JSON)
     fun getSession(@PathParam("user") user: String, @PathParam("token") token: String): Session {
         val username = user.split("@")[0]
-        logger.trace(logMessage("Getting session",  "username" to username,  "token" to token))
+        logger.trace(logMessage("Getting session", "username" to username, "token" to token))
         val session = SessionManager[token] ?: failUnauthorized("No session found")
         if (session.user.longUser == username || session.user.shortUser == username)
             return session.toSession()
-        logger.info{"Username mismatch"}
+        logger.info { "Username mismatch" }
         failUnauthorized("No session found")
     }
 
@@ -78,11 +78,16 @@ class Sessions {
         val targetSession = SessionManager[id] ?: failNotFound("")
         if (requestSession.user.shortUser == targetSession.user.shortUser) {
             logger.info(logMessage("deleting session", "session" to targetSession, "t" to 0))
-                //"deleting session {\"session\":\"$targetSession\"}")
             SessionManager.end(id)
             return Response.ok("ok").build()
         }
-        logger.warn(logMessage("Unauthorized attempt to delete session", "of" to requestSession.user.shortUser, "by" to targetSession.user.shortUser))
+        logger.warn(
+            logMessage(
+                "Unauthorized attempt to delete session",
+                "of" to requestSession.user.shortUser,
+                "by" to targetSession.user.shortUser
+            )
+        )
         // returns failNotFound for uniformity with the case when the session doesn't exist
         failNotFound("")
     }
