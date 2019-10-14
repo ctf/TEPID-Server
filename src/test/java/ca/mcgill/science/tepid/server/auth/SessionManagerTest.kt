@@ -8,7 +8,6 @@ import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.spyk
 import io.mockk.unmockkAll
-import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test

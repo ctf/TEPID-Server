@@ -3,7 +3,8 @@ package ca.mcgill.science.tepid.server.auth
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 import java.math.BigInteger
 import java.security.SecureRandom
 
@@ -11,7 +12,7 @@ import java.security.SecureRandom
  * SessionManager is responsible for managing sessions. It doesn't do authentication. Why would it do that?
  */
 
-object SessionManager : WithLogging() {
+object SessionManager : Logging {
     private const val HOUR_IN_MILLIS = 60 * 60 * 1000
 
     private val random = SecureRandom()
@@ -21,16 +22,16 @@ object SessionManager : WithLogging() {
         val id = BigInteger(130, random).toString(32)
         session._id = id
         session.role = AuthenticationFilter.getCtfRole(session.user)
-        log.trace("Starting session {\"id\":\"$id\", \"shortUser\":\"${user.shortUser}\",\"duration\":\"${expiration * HOUR_IN_MILLIS}\", \"expiration\":\"${session.expiration}\"}")
+        logger.trace { logMessage("starting session", "id" to id, "shortUser" to user.shortUser, "duration" to expiration * HOUR_IN_MILLIS, "expiration" to session.expiration) }
         val out = DB.putSession(session)
-        log.trace(out)
+        logger.trace { logMessage("response creating session", "response" to out) }
         return session
     }
 
     operator fun get(token: String): FullSession? {
         val session = DB.getSessionOrNull(token) ?: return null
         if (isValid(session)) return session
-        log.trace("Deleting session token {\"token\":\"$token\", \"expiration\":\"${session.expiration}\", \"now\":\"${System.currentTimeMillis()}\"}")
+        logger.trace { logMessage("deleting session token", "token" to token, "expiration" to session.expiration, "now" to System.currentTimeMillis()) }
         DB.deleteSession(token)
         return null
     }

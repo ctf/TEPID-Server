@@ -5,9 +5,10 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 
-object AuthenticationManager : WithLogging() {
+object AuthenticationManager : Logging {
 
     /**
      * Authenticates user against LDAP (if enabled)
@@ -18,15 +19,15 @@ object AuthenticationManager : WithLogging() {
      */
     fun authenticate(identifier: PersonalIdentifier, pw: String): FullUser? {
         val dbUser = queryUserDb(identifier)
-        log.trace("Db data found for $identifier")
+        logger.trace { logMessage("db data found", "identifier" to identifier) }
 
-        log.debug("Authenticating against ldap {\"identifier\":\"$identifier\"}")
+        logger.debug { logMessage("authenticating against ldap", "identifier" to identifier) }
 
         val shortUser = (
-            if (identifier.matches(LdapHelper.shortUserRegex)) identifier
-            else queryUser(identifier)?.shortUser
-            )
-            ?: return null
+                if (identifier.matches(LdapHelper.shortUserRegex)) identifier
+                else queryUser(identifier)?.shortUser
+                )
+                ?: return null
 
         val ldapUser = Ldap.authenticate(shortUser, pw) ?: return null
         val mergedUser = mergeUsers(ldapUser, dbUser)
@@ -42,7 +43,7 @@ object AuthenticationManager : WithLogging() {
      * @return user if found
      */
     fun queryUser(identifier: PersonalIdentifier): FullUser? {
-        log.trace("Querying user: {\"identifier\":\"$identifier\"}")
+        logger.trace { logMessage("querying user", "identifier" to identifier) }
 
         val dbUser = queryUserDb(identifier)
 
@@ -52,7 +53,7 @@ object AuthenticationManager : WithLogging() {
 
         DB.putUser(ldapUser)
 
-        log.trace("Found user from ldap {\"identifier\":\"$identifier\", \"longUser\":\"${ldapUser.longUser}\"}")
+        logger.trace { logMessage("found user from ldap", "identifier" to identifier, "longUser" to ldapUser.longUser) }
         return ldapUser
     }
 
@@ -62,7 +63,7 @@ object AuthenticationManager : WithLogging() {
      * The resource account will be used as auth
      */
     fun queryUserLdap(identifier: PersonalIdentifier): FullUser? {
-        log.trace("Querying user from LDAP {\"identifier\":\"$identifier\", \"by\":\"resource\"}")
+        logger.trace { logMessage("querying user from LDAP", "identifier" to identifier, "by" to "resource") }
 
         return when {
             identifier.contains("@") -> Ldap.queryByEmail(identifier)
@@ -78,9 +79,9 @@ object AuthenticationManager : WithLogging() {
     fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?): FullUser {
         // ensure that short users actually match before attempting any merge
         val ldapShortUser = ldapUser.shortUser
-            ?: throw RuntimeException("LDAP user does not have a short user. Maybe this will help {\"ldapUser\":\"$ldapUser,\"dbUser\":\"$dbUser\"}")
+                ?: throw RuntimeException(logMessage("LDAP user does not have a short user. Maybe this will help", "ldapUser" to ldapUser, "dbUser" to dbUser))
         if (dbUser == null) return ldapUser
-        if (ldapShortUser != dbUser.shortUser) throw RuntimeException("Attempt to merge to different users {\"ldapUser\":\"$ldapUser,\"dbUser\":\"$dbUser\"}")
+        if (ldapShortUser != dbUser.shortUser) throw RuntimeException(logMessage("attempt to merge to different users", "ldapUser" to ldapUser, "dbUser" to dbUser))
         // proceed with data merge
         val newUser = ldapUser.copy()
         newUser.withDbData(dbUser)
@@ -100,14 +101,15 @@ object AuthenticationManager : WithLogging() {
     fun queryUserDb(identifier: PersonalIdentifier): FullUser? {
         val dbUser = DB.getUserOrNull(identifier)
         dbUser?._id ?: return null
-        log.trace("Found db user {\"identifier\":\"$identifier\",\"db_id\":\"${dbUser._id}\", \"dislayName\":\"${dbUser.displayName}\"}")
+        logger.trace { logMessage("found db user", "identifier" to identifier, "db_id" to dbUser._id, "dislayName" to dbUser.displayName) }
         return dbUser
     }
 
     fun refreshUser(shortUser: ShortUser): FullUser {
-        val dbUser = queryUser(shortUser) ?: throw RuntimeException("Could not fetch user from anywhere {\"shortUser\":\"$shortUser\"}")
+        val dbUser = queryUser(shortUser)
+                ?: throw RuntimeException(logMessage("could not fetch user from anywhere", "shortUser" to shortUser))
         val ldapUser = queryUserLdap(shortUser)
-            ?: throw RuntimeException("Could not fetch user from LDAP {\"shortUser\":\"$shortUser\"}")
+                ?: throw RuntimeException(logMessage("could not fetch user from LDAP", "shortUser" to shortUser))
         val refreshedUser = mergeUsers(ldapUser, dbUser)
         if (dbUser.role != refreshedUser.role) {
             SessionManager.invalidateSessions(shortUser)

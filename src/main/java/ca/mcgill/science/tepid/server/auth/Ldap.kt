@@ -4,10 +4,11 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 import javax.naming.directory.SearchControls
 
-object Ldap : WithLogging() {
+object Ldap : Logging {
 
     private val ldapConnector = LdapConnector()
 
@@ -65,7 +66,7 @@ object Ldap : WithLogging() {
      * Returns user data, but guarantees a pass through ldap
      */
     fun authenticate(shortUser: ShortUser, pw: String): FullUser? {
-        log.info("Authenticating {\"shortUser\":\"$shortUser\", \"shortUser\":\"$shortUser\"}")
+        logger.info { logMessage("authenticating", "shortUser" to shortUser) }
         return queryLdap(shortUser, shortUser to pw, SearchBy.sAMAccountName)
     }
 }

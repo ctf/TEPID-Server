@@ -2,7 +2,9 @@ package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.logError
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
 import javax.naming.Context
 import javax.naming.ldap.InitialLdapContext
@@ -15,18 +17,18 @@ class LdapConnector {
      */
 
     fun bindLdap(shortUser: ShortUser, password: String): LdapContext? {
-        log.trace("Attempting bind to LDAP: {'PROVIDER_URL':'${Config.PROVIDER_URL}', 'SECURITY_PRINCIPAL':'${Config.SECURITY_PRINCIPAL_PREFIX + shortUser}'}")
+        logger.trace { logMessage("attempting bind to LDAP", "PROVIDER_URL" to Config.PROVIDER_URL, "SECURITY_PRINCIPAL" to Config.SECURITY_PRINCIPAL_PREFIX + shortUser) }
         try {
             val auth = createAuthMap(shortUser, password)
             return InitialLdapContext(auth, null)
         } catch (e: Exception) {
             // TODO: propagate up the auth stack, currently lots of `?: return null`
-            log.error("Failed to bind to LDAP {\"shortUser\":\"$shortUser\"}", e)
+            logger.logError("failed to bind to LDAP", e, "shortUser" to shortUser)
             return null
         }
     }
 
-    private companion object : WithLogging() {
+    private companion object : Logging {
         /**
          * Defines the environment necessary for [InitialLdapContext]
          */

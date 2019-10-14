@@ -2,15 +2,13 @@ package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.logError
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 import javax.naming.NamingException
-import javax.naming.directory.BasicAttribute
-import javax.naming.directory.DirContext
-import javax.naming.directory.ModificationItem
-import javax.naming.directory.SearchControls
-import javax.naming.directory.SearchResult
+import javax.naming.directory.*
 
-object ExchangeManager : WithLogging() {
+object ExchangeManager : Logging {
 
     private val ldapConnector = LdapConnector()
 
@@ -25,7 +23,7 @@ object ExchangeManager : WithLogging() {
      * @return updated status of the user
      */
     fun setExchangeStudent(shortUser: ShortUser, exchange: Boolean): Boolean {
-        log.info("Setting exchange status {\"shortUser\":\"$shortUser\", \"exchange_status\":\"$exchange\"}")
+        logger.info { logMessage("setting exchange status", "shortUser" to shortUser, "exchange_status" to exchange) }
         val success = setExchangeStudentLdap(shortUser, exchange)
         AuthenticationManager.refreshUser(shortUser)
         return success
@@ -48,41 +46,38 @@ object ExchangeManager : WithLogging() {
             searchResult = results.nextElement()
             results.close()
         } catch (e: Exception) {
-            log.error("Error getting user while modifying exchange status: {\"shortUser\":\"$shortUser\", \"cause\":\"${e.message}\"}")
+            logger.logError("error getting user while modifying exchange status", e, "shortUser" to shortUser)
         }
 
         if (searchResult == null) return false
 
         val userDn =
-            searchResult.nameInNamespace ?: throw NamingException("userDn not found {\"shortUser\":\"$shortUser\"}")
+                searchResult.nameInNamespace ?: throw NamingException("userDn not found {\"shortUser\":\"$shortUser\"}")
         val groupDn = "CN=${Config.CURRENT_EXCHANGE_GROUP.name}, ${Config.GROUPS_LOCATION}"
 
         val mod = BasicAttribute("member", userDn)
         // todo check if we should ignore modification action if the user is already in/not in the exchange group?
         val mods =
-            arrayOf(ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod))
+                arrayOf(ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod))
 
         return parseLdapResponse(shortUser) { ctx.modifyAttributes(groupDn, mods); exchange }
     }
 
-    private fun parseLdapResponse(
-        shortUser: ShortUser,
-        action: () -> Boolean
-    ): Boolean {
+    private fun parseLdapResponse(shortUser: ShortUser, action: () -> Boolean): Boolean {
 
         return try {
             val targetState = action()
-            log.info("${if (targetState) "Added $shortUser to" else "Removed $shortUser from"} exchange students.")
+            logger.info { logMessage("modified exchange status", "shortUser" to shortUser, "status" to if (targetState) "added" else "removed") }
             targetState
         } catch (e: NamingException) {
             if (e.message?.contains("LDAP: error code 53") == true) {
-                log.info("Error removing user from Exchange: {\"shortUser\":\"$shortUser\", \"cause\":\"not in group\"}")
+                logger.info { logMessage("error removing user from Exchange", "shortUser" to shortUser, "cause" to "not in group") }
                 false
             } else if (e.message?.contains("LDAP: error code 68") == true) {
-                log.info("Error adding user from Exchange: {\"shortUser\":\"$shortUser\", \"cause\":\"already in group\"}")
+                logger.info { logMessage("error adding user from Exchange", "shortUser" to shortUser, "cause" to "already in group") }
                 true
             } else {
-                log.error("Error adding to exchange students. {\"shortUser\":\"$shortUser\", \"cause\":\"${e.message}\"}")
+                logger.logError("error adding to exchange students", e, "shortUser" to shortUser)
                 throw e
             }
         }
