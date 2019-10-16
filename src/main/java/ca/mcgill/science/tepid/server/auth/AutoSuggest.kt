@@ -13,8 +13,6 @@ object AutoSuggest : WithLogging() {
 
     private val ldapConnector = LdapConnector()
 
-    private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
-
     /**
      * Sends list of matching [User]s based on current query
      *
@@ -27,18 +25,19 @@ object AutoSuggest : WithLogging() {
         val q = Q.defer<List<FullUser>>()
         object : Thread("LDAP AutoSuggest: " + like) {
             override fun run() {
-                val out = queryLdap(like, auth, limit)
+                val out = queryLdap(like, limit)
                 q.resolve(out)
             }
         }.start()
         return q.promise
     }
 
-    fun queryLdap(like: String, auth: Pair<String, String>, limit: Int): List<FullUser> {
+    fun queryLdap(like: String, limit: Int): List<FullUser> {
+        val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
         try {
             val ldapSearchBase = Config.LDAP_SEARCH_BASE
             val searchFilter = "(&(objectClass=user)(|(userPrincipalName=$like*)(samaccountname=$like*)))"
-            val ctx = ldapConnector.bindLdap(auth) ?: return emptyList()
+            val ctx = ldapConnector.bindLdap(auth.first, auth.second) ?: return emptyList()
             val searchControls = SearchControls()
             searchControls.searchScope = SearchControls.SUBTREE_SCOPE
             val results = ctx.search(ldapSearchBase, searchFilter, searchControls)

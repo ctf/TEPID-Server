@@ -59,7 +59,7 @@ class TestUserGetQuota : WithLogging() {
 
     private fun mockUser(tailoredUser: FullUser?) {
         every {
-            AuthenticationManager.queryUser("targetUser", null)
+            AuthenticationManager.queryUser("targetUser")
         } returns (tailoredUser)
     }
 
@@ -194,7 +194,7 @@ class TestUserGetQuota : WithLogging() {
             mockkObject(AuthenticationFilter)
             mockkObject(Users)
             every {
-                AuthenticationManager.queryUser("targetUser", null)
+                AuthenticationManager.queryUser("targetUser")
             } returns (FullUser())
         }
 
@@ -235,14 +235,14 @@ class getUserBySamTest : WithLogging() {
         mockkObject(SessionManager)
         mockkObject(AuthenticationManager)
         every {
-            AuthenticationManager.queryUser("targetUser", null)
+            AuthenticationManager.queryUser("targetUser")
         } returns (user)
     }
 
     fun doTestUserQuery(role: String, queryResult: FullUser?, expected: FullUser?): Response {
         mockSession(role)
         mockUserQuery(queryResult)
-        val result = endpoints.queryLdap("targetUser", null, rc, uriInfo)
+        val result = endpoints.queryLdap("targetUser", rc, uriInfo)
         assertEquals(expected, result.entity)
         return result
     }
@@ -250,7 +250,7 @@ class getUserBySamTest : WithLogging() {
     fun doTestUserQuery403(role: String, queryResult: FullUser?) {
         mockSession(role)
         mockUserQuery(queryResult)
-        val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
+        val response = endpoints.queryLdap("targetUser", rc, uriInfo)
         assertEquals(403, response.status)
 
         // This line makes sure that a 403 response doesn't also leak an attached user.

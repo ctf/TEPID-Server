@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
@@ -55,14 +56,14 @@ class Users {
     @Path("/{sam}")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun queryLdap(@PathParam("sam") sam: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
+    fun queryLdap(@PathParam("sam") sam: String, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getSession()
 
         val returnedUser: FullUser // an explicit return, so that nothing is accidentally returned
 
         when (session.role) {
             USER -> {
-                val queriedUser = AuthenticationManager.queryUser(sam, pw)
+                val queriedUser = AuthenticationManager.queryUser(sam)
                 if (queriedUser == null || session.user.shortUser != queriedUser.shortUser) {
                     return Response.Status.FORBIDDEN.text("You cannot access this resource")
                 }
@@ -71,7 +72,7 @@ class Users {
                 returnedUser = queriedUser
             }
             CTFER, ELDER -> {
-                val queriedUser = AuthenticationManager.queryUser(sam, pw)
+                val queriedUser = AuthenticationManager.queryUser(sam)
                 if (queriedUser == null) {
                     log.warn("Could not find user {}.", sam)
                     throw NotFoundException(Response.status(404).entity("Could not find user " + sam).type(MediaType.TEXT_PLAIN).build())
@@ -94,7 +95,7 @@ class Users {
     }
 
     /**
-     * Attempts to add the supplied sam to the exchange group
+     * Attempts to add the supplied ShortUser to the exchange group
      * @return updated status of the user; false if anything goes wrong
      */
     @PUT
@@ -102,8 +103,8 @@ class Users {
     @RolesAllowed(CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setExchange(@PathParam("sam") sam: String, exchange: Boolean): Boolean =
-        ExchangeManager.setExchangeStudent(sam, exchange)
+    fun setExchange(@PathParam("sam") shortUser: ShortUser, exchange: Boolean): Boolean =
+        ExchangeManager.setExchangeStudent(shortUser, exchange)
 
     /**
      * Abstract implementation of modifying user data
@@ -116,7 +117,7 @@ class Users {
         action: (user: FullUser) -> Unit
     ): Response {
         val session = ctx.getSession()
-        val user = AuthenticationManager.queryUser(sam, null)
+        val user = AuthenticationManager.queryUser(sam)
             ?: return Response.Status.NOT_FOUND.text("User $sam not found")
         if (session.role == USER && session.user.shortUser != user.shortUser)
             return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
@@ -167,7 +168,7 @@ class Users {
         return if (session.role == USER && session.user.shortUser != shortUser)
             -1
         else {
-            val user = AuthenticationManager.queryUser(shortUser, null)
+            val user = AuthenticationManager.queryUser(shortUser)
             getQuota(user)
         }
     }
@@ -177,7 +178,7 @@ class Users {
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun getQuotaDebug(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): QuotaData {
-        val user = AuthenticationManager.queryUser(shortUser, null)
+        val user = AuthenticationManager.queryUser(shortUser)
         return getQuotaData(user) ?: failNotFound("Could not calculate quota")
     }
 

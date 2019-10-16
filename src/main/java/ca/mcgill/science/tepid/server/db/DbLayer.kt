@@ -4,9 +4,9 @@ import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.MarqueeData
+import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
-import ca.mcgill.science.tepid.models.data.Sam
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import java.io.InputStream
@@ -84,7 +84,7 @@ interface DbJobLayer {
         limit: Int = -1
     ): List<PrintJob>
 
-    fun getJobsByUser(sam: Sam, sortOrder: Order = Order.DESCENDING): List<PrintJob>
+    fun getJobsByUser(sam: PersonalIdentifier, sortOrder: Order = Order.DESCENDING): List<PrintJob>
 
     /**
      * Gets jobs which have a value for their file, implying the contents are still stored in TEPID
@@ -149,7 +149,7 @@ interface DbUserLayer {
     */
     fun putUser(user: FullUser): Response
 
-    fun getUserOrNull(sam: Sam): FullUser?
+    fun getUserOrNull(sam: PersonalIdentifier): FullUser?
 
     fun isAdminConfigured(): Boolean
 

@@ -1,10 +1,8 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.models.data.Sam
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.WithLogging
-import java.util.*
 import javax.naming.NamingException
 import javax.naming.directory.BasicAttribute
 import javax.naming.directory.DirContext
@@ -16,17 +14,15 @@ object ExchangeManager : WithLogging() {
 
     private val ldapConnector = LdapConnector()
 
-    private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
-
     /**
      * Sets exchange student status.
      * Also updates user information from LDAP.
      * This refreshes the groups and courses of a user,
-     * which allows for thier role to change
+     * which allows for their role to change
      *
      * @param shortUser shortUser
      * @param exchange boolean for exchange status
-     * @return updated status of the user; false if anything goes wrong
+     * @return updated status of the user
      */
     fun setExchangeStudent(shortUser: ShortUser, exchange: Boolean): Boolean {
         log.info("Setting exchange status {\"shortUser\":\"$shortUser\", \"exchange_status\":\"$exchange\"}")
@@ -38,14 +34,12 @@ object ExchangeManager : WithLogging() {
     /**
      * Adds the supplied user to the exchange group
      *
-     * @return updated status of the user; false if anything goes wrong
+     * @return updated status of the user
      */
-    fun setExchangeStudentLdap(sam: Sam, exchange: Boolean): Boolean {
-        val isLongUser = sam.contains(".")
+    fun setExchangeStudentLdap(shortUser: ShortUser, exchange: Boolean): Boolean {
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
-        val searchFilter =
-            "(&(objectClass=user)(" + (if (isLongUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (isLongUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
-        val ctx = ldapConnector.bindLdap(auth) ?: return false
+        val searchFilter = "(&(objectClass=user)(sAMAccountName=$shortUser))"
+        val ctx = ldapConnector.bindLdap(Config.RESOURCE_USER, Config.RESOURCE_CREDENTIALS) ?: return false
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
         var searchResult: SearchResult? = null
@@ -54,34 +48,42 @@ object ExchangeManager : WithLogging() {
             searchResult = results.nextElement()
             results.close()
         } catch (e: Exception) {
-            log.error("Error getting user while modifying exchange status: {\"sam\":\"$sam\", \"cause\":\"${e.message}\"}")
+            log.error("Error getting user while modifying exchange status: {\"shortUser\":\"$shortUser\", \"cause\":\"${e.message}\"}")
         }
 
         if (searchResult == null) return false
-        val cal = Calendar.getInstance()
-        val userDn = searchResult.nameInNamespace
-        val year = cal.get(Calendar.YEAR)
-        val season = if (cal.get(Calendar.MONTH) < 8) "W" else "F"
-        val groupDn = "CN=" + Config.EXCHANGE_STUDENTS_GROUP_BASE + "$year$season, " + Config.GROUPS_LOCATION
+
+        val userDn =
+            searchResult.nameInNamespace ?: throw NamingException("userDn not found {\"shortUser\":\"$shortUser\"}")
+        val groupDn = "CN=${Config.CURRENT_EXCHANGE_GROUP.name}, ${Config.GROUPS_LOCATION}"
+
         val mod = BasicAttribute("member", userDn)
         // todo check if we should ignore modification action if the user is already in/not in the exchange group?
         val mods =
             arrayOf(ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod))
+
+        return parseLdapResponse(shortUser) { ctx.modifyAttributes(groupDn, mods); exchange }
+    }
+
+    private fun parseLdapResponse(
+        shortUser: ShortUser,
+        action: () -> Boolean
+    ): Boolean {
+
         return try {
-            ctx.modifyAttributes(groupDn, mods)
-            log.info("${if (exchange) "Added $sam to" else "Removed $sam from"} exchange students.")
-            exchange
+            val targetState = action()
+            log.info("${if (targetState) "Added $shortUser to" else "Removed $shortUser from"} exchange students.")
+            targetState
         } catch (e: NamingException) {
             if (e.message?.contains("LDAP: error code 53") == true) {
-                log.info("Error removing user from Exchange: {\"sam\":\"$sam\", \"cause\":\"not in group\"}")
+                log.info("Error removing user from Exchange: {\"shortUser\":\"$shortUser\", \"cause\":\"not in group\"}")
                 false
-            } else if (e.message!!.contains("LDAP: error code 68")) {
-                log.info("Error adding user from Exchange: {\"sam\":\"$sam\", \"cause\":\"already in group\"}")
+            } else if (e.message?.contains("LDAP: error code 68") == true) {
+                log.info("Error adding user from Exchange: {\"shortUser\":\"$shortUser\", \"cause\":\"already in group\"}")
                 true
             } else {
-                log.error("Error adding to exchange students. {\"sam\":\"$sam\", \"userDN\":\"$userDn\",\"groupDN\":\"$groupDn\", \"cause\":null}")
-                e.printStackTrace()
-                false
+                log.error("Error adding to exchange students. {\"shortUser\":\"$shortUser\", \"cause\":\"${e.message}\"}")
+                throw e
             }
         }
     }

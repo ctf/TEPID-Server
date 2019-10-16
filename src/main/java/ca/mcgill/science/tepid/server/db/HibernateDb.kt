@@ -4,10 +4,10 @@ import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.MarqueeData
+import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.PutResponse
-import ca.mcgill.science.tepid.models.data.Sam
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.server.mapper
@@ -103,14 +103,14 @@ class HibernateJobLayer(val hc: HibernateCrud<PrintJob, String?>) : DbJobLayer {
         }
     }
 
-    override fun getJobsByUser(sam: Sam, sortOrder: Order): List<PrintJob> {
+    override fun getJobsByUser(su: ShortUser, sortOrder: Order): List<PrintJob> {
         val sort = if (sortOrder == Order.ASCENDING) "ASC" else "DESC"
         return hc.dbOp { em ->
             em.createQuery(
                 "SELECT c FROM PrintJob c WHERE c.userIdentification = :userId ORDER BY c.started $sort",
                 PrintJob::class.java
             )
-                .setParameter("userId", sam)
+                .setParameter("userId", su)
                 .resultList
         }
     }
@@ -260,7 +260,7 @@ class HibernateUserLayer(val hc: HibernateCrud<FullUser, String?>) : DbUserLayer
 
     private val numRegex = Regex("[0-9]+")
 
-    override fun getUserOrNull(sam: Sam): FullUser? {
+    override fun getUserOrNull(sam: PersonalIdentifier): FullUser? {
         try {
             return when {
                 sam.contains(".") -> hc.dbOp { em ->

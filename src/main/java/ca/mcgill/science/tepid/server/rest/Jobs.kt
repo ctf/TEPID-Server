@@ -49,9 +49,11 @@ class Jobs {
         return DB.getJobsByUser(sam, Order.DESCENDING)
     }
 
-    private fun PrintJob.getJobExpiration() =
-        System.currentTimeMillis() + (AuthenticationManager.queryUserDb(userIdentification)?.jobExpiration
+    private fun PrintJob.getJobExpiration(): Long {
+        val userId = userIdentification ?: return 0
+        return System.currentTimeMillis() + (AuthenticationManager.queryUserDb(userId)?.jobExpiration
             ?: TimeUnit.DAYS.toMillis(7))
+    }
 
     @POST
     @RolesAllowed(USER, CTFER, ELDER)

@@ -23,6 +23,7 @@ test:
   extends: .base
   stage: test
   script:
+  - ./gradlew clean
   - ./gradlew test -i
   artifacts:
     when: always
@@ -71,11 +72,10 @@ staging:
 
 integrationTest:
   extends: .base
-  when: delayed
-  start_in: 1 minutes
   stage: integrationTest
   script:
-  - ./gradlew integrationTest -i
+    - ./gradlew test -i
+    - ./gradlew integrationTest -i
   artifacts:
     when: always
     reports:

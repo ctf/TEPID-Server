@@ -108,7 +108,7 @@ class ScreenSaver {
     @Path("/user/{username}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getUserInfo(@PathParam("username") username: String): String {
-        return AuthenticationManager.queryUser(username, null)?.nick
+        return AuthenticationManager.queryUser(username)?.nick
             ?: failNotFound("No nick associated with $username")
     }
 

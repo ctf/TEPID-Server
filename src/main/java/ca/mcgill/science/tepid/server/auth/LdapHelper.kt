@@ -27,6 +27,8 @@ class LdapHelper {
          */
         private val semesterRegex: Regex by lazy { Regex("ou=(fall|winter|summer) (2[0-9]{3})[^0-9]") }
 
+        val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
+
         /**
          * Creates a blank user and attempts to retrieve as many attributes
          * as possible from the specified attributes

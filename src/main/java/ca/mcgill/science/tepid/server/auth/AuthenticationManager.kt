@@ -2,57 +2,73 @@ package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Sam
+import ca.mcgill.science.tepid.models.data.PersonalIdentifier
+import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.util.isSuccessful
 import ca.mcgill.science.tepid.utils.WithLogging
-import javax.ws.rs.core.Response
 
 object AuthenticationManager : WithLogging() {
 
-    private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
-
     /**
-     * Authenticates user as appropriate:
-     * first with local auth (if applicable), then against LDAP (if enabled)
+     * Authenticates user against LDAP (if enabled)
      *
-     * @param sam short user
+     * @param identifier identifier
      * @param pw password
      * @return authenticated user, or null if auth failure
      */
-    fun authenticate(sam: Sam, pw: String): FullUser? {
-        val dbUser = queryUserDb(sam)
-        log.trace("Db data found for $sam")
-        var ldapUser = Ldap.authenticate(sam, pw)
-        if (ldapUser != null) {
-            ldapUser = mergeUsers(ldapUser, dbUser)
-            updateDbWithUser(ldapUser)
-        }
-        return ldapUser
+    fun authenticate(identifier: PersonalIdentifier, pw: String): FullUser? {
+        val dbUser = queryUserDb(identifier)
+        log.trace("Db data found for $identifier")
+
+        log.debug("Authenticating against ldap {\"identifier\":\"$identifier\"}")
+
+        val shortUser = (
+            if (identifier.matches(LdapHelper.shortUserRegex)) identifier
+            else queryUser(identifier)?.shortUser
+            )
+            ?: return null
+
+        val ldapUser = Ldap.authenticate(shortUser, pw) ?: return null
+        val mergedUser = mergeUsers(ldapUser, dbUser)
+        DB.putUser(mergedUser)
+        return mergedUser
     }
 
     /**
      * Retrieve user from DB if available, otherwise retrieves from LDAP
      *
-     * @param sam short user
+     * @param identifier identifier
      * @param pw password
      * @return user if found
      */
-    fun queryUser(sam: Sam?, pw: String?): FullUser? {
-        if (sam == null) return null
-        log.trace("Querying user: {\"sam\":\"$sam\"}")
+    fun queryUser(identifier: PersonalIdentifier): FullUser? {
+        log.trace("Querying user: {\"identifier\":\"$identifier\"}")
 
-        val dbUser = queryUserDb(sam)
+        val dbUser = queryUserDb(identifier)
 
         if (dbUser != null) return dbUser
 
-        if (!sam.matches(shortUserRegex)) return null // cannot query without short user
-        val ldapUser = Ldap.queryUser(sam, pw) ?: return null
+        val ldapUser = queryUserLdap(identifier) ?: return null
 
-        updateDbWithUser(ldapUser)
+        DB.putUser(ldapUser)
 
-        log.trace("Found user from ldap {\"sam\":\"$sam\", \"longUser\":\"${ldapUser.longUser}\"}")
+        log.trace("Found user from ldap {\"identifier\":\"$identifier\", \"longUser\":\"${ldapUser.longUser}\"}")
         return ldapUser
+    }
+
+    /**
+     * Retrieve a [FullUser] from ldap
+     * [identifier] must be a valid short user or long user
+     * The resource account will be used as auth
+     */
+    fun queryUserLdap(identifier: PersonalIdentifier): FullUser? {
+        log.trace("Querying user from LDAP {\"identifier\":\"$identifier\", \"by\":\"resource\"}")
+
+        return when {
+            identifier.contains("@") -> Ldap.queryByEmail(identifier)
+            identifier.contains(".") -> Ldap.queryByLongUser(identifier)
+            else -> Ldap.queryByShortUser(identifier)
+        }
     }
 
     /**
@@ -78,51 +94,25 @@ object AuthenticationManager : WithLogging() {
     }
 
     /**
-     * Uploads a [user] to the DB,
-     * with logging for failures
-     */
-    fun updateDbWithUser(user: FullUser) {
-        val shortUser = user.shortUser
-            ?: return log.error("Cannot update user, shortUser is null {\"user\": \"$user\"}")
-        log.trace("Update db instance {\"user\":\"$shortUser\"}\n")
-        try {
-            val response: Response = DB.putUser(user)
-            if (response.isSuccessful) {
-                log.trace("Updated User {\"user\": \"$shortUser\"}")
-            } else {
-                log.error("Updating DB with user failed: {\"user\": \"$shortUser\",\"response\":\"$response\"}")
-            }
-        } catch (e: Exception) {
-            log.error("Error updating DB with user: {\"user\": \"$shortUser\"}", e)
-        }
-    }
-
-    /**
      * Retrieve a [FullUser] directly from the database when supplied with either a
      * short user, long user, or student id
      */
-    fun queryUserDb(sam: Sam?): FullUser? {
-        sam ?: return null
-        val dbUser = DB.getUserOrNull(sam)
+    fun queryUserDb(identifier: PersonalIdentifier): FullUser? {
+        val dbUser = DB.getUserOrNull(identifier)
         dbUser?._id ?: return null
-        log.trace("Found db user {\"sam\":\"$sam\",\"db_id\":\"${dbUser._id}\", \"dislayName\":\"${dbUser.displayName}\"}")
+        log.trace("Found db user {\"identifier\":\"$identifier\",\"db_id\":\"${dbUser._id}\", \"dislayName\":\"${dbUser.displayName}\"}")
         return dbUser
     }
 
-    fun refreshUser(sam: Sam): FullUser {
-        val dbUser = queryUserDb(sam)
-        if (dbUser == null) {
-            log.info("Could not fetch user from DB {\"sam\":\"$sam\"}")
-            return queryUser(sam, null)
-                ?: throw RuntimeException("Could not fetch user from anywhere {\"sam\":\"$sam\"}")
-        }
-        val ldapUser = Ldap.queryUser(sam, null)
-            ?: throw RuntimeException("Could not fetch user from LDAP {\"sam\":\"$sam\"}")
+    fun refreshUser(shortUser: ShortUser): FullUser {
+        val dbUser = queryUser(shortUser) ?: throw RuntimeException("Could not fetch user from anywhere {\"shortUser\":\"$shortUser\"}")
+        val ldapUser = queryUserLdap(shortUser)
+            ?: throw RuntimeException("Could not fetch user from LDAP {\"shortUser\":\"$shortUser\"}")
         val refreshedUser = mergeUsers(ldapUser, dbUser)
         if (dbUser.role != refreshedUser.role) {
-            SessionManager.invalidateSessions(sam)
+            SessionManager.invalidateSessions(shortUser)
         }
-        updateDbWithUser(refreshedUser)
+        DB.putUser(refreshedUser)
         return refreshedUser
     }
 }

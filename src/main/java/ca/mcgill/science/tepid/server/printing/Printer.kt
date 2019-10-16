@@ -150,7 +150,8 @@ object Printer : WithLogging() {
                 log.trace("Job $id has ${psInfo.pages} pages, ${psInfo.colorPages} in color")
 
                 var j2: PrintJob = updatePagecount(id, psInfo)
-                val user = AuthenticationManager.queryUser(j2.userIdentification, null)
+                val userIdentification = j2.userIdentification ?: throw PrintException("Could not retrieve userIdentification {\"job\":\"${j2.getId()}\", \"userIdentification\":\"${j2.userIdentification}\"}")
+                val user = AuthenticationManager.queryUser(userIdentification)
                     ?: throw PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
 
                 validateColorAvailable(user, j2, psInfo)
