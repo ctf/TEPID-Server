@@ -78,7 +78,7 @@ object ExchangeManager : WithLogging() {
             if (e.message?.contains("LDAP: error code 53") == true) {
                 log.info("Error removing user from Exchange: {\"shortUser\":\"$shortUser\", \"cause\":\"not in group\"}")
                 false
-            } else if (e.message!!.contains("LDAP: error code 68")) {
+            } else if (e.message?.contains("LDAP: error code 68") == true) {
                 log.info("Error adding user from Exchange: {\"shortUser\":\"$shortUser\", \"cause\":\"already in group\"}")
                 true
             } else {
