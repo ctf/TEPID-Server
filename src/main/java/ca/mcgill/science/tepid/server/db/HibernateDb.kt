@@ -13,6 +13,7 @@ import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.server.mapper
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.logError
+import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.utils.PropsDB
 import java.io.InputStream
 import java.util.*
@@ -42,7 +43,7 @@ class HibernateDbLayer(val emf: EntityManagerFactory) : DbLayer,
 
 class HibernateDestinationLayer(val hc: HibernateCrud<FullDestination, String?>) : DbDestinationLayer {
     override fun getDestination(id: Id): FullDestination {
-        return hc.read(id) ?: failNotFound("Could not find destination {\"ID\":\"$id\"}")
+        return hc.read(id) ?: failNotFound(logMessage("could not find destination", "ID" to id))
     }
 
     override fun getDestinations(): List<FullDestination> {
@@ -168,8 +169,7 @@ class HibernateJobLayer(val hc: HibernateCrud<PrintJob, String?>) : DbJobLayer {
 class HibernateQueueLayer(val hc: HibernateCrud<PrintQueue, String?>) : DbQueueLayer {
     override fun getQueue(id: Id): PrintQueue {
         val allQueues = hc.readAll()
-        val q = allQueues.find { it._id == id.padEnd(36) } ?: failNotFound("Could not find PrintQueue {\"ID\":\"$id\"}")
-        return q
+        return allQueues.find { it._id == id.padEnd(36) } ?: failNotFound(logMessage("could not find PrintQueue", "ID" to id))
     }
 
     override fun getQueues(): List<PrintQueue> {

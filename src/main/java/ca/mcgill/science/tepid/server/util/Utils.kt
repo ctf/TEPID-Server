@@ -55,6 +55,10 @@ fun logMessage(msg: String, vararg params: Pair<String, Any?>): String {
     )
 }
 
+fun logError(msg: String, e: Exception, vararg params: Pair<String, Any?>): String {
+    return logMessage(msg, "error" to e, *params)
+}
+
 fun KotlinLogger.logError(msg: String, e: Exception, vararg params: Pair<String, Any?>) {
     this.error(logMessage(msg, *params), e)
 }

@@ -84,7 +84,7 @@ interface DbJobLayer {
         limit: Int = -1
     ): List<PrintJob>
 
-    fun getJobsByUser(sam: PersonalIdentifier, sortOrder: Order = Order.DESCENDING): List<PrintJob>
+    fun getJobsByUser(su: ShortUser, sortOrder: Order = Order.DESCENDING): List<PrintJob>
 
     /**
      * Gets jobs which have a value for their file, implying the contents are still stored in TEPID
