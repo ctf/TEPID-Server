@@ -8,7 +8,8 @@ import ca.mcgill.science.tepid.server.db.Order
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer
 import ca.mcgill.science.tepid.server.util.failBadRequest
 import ca.mcgill.science.tepid.server.util.failNotFound
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 import java.io.InputStream
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.Consumes
@@ -32,7 +33,7 @@ class Queues {
     @Produces(MediaType.APPLICATION_JSON)
     fun putQueues(queues: List<PrintQueue>): Response {
         val response = DB.putQueues(queues)
-        queues.forEach { log.info("Added new queue {}.", it.name) }
+        queues.forEach { logger.info(logMessage("added new queue", "name" to it.name)) }
         return response
     }
 
@@ -89,5 +90,5 @@ class Queues {
             .map { it.simpleName }
     }
 
-    private companion object : WithLogging()
+    private companion object : Logging
 }

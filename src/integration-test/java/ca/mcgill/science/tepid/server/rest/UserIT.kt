@@ -1,13 +1,11 @@
 package ca.mcgill.science.tepid.server.rest
 
 import ca.mcgill.science.tepid.server.ITBase
-import ca.mcgill.science.tepid.utils.Loggable
-import ca.mcgill.science.tepid.utils.WithLogging
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
 import kotlin.test.assertTrue
 
-class UserIT : ITBase(), Loggable by WithLogging() {
+class UserIT : ITBase() {
 
     val endpoints: Users by lazy {
         Users()

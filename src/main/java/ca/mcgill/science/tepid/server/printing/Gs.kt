@@ -1,6 +1,6 @@
 package ca.mcgill.science.tepid.server.printing
 
-import ca.mcgill.science.tepid.utils.WithLogging
+import org.apache.logging.log4j.kotlin.Logging
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
@@ -38,7 +38,7 @@ interface GsContract {
 /**
  * Underlying delegate that exposes methods for unit testing
  */
-class GsDelegate : WithLogging(), GsContract {
+class GsDelegate : Logging, GsContract {
     private val gsBin = if (System.getProperty("os.name").startsWith("Windows"))
         "gswin64c.exe" else "gs"
 
@@ -47,7 +47,7 @@ class GsDelegate : WithLogging(), GsContract {
         return try {
             pb.start()
         } catch (e: IOException) {
-            log.error("Could not launch gs", e)
+            logger.error("Could not launch gs", e)
             null
         }
     }

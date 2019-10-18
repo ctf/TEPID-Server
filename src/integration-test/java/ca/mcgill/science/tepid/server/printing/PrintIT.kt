@@ -1,8 +1,6 @@
 package ca.mcgill.science.tepid.server.printing
 
 import ca.mcgill.science.tepid.server.ITBase
-import ca.mcgill.science.tepid.utils.Loggable
-import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
@@ -15,7 +13,7 @@ import java.io.IOException
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class PrintIT : ITBase(), Loggable by WithLogging() {
+class PrintIT : ITBase() {
 
     @Test
     fun testDeleteFileOnFailedUpload() {

@@ -5,11 +5,12 @@ import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.logError
+import org.apache.logging.log4j.kotlin.Logging
 import javax.naming.NamingException
 import javax.naming.directory.SearchControls
 
-object AutoSuggest : WithLogging() {
+object AutoSuggest : Logging {
 
     private val ldapConnector = LdapConnector()
 
@@ -54,7 +55,7 @@ object AutoSuggest : WithLogging() {
             ctx.close()
             return out
         } catch (ne: NamingException) {
-            log.error("Could not get autosuggest", ne)
+            logger.logError("could not get autosuggest", ne, "like" to like)
             return emptyList()
         }
     }

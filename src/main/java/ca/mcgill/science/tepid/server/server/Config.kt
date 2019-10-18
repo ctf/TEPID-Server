@@ -20,14 +20,14 @@ import ca.mcgill.science.tepid.utils.PropsLDAPResource
 import ca.mcgill.science.tepid.utils.PropsPrinting
 import ca.mcgill.science.tepid.utils.PropsTEM
 import ca.mcgill.science.tepid.utils.PropsURL
-import ca.mcgill.science.tepid.utils.WithLogging
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.LoggerContext
+import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
 import javax.persistence.EntityManagerFactory
 
-object Config : WithLogging() {
+object Config : Logging {
 
     private val illegalLDAPCharacters = "[,+\"\\\\<>;=]".toRegex()
 
@@ -104,9 +104,9 @@ object Config : WithLogging() {
     init {
         // TODO: revise to use getNonNull, possibly implement a get with default
 
-        log.info("**********************************")
-        log.info("*       Setting up Configs       *")
-        log.info("**********************************")
+        logger.info("**********************************")
+        logger.info("*       Setting up Configs       *")
+        logger.info("**********************************")
 
         DefaultProps.withName = { fileName ->
             listOf(
@@ -164,26 +164,26 @@ object Config : WithLogging() {
 
         if (DEBUG)
             setLoggingLevel(Level.TRACE)
-        log.trace(ELDERS_GROUP)
-        log.trace(CTFERS_GROUP)
-        log.trace(USERS_GROUP)
+        logger.trace(ELDERS_GROUP)
+        logger.trace(CTFERS_GROUP)
+        logger.trace(USERS_GROUP)
 
         /*
          * For logging
          */
         val warnings = mutableListOf<String>()
 
-        log.trace("Validating configs settings")
+        logger.trace("Validating configs settings")
 
-        log.info("Debug mode: $DEBUG")
+        logger.info("Debug mode: $DEBUG")
         if (DB_URL.isEmpty())
-            log.fatal("DB_URL not set")
+            logger.fatal("DB_URL not set")
         if (DB_PASSWORD.isEmpty())
-            log.fatal("DB_PASSWORD not set")
+            logger.fatal("DB_PASSWORD not set")
         if (RESOURCE_CREDENTIALS.isEmpty())
-            log.error("RESOURCE_CREDENTIALS not set")
+            logger.error("RESOURCE_CREDENTIALS not set")
 
-        log.info("Build hash: $HASH")
+        logger.info("Build hash: $HASH")
 
         PUBLIC = About(
             debug = DEBUG,
@@ -197,23 +197,23 @@ object Config : WithLogging() {
             creationTimestamp = CREATION_TIMESTAMP
         )
 
-        log.trace("Completed setting configs")
+        logger.trace("Completed setting configs")
 
-        log.trace("Initialising subsystems")
+        logger.trace("Initialising subsystems")
 
         DB = getDb()
 
         try {
             Gs.testRequiredDevicesInstalled()
         } catch (e: GSException) {
-            log.fatal("GS ink_cov device unavailable")
+            logger.fatal("GS ink_cov device unavailable")
         }
 
-        log.trace("Completed initialising subsystems")
+        logger.trace("Completed initialising subsystems")
     }
 
     fun setLoggingLevel(level: Level) {
-        log.info("Updating log level to $level")
+        logger.info("Updating log level to $level")
         val ctx = LogManager.getContext(false) as LoggerContext
         val config = ctx.configuration
         val loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME)

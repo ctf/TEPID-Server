@@ -13,12 +13,12 @@ import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.util.getSession
-import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
+import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -31,7 +31,7 @@ import kotlin.test.assertEquals
 import kotlin.test.fail
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class TestUserGetQuota : WithLogging() {
+class TestUserGetQuota : Logging {
 
     val c2019f = Course("2019f", Season.FALL, 2019)
     val c2018s = Course("2018s", Season.SUMMER, 2018)
@@ -206,7 +206,7 @@ class TestUserGetQuota : WithLogging() {
     }
 }
 
-class getUserBySamTest : WithLogging() {
+class getUserBySamTest : Logging {
 
     val endpoints: Users by lazy {
         Users()

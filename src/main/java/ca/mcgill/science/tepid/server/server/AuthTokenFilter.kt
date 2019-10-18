@@ -1,7 +1,7 @@
 package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.server.util.getSessionSafely
-import ca.mcgill.science.tepid.utils.WithLogging
+import org.apache.logging.log4j.kotlin.Logging
 import javax.annotation.Priority
 import javax.ws.rs.Priorities
 import javax.ws.rs.container.ContainerRequestContext
@@ -29,7 +29,7 @@ class AuthTokenFilter : ContainerResponseFilter {
         }
     }
 
-    private companion object : WithLogging() {
+    private companion object : Logging {
 
         private const val HOUR_IN_MILLIS = 60 * 60 * 1000
         private const val HEADER_SESSION = "X-TEPID-Session"

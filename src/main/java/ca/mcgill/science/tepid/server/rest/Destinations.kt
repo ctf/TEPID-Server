@@ -10,7 +10,8 @@ import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.server.util.isSuccessful
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.Consumes
 import javax.ws.rs.DELETE
@@ -69,7 +70,14 @@ class Destinations {
         val response = DB.updateDestinationWithResponse(id) {
             up = ticket.up
             this.ticket = if (ticket.up) null else ticket
-            log.info("Destination $successText.")
+            logger.info(
+                logMessage(
+                    "destination status changed",
+                    "status" to if (ticket.up) "up" else "down",
+                    "reason" to ticket.reason,
+                    "by" to ticket.user?.shortUser
+                )
+            )
         }
         if (!response.isSuccessful)
             failNotFound("Could not find destination $id")
@@ -83,5 +91,5 @@ class Destinations {
     fun deleteQueue(@PathParam("dest") destination: String): String =
         DB.deleteDestination(destination)
 
-    private companion object : WithLogging()
+    private companion object : Logging
 }

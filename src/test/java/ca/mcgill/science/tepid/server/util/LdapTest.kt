@@ -2,7 +2,7 @@ package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
-import ca.mcgill.science.tepid.utils.WithLogging
+import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
@@ -54,7 +54,7 @@ class LdapTest {
 
 @Disabled("NI")
 class
-testQueryUserLdap : WithLogging() {
+testQueryUserLdap : Logging {
 
     @Test
     fun testQueryUserWithSuAndPw() {

@@ -2,7 +2,9 @@ package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
-import org.apache.logging.log4j.Logger
+import ca.mcgill.science.tepid.server.server.mapper
+import org.apache.logging.log4j.kotlin.KotlinLogger
+import org.slf4j.MDC
 import java.io.File
 import java.io.InputStream
 import java.nio.file.CopyOption
@@ -45,6 +47,30 @@ fun File.copyFrom(
     }
 }
 
+fun logMessage(msg: String, vararg params: Pair<String, Any?>): String {
+    return mapper.writeValueAsString(
+        listOf("msg" to msg, *params, "req" to MDC.get("req")).associateBy(
+            { p -> p.first },
+            { p -> p.second.toString() })
+    )
+}
+
+fun logError(msg: String, e: Exception, vararg params: Pair<String, Any?>): String {
+    return logMessage(msg, "error" to e, *params)
+}
+
+fun KotlinLogger.logError(msg: String, e: Exception, vararg params: Pair<String, Any?>) {
+    this.error(logMessage(msg, *params), e)
+}
+
+fun logAnnounce(msg: String, vararg params: Pair<String, Any?>): String {
+    return mapper.writeValueAsString(
+        listOf("msg" to msg, *params).associateBy(
+            { p -> p.first },
+            { p -> p.second.toString() })
+    )
+}
+
 /**
  * Collection of helper methods
  * May be extensive, which is why it is bound within the Utils singleton
@@ -73,7 +99,7 @@ object Utils {
     /**
      * Create and run a thread with try catch
      */
-    inline fun startCaughtThread(name: String, log: Logger? = null, crossinline action: () -> Unit) =
+    inline fun startCaughtThread(name: String, log: KotlinLogger? = null, crossinline action: () -> Unit) =
         object : Thread(name) {
             override fun run() {
                 try {
