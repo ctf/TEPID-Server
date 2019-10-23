@@ -32,7 +32,7 @@ object Ldap : Logging {
     }
 
     internal fun queryByLongUser(username: String): FullUser? {
-        return queryLdap("$username${Config.ACCOUNT_DOMAIN}", auth, SearchBy.longUser)
+        return queryLdap("$username@${Config.ACCOUNT_DOMAIN}", auth, SearchBy.longUser)
     }
 
     internal fun queryByEmail(userEmail: String): FullUser? {
