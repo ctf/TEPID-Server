@@ -77,6 +77,7 @@ class LdapHelper {
             }
             out.groups = groups
             out.courses = courses
+            out.semesters = courses.map { c -> c.semester() }.toSet()
 
             out.role = AuthenticationFilter.getCtfRole(out)
 
