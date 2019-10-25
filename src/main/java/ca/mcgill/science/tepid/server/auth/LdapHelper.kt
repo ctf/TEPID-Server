@@ -1,6 +1,10 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.models.data.AdGroup
+import ca.mcgill.science.tepid.models.data.Course
+import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.server.util.logError
 import org.apache.logging.log4j.kotlin.Logging
 import java.text.ParseException
@@ -61,20 +65,22 @@ class LdapHelper {
                     val groupValues = semesterRegex.find(it.toLowerCase(Locale.CANADA))?.groupValues
                     val semester = if (groupValues != null) Semester(Season(groupValues[1]), groupValues[2].toInt())
                     else null
-                    cn to semester
+
+                    if (semester != null) {
+                        ParsedLdapGroup.course(Course(cn, semester.season, semester.year))
+                    } else {
+                        ParsedLdapGroup.group(AdGroup(cn))
+                    }
                 } catch (e: NamingException) {
                     logger.logError("error instantiating LDAP Groups", e, "user" to out, "memberOF" to attributes.get("memberOf"))
                     null
                 }
             }
 
-            val groups = mutableSetOf<AdGroup>()
-            val courses = mutableSetOf<Course>()
 
-            ldapGroups.forEach { (name, semester) ->
-                if (semester == null) groups.add(AdGroup(name))
-                else courses.add(Course(name, semester.season, semester.year))
-            }
+            val groups = ldapGroups.filter { plg -> plg is ParsedLdapGroup.group }.map{ g -> g as ParsedLdapGroup.group; g.group }.toSet()
+            val courses = ldapGroups.filter { plg -> plg is ParsedLdapGroup.course }.map{ g -> g as ParsedLdapGroup.course; g.course }.toSet()
+
             out.groups = groups
             out.courses = courses
             out.semesters = courses.map { c -> c.semester() }.toSet()
@@ -83,5 +89,11 @@ class LdapHelper {
 
             return out
         }
+    }
+
+    sealed class ParsedLdapGroup {
+        data class course(val course: Course) : ParsedLdapGroup()
+        data class group(val group: AdGroup) : ParsedLdapGroup()
+
     }
 }
