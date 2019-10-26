@@ -46,7 +46,7 @@ class TestUserGetQuota : Logging {
      */
     private fun userGetQuotaTest(tailoredUser: FullUser, expected: Int, message: String) {
         mockUser(tailoredUser)
-        val actual = Users.getQuota(tailoredUser)
+        val actual = Users.getQuotaData(tailoredUser).quota
         assertEquals(expected, actual, message)
     }
 

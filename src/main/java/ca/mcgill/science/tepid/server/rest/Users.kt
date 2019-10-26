@@ -247,12 +247,6 @@ class Users {
             )
         }
 
-        /**
-         * Given a shortUser, query for the number of pages remaining
-         * Returns 0 if an error has occurred
-         */
-        fun getQuota(user: FullUser): Int = getQuotaData(user).quota
-
         fun getTotalPrinted(shortUser: String?) =
             if (shortUser == null) 0
             else DB.getTotalPrintedCount(shortUser)
