@@ -16,6 +16,7 @@ import ca.mcgill.science.tepid.server.auth.AutoSuggest
 import ca.mcgill.science.tepid.server.auth.ExchangeManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.util.failForbidden
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.server.util.logMessage
@@ -165,13 +166,13 @@ class Users {
     @Path("/{sam}/quota")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQuota(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): Int {
+    fun getQuota(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): QuotaData {
         val session = ctx.getSession()
-        return if (session.role == USER && session.user.shortUser != shortUser)
-            -1
+        if (session.role == USER && session.user.shortUser != shortUser)
+            failForbidden()
         else {
             val user = AuthenticationManager.queryUser(shortUser)
-            getQuota(user)
+            return getQuotaData(user)
         }
     }
 
