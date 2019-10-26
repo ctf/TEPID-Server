@@ -17,6 +17,7 @@ import ca.mcgill.science.tepid.server.auth.ExchangeManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.failForbidden
+import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.server.util.text
@@ -170,7 +171,7 @@ class Users {
         if (session.role == USER && session.user.shortUser != shortUser)
             failForbidden()
         else {
-            val user = AuthenticationManager.queryUser(shortUser)
+            val user = AuthenticationManager.queryUser(shortUser) ?: failNotFound()
             return getQuotaData(user)
         }
     }
@@ -200,10 +201,12 @@ class Users {
 
     companion object : Logging {
 
-        fun getQuotaData(user: FullUser?): QuotaData {
-            val shortUser = user?.shortUser ?: return QuotaData(0, 0, 0)
+        val nullQuotaData = QuotaData(0, 0, 0)
 
-            if (AuthenticationFilter.getCtfRole(user).isEmpty()) return QuotaData(0, 0, 0)
+        fun getQuotaData(user: FullUser): QuotaData {
+            val shortUser = user.shortUser ?: return nullQuotaData
+
+            if (AuthenticationFilter.getCtfRole(user).isEmpty()) return nullQuotaData
 
             val totalPrinted = getTotalPrinted(shortUser)
 
@@ -248,7 +251,7 @@ class Users {
          * Given a shortUser, query for the number of pages remaining
          * Returns 0 if an error has occurred
          */
-        fun getQuota(user: FullUser?): Int = getQuotaData(user).quota
+        fun getQuota(user: FullUser): Int = getQuotaData(user).quota
 
         fun getTotalPrinted(shortUser: String?) =
             if (shortUser == null) 0

@@ -42,6 +42,6 @@ fun fail(status: Response.Status, message: String): Nothing =
 fun failBadRequest(message: String): Nothing = fail(Response.Status.BAD_REQUEST, message)
 fun failUnauthorized(message: String): Nothing = fail(Response.Status.UNAUTHORIZED, message)
 fun failForbidden(message: String = "You cannot access this resource"): Nothing = fail(Response.Status.FORBIDDEN, message)
-fun failNotFound(message: String): Nothing = fail(Response.Status.NOT_FOUND, message)
+fun failNotFound(message: String = "Resource not found"): Nothing = fail(Response.Status.NOT_FOUND, message)
 fun failTimeout(message: String): Nothing = fail(Response.Status.REQUEST_TIMEOUT, message)
 fun failInternal(message: String): Nothing = fail(Response.Status.INTERNAL_SERVER_ERROR, message)

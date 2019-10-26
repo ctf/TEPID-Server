@@ -44,7 +44,7 @@ class TestUserGetQuota : Logging {
     /**
      * Runs a test of Users.getQuota, Mockking [tailoredUser] as the user returned by AuthenticationManager
      */
-    private fun userGetQuotaTest(tailoredUser: FullUser?, expected: Int, message: String) {
+    private fun userGetQuotaTest(tailoredUser: FullUser, expected: Int, message: String) {
         mockUser(tailoredUser)
         val actual = Users.getQuota(tailoredUser)
         assertEquals(expected, actual, message)
@@ -67,11 +67,6 @@ class TestUserGetQuota : Logging {
         every {
             Users.getTotalPrinted(ofType(String::class))
         } returns printedPages
-    }
-
-    @Test
-    fun testGetQuotaQueriedUserNull() {
-        userGetQuotaTest(null, 0, "Null user is not assigned 0 quota")
     }
 
     @Test
