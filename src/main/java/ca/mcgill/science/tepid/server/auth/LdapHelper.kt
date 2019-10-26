@@ -68,6 +68,7 @@ class LdapHelper {
 
                     if (semester != null) {
                         ParsedLdapGroup.course(Course(cn, semester.season, semester.year))
+                        ParsedLdapGroup.semester(Semester(semester.season, semester.year))
                     } else {
                         ParsedLdapGroup.group(AdGroup(cn))
                     }
@@ -78,12 +79,9 @@ class LdapHelper {
             }
 
 
-            val groups = ldapGroups.filter { plg -> plg is ParsedLdapGroup.group }.map{ g -> g as ParsedLdapGroup.group; g.group }.toSet()
-            val courses = ldapGroups.filter { plg -> plg is ParsedLdapGroup.course }.map{ g -> g as ParsedLdapGroup.course; g.course }.toSet()
-
-            out.groups = groups
-            out.courses = courses
-            out.semesters = courses.map { c -> c.semester() }.toSet()
+            out.groups = ldapGroups.filter { plg -> plg is ParsedLdapGroup.group }.map { g -> g as ParsedLdapGroup.group; g.group }.toSet()
+            out.courses = ldapGroups.filter { plg -> plg is ParsedLdapGroup.course }.map { g -> g as ParsedLdapGroup.course; g.course }.toSet()
+            out.semesters = ldapGroups.filter { plg -> plg is ParsedLdapGroup.semester }.map { g -> g as ParsedLdapGroup.semester; g.semester }.toSet()
 
             out.role = AuthenticationFilter.getCtfRole(out)
 
@@ -94,6 +92,6 @@ class LdapHelper {
     sealed class ParsedLdapGroup {
         data class course(val course: Course) : ParsedLdapGroup()
         data class group(val group: AdGroup) : ParsedLdapGroup()
-
+        data class semester(val semester: Semester) : ParsedLdapGroup()
     }
 }
