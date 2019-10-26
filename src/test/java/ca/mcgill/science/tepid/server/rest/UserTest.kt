@@ -4,10 +4,10 @@ import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.AdGroup
-import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
@@ -33,13 +33,13 @@ import kotlin.test.fail
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestUserGetQuota : Logging {
 
-    val c2019f = Course("2019f", Season.FALL, 2019)
-    val c2018s = Course("2018s", Season.SUMMER, 2018)
-    val c1066f = Course("1066f", Season.FALL, 1066)
-    val c2016f = Course("2016f", Season.FALL, 2016)
-    val c2018f = Course("2018f", Season.FALL, 2018)
-    val c2018w = Course("2018w", Season.WINTER, 2018)
-    val c2018w0 = Course("2018w other", Season.WINTER, 2018)
+    val s2019f = Semester(Season.FALL, 2019)
+    val s2018s = Semester(Season.SUMMER, 2018)
+    val s1066f = Semester(Season.FALL, 1066)
+    val s2016f = Semester(Season.FALL, 2016)
+    val s2018f = Semester(Season.FALL, 2018)
+    val s2018w = Semester(Season.WINTER, 2018)
+    val s2018w0 = Semester(Season.WINTER, 2018)
 
     /**
      * Runs a test of Users.getQuota, Mockking [tailoredUser] as the user returned by AuthenticationManager
@@ -83,7 +83,7 @@ class TestUserGetQuota : Logging {
     fun testGetQuotaElder() {
         setPrintedPages(0)
         userGetQuotaTest(
-            FullUser(role = ELDER, courses = setOf(c2019f)),
+            FullUser(role = ELDER, semesters = setOf(s2019f)),
             ELDER,
             250,
             "Elder is not given correct quota"
@@ -94,7 +94,7 @@ class TestUserGetQuota : Logging {
     fun testGetQuotaCTFer() {
         setPrintedPages(0)
         userGetQuotaTest(
-            FullUser(role = CTFER, courses = setOf(c2019f)),
+            FullUser(role = CTFER, semesters = setOf(s2019f)),
             CTFER,
             250,
             "CTFER is not given correct quota"
@@ -105,7 +105,7 @@ class TestUserGetQuota : Logging {
     fun testGetQuotaNUS() {
         setPrintedPages(0)
         userGetQuotaTest(
-            FullUser(role = USER, courses = setOf(c2019f), groups = setOf(AdGroup("520-NUS Users"))),
+            FullUser(role = USER, semesters = setOf(s2019f), groups = setOf(AdGroup("520-NUS Users"))),
             CTFER,
             1000,
             "NUS is not given correct quota"
@@ -115,26 +115,26 @@ class TestUserGetQuota : Logging {
     @Test
     fun testGetQuotaUserIgnoreSummerSemester() {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role = USER, courses = setOf(c2018s)), USER, 0, "Summer gives quota")
+        userGetQuotaTest(FullUser(role = USER, semesters = setOf(s2018s)), USER, 0, "Summer gives quota")
     }
 
     @Test
     fun testGetQuotaUserSemesterPre2016() {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role = USER, courses = setOf(c1066f)), USER, 0, "Ancient semester gives quota")
+        userGetQuotaTest(FullUser(role = USER, semesters = setOf(s1066f)), USER, 0, "Ancient semester gives quota")
     }
 
     @Test
     fun testGetQuotaUserSemester2016F() {
         setPrintedPages(0)
-        userGetQuotaTest(FullUser(role = USER, courses = setOf(c2016f)), USER, 500, "500 pages not given for 2016F")
+        userGetQuotaTest(FullUser(role = USER, semesters = setOf(s2016f)), USER, 500, "500 pages not given for 2016F")
     }
 
     @Test
     fun testGetQuotaUserSemesterPost2016F() {
         setPrintedPages(0)
         userGetQuotaTest(
-            FullUser(role = USER, courses = setOf(c2018f)),
+            FullUser(role = USER, semesters = setOf(s2018f)),
             USER,
             1000,
             "1000 pages not given for semester"
@@ -145,7 +145,7 @@ class TestUserGetQuota : Logging {
     fun testGetQuotaUserSemesterPost2019F() {
         setPrintedPages(0)
         userGetQuotaTest(
-            FullUser(role = USER, courses = setOf(c2019f)),
+            FullUser(role = USER, semesters = setOf(s2019f)),
             USER,
             250,
             "250 pages not given for semester post 2019f"
@@ -156,7 +156,7 @@ class TestUserGetQuota : Logging {
     fun testGetQuotaUserSpanMultipleSemesters() {
         setPrintedPages(0)
         userGetQuotaTest(
-            FullUser(role = USER, courses = setOf(c2018f, c2018w)),
+            FullUser(role = USER, semesters = setOf(s2018f, s2018w)),
             USER,
             2000,
             "multiple semesters not counted"
@@ -167,7 +167,7 @@ class TestUserGetQuota : Logging {
     fun testGetQuotaTotalPrintedSubtracted() {
         setPrintedPages(300)
         userGetQuotaTest(
-            FullUser(role = USER, courses = setOf(c2018f)),
+            FullUser(role = USER, semesters = setOf(s2018f)),
             USER,
             700,
             "Printed pages not subtracted (you had one job)"
@@ -179,7 +179,7 @@ class TestUserGetQuota : Logging {
     fun testGetQuotaMultipleCoursesReduced() {
         setPrintedPages(0)
         userGetQuotaTest(
-            FullUser(role = USER, courses = setOf(c2018w0, c2018w)),
+            FullUser(role = USER, semesters = setOf(s2018w0, s2018w)),
             USER,
             1000,
             "multiple courses in same semester counted as other semesters"
