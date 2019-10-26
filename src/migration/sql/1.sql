@@ -1,3 +1,5 @@
+-- Adds Set of Semesters as attribute of Fulluser
+
 --
 -- Name: fulluser_semesters; Type: TABLE; Schema: public; Owner: tepid
 --
