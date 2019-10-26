@@ -209,11 +209,9 @@ class Users {
     companion object : Logging {
 
         data class QuotaData(
-            val shortUser: String,
             val quota: Int,
             val maxQuota: Int,
-            val totalPrinted: Int,
-            val semesters: List<Semester>
+            val totalPrinted: Int
         )
 
         fun getQuotaData(user: FullUser?): QuotaData? {
@@ -254,11 +252,9 @@ class Users {
             val quota = max(newMaxQuota - totalPrinted, 0)
 
             return QuotaData(
-                shortUser = shortUser,
                 quota = quota,
                 maxQuota = newMaxQuota,
-                totalPrinted = totalPrinted,
-                semesters = semesters
+                totalPrinted = totalPrinted
             )
         }
 
