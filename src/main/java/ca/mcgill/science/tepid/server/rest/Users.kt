@@ -17,7 +17,6 @@ import ca.mcgill.science.tepid.server.auth.ExchangeManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.failForbidden
-import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.server.util.text
@@ -174,15 +173,6 @@ class Users {
             val user = AuthenticationManager.queryUser(shortUser)
             return getQuotaData(user)
         }
-    }
-
-    @GET
-    @Path("/{sam}/quota/debug")
-    @RolesAllowed(CTFER, ELDER)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun getQuotaDebug(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): QuotaData {
-        val user = AuthenticationManager.queryUser(shortUser)
-        return getQuotaData(user) ?: failNotFound("Could not calculate quota")
     }
 
     @POST
