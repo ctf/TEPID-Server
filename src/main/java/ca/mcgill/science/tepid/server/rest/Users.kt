@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.DTO.QuotaData
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
@@ -208,16 +209,10 @@ class Users {
 
     companion object : Logging {
 
-        data class QuotaData(
-            val quota: Int,
-            val maxQuota: Int,
-            val totalPrinted: Int
-        )
+        fun getQuotaData(user: FullUser?): QuotaData {
+            val shortUser = user?.shortUser ?: return QuotaData(0, 0, 0)
 
-        fun getQuotaData(user: FullUser?): QuotaData? {
-            val shortUser = user?.shortUser ?: return null
-
-            if (AuthenticationFilter.getCtfRole(user).isEmpty()) return null
+            if (AuthenticationFilter.getCtfRole(user).isEmpty()) return QuotaData(0, 0, 0)
 
             val totalPrinted = getTotalPrinted(shortUser)
 
@@ -262,7 +257,7 @@ class Users {
          * Given a shortUser, query for the number of pages remaining
          * Returns 0 if an error has occurred
          */
-        fun getQuota(user: FullUser?): Int = getQuotaData(user)?.quota ?: 0
+        fun getQuota(user: FullUser?): Int = getQuotaData(user).quota
 
         fun getTotalPrinted(shortUser: String?) =
             if (shortUser == null) 0
