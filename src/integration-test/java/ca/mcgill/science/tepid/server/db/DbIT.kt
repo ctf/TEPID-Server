@@ -1,10 +1,10 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.data.AdGroup
-import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.models.data.Semester
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -22,21 +22,21 @@ class DbIT : DbTest() {
             AdGroup("Group1"),
             AdGroup("Group2")
         )
-        val courses = mutableSetOf(
-            Course("course0", Season.SUMMER, 1337),
-            Course("course1", Season.SUMMER, 1337),
-            Course("course2", Season.SUMMER, 1337)
+        val semesters = mutableSetOf(
+            Semester(Season.SUMMER, 1337),
+            Semester(Season.SUMMER, 1337),
+            Semester(Season.WINTER, 1337)
         )
 
         u.groups = groups
-        u.courses = courses
+        u.semesters = semesters
         persist(u)
 //        em.clear()
 
         val ri = hl.getUserOrNull(u.shortUser!!) ?: fail("Did not retieve user")
 
         assertEquals(3, ri.groups.size)
-        assertEquals(3, ri.courses.size)
+        assertEquals(2, ri.semesters.size)
     }
 
     @AfterEach

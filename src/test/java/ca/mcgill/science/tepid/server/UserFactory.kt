@@ -1,9 +1,9 @@
 package ca.mcgill.science.tepid.server
 
 import ca.mcgill.science.tepid.models.data.AdGroup
-import ca.mcgill.science.tepid.models.data.Course
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.models.data.Semester
 
 object UserFactory {
     // note that the shortUsers are the same, since they are the unique key
@@ -11,7 +11,7 @@ object UserFactory {
         val testUser = UserFactory.generateTestUser("db").copy(
             activeSince = 1000,
             shortUser = SU,
-            courses = setOf(Course("dbCourseName", Season.FALL, 4444)),
+            semesters = setOf(Semester(Season.FALL, 4444)),
             studentId = 3333,
             colorPrinting = true,
             jobExpiration = 12
@@ -25,7 +25,7 @@ object UserFactory {
         val testOtherUser = UserFactory.generateTestUser("ldap").copy(
             activeSince = 9999,
             shortUser = SU,
-            courses = setOf(Course("ldapCourseName", Season.FALL, 2222)),
+            semesters = setOf(Semester(Season.FALL, 2222)),
             studentId = 1111,
             jobExpiration = 604800000,
             colorPrinting = false
@@ -55,7 +55,7 @@ object UserFactory {
             email = "$prefix.EM@example.com",
             faculty = "${prefix}Faculty",
             groups = setOf(AdGroup("${prefix}Groups")),
-            courses = setOf(Course(prefix + "CourseName", Season.FALL, 4444)),
+            semesters = setOf(Semester(Season.FALL, 4444)),
             studentId = 3333,
             colorPrinting = true,
             jobExpiration = 12,

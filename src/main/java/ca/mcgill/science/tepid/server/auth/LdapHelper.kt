@@ -1,6 +1,9 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.models.data.AdGroup
+import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.server.util.logError
 import org.apache.logging.log4j.kotlin.Logging
 import java.text.ParseException
@@ -61,26 +64,29 @@ class LdapHelper {
                     val groupValues = semesterRegex.find(it.toLowerCase(Locale.CANADA))?.groupValues
                     val semester = if (groupValues != null) Semester(Season(groupValues[1]), groupValues[2].toInt())
                     else null
-                    cn to semester
+
+                    if (semester != null) {
+                        ParsedLdapGroup.semester(Semester(semester.season, semester.year))
+                    } else {
+                        ParsedLdapGroup.group(AdGroup(cn))
+                    }
                 } catch (e: NamingException) {
                     logger.logError("error instantiating LDAP Groups", e, "user" to out, "memberOF" to attributes.get("memberOf"))
                     null
                 }
             }
 
-            val groups = mutableSetOf<AdGroup>()
-            val courses = mutableSetOf<Course>()
-
-            ldapGroups.forEach { (name, semester) ->
-                if (semester == null) groups.add(AdGroup(name))
-                else courses.add(Course(name, semester.season, semester.year))
-            }
-            out.groups = groups
-            out.courses = courses
+            out.groups = ldapGroups.filterIsInstance<ParsedLdapGroup.group>().map { g -> g.group }.toSet()
+            out.semesters = ldapGroups.filterIsInstance<ParsedLdapGroup.semester>().map { g -> g.semester }.toSet()
 
             out.role = AuthenticationFilter.getCtfRole(out)
 
             return out
         }
+    }
+
+    sealed class ParsedLdapGroup {
+        data class group(val group: AdGroup) : ParsedLdapGroup()
+        data class semester(val semester: Semester) : ParsedLdapGroup()
     }
 }

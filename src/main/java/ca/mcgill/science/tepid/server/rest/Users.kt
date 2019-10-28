@@ -225,7 +225,7 @@ class Users {
 
             val currentSemester = Semester.current
             // TODO: incorporate summer escape into mapper
-            val semesters = user.getSemesters()
+            val semesters = user.semesters
                 .filter { it.season != Season.SUMMER } // we don't add quota for the summer
                 .filter { it >= Semester.fall(2016) } // TEPID didn't exist before fall 2016
                 .filter { it <= currentSemester } // only add quota for valid semesters
