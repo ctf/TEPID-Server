@@ -76,8 +76,8 @@ class LdapHelper {
                 }
             }
 
-            out.groups = ldapGroups.filter { plg -> plg is ParsedLdapGroup.group }.map { g -> g as ParsedLdapGroup.group; g.group }.toSet()
-            out.semesters = ldapGroups.filter { plg -> plg is ParsedLdapGroup.semester }.map { g -> g as ParsedLdapGroup.semester; g.semester }.toSet()
+            out.groups = ldapGroups.filterIsInstance<ParsedLdapGroup.group>().map { g -> g.group }.toSet()
+            out.semesters = ldapGroups.filterIsInstance<ParsedLdapGroup.semester>().map { g -> g.semester }.toSet()
 
             out.role = AuthenticationFilter.getCtfRole(out)
 
