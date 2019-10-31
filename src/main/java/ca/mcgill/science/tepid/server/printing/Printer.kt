@@ -223,7 +223,7 @@ object Printer : Logging {
     // check if user has sufficient quota to print this job
     private fun validateAvailableQuota(user: FullUser, job: PrintJob, psInfo: PsData) {
         logger.trace(logMessage("testing for quota for job", "id" to job.getId()))
-        if (Users.getQuota(user) < psInfo.pages + psInfo.colorPages * 2)
+        if (Users.getQuotaData(user).quota < psInfo.pages + psInfo.colorPages * 2)
             throw PrintException(PrintError.INSUFFICIENT_QUOTA)
     }
 

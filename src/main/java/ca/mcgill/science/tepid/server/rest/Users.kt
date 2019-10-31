@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.rest
 
+import ca.mcgill.science.tepid.models.DTO.QuotaData
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
@@ -15,6 +16,7 @@ import ca.mcgill.science.tepid.server.auth.AutoSuggest
 import ca.mcgill.science.tepid.server.auth.ExchangeManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.util.failForbidden
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.server.util.logMessage
@@ -164,23 +166,14 @@ class Users {
     @Path("/{sam}/quota")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQuota(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): Int {
+    fun getQuota(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): QuotaData {
         val session = ctx.getSession()
-        return if (session.role == USER && session.user.shortUser != shortUser)
-            -1
+        if (session.role == USER && session.user.shortUser != shortUser)
+            failForbidden()
         else {
-            val user = AuthenticationManager.queryUser(shortUser)
-            getQuota(user)
+            val user = AuthenticationManager.queryUser(shortUser) ?: failNotFound()
+            return getQuotaData(user)
         }
-    }
-
-    @GET
-    @Path("/{sam}/quota/debug")
-    @RolesAllowed(CTFER, ELDER)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun getQuotaDebug(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): QuotaData {
-        val user = AuthenticationManager.queryUser(shortUser)
-        return getQuotaData(user) ?: failNotFound("Could not calculate quota")
     }
 
     @POST
@@ -208,18 +201,12 @@ class Users {
 
     companion object : Logging {
 
-        data class QuotaData(
-            val shortUser: String,
-            val quota: Int,
-            val maxQuota: Int,
-            val totalPrinted: Int,
-            val semesters: List<Semester>
-        )
+        val nullQuotaData = QuotaData(0, 0, 0)
 
-        fun getQuotaData(user: FullUser?): QuotaData? {
-            val shortUser = user?.shortUser ?: return null
+        fun getQuotaData(user: FullUser): QuotaData {
+            val shortUser = user.shortUser ?: return nullQuotaData
 
-            if (AuthenticationFilter.getCtfRole(user).isEmpty()) return null
+            if (AuthenticationFilter.getCtfRole(user).isEmpty()) return nullQuotaData
 
             val totalPrinted = getTotalPrinted(shortUser)
 
@@ -254,19 +241,11 @@ class Users {
             val quota = max(newMaxQuota - totalPrinted, 0)
 
             return QuotaData(
-                shortUser = shortUser,
                 quota = quota,
                 maxQuota = newMaxQuota,
-                totalPrinted = totalPrinted,
-                semesters = semesters
+                totalPrinted = totalPrinted
             )
         }
-
-        /**
-         * Given a shortUser, query for the number of pages remaining
-         * Returns 0 if an error has occurred
-         */
-        fun getQuota(user: FullUser?): Int = getQuotaData(user)?.quota ?: 0
 
         fun getTotalPrinted(shortUser: String?) =
             if (shortUser == null) 0
