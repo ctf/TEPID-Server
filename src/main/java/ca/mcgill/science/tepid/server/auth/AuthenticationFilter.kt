@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.Session
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.logMessage
@@ -132,16 +133,22 @@ class AuthenticationFilter : ContainerRequestFilter {
         /**
          * Returns either an empty role, or one of
          * [USER], [CTFER], or [ELDER]
-         *
-         * Note that this differs from the full user role,
-         * which may include being a local admin
          */
         fun getCtfRole(user: FullUser): String {
-            val g = user.groups.toSet()
+            val g = user.groups
             if (Config.ELDERS_GROUP.any(g::contains)) return ELDER
             if (Config.CTFERS_GROUP.any(g::contains)) return CTFER
             if (Config.USERS_GROUP.any(g::contains)) return USER
             return ""
+        }
+
+        /**
+         * Says if the current semester is eligible for granting quota.
+         * Checks that the student is in one of the User groups and that they are enrolled in courses.
+         * I've put it here because it involves checking against LDAP groups to determine privileges
+         */
+        fun hasCurrentSemesterEligible(user: FullUser, registeredSemesters: Set<Semester>): Boolean {
+            return (Config.USERS_GROUP.any(user.groups::contains) && registeredSemesters.contains(Semester.current))
         }
     }
 }
