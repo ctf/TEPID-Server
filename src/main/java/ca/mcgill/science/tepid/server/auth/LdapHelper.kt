@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.server.printing.QuotaCounter
 import ca.mcgill.science.tepid.server.util.logError
 import org.apache.logging.log4j.kotlin.Logging
 import java.text.ParseException
@@ -77,9 +78,12 @@ class LdapHelper {
             }
 
             out.groups = ldapGroups.filterIsInstance<ParsedLdapGroup.group>().map { g -> g.group }.toSet()
-            out.semesters = ldapGroups.filterIsInstance<ParsedLdapGroup.semester>().map { g -> g.semester }.toSet()
+            val registeredSemesters = ldapGroups.filterIsInstance<ParsedLdapGroup.semester>().map { g -> g.semester }.toSet()
 
             out.role = AuthenticationFilter.getCtfRole(out)
+            if (AuthenticationFilter.hasCurrentSemesterEligible(out, registeredSemesters)) {
+                QuotaCounter.addSemester(out)
+            }
 
             return out
         }
