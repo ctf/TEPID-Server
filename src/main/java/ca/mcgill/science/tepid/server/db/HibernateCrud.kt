@@ -5,8 +5,55 @@ import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.server.util.text
 import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
-import javax.persistence.*
+import javax.persistence.EntityExistsException
+import javax.persistence.EntityManager
+import javax.persistence.EntityManagerFactory
+import javax.persistence.EntityNotFoundException
+import javax.persistence.NoResultException
 import javax.ws.rs.core.Response
+
+interface IHibernateConnector : Logging {
+    val emf: EntityManagerFactory
+    fun <T> dbOp(errorLogger: (Exception) -> String = { logMessage("DB error") }, f: (em: EntityManager) -> T): T
+    fun <T> dbOpTransaction(
+        errorLogger: (Exception) -> String = { logMessage("DB error") },
+        f: (em: EntityManager) -> T
+    ): T
+}
+
+class HibernateConnector(override val emf: EntityManagerFactory) : IHibernateConnector {
+
+    override fun <T> dbOp(errorLogger: (Exception) -> String, f: (em: EntityManager) -> T): T {
+        val em = emf.createEntityManager()
+        try {
+            return f(em)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            logger.error(errorLogger(e), e)
+            throw e
+        } finally {
+            em.close()
+        }
+    }
+    override fun <T> dbOpTransaction(
+        errorLogger: (Exception) -> String,
+        f: (em: EntityManager) -> T
+    ): T {
+        return dbOp(errorLogger) {
+            try {
+                it.transaction.begin()
+                val o = f(it)
+                it.transaction.commit()
+                return@dbOp o
+            } catch (e: Exception) {
+                logger.error(errorLogger(e), e)
+                e.printStackTrace()
+                it.transaction.rollback()
+                throw e
+            }
+        }
+    }
+}
 
 interface IHibernateCrud<T : Any, P> : Logging {
 
@@ -25,39 +72,8 @@ interface IHibernateCrud<T : Any, P> : Logging {
     fun updateOrCreateIfNotExist(obj: T): T
 }
 
-class HibernateCrud<T : TepidDb, P>(val emf: EntityManagerFactory, val classParameter: Class<T>) : IHibernateCrud<T, P> {
-
-    fun <T> dbOp(errorLogger: (Exception) -> String = { logMessage("DB error") }, f: (em: EntityManager) -> T): T {
-        val em = emf.createEntityManager()
-        try {
-            return f(em)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            logger.error(errorLogger(e), e)
-            throw e
-        } finally {
-            em.close()
-        }
-    }
-
-    fun <T> dbOpTransaction(
-        errorLogger: (Exception) -> String = { logMessage("DB error") },
-        f: (em: EntityManager) -> T
-    ): T {
-        return dbOp(errorLogger) {
-            try {
-                it.transaction.begin()
-                val o = f(it)
-                it.transaction.commit()
-                return@dbOp o
-            } catch (e: Exception) {
-                logger.error(errorLogger(e), e)
-                e.printStackTrace()
-                it.transaction.rollback()
-                throw e
-            }
-        }
-    }
+class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, val classParameter: Class<T>) : IHibernateCrud<T, P>,
+    IHibernateConnector by HibernateConnector(emf) {
 
     override fun create(obj: T): T {
         return dbOpTransaction(
