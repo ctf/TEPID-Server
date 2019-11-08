@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.auth
 
+import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.logError
@@ -7,6 +8,9 @@ import ca.mcgill.science.tepid.server.util.logMessage
 import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
 import javax.naming.Context
+import javax.naming.NamingEnumeration
+import javax.naming.directory.SearchControls
+import javax.naming.directory.SearchResult
 import javax.naming.ldap.InitialLdapContext
 import javax.naming.ldap.LdapContext
 
@@ -32,6 +36,24 @@ class LdapConnector {
             // TODO: propagate up the auth stack, currently lots of `?: return null`
             logger.logError("failed to bind to LDAP", e, "shortUser" to shortUser)
             return null
+        }
+    }
+
+    fun executeSearch(searchFilter: String, limit: Long = 10): Set<FullUser>? {
+        var results: NamingEnumeration<SearchResult>? = null
+        val ctx = bindLdapWithResource() ?: return null
+        try {
+            val searchControls = SearchControls()
+            searchControls.searchScope = SearchControls.SUBTREE_SCOPE
+            searchControls.countLimit = limit
+
+            results = ctx.search(Config.LDAP_SEARCH_BASE, searchFilter, searchControls)
+
+            val users = results.toList().map { LdapHelper.AttributesToUser(it.attributes, ctx) }.toSet()
+            return users
+        } finally {
+            results?.close()
+            ctx.close()
         }
     }
 
