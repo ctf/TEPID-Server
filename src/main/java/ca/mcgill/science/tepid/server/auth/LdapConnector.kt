@@ -13,6 +13,13 @@ import javax.naming.ldap.LdapContext
 class LdapConnector {
 
     /**
+     * Create [LdapContext] with the resource credentials
+     */
+    fun bindLdapWithResource(): LdapContext? {
+        return bindLdap(Config.RESOURCE_USER, Config.RESOURCE_CREDENTIALS)
+    }
+
+    /**
      * Create [LdapContext] for given credentials
      */
 

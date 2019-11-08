@@ -6,7 +6,11 @@ import ca.mcgill.science.tepid.server.util.logError
 import ca.mcgill.science.tepid.server.util.logMessage
 import org.apache.logging.log4j.kotlin.Logging
 import javax.naming.NamingException
-import javax.naming.directory.*
+import javax.naming.directory.BasicAttribute
+import javax.naming.directory.DirContext
+import javax.naming.directory.ModificationItem
+import javax.naming.directory.SearchControls
+import javax.naming.directory.SearchResult
 
 object ExchangeManager : Logging {
 
@@ -37,7 +41,7 @@ object ExchangeManager : Logging {
     fun setExchangeStudentLdap(shortUser: ShortUser, exchange: Boolean): Boolean {
         val ldapSearchBase = Config.LDAP_SEARCH_BASE
         val searchFilter = "(&(objectClass=user)(sAMAccountName=$shortUser))"
-        val ctx = ldapConnector.bindLdap(Config.RESOURCE_USER, Config.RESOURCE_CREDENTIALS) ?: return false
+        val ctx = ldapConnector.bindLdapWithResource() ?: return false
         val searchControls = SearchControls()
         searchControls.searchScope = SearchControls.SUBTREE_SCOPE
         var searchResult: SearchResult? = null
