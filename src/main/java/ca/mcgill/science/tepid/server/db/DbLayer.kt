@@ -48,7 +48,8 @@ interface DbLayer :
     DbQueueLayer,
     DbMarqueeLayer,
     DbSessionLayer,
-    DbUserLayer {
+    DbUserLayer,
+    DbQuotaLayer {
     fun <T : Comparable<T>> List<T>.sortAs(order: Order): List<T> = order.sort(this)
 }
 
@@ -152,6 +153,8 @@ interface DbUserLayer {
     fun getUserOrNull(sam: PersonalIdentifier): FullUser?
 
     fun isAdminConfigured(): Boolean
+}
 
+interface DbQuotaLayer {
     fun getTotalPrintedCount(shortUser: ShortUser): Int
 }

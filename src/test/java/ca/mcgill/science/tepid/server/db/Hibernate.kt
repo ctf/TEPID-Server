@@ -692,14 +692,14 @@ class HibernateUserLayerTest() : DbTest() {
     fun testIsAdminConfiguredTrue() {
         persist(testItems[0])
 
-        val ri = hl.isAdminConfigured()
+        val ri = hul.isAdminConfigured()
 
         assertTrue(ri)
     }
 
     @Test
     fun testIsAdminConfiguredFalse() {
-        val ri = hl.isAdminConfigured()
+        val ri = hul.isAdminConfigured()
 
         assertFalse(ri)
     }
@@ -709,7 +709,7 @@ class HibernateUserLayerTest() : DbTest() {
         persistMultiple(testItems)
         persistMultiple(testPrints)
 
-        val ri = hl.getTotalPrintedCount(testItems[0].shortUser!!)
+        val ri = hql.getTotalPrintedCount(testItems[0].shortUser!!)
 
         assertEquals(140, ri)
     }
@@ -722,7 +722,7 @@ class HibernateUserLayerTest() : DbTest() {
         persistMultiple(testItems)
         persistMultiple(testPrints)
 
-        val ri = hl.getTotalPrintedCount(otherUser.shortUser!!)
+        val ri = hql.getTotalPrintedCount(otherUser.shortUser!!)
 
         assertEquals(0, ri)
     }
@@ -733,7 +733,7 @@ class HibernateUserLayerTest() : DbTest() {
         otherUser._id = "TEST"
         persist(otherUser)
 
-        val ri = hl.getUserOrNull(otherUser.studentId.toString()) ?: fail("User was not retrieved")
+        val ri = hul.getUserOrNull(otherUser.studentId.toString()) ?: fail("User was not retrieved")
 
         assertEquals(ri.shortUser, testItems[0].shortUser)
     }
@@ -758,7 +758,7 @@ class HibernateUserLayerTest() : DbTest() {
         persist(u)
 //        em.clear()
 
-        val ri = hl.getUserOrNull(u.shortUser!!) ?: fail("Did not retieve user")
+        val ri = hul.getUserOrNull(u.shortUser!!) ?: fail("Did not retieve user")
 
         assertEquals(3, ri.groups.size)
         assertEquals(2, ri.semesters.size)
@@ -789,13 +789,15 @@ class HibernateUserLayerTest() : DbTest() {
         )
 
         lateinit var hc: HibernateCrud<FullUser, String?>
-        lateinit var hl: HibernateUserLayer
+        lateinit var hul: HibernateUserLayer
+        lateinit var hql: HibernateQuotaLayer
 
         @JvmStatic
         @BeforeAll
         fun initHelper() {
             hc = HibernateCrud(emf, FullUser::class.java)
-            hl = HibernateUserLayer(hc)
+            hul = HibernateUserLayer(hc)
+            hql = HibernateQuotaLayer(emf)
             println("======Begin Tests======")
         }
     }
