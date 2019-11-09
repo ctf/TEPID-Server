@@ -1,5 +1,8 @@
 package ca.mcgill.science.tepid.server.printing
 
+import ca.mcgill.science.tepid.models.bindings.CTFER
+import ca.mcgill.science.tepid.models.bindings.ELDER
+import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.server.auth.LdapConnector
@@ -18,7 +21,7 @@ object QuotaCounter {
      * Checks that the student is in one of the User groups and that they are enrolled in courses.
      */
     fun hasCurrentSemesterEligible(user: FullUser, registeredSemesters: Set<Semester>): Boolean {
-        return (Config.USERS_GROUP.any(user.groups::contains) && registeredSemesters.contains(Semester.current))
+        return (setOf<String>(USER, CTFER, ELDER).contains(user.role) && registeredSemesters.contains(Semester.current))
     }
 
     fun getAllCurrentlyEligible(): Set<FullUser>? {
