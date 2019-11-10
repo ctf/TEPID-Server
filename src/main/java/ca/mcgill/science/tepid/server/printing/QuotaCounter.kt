@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.server.auth.LdapConnector
+import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.server.Config
 
 object QuotaCounter {
@@ -24,8 +25,15 @@ object QuotaCounter {
         return (setOf<String>(USER, CTFER, ELDER).contains(user.role) && registeredSemesters.contains(Semester.current))
     }
 
-    fun getAllCurrentlyEligible(): Set<FullUser>? {
+    fun getAllCurrentlyEligible(): Set<FullUser> {
         val filter = "(|${Config.USERS_GROUP.map { "(memberOf:1.2.840.113556.1.4.1941:=cn=${it.name},${Config.GROUPS_LOCATION})" }.joinToString()})"
-        return ldapConnector.executeSearch(filter, Long.MAX_VALUE)
+        return ldapConnector.executeSearch(filter, Long.MAX_VALUE) ?: emptySet()
+    }
+
+    fun getAllNeedingGranting(): Set<FullUser> {
+        val eligible = getAllCurrentlyEligible().mapNotNull { u -> u._id?.let { Pair(u._id!!, u) } }.toMap()
+        val have = DB.getAlreadyGrantedUsers(eligible.keys, Semester.current)
+
+        return eligible.filterKeys { ! have.contains(it) }.values.toSet()
     }
 }
