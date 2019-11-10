@@ -14,7 +14,7 @@ import javax.naming.directory.SearchResult
 import javax.naming.ldap.InitialLdapContext
 import javax.naming.ldap.LdapContext
 
-class LdapConnector {
+class LdapConnector(val timeout: Int? = 5000) : Logging {
 
     /**
      * Create [LdapContext] with the resource credentials
@@ -67,7 +67,7 @@ class LdapConnector {
             put(Context.PROVIDER_URL, Config.PROVIDER_URL)
             put(Context.SECURITY_PRINCIPAL, Config.SECURITY_PRINCIPAL_PREFIX + user)
             put(Context.SECURITY_CREDENTIALS, password)
-            put("com.sun.jndi.ldap.read.timeout", "5000")
+        put("com.sun.jndi.ldap.read.timeout", timeout.toString())
             put("com.sun.jndi.ldap.connect.timeout", "500")
         }
     }
