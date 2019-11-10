@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.models.data.MarqueeData
 import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import java.io.InputStream
@@ -157,4 +158,6 @@ interface DbUserLayer {
 
 interface DbQuotaLayer {
     fun getTotalPrintedCount(shortUser: ShortUser): Int
+
+    fun getAlreadyGrantedUsers(ids: Set<String>, semester: Semester): Set<String>
 }

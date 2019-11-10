@@ -8,6 +8,7 @@ import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.PutResponse
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.server.mapper
@@ -170,7 +171,12 @@ class HibernateJobLayer(val hc: HibernateCrud<PrintJob, String?>) : DbJobLayer {
 class HibernateQueueLayer(val hc: HibernateCrud<PrintQueue, String?>) : DbQueueLayer {
     override fun getQueue(id: Id): PrintQueue {
         val allQueues = hc.readAll()
-        return allQueues.find { it._id == id.padEnd(36) } ?: failNotFound(logMessage("could not find PrintQueue", "ID" to id))
+        return allQueues.find { it._id == id.padEnd(36) } ?: failNotFound(
+            logMessage(
+                "could not find PrintQueue",
+                "ID" to id
+            )
+        )
     }
 
     override fun getQueues(): List<PrintQueue> {
@@ -297,5 +303,16 @@ class HibernateQuotaLayer(emf: EntityManagerFactory) : DbQuotaLayer, IHibernateC
             em.createQuery("SELECT SUM(c.pages)+2*SUM(c.colorPages) FROM PrintJob c WHERE c.userIdentification = :userId AND c.isRefunded = FALSE AND c.failed <= 0")
                 .setParameter("userId", shortUser).singleResult
         } as? Long ?: 0).toInt()
+    }
+
+    override fun getAlreadyGrantedUsers(ids: Set<String>, semester: Semester): Set<String> {
+        return dbOp { em ->
+            // em.createQuery("SELECT c._id FROM FullUser c WHERE :s in c.semesters and c._id in :users", String::class.java)
+
+            em.createQuery("SELECT c._id FROM FullUser c JOIN c.semesters s WHERE :t in elements(c.semesters) and c._id in :users", String::class.java)
+                .setParameter("t", Semester.current)
+                .setParameter("users", ids)
+                .resultList.toSet()
+        }
     }
 }

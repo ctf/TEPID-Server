@@ -17,7 +17,7 @@
 
         <class>ca.mcgill.science.tepid.models.data.MarqueeData</class>
         <class>ca.mcgill.science.tepid.models.data.AdGroup</class>
-        <class>ca.mcgill.science.tepid.models.data.Course</class>
+        <class>ca.mcgill.science.tepid.models.data.Semester</class>
 
         <properties>
             <!-- Configuring JDBC properties -->
