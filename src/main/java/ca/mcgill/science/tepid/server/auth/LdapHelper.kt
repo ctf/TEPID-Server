@@ -36,7 +36,7 @@ class LdapHelper {
          */
         fun AttributesToUser(attributes: Attributes, ctx: LdapContext): FullUser {
             fun attr(name: String) = attributes.get(name)?.get()?.toString() ?: ""
-            val out = FullUser(
+            var out = FullUser(
                     displayName = attr("displayName"),
                     givenName = attr("givenName"),
                     lastName = attr("sn"),
@@ -82,7 +82,7 @@ class LdapHelper {
 
             out.role = AuthenticationFilter.getCtfRole(out)
             if (QuotaCounter.hasCurrentSemesterEligible(out, registeredSemesters)) {
-                QuotaCounter.addSemester(out)
+                out = QuotaCounter.addSemester(out)
             }
 
             return out

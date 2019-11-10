@@ -10,10 +10,10 @@ import ca.mcgill.science.tepid.server.server.Config
 
 object QuotaCounter {
 
-    private val ldapConnector = LdapConnector()
+    private val ldapConnector = LdapConnector(timeout = 0)
 
-    fun addSemester(user: FullUser, semester: Semester = Semester.current) {
-        user.semesters = user.semesters.plus(semester)
+    fun addSemester(user: FullUser, semester: Semester = Semester.current): FullUser {
+        return user.copy(semesters = user.semesters.plus(semester))
     }
 
     /**
