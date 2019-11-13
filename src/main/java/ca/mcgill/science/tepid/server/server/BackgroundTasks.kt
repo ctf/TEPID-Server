@@ -20,6 +20,7 @@ class BackgroundTasks : ServletContextListener {
         scheduler.scheduleAtFixedRate(JobMonitor(), 0, 30, TimeUnit.MINUTES)
         scheduler.scheduleAtFixedRate(JobDataMonitor(), 0, 12, TimeUnit.HOURS)
         scheduler.scheduleAtFixedRate(SessionMonitor(), 0, 4, TimeUnit.HOURS)
+        scheduler.scheduleAtFixedRate(UserMembershipMonitor(), 1, 7, TimeUnit.DAYS)
         logger.info("BackgroundTasks initialized")
     }
 
