@@ -151,6 +151,8 @@ interface DbUserLayer {
     */
     fun putUser(user: FullUser): Response
 
+    fun getAllIfPresent(ids: Set<String>): Set<FullUser>
+
     fun getUserOrNull(sam: PersonalIdentifier): FullUser?
 
     fun isAdminConfigured(): Boolean
@@ -160,6 +162,4 @@ interface DbQuotaLayer {
     fun getTotalPrintedCount(shortUser: ShortUser): Int
 
     fun getAlreadyGrantedUsers(ids: Set<String>, semester: Semester): Set<String>
-
-    fun getExistingUsers(ids: Set<String>): Set<FullUser>
 }

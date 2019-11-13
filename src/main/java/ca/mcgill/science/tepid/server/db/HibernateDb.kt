@@ -289,6 +289,14 @@ class HibernateUserLayer(val hc: HibernateCrud<FullUser, String?>) : DbUserLayer
         }
     }
 
+    override fun getAllIfPresent(ids: Set<String>): Set<FullUser> {
+        return hc.dbOp { em ->
+            em.createQuery("SELECT c FROM FullUser c WHERE c._id in :ids", hc.classParameter)
+                .setParameter("ids", ids)
+                .resultList.toSet()
+        }
+    }
+
     override fun isAdminConfigured(): Boolean {
         return (hc.dbOp { em ->
             em.createQuery("SELECT COUNT(c) FROM FullUser c")
@@ -312,14 +320,6 @@ class HibernateQuotaLayer(emf: EntityManagerFactory) : DbQuotaLayer, IHibernateC
             em.createQuery("SELECT c._id FROM FullUser c JOIN c.semesters s WHERE :t in elements(c.semesters) and c._id in :users", String::class.java)
                 .setParameter("t", Semester.current)
                 .setParameter("users", ids)
-                .resultList.toSet()
-        }
-    }
-
-    override fun getExistingUsers(ids: Set<String>): Set<FullUser> {
-        return dbOp { em ->
-            em.createQuery("SELECT c FROM FullUser c WHERE c._id in :ids", FullUser::class.java)
-                .setParameter("ids", ids)
                 .resultList.toSet()
         }
     }

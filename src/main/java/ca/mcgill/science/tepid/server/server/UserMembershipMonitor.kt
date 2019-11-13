@@ -20,7 +20,7 @@ class UserMembershipMonitor : Runnable {
 
         // Partitions the list into users which are already in the DB and those which aren't
         // GetExistingUsers returns the users from the DB while we're at it
-        val inDb = DB.getExistingUsers(needing.mapNotNull { u -> u._id }.toSet())
+        val inDb = DB.getAllIfPresent(needing.mapNotNull { u -> u._id }.toSet())
         val notInDb = needing subtract inDb
 
         val fromLdap = needing.associateBy { it -> it.shortUser ?: "" }
