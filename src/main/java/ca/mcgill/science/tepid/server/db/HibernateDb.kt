@@ -315,4 +315,12 @@ class HibernateQuotaLayer(emf: EntityManagerFactory) : DbQuotaLayer, IHibernateC
                 .resultList.toSet()
         }
     }
+
+    override fun getExistingUsers(ids: Set<String>): Set<FullUser> {
+        return dbOp { em ->
+            em.createQuery("SELECT c FROM FullUser c WHERE c._id in :ids", FullUser::class.java)
+                .setParameter("ids", ids)
+                .resultList.toSet()
+        }
+    }
 }

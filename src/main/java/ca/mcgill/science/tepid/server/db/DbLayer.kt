@@ -160,4 +160,6 @@ interface DbQuotaLayer {
     fun getTotalPrintedCount(shortUser: ShortUser): Int
 
     fun getAlreadyGrantedUsers(ids: Set<String>, semester: Semester): Set<String>
+
+    fun getExistingUsers(ids: Set<String>): Set<FullUser>
 }
