@@ -82,7 +82,7 @@ class LdapHelper {
 
             out.role = AuthenticationFilter.getCtfRole(out)
             if (QuotaCounter.hasCurrentSemesterEligible(out, registeredSemesters)) {
-                out = QuotaCounter.addSemester(out)
+                out = QuotaCounter.withCurrentSemester(out)
             }
 
             return out

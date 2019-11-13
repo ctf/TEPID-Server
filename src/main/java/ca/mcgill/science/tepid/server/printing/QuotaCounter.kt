@@ -13,8 +13,8 @@ object QuotaCounter {
 
     private val ldapConnector = LdapConnector(timeout = 0)
 
-    fun addSemester(user: FullUser, semester: Semester = Semester.current): FullUser {
-        return user.copy(semesters = user.semesters.plus(semester))
+    fun withCurrentSemester(user: FullUser): FullUser {
+        return user.copy(semesters = user.semesters.plus(Semester.current))
     }
 
     /**
