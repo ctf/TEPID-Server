@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+// So this is here because H2 has a problem with the part of this query which matches the semester :(
 class QuotaTest : Logging {
     @Test
     fun getAlreadyGrantedUsers() {
