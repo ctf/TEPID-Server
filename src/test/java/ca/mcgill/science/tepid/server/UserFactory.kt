@@ -39,6 +39,7 @@ object UserFactory {
             colorPrinting = dbUser.colorPrinting,
             jobExpiration = dbUser.jobExpiration,
             preferredName = dbUser.preferredName,
+            semesters = dbUser.semesters,
             nick = dbUser.nick
         )
         testUser.updateUserNameInformation()

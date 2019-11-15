@@ -83,13 +83,15 @@ object AuthenticationManager : Logging {
         if (dbUser == null) return ldapUser
         if (ldapShortUser != dbUser.shortUser) throw RuntimeException(logMessage("attempt to merge to different users", "ldapUser" to ldapUser, "dbUser" to dbUser))
         // proceed with data merge
-        val newUser = ldapUser.copy()
+        val newUser = ldapUser.copy(
+            studentId = if (ldapUser.studentId != -1) ldapUser.studentId else dbUser.studentId,
+            preferredName = dbUser.preferredName,
+            nick = dbUser.nick,
+            colorPrinting = dbUser.colorPrinting,
+            jobExpiration = dbUser.jobExpiration,
+            semesters = dbUser.semesters
+        )
         newUser.withDbData(dbUser)
-        newUser.studentId = if (ldapUser.studentId != -1) ldapUser.studentId else dbUser.studentId
-        newUser.preferredName = dbUser.preferredName
-        newUser.nick = dbUser.nick
-        newUser.colorPrinting = dbUser.colorPrinting
-        newUser.jobExpiration = dbUser.jobExpiration
         newUser.updateUserNameInformation()
         return newUser
     }
