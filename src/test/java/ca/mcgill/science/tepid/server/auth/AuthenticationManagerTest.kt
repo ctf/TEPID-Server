@@ -205,6 +205,7 @@ class QueryUserDbTest {
         @AfterAll
         fun tearTest() {
             unmockkAll()
+            DB = Config.getDb()
         }
     }
 }
@@ -241,6 +242,7 @@ class AuthenticateTest {
     @AfterEach
     fun tearTest() {
         unmockkAll()
+        DB = Config.getDb()
     }
 
     @Test
@@ -329,6 +331,7 @@ class RefreshUserTest {
         @AfterAll
         fun tearTest() {
             unmockkAll()
+            DB = Config.getDb()
         }
     }
 }
@@ -363,6 +366,7 @@ class QueryUserTest : WithLogging() {
         @AfterAll
         fun tearTest() {
             unmockkAll()
+            DB = Config.getDb()
         }
     }
 

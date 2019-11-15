@@ -7,7 +7,6 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-
 class QuotaIT : AuthIT() {
 
     @Test

@@ -222,6 +222,6 @@ object Config : Logging {
     }
 
     fun getDb(): DbLayer {
-        return HibernateDbLayer(HibernateDbLayer.makeEntityManagerFactory("tepid-pu").also { emf = it })
+        return HibernateDbLayer(HibernateDbLayer.makeEntityManagerFactory(if (DEBUG) "hibernate-pu-test" else "tepid-pu").also { emf = it })
     }
 }

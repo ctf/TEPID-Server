@@ -52,10 +52,9 @@ open class AuthIT {
     fun deleteUser(shortUser: ShortUser = PropsLDAPTestUser.TEST_USER) {
         Config.emf
         val userDb = HibernateCrud<FullUser, String?>(emf!!, FullUser::class.java)
-        try{
+        try {
             userDb.deleteById("u$shortUser")
-        } catch (e: IllegalStateException){
-
+        } catch (e: IllegalStateException) {
         }
     }
 

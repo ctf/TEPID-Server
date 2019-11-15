@@ -315,8 +315,6 @@ class HibernateQuotaLayer(emf: EntityManagerFactory) : DbQuotaLayer, IHibernateC
 
     override fun getAlreadyGrantedUsers(ids: Set<String>, semester: Semester): Set<String> {
         return dbOp { em ->
-            // em.createQuery("SELECT c._id FROM FullUser c WHERE :s in c.semesters and c._id in :users", String::class.java)
-
             em.createQuery("SELECT c._id FROM FullUser c JOIN c.semesters s WHERE :t in elements(c.semesters) and c._id in :users", String::class.java)
                 .setParameter("t", Semester.current)
                 .setParameter("users", ids)
