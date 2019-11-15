@@ -4,6 +4,7 @@ import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.AdGroup
+import ca.mcgill.science.tepid.models.data.ErrorResponse
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
@@ -12,7 +13,10 @@ import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
+import ca.mcgill.science.tepid.server.server.mapper
+import ca.mcgill.science.tepid.server.util.TepidException
 import ca.mcgill.science.tepid.server.util.getSession
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -20,15 +24,14 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import javax.ws.rs.ClientErrorException
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
 import kotlin.test.assertEquals
-import kotlin.test.fail
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestUserGetQuota : Logging {
@@ -245,12 +248,12 @@ class getUserBySamTest : Logging {
     fun doTestUserQuery403(role: String, queryResult: FullUser?) {
         mockSession(role)
         mockUserQuery(queryResult)
-        val response = endpoints.queryLdap("targetUser", rc, uriInfo)
-        assertEquals(403, response.status)
+        val exception = assertThrows(TepidException::class.java) { endpoints.queryLdap("targetUser", rc, uriInfo) }
+        assertEquals(403, exception.response.status)
 
         // This line makes sure that a 403 response doesn't also leak an attached user.
         // In case the user is added to the response before the response is marked as forbidden
-        assertEquals("You cannot access this resource", response.entity)
+        assertEquals("You cannot access this resource", mapper.readValue<ErrorResponse>(exception.response.entity as String).error)
     }
 
     @Test
@@ -260,13 +263,12 @@ class getUserBySamTest : Logging {
 
     @Test
     fun getUserBySamElderAndInvalidUser() {
-
-        try {
-            doTestUserQuery(ELDER, null, null)
-            fail("Did not throw 404 error when an Elder queried for a nonexistant user")
-        } catch (e: ClientErrorException) {
-            assertEquals(404, e.response.status)
-        }
+        val exception = assertThrows(
+            TepidException::class.java,
+            { doTestUserQuery(ELDER, null, null) },
+            "Did not throw 404 error when an Elder queried for a nonexistant user"
+        )
+        assertEquals(404, exception.response.status)
     }
 
     @Test
@@ -276,13 +278,12 @@ class getUserBySamTest : Logging {
 
     @Test
     fun getUserBySamCtferAndInvalidUser() {
-
-        try {
-            doTestUserQuery(CTFER, null, null)
-            fail("Did not throw 404 error when a CTFer queried for a nonexistant user")
-        } catch (e: ClientErrorException) {
-            assertEquals(404, e.response.status)
-        }
+        val exception = assertThrows(
+            TepidException::class.java,
+            { doTestUserQuery(CTFER, null, null) },
+            "Did not throw 404 error when a CTFer queried for a nonexistant user"
+        )
+        assertEquals(404, exception.response.status)
     }
 
     @Test

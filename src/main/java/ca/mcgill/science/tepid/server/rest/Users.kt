@@ -18,9 +18,9 @@ import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.failForbidden
 import ca.mcgill.science.tepid.server.util.failNotFound
+import ca.mcgill.science.tepid.server.util.failUnauthorized
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.server.util.logMessage
-import ca.mcgill.science.tepid.server.util.text
 import org.apache.logging.log4j.kotlin.Logging
 import java.net.URI
 import java.net.URISyntaxException
@@ -28,7 +28,6 @@ import javax.annotation.security.RolesAllowed
 import javax.ws.rs.Consumes
 import javax.ws.rs.DefaultValue
 import javax.ws.rs.GET
-import javax.ws.rs.NotFoundException
 import javax.ws.rs.POST
 import javax.ws.rs.PUT
 import javax.ws.rs.Path
@@ -68,7 +67,7 @@ class Users {
             USER -> {
                 val queriedUser = AuthenticationManager.queryUser(sam)
                 if (queriedUser == null || session.user.shortUser != queriedUser.shortUser) {
-                    return Response.Status.FORBIDDEN.text("You cannot access this resource")
+                    failForbidden()
                 }
                 // queried user is the querying user
 
@@ -78,12 +77,12 @@ class Users {
                 val queriedUser = AuthenticationManager.queryUser(sam)
                 if (queriedUser == null) {
                     logger.warn(logMessage("could not find user", "sam" to sam))
-                    throw NotFoundException(Response.status(404).entity("Could not find user " + sam).type(MediaType.TEXT_PLAIN).build())
+                    failNotFound("Could not find user $sam")
                 }
                 returnedUser = queriedUser
             }
             else -> {
-                return Response.Status.FORBIDDEN.text("You cannot access this resource")
+                failForbidden()
             }
         }
 
@@ -121,9 +120,9 @@ class Users {
     ): Response {
         val session = ctx.getSession()
         val user = AuthenticationManager.queryUser(sam)
-            ?: return Response.Status.NOT_FOUND.text("User $sam not found")
+            ?: failNotFound("Could not find user $sam")
         if (session.role == USER && session.user.shortUser != user.shortUser)
-            return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
+            failUnauthorized()
         action(user)
         return DB.putUser(user)
     }
@@ -185,7 +184,7 @@ class Users {
             AuthenticationManager.refreshUser(shortUser)
             SessionManager.invalidateSessions(shortUser)
         } catch (e: Exception) {
-            throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
+            failNotFound("Could not find user $shortUser")
         }
     }
 
