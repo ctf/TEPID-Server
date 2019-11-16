@@ -135,10 +135,13 @@ class AuthenticationFilter : ContainerRequestFilter {
          */
         fun getCtfRole(user: FullUser): String {
             val g = user.groups
-            if (Config.ELDERS_GROUP.any(g::contains)) return ELDER
-            if (Config.CTFERS_GROUP.any(g::contains)) return CTFER
-            if (Config.USERS_GROUP.any(g::contains)) return USER
-            return ""
+            return when {
+                Config.ELDERS_GROUP.any(g::contains) -> ELDER
+                Config.CTFERS_GROUP.any(g::contains) -> CTFER
+                Config.USERS_GROUP.any(g::contains) -> USER
+                g.isNotEmpty() -> USER
+                else -> ""
+            }
         }
     }
 }
