@@ -13,6 +13,10 @@ import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
+import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.DbLayer
+import ca.mcgill.science.tepid.server.printing.QuotaCounter
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.server.mapper
 import ca.mcgill.science.tepid.server.util.TepidException
 import ca.mcgill.science.tepid.server.util.getSession
@@ -21,6 +25,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import io.mockk.spyk
 import io.mockk.unmockkAll
 import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.AfterAll
@@ -49,7 +54,7 @@ class TestUserGetQuota : Logging {
      */
     private fun userGetQuotaTest(tailoredUser: FullUser, expected: Int, message: String) {
         mockUser(tailoredUser)
-        val actual = Users.getQuotaData(tailoredUser).quota
+        val actual = QuotaCounter.getQuotaData(tailoredUser).quota
         assertEquals(expected, actual, message)
     }
 
@@ -68,7 +73,7 @@ class TestUserGetQuota : Logging {
 
     private fun setPrintedPages(printedPages: Int) {
         every {
-            Users.getTotalPrinted(ofType(String::class))
+            mockDb.getTotalPrintedCount(ofType(String::class))
         } returns printedPages
     }
 
@@ -185,12 +190,15 @@ class TestUserGetQuota : Logging {
     }
 
     companion object {
+        lateinit var mockDb: DbLayer
+
         @JvmStatic
         @BeforeAll
         fun initTest() {
             mockkObject(AuthenticationManager)
             mockkObject(AuthenticationFilter)
-            mockkObject(Users)
+            mockDb = spyk<DbLayer>(Config.getDb())
+            DB = mockDb
             every {
                 AuthenticationManager.queryUser("targetUser")
             } returns (FullUser())
@@ -200,6 +208,7 @@ class TestUserGetQuota : Logging {
         @AfterAll
         fun tearTest() {
             unmockkAll()
+            DB = Config.getDb()
         }
     }
 }

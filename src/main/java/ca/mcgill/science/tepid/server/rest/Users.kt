@@ -4,18 +4,16 @@ import ca.mcgill.science.tepid.models.DTO.QuotaData
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
-import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Season
-import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.models.data.User
-import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.AutoSuggest
 import ca.mcgill.science.tepid.server.auth.ExchangeManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.printing.IQuotaCounter
+import ca.mcgill.science.tepid.server.printing.QuotaCounter
 import ca.mcgill.science.tepid.server.util.failForbidden
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.failUnauthorized
@@ -39,7 +37,6 @@ import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
-import kotlin.math.max
 
 @Path("/users")
 class Users {
@@ -171,7 +168,7 @@ class Users {
             failForbidden()
         else {
             val user = AuthenticationManager.queryUser(shortUser) ?: failNotFound()
-            return getQuotaData(user)
+            return quotaCounter.getQuotaData(user)
         }
     }
 
@@ -199,55 +196,6 @@ class Users {
     }
 
     companion object : Logging {
-
-        val nullQuotaData = QuotaData(0, 0, 0)
-
-        fun getQuotaData(user: FullUser): QuotaData {
-            val shortUser = user.shortUser ?: return nullQuotaData
-
-            if (AuthenticationFilter.getCtfRole(user).isEmpty()) return nullQuotaData
-
-            val totalPrinted = getTotalPrinted(shortUser)
-
-            val currentSemester = Semester.current
-            // TODO: incorporate summer escape into mapper
-            val semesters = user.semesters
-                .filter { it.season != Season.SUMMER } // we don't add quota for the summer
-                .filter { it >= Semester.fall(2016) } // TEPID didn't exist before fall 2016
-                .filter { it <= currentSemester } // only add quota for valid semesters
-
-            val newMaxQuota = semesters.map { semester ->
-                /*
-                 * The following mapper allows you to customize
-                 * The quota/semester
-                 *
-                 * Granted that semesters are comparable,
-                 * you may specify ranges (inclusive) when matching
-                 */
-
-                // for NUS, which has a separate contract
-                if (user.groups.contains(AdGroup("520-NUS Users")) && semester > Semester.fall(2018)) {
-                    return@map 1000
-                }
-
-                when {
-                    semester == Semester.fall(2016) -> 500 // the first semester had 500 pages only
-                    (semester > Semester.fall(2016) && semester < Semester.fall(2019)) -> 1000 // semesters used to add 1000 pages to the base quota
-                    else -> 250 // then we came to our senses
-                }
-            }.sum()
-
-            val quota = max(newMaxQuota - totalPrinted, 0)
-
-            return QuotaData(
-                quota = quota,
-                maxQuota = newMaxQuota,
-                totalPrinted = totalPrinted
-            )
-        }
-
-        fun getTotalPrinted(shortUser: String?) =
-            if (shortUser == null) 0
-            else DB.getTotalPrintedCount(shortUser)
+        val quotaCounter: IQuotaCounter = QuotaCounter
     }
 }
