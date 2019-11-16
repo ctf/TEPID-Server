@@ -64,7 +64,6 @@ object QuotaCounter : IQuotaCounter {
         )
     }
 
-
     private val ldapConnector = LdapConnector(timeout = 0)
 
     fun withCurrentSemester(user: FullUser): FullUser {
