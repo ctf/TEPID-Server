@@ -18,6 +18,7 @@ import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.utils.PropsDB
 import java.io.InputStream
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 import javax.persistence.EntityManagerFactory
 import javax.persistence.EntityNotFoundException
 import javax.persistence.Persistence
@@ -313,12 +314,23 @@ class HibernateQuotaLayer(emf: EntityManagerFactory) : DbQuotaLayer, IHibernateC
         } as? Long ?: 0).toInt()
     }
 
+    /**
+     * So this splits the list of users to fetch into batches small enough that Hibernate's AST parser doesn't choke
+     * This is because it does a recursive descent of the list of names, which requires _many_ levels and causes a
+     * stackoverflow. The folks at Hibernate are aware  of this, and generally think that there queries are silly.
+     * Who knows, maybe I'm the fool.
+     */
     override fun getAlreadyGrantedUsers(ids: Set<String>, semester: Semester): Set<String> {
         return dbOp { em ->
-            em.createQuery("SELECT c._id FROM FullUser c JOIN c.semesters s WHERE :t in elements(c.semesters) and c._id in :users", String::class.java)
+            {
+                val counter: AtomicInteger = AtomicInteger()
+                ids.groupBy { counter.getAndIncrement() / 500 }.values.map {
+
+                em.createQuery("SELECT c._id FROM FullUser c JOIN c.semesters s WHERE :t in elements(c.semesters) and c._id in :users", String::class.java)
                 .setParameter("t", Semester.current)
-                .setParameter("users", ids)
-                .resultList.toSet()
+                .setParameter("users", it)
+                .resultList.toSet() }.flatten().toSet()
+                }()
         }
     }
 }
