@@ -8,7 +8,6 @@ import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.LdapConnector
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.server.Config
@@ -23,11 +22,8 @@ interface IQuotaCounter {
 
 object QuotaCounter : IQuotaCounter {
 
-
     override fun getQuotaData(user: FullUser): QuotaData {
         val shortUser = user.shortUser ?: return nullQuotaData
-
-        if (AuthenticationFilter.getCtfRole(user).isEmpty()) return nullQuotaData
 
         val totalPrinted = DB.getTotalPrintedCount(shortUser)
 
