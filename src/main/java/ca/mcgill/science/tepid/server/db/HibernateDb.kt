@@ -329,7 +329,7 @@ class HibernateQuotaLayer(emf: EntityManagerFactory) : DbQuotaLayer, IHibernateC
                 em.createQuery("SELECT c._id FROM FullUser c JOIN c.semesters s WHERE :t in elements(c.semesters) and c._id in :users", String::class.java)
                 .setParameter("t", Semester.current)
                 .setParameter("users", it)
-                .resultList.toSet() }.flatten().toSet()
+                .resultList }.flatten().toSet()
                 }()
         }
     }

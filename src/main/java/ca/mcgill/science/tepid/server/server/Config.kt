@@ -11,14 +11,12 @@ import ca.mcgill.science.tepid.server.util.Utils
 import ca.mcgill.science.tepid.utils.DefaultProps
 import ca.mcgill.science.tepid.utils.FilePropLoader
 import ca.mcgill.science.tepid.utils.JarPropLoader
-import ca.mcgill.science.tepid.utils.PropsBarcode
 import ca.mcgill.science.tepid.utils.PropsCreationInfo
 import ca.mcgill.science.tepid.utils.PropsDB
 import ca.mcgill.science.tepid.utils.PropsLDAP
 import ca.mcgill.science.tepid.utils.PropsLDAPGroups
 import ca.mcgill.science.tepid.utils.PropsLDAPResource
 import ca.mcgill.science.tepid.utils.PropsPrinting
-import ca.mcgill.science.tepid.utils.PropsTEM
 import ca.mcgill.science.tepid.utils.PropsURL
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
@@ -49,22 +47,10 @@ object Config : Logging {
     val DB_USERNAME: String
     val DB_PASSWORD: String
     var emf: EntityManagerFactory? = null
-    /*
-     * Barcode data
-     */
-    val BARCODES_USERNAME: String
-    val BARCODES_PASSWORD: String
-    val BARCODES_URL: String
-    /*
-     * TEM data
-     */
-    val TEM_URL: String
 
     /*
      * LDAP and Permission Groups
      */
-
-    const val LDAP_ENABLED = true
 
     val LDAP_SEARCH_BASE: String
     val ACCOUNT_DOMAIN: String
@@ -79,7 +65,7 @@ object Config : Logging {
     val ELDERS_GROUP: List<AdGroup>
     val CTFERS_GROUP: List<AdGroup>
     val CURRENT_EXCHANGE_GROUP: AdGroup
-    val USERS_GROUP: List<AdGroup>
+    val QUOTA_GROUP: List<AdGroup>
 
     /*
      * Printing configuration
@@ -126,10 +112,6 @@ object Config : Logging {
         DB_USERNAME = PropsDB.USERNAME
         DB_PASSWORD = PropsDB.PASSWORD
 
-        BARCODES_URL = PropsBarcode.BARCODES_URL ?: ""
-        BARCODES_USERNAME = PropsBarcode.BARCODES_DB_USERNAME ?: ""
-        BARCODES_PASSWORD = PropsBarcode.BARCODES_DB_PASSWORD ?: ""
-
         LDAP_SEARCH_BASE = PropsLDAP.LDAP_SEARCH_BASE ?: ""
         ACCOUNT_DOMAIN = PropsLDAP.ACCOUNT_DOMAIN ?: ""
         PROVIDER_URL = PropsLDAP.PROVIDER_URL ?: ""
@@ -139,9 +121,9 @@ object Config : Logging {
         RESOURCE_CREDENTIALS = PropsLDAPResource.LDAP_RESOURCE_CREDENTIALS ?: ""
 
         EXCHANGE_STUDENTS_GROUP_BASE = PropsLDAPGroups.EXCHANGE_STUDENTS_GROUP_BASE ?: ""
-        GROUPS_LOCATION = PropsLDAPGroups.GROUPS_LOCATION ?: ""
-        ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS?.split(illegalLDAPCharacters)?.map { AdGroup(it) } ?: emptyList()
-        CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS?.split(illegalLDAPCharacters)?.map { AdGroup(it) } ?: emptyList()
+        GROUPS_LOCATION = PropsLDAPGroups.GROUPS_LOCATION
+        ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS
+        CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS
 
         CURRENT_EXCHANGE_GROUP = {
             val cal = Calendar.getInstance()
@@ -149,11 +131,7 @@ object Config : Logging {
                 EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
             AdGroup(groupName)
         }()
-        USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS?.split(illegalLDAPCharacters))?.map { AdGroup(it) }
-            ?.plus(CURRENT_EXCHANGE_GROUP)
-            ?: emptyList()
-
-        TEM_URL = PropsTEM.TEM_URL ?: ""
+        QUOTA_GROUP = PropsLDAPGroups.QUOTA_GROUPS.plus(CURRENT_EXCHANGE_GROUP)
 
         HASH = PropsCreationInfo.HASH ?: ""
         TAG = PropsCreationInfo.TAG ?: ""
@@ -166,7 +144,7 @@ object Config : Logging {
             setLoggingLevel(Level.TRACE)
         logger.trace(ELDERS_GROUP)
         logger.trace(CTFERS_GROUP)
-        logger.trace(USERS_GROUP)
+        logger.trace(QUOTA_GROUP)
 
         /*
          * For logging
@@ -187,7 +165,7 @@ object Config : Logging {
 
         PUBLIC = About(
             debug = DEBUG,
-            ldapEnabled = LDAP_ENABLED,
+            ldapEnabled = true,
             startTimestamp = System.currentTimeMillis(),
             startTime = Utils.now(),
             hash = HASH,

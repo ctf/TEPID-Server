@@ -25,7 +25,7 @@ class AuthenticationFilterTest : Logging {
     @Test
     fun testGetCtfRoleUserInUsersGroup() {
         mockkObject(Config)
-        every { Config.USERS_GROUP } returns listOf(AdGroup("user_group"))
+        every { Config.QUOTA_GROUP } returns listOf(AdGroup("user_group"))
 
         val user = FullUser(groups = setOf(AdGroup("user_group")))
         val actual = AuthenticationFilter.getCtfRole(user)
@@ -36,7 +36,7 @@ class AuthenticationFilterTest : Logging {
     @Test
     fun testGetCtfRoleUserNotInUsersGroup() {
         mockkObject(Config)
-        every { Config.USERS_GROUP } returns listOf(AdGroup("user_group"))
+        every { Config.QUOTA_GROUP } returns listOf(AdGroup("user_group"))
 
         val user = FullUser(groups = setOf(AdGroup("not_user_group")))
         val actual = AuthenticationFilter.getCtfRole(user)

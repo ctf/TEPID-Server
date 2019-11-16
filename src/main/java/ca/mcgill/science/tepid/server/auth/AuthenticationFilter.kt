@@ -138,7 +138,7 @@ class AuthenticationFilter : ContainerRequestFilter {
             return when {
                 Config.ELDERS_GROUP.any(g::contains) -> ELDER
                 Config.CTFERS_GROUP.any(g::contains) -> CTFER
-                Config.USERS_GROUP.any(g::contains) -> USER
+                Config.QUOTA_GROUP.any(g::contains) -> USER
                 g.isNotEmpty() -> USER
                 else -> ""
             }
