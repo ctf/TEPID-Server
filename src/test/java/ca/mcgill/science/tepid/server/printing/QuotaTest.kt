@@ -174,6 +174,17 @@ class QuotaTest : Logging {
         )
     }
 
+    @Test
+    fun testGetQuotaNoCurrentRole() {
+        setPrintedPages(0)
+        userGetQuotaTest(
+            FullUser(role = "", semesters = setOf(s2018w)),
+            "",
+            1000,
+            "former user is not granted pages"
+        )
+    }
+
     companion object {
         lateinit var mockDb: DbLayer
 
