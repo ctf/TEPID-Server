@@ -8,7 +8,38 @@ import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.logMessage
 import org.apache.logging.log4j.kotlin.Logging
 
-object AuthenticationManager : Logging {
+interface IAuthenticationManager {
+    /**
+     * Authenticates user against LDAP (if enabled)
+     *
+     * @param identifier identifier
+     * @param pw password
+     * @return authenticated user, or null if auth failure
+     */
+    fun authenticate(identifier: PersonalIdentifier, pw: String): FullUser?
+
+    /**
+     * Retrieve user from DB if available, otherwise retrieves from LDAP
+     *
+     * @param identifier identifier
+     * @param pw password
+     * @return user if found
+     */
+    fun queryUser(identifier: PersonalIdentifier): FullUser?
+
+    /**
+     * Refreshes a user with their attributes from LDAP
+     */
+
+    fun refreshUser(shortUser: ShortUser): FullUser
+
+    /**
+     * Gets all currently eligible users
+     */
+    fun getAllCurrentlyEligible(): Set<FullUser>
+}
+
+object AuthenticationManager : Logging, IAuthenticationManager {
 
     /**
      * Authenticates user against LDAP (if enabled)
@@ -17,7 +48,7 @@ object AuthenticationManager : Logging {
      * @param pw password
      * @return authenticated user, or null if auth failure
      */
-    fun authenticate(identifier: PersonalIdentifier, pw: String): FullUser? {
+    override fun authenticate(identifier: PersonalIdentifier, pw: String): FullUser? {
         val dbUser = queryUserDb(identifier)
         logger.trace { logMessage("db data found", "identifier" to identifier) }
 
@@ -42,7 +73,7 @@ object AuthenticationManager : Logging {
      * @param pw password
      * @return user if found
      */
-    fun queryUser(identifier: PersonalIdentifier): FullUser? {
+    override fun queryUser(identifier: PersonalIdentifier): FullUser? {
         logger.trace { logMessage("querying user", "identifier" to identifier) }
 
         val dbUser = queryUserDb(identifier)
@@ -107,7 +138,7 @@ object AuthenticationManager : Logging {
         return dbUser
     }
 
-    fun refreshUser(shortUser: ShortUser): FullUser {
+    override fun refreshUser(shortUser: ShortUser): FullUser {
         val dbUser = queryUser(shortUser)
                 ?: throw RuntimeException(logMessage("could not fetch user from anywhere", "shortUser" to shortUser))
         val ldapUser = queryUserLdap(shortUser)
@@ -118,5 +149,9 @@ object AuthenticationManager : Logging {
         }
         DB.putUser(refreshedUser)
         return refreshedUser
+    }
+
+    override fun getAllCurrentlyEligible(): Set<FullUser> {
+        return Ldap.getAllCurrentlyEligible()
     }
 }
