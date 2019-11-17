@@ -266,6 +266,12 @@ class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, I
         }
     }
 
+    override fun putUsers(users: Collection<FullUser>) {
+        dbOpTransaction { em ->
+            users.forEach{ em.merge(it) }
+        }
+    }
+
     private val numRegex = Regex("[0-9]+")
 
     override fun getUserOrNull(sam: PersonalIdentifier): FullUser? {

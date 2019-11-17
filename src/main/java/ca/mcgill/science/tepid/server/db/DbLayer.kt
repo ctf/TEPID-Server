@@ -151,6 +151,8 @@ interface DbUserLayer {
     */
     fun putUser(user: FullUser): Response
 
+    fun putUsers(users: Collection<FullUser>): Unit
+
     fun getAllIfPresent(ids: Set<String>): Set<FullUser>
 
     fun getUserOrNull(sam: PersonalIdentifier): FullUser?
