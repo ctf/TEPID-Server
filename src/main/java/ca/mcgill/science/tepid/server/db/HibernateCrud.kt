@@ -55,7 +55,8 @@ class HibernateConnector(override val emf: EntityManagerFactory) : IHibernateCon
     }
 }
 
-interface IHibernateCrud<T : Any, P> : Logging {
+interface IHibernateCrud<T : Any, P> : Logging, IHibernateConnector {
+    val classParameter: Class<T>
 
     fun create(obj: T): T
 
@@ -72,7 +73,7 @@ interface IHibernateCrud<T : Any, P> : Logging {
     fun updateOrCreateIfNotExist(obj: T): T
 }
 
-class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, val classParameter: Class<T>) : IHibernateCrud<T, P>,
+class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, override val classParameter: Class<T>) : IHibernateCrud<T, P>,
     IHibernateConnector by HibernateConnector(emf) {
 
     override fun create(obj: T): T {

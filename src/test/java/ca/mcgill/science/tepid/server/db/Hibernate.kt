@@ -390,7 +390,7 @@ class HibernateDestinationLayerTest : DbTest() {
             this.name = newName
         }
 
-        val retrieved = hl.hc.read(id)
+        val retrieved = hl.read(id)
         assertNotNull(retrieved)
         assertEquals(retrieved.name, newName)
         assertEquals(response.status, 200)
@@ -405,7 +405,7 @@ class HibernateDestinationLayerTest : DbTest() {
 
         val response = hl.deleteDestination(id)
 
-        val retrieved = hl.hc.read(id)
+        val retrieved = hl.read(id)
 
         assertNull(retrieved)
     }
@@ -499,7 +499,7 @@ class HibernateJobLayerTest : DbTest() {
 
         hl.updateJob(id) { name = "NEWNAME" }
 
-        val ri = hl.hc.read(id) ?: fail("Not Persisted")
+        val ri = hl.read(id) ?: fail("Not Persisted")
         assertEquals("NEWNAME", ri.name)
         assertEquals(ti.queueName, ri.queueName)
     }
@@ -512,7 +512,7 @@ class HibernateJobLayerTest : DbTest() {
 
         hl.postJob(ti)
 
-        val ri = hl.hc.read(id)
+        val ri = hl.read(id)
         assertEquals(ti, ri)
     }
 
@@ -593,7 +593,7 @@ class HibernateQueueLayerTest() : DbTest() {
 
         val response = hl.deleteQueue(id)
 
-        val retrieved = hl.hc.read(id)
+        val retrieved = hl.read(id)
         assertNull(retrieved)
     }
 
@@ -651,7 +651,7 @@ class HibernateSessionLayerTest() : DbTest() {
         persistMultiple(testUsers)
         persistMultiple(testItems)
 
-        val ri = hl.hc.read(testItems[0]._id)
+        val ri = hl.read(testItems[0]._id)
 
         assertNotNull(ri)
     }
