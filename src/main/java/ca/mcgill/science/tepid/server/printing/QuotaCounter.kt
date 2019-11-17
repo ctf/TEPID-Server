@@ -8,7 +8,6 @@ import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.LdapConnector
 import ca.mcgill.science.tepid.server.db.DB
 import kotlin.math.max
@@ -66,7 +65,7 @@ object QuotaCounter : IQuotaCounter {
 
     private val ldapConnector = LdapConnector(timeout = 0)
 
-    fun withCurrentSemester(user: FullUser): FullUser {
+    private fun withCurrentSemester(user: FullUser): FullUser {
         return user.copy(semesters = user.semesters.plus(Semester.current))
     }
 
@@ -74,14 +73,15 @@ object QuotaCounter : IQuotaCounter {
      * Says if the current semester is eligible for granting quota.
      * Checks that the student is in one of the User groups and that they are enrolled in courses.
      */
-    fun hasCurrentSemesterEligible(user: FullUser, registeredSemesters: Set<Semester>): Boolean {
+    private fun hasCurrentSemesterEligible(user: FullUser, registeredSemesters: Set<Semester>): Boolean {
         return (setOf<String>(USER, CTFER, ELDER).contains(user.role) && registeredSemesters.contains(Semester.current))
     }
 
-    fun getAllNeedingGranting(): Set<FullUser> {
-        val eligible = AuthenticationManager.getAllCurrentlyEligible().mapNotNull { u -> u._id?.let { Pair(u._id!!, u) } }.toMap()
-        val have = DB.getAlreadyGrantedUsers(eligible.keys, Semester.current)
-
-        return eligible.filterKeys { ! have.contains(it) }.values.toSet()
+    fun withCurrentSemesterIfEligible(user: FullUser, registeredSemesters: Set<Semester>): FullUser {
+        if (hasCurrentSemesterEligible(user, registeredSemesters)) {
+            return withCurrentSemester(user)
+        } else {
+            return user
+        }
     }
 }

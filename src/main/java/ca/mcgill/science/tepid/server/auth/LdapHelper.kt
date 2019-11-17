@@ -78,12 +78,12 @@ class LdapHelper {
             }
 
             out.groups = ldapGroups.filterIsInstance<ParsedLdapGroup.group>().map { g -> g.group }.toSet()
-            val registeredSemesters = ldapGroups.filterIsInstance<ParsedLdapGroup.semester>().map { g -> g.semester }.toSet()
-
             out.role = AuthenticationFilter.getCtfRole(out)
-            if (QuotaCounter.hasCurrentSemesterEligible(out, registeredSemesters)) {
-                out = QuotaCounter.withCurrentSemester(out)
-            }
+
+            out = QuotaCounter.withCurrentSemesterIfEligible(
+                out,
+                ldapGroups.filterIsInstance<ParsedLdapGroup.semester>().map { g -> g.semester }.toSet()
+            )
 
             return out
         }

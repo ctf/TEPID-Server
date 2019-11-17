@@ -34,9 +34,9 @@ interface IAuthenticationManager {
     fun refreshUser(shortUser: ShortUser): FullUser
 
     /**
-     * Gets all currently eligible users
+     * Adds all currently eligible users to the DB
      */
-    fun getAllCurrentlyEligible(): Set<FullUser>
+    fun addAllCurrentlyEligible()
 }
 
 object AuthenticationManager : Logging, IAuthenticationManager {
@@ -108,10 +108,10 @@ object AuthenticationManager : Logging, IAuthenticationManager {
      * Returns a new users (does not mutate either input
      */
     fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?): FullUser {
+        if (dbUser == null) return ldapUser
         // ensure that short users actually match before attempting any merge
         val ldapShortUser = ldapUser.shortUser
                 ?: throw RuntimeException(logMessage("LDAP user does not have a short user. Maybe this will help", "ldapUser" to ldapUser, "dbUser" to dbUser))
-        if (dbUser == null) return ldapUser
         if (ldapShortUser != dbUser.shortUser) throw RuntimeException(logMessage("attempt to merge to different users", "ldapUser" to ldapUser, "dbUser" to dbUser))
         // proceed with data merge
         val newUser = ldapUser.copy(
@@ -120,7 +120,7 @@ object AuthenticationManager : Logging, IAuthenticationManager {
             nick = dbUser.nick,
             colorPrinting = dbUser.colorPrinting,
             jobExpiration = dbUser.jobExpiration,
-            semesters = dbUser.semesters
+            semesters = dbUser.semesters.plus(ldapUser.semesters)
         )
         newUser.withDbData(dbUser)
         newUser.updateUserNameInformation()
@@ -151,7 +151,11 @@ object AuthenticationManager : Logging, IAuthenticationManager {
         return refreshedUser
     }
 
-    override fun getAllCurrentlyEligible(): Set<FullUser> {
-        return Ldap.getAllCurrentlyEligible()
+    override fun addAllCurrentlyEligible() {
+        val ldap = Ldap.getAllCurrentlyEligible().mapNotNull { p -> p.shortUser?.let { Pair<String, FullUser>(it, p) } }.toMap()
+        val fromDb = DB.getAllIfPresent(ldap.keys).mapNotNull { p -> p.shortUser?.let { Pair<String, FullUser>(it, p) } }.toMap()
+
+        val merged = ldap.mapNotNull { mergeUsers(it.value, fromDb[it.key]) }
+        DB.putUsers(merged)
     }
 }

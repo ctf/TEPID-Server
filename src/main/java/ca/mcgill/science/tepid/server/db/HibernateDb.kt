@@ -44,7 +44,7 @@ class HibernateDbLayer(val emf: EntityManagerFactory) : DbLayer,
     }
 }
 
-class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : DbDestinationLayer, IHibernateCrud<FullDestination, String?> by hc  {
+class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : DbDestinationLayer, IHibernateCrud<FullDestination, String?> by hc {
     override fun getDestination(id: Id): FullDestination {
         return read(id) ?: failNotFound(logMessage("could not find destination", "ID" to id))
     }
@@ -268,7 +268,7 @@ class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, I
 
     override fun putUsers(users: Collection<FullUser>) {
         dbOpTransaction { em ->
-            users.forEach{ em.merge(it) }
+            users.forEach { em.merge(it) }
         }
     }
 

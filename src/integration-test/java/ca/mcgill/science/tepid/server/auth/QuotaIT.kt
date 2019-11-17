@@ -1,11 +1,10 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.server.printing.QuotaCounter
+import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class QuotaIT : AuthIT() {
 
@@ -15,11 +14,10 @@ class QuotaIT : AuthIT() {
         deleteUser()
 
         val startTime = System.nanoTime()
-        val gotten = QuotaCounter.getAllNeedingGranting()
+        AuthenticationManager.addAllCurrentlyEligible()
         val elapsedTime = System.nanoTime() - startTime
-        assertNotNull(gotten)
-        assertTrue { gotten.isNotEmpty() }
-        assertNotNull(gotten.find { u -> u.shortUser == PropsLDAPTestUser.TEST_USER })
-        println("Fetched ${gotten.size} users in ${elapsedTime*1e-9}")
+
+        println("Fetched in ${elapsedTime*1e-9}")
+        assertNotNull(DB.getUserOrNull(PropsLDAPTestUser.TEST_USER))
     }
 }

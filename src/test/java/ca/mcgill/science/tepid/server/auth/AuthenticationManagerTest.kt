@@ -1,6 +1,8 @@
 package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
@@ -83,6 +85,19 @@ class MergeUsersTest {
         )
         val expected = UserFactory.makeMergedUser()
             .copy(studentId = UserFactory.makeDbUser().studentId)
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun testMergeUsersCombineSemesters() {
+        val testSemester = Semester(Season.FALL, 1111)
+        val ldapUser = UserFactory.makeLdapUser().copy(semesters = setOf(Semester.current))
+        val actual = AuthenticationManager.mergeUsers(
+            ldapUser,
+            UserFactory.makeDbUser().copy(semesters = setOf(testSemester))
+        )
+        val expected = UserFactory.makeMergedUser()
+            .copy(semesters = setOf(Semester.current, testSemester))
         assertEquals(expected, actual)
     }
 }

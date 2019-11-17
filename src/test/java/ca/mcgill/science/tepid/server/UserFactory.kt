@@ -35,11 +35,12 @@ object UserFactory {
 
     fun makeMergedUser(): FullUser {
         val dbUser = makeDbUser()
-        val testUser = makeLdapUser().copy(
+        val ldapUser = makeLdapUser()
+        val testUser = ldapUser.copy(
             colorPrinting = dbUser.colorPrinting,
             jobExpiration = dbUser.jobExpiration,
             preferredName = dbUser.preferredName,
-            semesters = dbUser.semesters,
+            semesters = ldapUser.semesters.plus(dbUser.semesters),
             nick = dbUser.nick
         )
         testUser.updateUserNameInformation()
