@@ -21,6 +21,7 @@ TEPID has several advantages over other print servers:
 * __Clean Web Interface:__ An easy-to-use web interface allows easy management of all the things Tier 1 techs or people operating a print pool would need to do, including changing the status of printers and refunding failed print jobs. Additional rights can be delegated to configure the queues themselves.
 * __Easily Deployed Client:__ The TEPID client builds to a JAR, which can be deployed easily enough, but it also uses WIX to build an MSI for easy deployment on Windows systems with Active Directory.
 * __Extra Informational Screensaver:__ The TEPID screensaver displays the time and room of people's print jobs, so if they forgot where it was sent they can look and find out. It also displays the statuses of the print queues themselves. Check it out! 
+* __Selectively Assign Quota:__ You can give users quota in one semester, and they'll keep it and still be able to print even if they don't get it next semester. 
 
 Tepid Server acts as Tepid's REST API to fulfill various requests for the printing service.
 In most cases, this simply means transferring data to and from our [database](#couchdb), but there are other instances (such as login and printing files) where some more extensive processes occur.
@@ -58,6 +59,8 @@ A lookup for the environment variable only occurs if the project property is not
 Configuration files can also be modified on the server, similarly to other applications one could install. Config files can be placed in /etc/tepid/ . These files will supersede those bundled in the WAR. This allows you to better care for their configuration using a configuration management tool, without having to rebuild the WAR.
 
 The TEPID server depends on DB, LDAP, LDAPGroups, LDAPResource, LDAPTest, TEM, and URL property files. 
+
+For testing, the included sample configs should provide placeholders sufficient for the unit tests.
 
 ## Endpoints
 
@@ -123,28 +126,7 @@ Logging is straightforward. Assuming you have a logger `log`,
 * Log misc content with `log.debug(msg)` or `log.info(msg)` (debug is more verbose than info)
 * Log very verbose content with `log.trace(msg)`. This is automatically disabled when debug mode is off.
 
-You may create a logger using:
-
-### Directly through Apache
-See `LogManager.getLogger(...)`
-
-### Through Companions
-Loggers are typically per class type. You can create it directly in the class,
-but the best practice is to only make one per all instance of the same class.
-
-To do so, create a companion object extending our logger:
-
-```kotlin
-companion object : WithLogging()
-```
-
-This will lazy load a logger when it is first used, and the class can call the methods through a `log` variable.
-
-If your companion already extends something, use the delegation pattern:
-
-```kotlin
-companion object : Loggable by WithLogging()
-```
+You may create a logger simply by inheriting from the Apache extension for that, which is `org.apache.logging.log4j.kotlin.Logging`
 
 ## VMs
 
