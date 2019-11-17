@@ -79,7 +79,7 @@ object QuotaCounter : IQuotaCounter {
     }
 
     fun getAllCurrentlyEligible(): Set<FullUser> {
-        val filter = "(|${Config.QUOTA_GROUP.map { "(memberOf:1.2.840.113556.1.4.1941:=cn=${it.name},${Config.GROUPS_LOCATION})" }.joinToString()})"
+        val filter = "(&(objectClass=user)(|${Config.QUOTA_GROUP.map { "(memberOf:1.2.840.113556.1.4.1941:=cn=${it.name},${Config.GROUPS_LOCATION})" }.joinToString()}))"
         return ldapConnector.executeSearch(filter, Long.MAX_VALUE) ?: emptySet()
     }
 

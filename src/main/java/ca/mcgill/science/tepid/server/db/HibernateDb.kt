@@ -324,13 +324,16 @@ class HibernateQuotaLayer(emf: EntityManagerFactory) : DbQuotaLayer, IHibernateC
         return dbOp { em ->
             {
                 val counter: AtomicInteger = AtomicInteger()
-                ids.groupBy { counter.getAndIncrement() / 500 }.values.map {
-
-                em.createQuery("SELECT c._id FROM FullUser c JOIN c.semesters s WHERE :t in elements(c.semesters) and c._id in :users", String::class.java)
-                .setParameter("t", Semester.current)
-                .setParameter("users", it)
-                .resultList }.flatten().toSet()
-                }()
+                ids.chunked(300).map {
+                    em.createQuery(
+                        "SELECT c._id FROM FullUser c JOIN c.semesters s WHERE :t in elements(c.semesters) and c._id in :users",
+                        String::class.java
+                    )
+                        .setParameter("t", Semester.current)
+                        .setParameter("users", it)
+                        .resultList
+                }.flatten().toSet()
+            }()
         }
     }
 }

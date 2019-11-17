@@ -27,8 +27,6 @@ import javax.persistence.EntityManagerFactory
 
 object Config : Logging {
 
-    private val illegalLDAPCharacters = "[,+\"\\\\<>;=]".toRegex()
-
     /**
      * Global definition for whether a the build is in debug mode or not
      */
