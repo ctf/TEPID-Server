@@ -38,7 +38,7 @@
     window.onload = function () {
         // Begin Swagger UI call region
         const ui = SwaggerUIBundle({
-            url: "<%out.print("https://"+Config.INSTANCE.getTEPID_URL_PRODUCTION()+"/openapi.json"); %>",
+            url: "<%out.print("https://"+Config.INSTANCE.getTEPID_URL_PRODUCTION()+"openapi.json"); %>",
             dom_id: '#swagger-ui',
             deepLinking: true,
             presets: [
