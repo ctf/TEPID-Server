@@ -8,7 +8,6 @@ import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.server.auth.LdapConnector
 import ca.mcgill.science.tepid.server.db.DB
 import kotlin.math.max
 
@@ -62,8 +61,6 @@ object QuotaCounter : IQuotaCounter {
             totalPrinted = totalPrinted
         )
     }
-
-    private val ldapConnector = LdapConnector(timeout = 0)
 
     private fun withCurrentSemester(user: FullUser): FullUser {
         return user.copy(semesters = user.semesters.plus(Semester.current))

@@ -4,11 +4,9 @@ import `in`.waffl.q.Promise
 import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.User
-import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.logError
 import org.apache.logging.log4j.kotlin.Logging
 import javax.naming.NamingException
-import javax.naming.directory.SearchControls
 
 object AutoSuggest : Logging {
 
@@ -35,24 +33,7 @@ object AutoSuggest : Logging {
 
     fun queryLdap(like: String, limit: Int): List<FullUser> {
         try {
-            val ldapSearchBase = Config.LDAP_SEARCH_BASE
-            val searchFilter = "(&(objectClass=user)(|(userPrincipalName=$like*)(samaccountname=$like*)))"
-            val ctx = ldapConnector.bindLdapWithResource() ?: return emptyList()
-            val searchControls = SearchControls()
-            searchControls.searchScope = SearchControls.SUBTREE_SCOPE
-            val results = ctx.search(ldapSearchBase, searchFilter, searchControls)
-            val out = mutableListOf<FullUser>()
-            var res = 0
-            val iter = results.iterator()
-            while (iter.hasNext() && res++ < limit) {
-                val user = LdapHelper.AttributesToUser(iter.next().attributes, ctx)
-                if (user.longUser?.split("@")?.getOrNull(0)?.indexOf(".") ?: -1 > 0)
-                    out.add(user)
-            }
-            // todo update; a crash here will lead to the contents not closing
-            results.close()
-            ctx.close()
-            return out
+            return ldapConnector.executeSearch("(&(objectClass=user)(|(userPrincipalName=$like*)(samaccountname=$like*)))", limit.toLong()).toList()
         } catch (ne: NamingException) {
             logger.logError("could not get autosuggest", ne, "like" to like)
             return emptyList()

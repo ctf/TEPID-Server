@@ -48,9 +48,9 @@ class LdapConnector(val timeout: Int? = 5000) : Logging {
         }
     }
 
-    fun executeSearch(searchFilter: String, limit: Long = 10): Set<FullUser>? {
-        var results: List<SearchResult>? = null
-        val ctx = bindLdapWithResource() ?: return null
+    fun executeSearch(searchFilter: String, limit: Long = 10, ctx: LdapContext? = bindLdapWithResource()): Set<FullUser> {
+        ctx ?: return emptySet()
+        val results: List<SearchResult>
         try {
             val searchControls = SearchControls()
             searchControls.searchScope = SearchControls.SUBTREE_SCOPE
