@@ -7,7 +7,6 @@ import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -17,6 +16,7 @@ import io.mockk.spyk
 import io.mockk.unmockkAll
 import io.mockk.unmockkObject
 import io.mockk.verify
+import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
@@ -351,7 +351,7 @@ class RefreshUserTest {
     }
 }
 
-class QueryUserTest : WithLogging() {
+class QueryUserTest : Logging {
 
     var testUser = UserFactory.makeDbUser()
 
