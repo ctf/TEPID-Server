@@ -129,7 +129,7 @@ object Config : Logging {
                 EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
             AdGroup(groupName)
         }()
-        QUOTA_GROUP = PropsLDAPGroups.QUOTA_GROUPS.plus(CURRENT_EXCHANGE_GROUP)
+        QUOTA_GROUP = PropsLDAPGroups.QUOTA_GROUPS.plus(CURRENT_EXCHANGE_GROUP).plus(CTFERS_GROUP).plus(ELDERS_GROUP)
 
         HASH = PropsCreationInfo.HASH ?: ""
         TAG = PropsCreationInfo.TAG ?: ""

@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.db.DB
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import kotlin.test.Ignore
 import kotlin.test.assertEquals
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -205,6 +207,49 @@ class QuotaTest : Logging {
         fun tearTest() {
             unmockkAll()
             DB = Config.getDb()
+        }
+    }
+}
+
+class QuotaEligibilityTest : Logging {
+
+    @Test
+    fun testEligibilityElder() {
+        QuotaCounter.hasCurrentSemesterEligible(UserFactory.generateTestUser("tu").copy(groups = setOf(quotaGroup), role = ELDER))
+    }
+
+    @Test
+    fun testEligibilityUserInGroup() {
+        every { Config.QUOTA_GROUP } returns listOf(quotaGroup)
+        QuotaCounter.hasCurrentSemesterEligible(UserFactory.generateTestUser("tu").copy(groups = setOf(quotaGroup), role = USER))
+    }
+
+    @Ignore("I'm too tired to deal with this as part of #135. ref #151")
+    @Test
+    fun testEligibilityTransitivelyInGroup() {
+        // not sure how I would test this...
+        // maybe more appropriate in whatever we use for transitive membership handling?
+    }
+
+    @Test
+    fun testEligibilityNotInGroup() {
+        every { Config.QUOTA_GROUP } returns listOf(quotaGroup)
+        QuotaCounter.hasCurrentSemesterEligible(UserFactory.generateTestUser("tu").copy(groups = setOf(), role = USER))
+    }
+
+    companion object : Logging {
+        val quotaGroup = AdGroup("quotaGroup")
+
+        @JvmStatic
+        @BeforeAll
+        fun initTest() {
+            mockkObject(Config)
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun tearTest() {
+            unmockkAll()
         }
     }
 }

@@ -9,6 +9,7 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.server.Config
 import kotlin.math.max
 
 interface IQuotaCounter {
@@ -69,13 +70,18 @@ object QuotaCounter : IQuotaCounter {
     /**
      * Says if the current semester is eligible for granting quota.
      * Checks that the student is in one of the User groups and that they are enrolled in courses.
+     * Or that they're CTFer or Elder
      */
-    private fun hasCurrentSemesterEligible(user: FullUser, registeredSemesters: Set<Semester>): Boolean {
-        return (setOf<String>(USER, CTFER, ELDER).contains(user.role) && registeredSemesters.contains(Semester.current))
+    fun hasCurrentSemesterEligible(user: FullUser): Boolean {
+        return when (user.role) {
+            USER -> Config.QUOTA_GROUP.any { user.groups.contains(it) }
+            CTFER, ELDER -> true
+            else -> false
+        }
     }
 
-    fun withCurrentSemesterIfEligible(user: FullUser, registeredSemesters: Set<Semester>): FullUser {
-        if (hasCurrentSemesterEligible(user, registeredSemesters)) {
+    fun withCurrentSemesterIfEligible(user: FullUser): FullUser {
+        if (hasCurrentSemesterEligible(user)) {
             return withCurrentSemester(user)
         } else {
             return user
