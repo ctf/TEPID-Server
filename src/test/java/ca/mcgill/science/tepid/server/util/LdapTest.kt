@@ -2,15 +2,11 @@ package ca.mcgill.science.tepid.server.util
 
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
-import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlin.test.fail
 
 class LdapTest {
 
@@ -49,35 +45,5 @@ class LdapTest {
         ).forEach { (tag, data) ->
             assertNotNull(data, "$tag is null for user")
         }
-    }
-}
-
-@Disabled("NI")
-class
-testQueryUserLdap : Logging {
-
-    @Test
-    fun testQueryUserWithSuAndPw() {
-        fail("NI")
-    }
-
-    @Test
-    fun testQueryUserWithSuNoPw() {
-        fail("NI")
-    }
-
-    @Test
-    fun testQueryUserWithNonSuAndPw() {
-        fail("NI")
-    }
-
-    @Test
-    fun testQueryUserWithNonSuNoPw() {
-        fail("NI")
-    }
-
-    @Test
-    fun testQueryUserNullUser() {
-        fail("NI")
     }
 }

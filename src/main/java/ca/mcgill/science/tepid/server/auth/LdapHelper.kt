@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.server.printing.QuotaCounter
 import ca.mcgill.science.tepid.server.util.logError
@@ -63,12 +62,9 @@ class LdapHelper {
             val ldapGroups = LdapHelper.AttributeToList(attributes.get("memberOf")).mapNotNull {
                 try {
                     val cn = getCn(it)
-                    val groupValues = semesterRegex.find(it.toLowerCase(Locale.CANADA))?.groupValues
-                    val semester = if (groupValues != null) Semester(Season(groupValues[1]), groupValues[2].toInt())
-                    else null
 
-                    if (semester != null) {
-                        ParsedLdapGroup.semester(Semester(semester.season, semester.year))
+                    if (semesterRegex.find(it.toLowerCase(Locale.CANADA)) != null) {
+                        null // it's a semester and we don't want it
                     } else {
                         ParsedLdapGroup.group(AdGroup(cn))
                     }
@@ -81,10 +77,7 @@ class LdapHelper {
             out.groups = ldapGroups.filterIsInstance<ParsedLdapGroup.group>().map { g -> g.group }.toSet()
             out.role = AuthenticationFilter.getCtfRole(out)
 
-            out = QuotaCounter.withCurrentSemesterIfEligible(
-                out,
-                ldapGroups.filterIsInstance<ParsedLdapGroup.semester>().map { g -> g.semester }.toSet()
-            )
+            out = QuotaCounter.withCurrentSemesterIfEligible(out)
 
             return out
         }
