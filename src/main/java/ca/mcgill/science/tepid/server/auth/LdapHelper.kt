@@ -48,6 +48,7 @@ class LdapHelper {
                     studentId = attr("employeeID").toIntOrNull() ?: -1
             )
             out._id = "u${attr("sAMAccountName")}"
+            out.updateUserNameInformation()
             try {
                 out.activeSince = SimpleDateFormat("yyyyMMddHHmmss.SX").parse(attr("whenCreated")).time
             } catch (e: ParseException) {
