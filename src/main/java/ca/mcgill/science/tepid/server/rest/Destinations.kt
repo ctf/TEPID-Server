@@ -88,7 +88,7 @@ class Destinations {
     @Path("/{dest}")
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun deleteQueue(@PathParam("dest") destination: String): String =
+    fun deleteDestination(@PathParam("dest") destination: String): String =
         DB.deleteDestination(destination)
 
     private companion object : Logging
