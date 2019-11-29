@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.models.data.MarqueeData
 import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import java.io.InputStream
@@ -48,7 +49,8 @@ interface DbLayer :
     DbQueueLayer,
     DbMarqueeLayer,
     DbSessionLayer,
-    DbUserLayer {
+    DbUserLayer,
+    DbQuotaLayer {
     fun <T : Comparable<T>> List<T>.sortAs(order: Order): List<T> = order.sort(this)
 }
 
@@ -149,9 +151,17 @@ interface DbUserLayer {
     */
     fun putUser(user: FullUser): Response
 
+    fun putUsers(users: Collection<FullUser>): Unit
+
+    fun getAllIfPresent(ids: Set<String>): Set<FullUser>
+
     fun getUserOrNull(sam: PersonalIdentifier): FullUser?
 
     fun isAdminConfigured(): Boolean
+}
 
+interface DbQuotaLayer {
     fun getTotalPrintedCount(shortUser: ShortUser): Int
+
+    fun getAlreadyGrantedUsers(ids: Set<String>, semester: Semester): Set<String>
 }

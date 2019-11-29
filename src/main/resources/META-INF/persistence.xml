@@ -17,13 +17,11 @@
 
         <class>ca.mcgill.science.tepid.models.data.MarqueeData</class>
         <class>ca.mcgill.science.tepid.models.data.AdGroup</class>
-        <class>ca.mcgill.science.tepid.models.data.Course</class>
+        <class>ca.mcgill.science.tepid.models.data.Semester</class>
 
         <properties>
             <!-- Configuring JDBC properties -->
             <property name="javax.persistence.jdbc.url" value="jdbc:postgresql:tepid"/>
-            <property name="javax.persistence.jdbc.user" value="tepid"/>
-            <property name="javax.persistence.jdbc.password" value=""/>
 
             <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver"/>
 

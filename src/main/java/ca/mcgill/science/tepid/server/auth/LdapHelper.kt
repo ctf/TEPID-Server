@@ -2,8 +2,8 @@ package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.server.printing.QuotaCounter
 import ca.mcgill.science.tepid.server.util.logError
 import org.apache.logging.log4j.kotlin.Logging
 import java.text.ParseException
@@ -35,7 +35,7 @@ class LdapHelper {
          */
         fun AttributesToUser(attributes: Attributes, ctx: LdapContext): FullUser {
             fun attr(name: String) = attributes.get(name)?.get()?.toString() ?: ""
-            val out = FullUser(
+            var out = FullUser(
                     displayName = attr("displayName"),
                     givenName = attr("givenName"),
                     lastName = attr("sn"),
@@ -47,6 +47,7 @@ class LdapHelper {
                     studentId = attr("employeeID").toIntOrNull() ?: -1
             )
             out._id = "u${attr("sAMAccountName")}"
+            out.updateUserNameInformation()
             try {
                 out.activeSince = SimpleDateFormat("yyyyMMddHHmmss.SX").parse(attr("whenCreated")).time
             } catch (e: ParseException) {
@@ -61,12 +62,9 @@ class LdapHelper {
             val ldapGroups = LdapHelper.AttributeToList(attributes.get("memberOf")).mapNotNull {
                 try {
                     val cn = getCn(it)
-                    val groupValues = semesterRegex.find(it.toLowerCase(Locale.CANADA))?.groupValues
-                    val semester = if (groupValues != null) Semester(Season(groupValues[1]), groupValues[2].toInt())
-                    else null
 
-                    if (semester != null) {
-                        ParsedLdapGroup.semester(Semester(semester.season, semester.year))
+                    if (semesterRegex.find(it.toLowerCase(Locale.CANADA)) != null) {
+                        null // it's a semester and we don't want it
                     } else {
                         ParsedLdapGroup.group(AdGroup(cn))
                     }
@@ -77,9 +75,9 @@ class LdapHelper {
             }
 
             out.groups = ldapGroups.filterIsInstance<ParsedLdapGroup.group>().map { g -> g.group }.toSet()
-            out.semesters = ldapGroups.filterIsInstance<ParsedLdapGroup.semester>().map { g -> g.semester }.toSet()
-
             out.role = AuthenticationFilter.getCtfRole(out)
+
+            out = QuotaCounter.withCurrentSemesterIfEligible(out)
 
             return out
         }

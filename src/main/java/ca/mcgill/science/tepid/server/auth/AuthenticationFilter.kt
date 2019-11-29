@@ -132,16 +132,16 @@ class AuthenticationFilter : ContainerRequestFilter {
         /**
          * Returns either an empty role, or one of
          * [USER], [CTFER], or [ELDER]
-         *
-         * Note that this differs from the full user role,
-         * which may include being a local admin
          */
         fun getCtfRole(user: FullUser): String {
-            val g = user.groups.toSet()
-            if (Config.ELDERS_GROUP.any(g::contains)) return ELDER
-            if (Config.CTFERS_GROUP.any(g::contains)) return CTFER
-            if (Config.USERS_GROUP.any(g::contains)) return USER
-            return ""
+            val g = user.groups
+            return when {
+                Config.ELDERS_GROUP.any(g::contains) -> ELDER
+                Config.CTFERS_GROUP.any(g::contains) -> CTFER
+                Config.QUOTA_GROUP.any(g::contains) -> USER
+                g.isNotEmpty() -> USER
+                else -> ""
+            }
         }
     }
 }

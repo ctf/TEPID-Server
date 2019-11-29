@@ -6,7 +6,6 @@ import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.logMessage
 import org.apache.logging.log4j.kotlin.Logging
-import javax.naming.directory.SearchControls
 
 object Ldap : Logging {
 
@@ -49,17 +48,8 @@ object Ldap : Logging {
      * the studentId cannot be queried
      */
     private fun queryLdap(userName: PersonalIdentifier, auth: Pair<String, String>, searchName: SearchBy): FullUser? {
-        val searchFilter = "(&(objectClass=user)($searchName=$userName))"
         val ctx = ldapConnector.bindLdap(auth.first, auth.second) ?: return null
-        val searchControls = SearchControls()
-        searchControls.searchScope = SearchControls.SUBTREE_SCOPE
-        val results = ctx.search(Config.LDAP_SEARCH_BASE, searchFilter, searchControls)
-        val searchResultAttributes = results.nextElement()?.attributes
-        results.close()
-        val user = searchResultAttributes?.let { LdapHelper.AttributesToUser(searchResultAttributes, ctx) }
-        ctx.close()
-        user?.updateUserNameInformation()
-        return user
+        return ldapConnector.executeSearch("(&(objectClass=user)($searchName=$userName))", 1, ctx).firstOrNull()
     }
 
     /**
@@ -68,5 +58,13 @@ object Ldap : Logging {
     fun authenticate(shortUser: ShortUser, pw: String): FullUser? {
         logger.info { logMessage("authenticating", "shortUser" to shortUser) }
         return queryLdap(shortUser, shortUser to pw, SearchBy.sAMAccountName)
+    }
+
+    /**
+     * Gets all currently eligible users
+     */
+    fun getAllCurrentlyEligible(): Set<FullUser> {
+        val filter = "(&(objectClass=user)(|${Config.QUOTA_GROUP.map { "(memberOf:1.2.840.113556.1.4.1941:=cn=${it.name},${Config.GROUPS_LOCATION})" }.joinToString()}))"
+        return LdapConnector(0).executeSearch(filter, Long.MAX_VALUE)
     }
 }

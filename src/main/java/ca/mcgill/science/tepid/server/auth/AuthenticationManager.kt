@@ -8,7 +8,38 @@ import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.logMessage
 import org.apache.logging.log4j.kotlin.Logging
 
-object AuthenticationManager : Logging {
+interface IAuthenticationManager {
+    /**
+     * Authenticates user against LDAP (if enabled)
+     *
+     * @param identifier identifier
+     * @param pw password
+     * @return authenticated user, or null if auth failure
+     */
+    fun authenticate(identifier: PersonalIdentifier, pw: String): FullUser?
+
+    /**
+     * Retrieve user from DB if available, otherwise retrieves from LDAP
+     *
+     * @param identifier identifier
+     * @param pw password
+     * @return user if found
+     */
+    fun queryUser(identifier: PersonalIdentifier): FullUser?
+
+    /**
+     * Refreshes a user with their attributes from LDAP
+     */
+
+    fun refreshUser(shortUser: ShortUser): FullUser
+
+    /**
+     * Adds all currently eligible users to the DB
+     */
+    fun addAllCurrentlyEligible()
+}
+
+object AuthenticationManager : Logging, IAuthenticationManager {
 
     /**
      * Authenticates user against LDAP (if enabled)
@@ -17,7 +48,7 @@ object AuthenticationManager : Logging {
      * @param pw password
      * @return authenticated user, or null if auth failure
      */
-    fun authenticate(identifier: PersonalIdentifier, pw: String): FullUser? {
+    override fun authenticate(identifier: PersonalIdentifier, pw: String): FullUser? {
         val dbUser = queryUserDb(identifier)
         logger.trace { logMessage("db data found", "identifier" to identifier) }
 
@@ -42,7 +73,7 @@ object AuthenticationManager : Logging {
      * @param pw password
      * @return user if found
      */
-    fun queryUser(identifier: PersonalIdentifier): FullUser? {
+    override fun queryUser(identifier: PersonalIdentifier): FullUser? {
         logger.trace { logMessage("querying user", "identifier" to identifier) }
 
         val dbUser = queryUserDb(identifier)
@@ -77,19 +108,21 @@ object AuthenticationManager : Logging {
      * Returns a new users (does not mutate either input
      */
     fun mergeUsers(ldapUser: FullUser, dbUser: FullUser?): FullUser {
+        if (dbUser == null) return ldapUser
         // ensure that short users actually match before attempting any merge
         val ldapShortUser = ldapUser.shortUser
                 ?: throw RuntimeException(logMessage("LDAP user does not have a short user. Maybe this will help", "ldapUser" to ldapUser, "dbUser" to dbUser))
-        if (dbUser == null) return ldapUser
         if (ldapShortUser != dbUser.shortUser) throw RuntimeException(logMessage("attempt to merge to different users", "ldapUser" to ldapUser, "dbUser" to dbUser))
         // proceed with data merge
-        val newUser = ldapUser.copy()
+        val newUser = ldapUser.copy(
+            studentId = if (ldapUser.studentId != -1) ldapUser.studentId else dbUser.studentId,
+            preferredName = dbUser.preferredName,
+            nick = dbUser.nick,
+            colorPrinting = dbUser.colorPrinting,
+            jobExpiration = dbUser.jobExpiration,
+            semesters = dbUser.semesters.plus(ldapUser.semesters)
+        )
         newUser.withDbData(dbUser)
-        newUser.studentId = if (ldapUser.studentId != -1) ldapUser.studentId else dbUser.studentId
-        newUser.preferredName = dbUser.preferredName
-        newUser.nick = dbUser.nick
-        newUser.colorPrinting = dbUser.colorPrinting
-        newUser.jobExpiration = dbUser.jobExpiration
         newUser.updateUserNameInformation()
         return newUser
     }
@@ -105,7 +138,7 @@ object AuthenticationManager : Logging {
         return dbUser
     }
 
-    fun refreshUser(shortUser: ShortUser): FullUser {
+    override fun refreshUser(shortUser: ShortUser): FullUser {
         val dbUser = queryUser(shortUser)
                 ?: throw RuntimeException(logMessage("could not fetch user from anywhere", "shortUser" to shortUser))
         val ldapUser = queryUserLdap(shortUser)
@@ -116,5 +149,13 @@ object AuthenticationManager : Logging {
         }
         DB.putUser(refreshedUser)
         return refreshedUser
+    }
+
+    override fun addAllCurrentlyEligible() {
+        val ldap = Ldap.getAllCurrentlyEligible().mapNotNull { p -> p.shortUser?.let { Pair<String, FullUser>(it, p) } }.toMap()
+        val fromDb = DB.getAllIfPresent(ldap.keys).mapNotNull { p -> p.shortUser?.let { Pair<String, FullUser>(it, p) } }.toMap()
+
+        val merged = ldap.mapNotNull { mergeUsers(it.value, fromDb[it.key]) }
+        DB.putUsers(merged)
     }
 }

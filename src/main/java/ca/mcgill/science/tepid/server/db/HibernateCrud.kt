@@ -5,29 +5,25 @@ import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.server.util.text
 import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
-import javax.persistence.*
+import javax.persistence.EntityExistsException
+import javax.persistence.EntityManager
+import javax.persistence.EntityManagerFactory
+import javax.persistence.EntityNotFoundException
+import javax.persistence.NoResultException
 import javax.ws.rs.core.Response
 
-interface IHibernateCrud<T : Any, P> : Logging {
-
-    fun create(obj: T): T
-
-    fun read(id: P): T?
-
-    fun readAll(): List<T>
-
-    fun update(obj: T): T
-
-    fun delete(obj: T)
-
-    fun deleteById(id: P)
-
-    fun updateOrCreateIfNotExist(obj: T): T
+interface IHibernateConnector : Logging {
+    val emf: EntityManagerFactory
+    fun <T> dbOp(errorLogger: (Exception) -> String = { logMessage("DB error") }, f: (em: EntityManager) -> T): T
+    fun <T> dbOpTransaction(
+        errorLogger: (Exception) -> String = { logMessage("DB error") },
+        f: (em: EntityManager) -> T
+    ): T
 }
 
-class HibernateCrud<T : TepidDb, P>(val emf: EntityManagerFactory, val classParameter: Class<T>) : IHibernateCrud<T, P> {
+class HibernateConnector(override val emf: EntityManagerFactory) : IHibernateConnector {
 
-    fun <T> dbOp(errorLogger: (Exception) -> String = { logMessage("DB error") }, f: (em: EntityManager) -> T): T {
+    override fun <T> dbOp(errorLogger: (Exception) -> String, f: (em: EntityManager) -> T): T {
         val em = emf.createEntityManager()
         try {
             return f(em)
@@ -39,9 +35,8 @@ class HibernateCrud<T : TepidDb, P>(val emf: EntityManagerFactory, val classPara
             em.close()
         }
     }
-
-    fun <T> dbOpTransaction(
-        errorLogger: (Exception) -> String = { logMessage("DB error") },
+    override fun <T> dbOpTransaction(
+        errorLogger: (Exception) -> String,
         f: (em: EntityManager) -> T
     ): T {
         return dbOp(errorLogger) {
@@ -58,6 +53,28 @@ class HibernateCrud<T : TepidDb, P>(val emf: EntityManagerFactory, val classPara
             }
         }
     }
+}
+
+interface IHibernateCrud<T : Any, P> : Logging, IHibernateConnector {
+    val classParameter: Class<T>
+
+    fun create(obj: T): T
+
+    fun read(id: P): T?
+
+    fun readAll(): List<T>
+
+    fun update(obj: T): T
+
+    fun delete(obj: T)
+
+    fun deleteById(id: P)
+
+    fun updateOrCreateIfNotExist(obj: T): T
+}
+
+class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, override val classParameter: Class<T>) : IHibernateCrud<T, P>,
+    IHibernateConnector by HibernateConnector(emf) {
 
     override fun create(obj: T): T {
         return dbOpTransaction(

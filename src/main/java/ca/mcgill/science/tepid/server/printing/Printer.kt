@@ -6,7 +6,6 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.enums.PrintError
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.copyFrom
 import ca.mcgill.science.tepid.server.util.logError
@@ -223,7 +222,7 @@ object Printer : Logging {
     // check if user has sufficient quota to print this job
     private fun validateAvailableQuota(user: FullUser, job: PrintJob, psInfo: PsData) {
         logger.trace(logMessage("testing for quota for job", "id" to job.getId()))
-        if (Users.getQuotaData(user).quota < psInfo.pages + psInfo.colorPages * 2)
+        if (QuotaCounter.getQuotaData(user).quota < psInfo.pages + psInfo.colorPages * 2)
             throw PrintException(PrintError.INSUFFICIENT_QUOTA)
     }
 

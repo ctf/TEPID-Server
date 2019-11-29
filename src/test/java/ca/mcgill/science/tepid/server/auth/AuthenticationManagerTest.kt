@@ -1,11 +1,12 @@
 package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.Season
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.server.UserFactory
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.utils.WithLogging
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -15,6 +16,7 @@ import io.mockk.spyk
 import io.mockk.unmockkAll
 import io.mockk.unmockkObject
 import io.mockk.verify
+import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
@@ -83,6 +85,19 @@ class MergeUsersTest {
         )
         val expected = UserFactory.makeMergedUser()
             .copy(studentId = UserFactory.makeDbUser().studentId)
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun testMergeUsersCombineSemesters() {
+        val testSemester = Semester(Season.FALL, 1111)
+        val ldapUser = UserFactory.makeLdapUser().copy(semesters = setOf(Semester.current))
+        val actual = AuthenticationManager.mergeUsers(
+            ldapUser,
+            UserFactory.makeDbUser().copy(semesters = setOf(testSemester))
+        )
+        val expected = UserFactory.makeMergedUser()
+            .copy(semesters = setOf(Semester.current, testSemester))
         assertEquals(expected, actual)
     }
 }
@@ -205,6 +220,7 @@ class QueryUserDbTest {
         @AfterAll
         fun tearTest() {
             unmockkAll()
+            DB = Config.getDb()
         }
     }
 }
@@ -241,6 +257,7 @@ class AuthenticateTest {
     @AfterEach
     fun tearTest() {
         unmockkAll()
+        DB = Config.getDb()
     }
 
     @Test
@@ -329,11 +346,12 @@ class RefreshUserTest {
         @AfterAll
         fun tearTest() {
             unmockkAll()
+            DB = Config.getDb()
         }
     }
 }
 
-class QueryUserTest : WithLogging() {
+class QueryUserTest : Logging {
 
     var testUser = UserFactory.makeDbUser()
 
@@ -363,6 +381,7 @@ class QueryUserTest : WithLogging() {
         @AfterAll
         fun tearTest() {
             unmockkAll()
+            DB = Config.getDb()
         }
     }
 
