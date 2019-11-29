@@ -12,7 +12,7 @@ buildscript {
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$KOTLIN"
         classpath "ca.mcgill:tepid-commons:$TEPID_COMMONS"
-        classpath "io.swagger.core.v3:swagger-gradle-plugin:2.0.6"      // For Swagger
+        classpath "io.swagger.core.v3:swagger-gradle-plugin:2.1.0"      // For Swagger
         classpath "org.jetbrains.kotlin:kotlin-noarg:$KOTLIN"           // For Hibernate
         classpath "org.jlleitschuh.gradle:ktlint-gradle:8.2.0"          // For ktlint-gradle
     }
