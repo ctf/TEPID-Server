@@ -16,8 +16,8 @@ interface IHibernateConnector : Logging {
     val emf: EntityManagerFactory
     fun <T> dbOp(errorLogger: (Exception) -> String = { logMessage("DB error") }, f: (em: EntityManager) -> T): T
     fun <T> dbOpTransaction(
-        errorLogger: (Exception) -> String = { logMessage("DB error") },
-        f: (em: EntityManager) -> T
+            errorLogger: (Exception) -> String = { logMessage("DB error") },
+            f: (em: EntityManager) -> T
     ): T
 }
 
@@ -35,9 +35,10 @@ class HibernateConnector(override val emf: EntityManagerFactory) : IHibernateCon
             em.close()
         }
     }
+
     override fun <T> dbOpTransaction(
-        errorLogger: (Exception) -> String,
-        f: (em: EntityManager) -> T
+            errorLogger: (Exception) -> String,
+            f: (em: EntityManager) -> T
     ): T {
         return dbOp(errorLogger) {
             try {
@@ -66,6 +67,8 @@ interface IHibernateCrud<T : Any, P> : Logging, IHibernateConnector {
 
     fun update(obj: T): T
 
+    fun update(id: P, updater: T.() -> Unit): T
+
     fun delete(obj: T)
 
     fun deleteById(id: P)
@@ -74,7 +77,7 @@ interface IHibernateCrud<T : Any, P> : Logging, IHibernateConnector {
 }
 
 class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, override val classParameter: Class<T>) : IHibernateCrud<T, P>,
-    IHibernateConnector by HibernateConnector(emf) {
+        IHibernateConnector by HibernateConnector(emf) {
 
     override fun create(obj: T): T {
         return dbOpTransaction(
@@ -109,6 +112,13 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
                 { logMessage("error updating object", "object" to obj) },
                 { em -> em.merge(obj); return@dbOpTransaction obj }
         )
+    }
+
+    override fun update(id: P, updater: T.() -> Unit): T {
+        val o = read(id) ?: throw EntityNotFoundException()
+        updater(o)
+        update(o)
+        return o
     }
 
     override fun delete(obj: T) {
