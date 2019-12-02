@@ -82,7 +82,7 @@ class DbLayer(
     fun <T : Comparable<T>> List<T>.sortAs(order: Order): List<T> = order.sort(this)
 }
 
-interface DbDestinationLayer : ICrud<FullDestination, String?> {
+interface DbDestinationLayer : ICrud<FullDestination, Id?> {
 
     fun getDestination(id: Id): FullDestination
 
@@ -97,7 +97,7 @@ interface DbDestinationLayer : ICrud<FullDestination, String?> {
     fun deleteDestination(id: Id): String
 }
 
-interface DbJobLayer : ICrud<PrintJob, String?> {
+interface DbJobLayer : ICrud<PrintJob, Id?> {
 
     fun getJob(id: Id): PrintJob
 
@@ -134,7 +134,7 @@ interface DbJobLayer : ICrud<PrintJob, String?> {
     fun getOldJobs(): List<PrintJob>
 }
 
-interface DbQueueLayer : ICrud<PrintQueue, String?> {
+interface DbQueueLayer : ICrud<PrintQueue, Id?> {
 
     fun getQueue(id: Id): PrintQueue
 
@@ -150,11 +150,11 @@ interface DbQueueLayer : ICrud<PrintQueue, String?> {
     fun getEta(destinationId: Id): Long
 }
 
-interface DbMarqueeLayer : ICrud<MarqueeData, String?> {
+interface DbMarqueeLayer : ICrud<MarqueeData, Id?> {
     fun getMarquees(): List<MarqueeData>
 }
 
-interface DbSessionLayer : ICrud<FullSession, String?> {
+interface DbSessionLayer : ICrud<FullSession, Id?> {
 
     /*
    On Success: returns Response containing the Session added
@@ -170,7 +170,7 @@ interface DbSessionLayer : ICrud<FullSession, String?> {
     fun deleteSession(id: Id): String
 }
 
-interface DbUserLayer : ICrud<FullUser, String?> {
+interface DbUserLayer : ICrud<FullUser, Id?> {
 
     /*
    On Success: returns Response containing the User added
