@@ -37,6 +37,26 @@ enum class Order {
     abstract fun <T : Comparable<T>> sort(iterable: Iterable<T>): List<T>
 }
 
+interface ICrud<T, P> {
+    val classParameter: Class<T>
+
+    fun create(obj: T): T
+
+    fun read(id: P): T?
+
+    fun readAll(): List<T>
+
+    fun update(obj: T): T
+
+    fun update(id: P, updater: T.() -> Unit): T
+
+    fun delete(obj: T)
+
+    fun deleteById(id: P)
+
+    fun put(obj: T): T
+}
+
 /**
  * Abstraction layer for all db transactions.
  * Inputs and outputs must be pure JVM models that are separated from db models.
@@ -54,7 +74,7 @@ interface DbLayer :
     fun <T : Comparable<T>> List<T>.sortAs(order: Order): List<T> = order.sort(this)
 }
 
-interface DbDestinationLayer {
+interface DbDestinationLayer : ICrud<FullDestination, String?> {
 
     fun getDestination(id: Id): FullDestination
 
@@ -63,14 +83,13 @@ interface DbDestinationLayer {
     fun putDestinations(destinations: Map<Id, FullDestination>): String
 
     fun updateDestinationWithResponse(id: Id, updater: FullDestination.() -> Unit): Response
-
     /**
      * Returns a string result representing a response entity
      */
     fun deleteDestination(id: Id): String
 }
 
-interface DbJobLayer {
+interface DbJobLayer : ICrud<PrintJob, String?> {
 
     fun getJob(id: Id): PrintJob
 
@@ -107,7 +126,7 @@ interface DbJobLayer {
     fun getOldJobs(): List<PrintJob>
 }
 
-interface DbQueueLayer {
+interface DbQueueLayer : ICrud<PrintQueue, String?> {
 
     fun getQueue(id: Id): PrintQueue
 
@@ -123,12 +142,11 @@ interface DbQueueLayer {
     fun getEta(destinationId: Id): Long
 }
 
-interface DbMarqueeLayer {
-
+interface DbMarqueeLayer : ICrud<MarqueeData, String?> {
     fun getMarquees(): List<MarqueeData>
 }
 
-interface DbSessionLayer {
+interface DbSessionLayer : ICrud<FullSession, String?> {
 
     /*
    On Success: returns Response containing the Session added
@@ -144,7 +162,7 @@ interface DbSessionLayer {
     fun deleteSession(id: Id): String
 }
 
-interface DbUserLayer {
+interface DbUserLayer : ICrud<FullUser, String?> {
 
     /*
    On Success: returns Response containing the User added
