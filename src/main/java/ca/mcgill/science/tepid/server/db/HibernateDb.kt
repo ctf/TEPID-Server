@@ -58,7 +58,7 @@ class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : 
         destinations.map {
             try {
                 it.value._id = it.key
-                val u = updateOrCreateIfNotExist(it.value)
+                val u = put(it.value)
                 responses.add(PutResponse(ok = true, id = u.getId(), rev = u.getRev()))
             } catch (e: Exception) {
                 responses.add(PutResponse(ok = false, id = it.value.getId(), rev = it.value.getRev()))
@@ -186,7 +186,7 @@ class HibernateQueueLayer(hc: IHibernateCrud<PrintQueue, String?>) : DbQueueLaye
 
     override fun putQueues(queues: Collection<PrintQueue>): Response {
         try {
-            return Response.ok().entity(queues.map { updateOrCreateIfNotExist(it) }).build()
+            return Response.ok().entity(queues.map { put(it) }).build()
         } catch (e: Exception) {
             return parsePersistenceErrorToResponse(e)
         }
@@ -222,7 +222,7 @@ class HibernateMarqueeLayer(hc: IHibernateCrud<MarqueeData, String?>) : DbMarque
 class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessionLayer, IHibernateCrud<FullSession, String?> by hc {
     override fun putSession(session: FullSession): Response {
         try {
-            return Response.ok().entity(updateOrCreateIfNotExist(session)).build()
+            return Response.ok().entity(put(session)).build()
         } catch (e: Exception) {
             return parsePersistenceErrorToResponse(e)
         }
@@ -258,7 +258,7 @@ class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessio
 class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, IHibernateCrud<FullUser, String?> by hc {
     override fun putUser(user: FullUser): Response {
         try {
-            val updatedUser = updateOrCreateIfNotExist(user)
+            val updatedUser = put(user)
             return Response.ok().entity(PutResponse(ok = true, id = updatedUser.getId(), rev = updatedUser.getRev()))
                 .build()
         } catch (e: Exception) {

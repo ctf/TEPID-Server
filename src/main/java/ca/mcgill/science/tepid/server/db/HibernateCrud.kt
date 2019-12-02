@@ -138,7 +138,7 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
         }
     }
 
-    override fun updateOrCreateIfNotExist(obj: T): T {
+    override fun put(obj: T): T {
         obj._id
                 ?: return run { obj._id = UUID.randomUUID().toString(); create(obj) } // has no ID, needs to be created
         val em = emf.createEntityManager()

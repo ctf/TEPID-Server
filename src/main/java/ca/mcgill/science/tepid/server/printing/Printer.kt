@@ -94,13 +94,13 @@ object Printer : Logging {
             // todo test and validate
             // write compressed job to disk
             // adding filepath before upload ensures that the file can get deleted even if the job fails during upload
-            DB.updateJob(id) {
+            DB.printJobs.updateJob(id) {
                 file = tmpXz.absolutePath
                 logger.info(logMessage("updating job with path", "id" to id, "path" to file))
             }
             tmpXz.copyFrom(stream)
             // let db know we have received data
-            DB.updateJobWithResponse(id) {
+            DB.printJobs.updateJobWithResponse(id) {
                 received = System.currentTimeMillis()
                 logger.info(logMessage("job file received", "id" to id, "at" to received))
             }
@@ -117,7 +117,7 @@ object Printer : Logging {
                 if (!tmpXz.delete()) {
                     throw IOException("Failed to delete file in cleanup of failed reception")
                 }
-                DB.updateJob(id) {
+                DB.printJobs.updateJob(id) {
                     file = null
                 }
             } catch (e: Exception) {

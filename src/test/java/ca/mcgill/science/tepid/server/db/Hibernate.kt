@@ -289,13 +289,13 @@ class HibernateCrudTest() : DbTest() {
         val te = TestEntity("TEST")
         if (id != null) te._id = id
 
-        pc.updateOrCreateIfNotExist(te)
+        pc.put(te)
         val reCreated = em.find(TestEntity::class.java, te._id)
         assertEquals(te, reCreated)
 
         te.content = "NEW"
 
-        pc.updateOrCreateIfNotExist(te)
+        pc.put(te)
 
         em.close()
         em = emf.createEntityManager()
