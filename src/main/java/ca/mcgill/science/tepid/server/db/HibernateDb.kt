@@ -24,24 +24,25 @@ import javax.persistence.EntityNotFoundException
 import javax.persistence.Persistence
 import javax.ws.rs.core.Response
 
-class HibernateDbLayer(val emf: EntityManagerFactory) : DbLayer,
-    DbDestinationLayer by HibernateDestinationLayer(HibernateCrud(emf, FullDestination::class.java)),
-    DbJobLayer by HibernateJobLayer(HibernateCrud(emf, PrintJob::class.java)),
-    DbQueueLayer by HibernateQueueLayer(HibernateCrud(emf, PrintQueue::class.java)),
-    DbMarqueeLayer by HibernateMarqueeLayer(HibernateCrud(emf, MarqueeData::class.java)),
-    DbSessionLayer by HibernateSessionLayer(HibernateCrud(emf, FullSession::class.java)),
-    DbUserLayer by HibernateUserLayer(HibernateCrud(emf, FullUser::class.java)),
-    DbQuotaLayer by HibernateQuotaLayer(emf) {
-    companion object {
-        fun makeEntityManagerFactory(persistenceUnitName: String): EntityManagerFactory {
-            val props = HashMap<String, String>()
-            props.put("javax.persistence.jdbc.url", PropsDB.URL)
-            props.put("javax.persistence.jdbc.user", PropsDB.USERNAME)
-            props.put("javax.persistence.jdbc.password", PropsDB.PASSWORD)
-            val emf = Persistence.createEntityManagerFactory(persistenceUnitName, props)
-            return emf
-        }
-    }
+fun makeEntityManagerFactory(persistenceUnitName: String): EntityManagerFactory {
+    val props = HashMap<String, String>()
+    props.put("javax.persistence.jdbc.url", PropsDB.URL)
+    props.put("javax.persistence.jdbc.user", PropsDB.USERNAME)
+    props.put("javax.persistence.jdbc.password", PropsDB.PASSWORD)
+    val emf = Persistence.createEntityManagerFactory(persistenceUnitName, props)
+    return emf
+}
+
+fun makeHibernateDb(emf: EntityManagerFactory): DbLayer {
+    return DbLayer(
+            HibernateDestinationLayer(HibernateCrud(emf, FullDestination::class.java)),
+            HibernateJobLayer(HibernateCrud(emf, PrintJob::class.java)),
+            HibernateQueueLayer(HibernateCrud(emf, PrintQueue::class.java)),
+            HibernateMarqueeLayer(HibernateCrud(emf, MarqueeData::class.java)),
+            HibernateSessionLayer(HibernateCrud(emf, FullSession::class.java)),
+            HibernateUserLayer(HibernateCrud(emf, FullUser::class.java)),
+            HibernateQuotaLayer(emf)
+    )
 }
 
 class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : DbDestinationLayer, IHibernateCrud<FullDestination, String?> by hc {
