@@ -47,13 +47,13 @@ class Jobs {
         if (session.role == USER && session.user.shortUser != sam) {
             return emptyList()
         }
-        return DB.getJobsByUser(sam, Order.DESCENDING)
+        return DB.printJobs.getJobsByUser(sam, Order.DESCENDING)
     }
 
     private fun PrintJob.getJobExpiration(): Long {
         val userId = userIdentification ?: return 0
         return System.currentTimeMillis() + (AuthenticationManager.queryUserDb(userId)?.jobExpiration
-            ?: TimeUnit.DAYS.toMillis(7))
+                ?: TimeUnit.DAYS.toMillis(7))
     }
 
     @POST
@@ -62,14 +62,13 @@ class Jobs {
     @Consumes(MediaType.APPLICATION_JSON)
     fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): Response {
         val session = ctx.getSession()
-        val queueNames: List<String> = DB.getQueues().mapNotNull { it._id }
-
+        val queueNames: List<String> = DB.queues.getQueues().mapNotNull { it.name }
         if (!queueNames.contains(j.queueId))
             failBadRequest("Invalid queue name ${j.queueId}")
         j.userIdentification = session.user.shortUser
         j.deleteDataOn = j.getJobExpiration()
         logger.debug(logMessage("starting new print job", "name" to j.name, "for" to session.user.longUser))
-        return DB.postJob(j)
+        return DB.printJobs.postJob(j)
     }
 
     @PUT
@@ -91,7 +90,7 @@ class Jobs {
     fun getJob(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Context ctx: ContainerRequestContext): PrintJob {
         val session = ctx.getSession()
         logger.trace(logMessage("queried job", "id" to id))
-        val j = DB.getJob(id)
+        val j = DB.printJobs.getJob(id)
         if (session.role == USER && session.user.shortUser != j.userIdentification)
             failUnauthorized("You cannot access this resource")
         return j
@@ -102,7 +101,7 @@ class Jobs {
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun setJobRefunded(@PathParam("id") id: String, refunded: Boolean): PutResponse {
-        val result = DB.updateJob(id) {
+        val result = DB.printJobs.updateJob(id) {
             isRefunded = refunded
             logger.debug(logMessage("refunded job", "id" to id))
         } ?: failInternal("Could not modify refund status")
@@ -115,23 +114,23 @@ class Jobs {
     @Produces(MediaType.TEXT_PLAIN)
     fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): String {
         val session = ctx.getSession()
-        val j = DB.getJob(id)
+        val j = DB.printJobs.getJob(id)
         val file = Utils.existingFile(j.file) ?: failInternal("Data for this job no longer exists")
         if (session.role == USER && session.user.shortUser != j.userIdentification)
             failUnauthorized("You cannot reprint someone else's job")
         val reprint = PrintJob(
-            name = j.name,
-            originalHost = "REPRINT",
-            queueId = j.queueId,
-            userIdentification = j.userIdentification,
-            deleteDataOn = j.getJobExpiration()
+                name = j.name,
+                originalHost = "REPRINT",
+                queueId = j.queueId,
+                userIdentification = j.userIdentification,
+                deleteDataOn = j.getJobExpiration()
         )
         logger.debug(logMessage("reprinted", "name" to reprint.name))
-        val response = DB.postJob(reprint)
+        val response = DB.printJobs.postJob(reprint)
         if (!response.isSuccessful)
             throw WebApplicationException(response)
         val content = response.entity as? PutResponse
-            ?: failInternal("Failed to retrieve new id, could not get response entity")
+                ?: failInternal("Failed to retrieve new id, could not get response entity")
         val newId = content.id
         Utils.startCaughtThread("Reprint $id", logger) {
             val (success, message) = Printer.print(newId, FileInputStream(file))

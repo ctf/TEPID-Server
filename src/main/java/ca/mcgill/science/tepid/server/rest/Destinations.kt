@@ -37,7 +37,7 @@ class Destinations {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun putDestinations(destinations: Map<String, FullDestination>): String =
-        DB.putDestinations(destinations)
+            DB.destinations.putDestinations(destinations)
 
     /**
      * Retrieves map of room names as [String] and their details in [Destination]
@@ -50,12 +50,12 @@ class Destinations {
     @RolesAllowed(USER, CTFER, ELDER)
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
         val session = ctx.getSession()
-        return DB.getDestinations()
-            .mapNotNull {
-                val id = it._id ?: return@mapNotNull null
-                id to it.toDestination(session.role)
-            }
-            .toMap()
+        return DB.destinations.getDestinations()
+                .mapNotNull {
+                    val id = it._id ?: return@mapNotNull null
+                    id to it.toDestination(session.role)
+                }
+                .toMap()
     }
 
     @POST
@@ -67,16 +67,16 @@ class Destinations {
         val session = crc.getSession()
         ticket.user = session.user.toUser()
         val successText = "$id marked as ${if (ticket.up) "up" else "down"}"
-        val response = DB.updateDestinationWithResponse(id) {
+        val response = DB.destinations.updateDestinationWithResponse(id) {
             up = ticket.up
             this.ticket = if (ticket.up) null else ticket
             logger.info(
-                logMessage(
-                    "destination status changed",
-                    "status" to if (ticket.up) "up" else "down",
-                    "reason" to ticket.reason,
-                    "by" to ticket.user?.shortUser
-                )
+                    logMessage(
+                            "destination status changed",
+                            "status" to if (ticket.up) "up" else "down",
+                            "reason" to ticket.reason,
+                            "by" to ticket.user?.shortUser
+                    )
             )
         }
         if (!response.isSuccessful)
@@ -89,7 +89,7 @@ class Destinations {
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun deleteDestination(@PathParam("dest") destination: String): String =
-        DB.deleteDestination(destination)
+            DB.destinations.deleteDestination(destination)
 
     private companion object : Logging
 }

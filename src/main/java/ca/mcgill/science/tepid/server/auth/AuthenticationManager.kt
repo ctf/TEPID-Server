@@ -62,7 +62,7 @@ object AuthenticationManager : Logging, IAuthenticationManager {
 
         val ldapUser = Ldap.authenticate(shortUser, pw) ?: return null
         val mergedUser = mergeUsers(ldapUser, dbUser)
-        DB.putUser(mergedUser)
+        DB.users.putUser(mergedUser)
         return mergedUser
     }
 
@@ -82,7 +82,7 @@ object AuthenticationManager : Logging, IAuthenticationManager {
 
         val ldapUser = queryUserLdap(identifier) ?: return null
 
-        DB.putUser(ldapUser)
+        DB.users.putUser(ldapUser)
 
         logger.trace { logMessage("found user from ldap", "identifier" to identifier, "longUser" to ldapUser.longUser) }
         return ldapUser
@@ -132,7 +132,7 @@ object AuthenticationManager : Logging, IAuthenticationManager {
      * short user, long user, or student id
      */
     fun queryUserDb(identifier: PersonalIdentifier): FullUser? {
-        val dbUser = DB.getUserOrNull(identifier)
+        val dbUser = DB.users.getUserOrNull(identifier)
         dbUser?._id ?: return null
         logger.trace { logMessage("found db user", "identifier" to identifier, "db_id" to dbUser._id, "dislayName" to dbUser.displayName) }
         return dbUser
@@ -147,15 +147,15 @@ object AuthenticationManager : Logging, IAuthenticationManager {
         if (dbUser.role != refreshedUser.role) {
             SessionManager.invalidateSessions(shortUser)
         }
-        DB.putUser(refreshedUser)
+        DB.users.putUser(refreshedUser)
         return refreshedUser
     }
 
     override fun addAllCurrentlyEligible() {
         val ldap = Ldap.getAllCurrentlyEligible().mapNotNull { p -> p.shortUser?.let { Pair<String, FullUser>(it, p) } }.toMap()
-        val fromDb = DB.getAllIfPresent(ldap.keys).mapNotNull { p -> p.shortUser?.let { Pair<String, FullUser>(it, p) } }.toMap()
+        val fromDb = DB.users.getAllIfPresent(ldap.keys).mapNotNull { p -> p.shortUser?.let { Pair<String, FullUser>(it, p) } }.toMap()
 
         val merged = ldap.mapNotNull { mergeUsers(it.value, fromDb[it.key]) }
-        DB.putUsers(merged)
+        DB.users.putUsers(merged)
     }
 }

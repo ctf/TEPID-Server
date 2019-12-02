@@ -23,16 +23,16 @@ object SessionManager : Logging {
         session._id = id
         session.role = AuthenticationFilter.getCtfRole(session.user)
         logger.trace { logMessage("starting session", "id" to id, "shortUser" to user.shortUser, "duration" to expiration * HOUR_IN_MILLIS, "expiration" to session.expiration) }
-        val out = DB.putSession(session)
+        val out = DB.sessions.putSession(session)
         logger.trace { logMessage("response creating session", "response" to out) }
         return session
     }
 
     operator fun get(token: String): FullSession? {
-        val session = DB.getSessionOrNull(token) ?: return null
+        val session = DB.sessions.getSessionOrNull(token) ?: return null
         if (isValid(session)) return session
         logger.trace { logMessage("deleting session token", "token" to token, "expiration" to session.expiration, "now" to System.currentTimeMillis()) }
-        DB.deleteSession(token)
+        DB.sessions.deleteSession(token)
         return null
     }
 
@@ -50,7 +50,7 @@ object SessionManager : Logging {
     }
 
     fun end(token: String) {
-        DB.deleteSession(token)
+        DB.sessions.deleteSession(token)
     }
 
     /**
@@ -59,6 +59,6 @@ object SessionManager : Logging {
      * @param shortUser the shortUser
      */
     fun invalidateSessions(shortUser: String) {
-        DB.getSessionIdsForUser(shortUser).forEach { end(it) }
+        DB.sessions.getSessionIdsForUser(shortUser).forEach { end(it) }
     }
 }

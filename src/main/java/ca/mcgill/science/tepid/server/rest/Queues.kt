@@ -32,14 +32,14 @@ class Queues {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun putQueues(queues: List<PrintQueue>): Response {
-        val response = DB.putQueues(queues)
+        val response = DB.queues.putQueues(queues)
         queues.forEach { logger.info(logMessage("added new queue", "name" to it.name)) }
         return response
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQueues(): List<PrintQueue> = DB.getQueues()
+    fun getQueues(): List<PrintQueue> = DB.queues.getQueues()
 
     @GET
     @Path("/{queue}")
@@ -48,14 +48,14 @@ class Queues {
         // TODO limit param no longer user, should be replaced by from param in client
         // this should get all jobs in "queue" from the past 2 days
         val twoDaysMs = 1000 * 60 * 60 * 24 * 2L
-        return DB.getJobsByQueue(queue, maxAge = twoDaysMs, sortOrder = Order.DESCENDING)
+        return DB.printJobs.getJobsByQueue(queue, maxAge = twoDaysMs, sortOrder = Order.DESCENDING)
     }
 
     @GET
     @Path("/{queue}/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getJob(@PathParam("queue") queue: String, @PathParam("id") id: String): PrintJob {
-        val j = DB.getJob(id)
+        val j = DB.printJobs.getJob(id)
         if (!j.queueId.equals(queue, ignoreCase = true))
             failBadRequest("Job queue does not match $queue")
         return j
@@ -66,16 +66,16 @@ class Queues {
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun deleteQueue(@PathParam("queue") queue: String): String =
-        DB.deleteQueue(queue)
+            DB.queues.deleteQueue(queue)
 
     @GET
     @Path("/{queue}/{id}/{file}")
     fun getAttachment(@PathParam("queue") queue: String, @PathParam("id") id: String, @PathParam("file") file: String): InputStream {
         try {
-            val j = DB.getJob(id)
+            val j = DB.printJobs.getJob(id)
             if (!j.queueId.equals(queue, ignoreCase = true))
                 failNotFound("Could not find job $id in queue $queue")
-            return DB.getJobFile(id, file)!!
+            return DB.printJobs.getJobFile(id, file)!!
         } catch (ignored: Exception) {
         }
         failNotFound("Could not find $file for job $id")

@@ -11,10 +11,10 @@ class JobDataMonitor : Runnable {
         logger.trace("deleting expired job data.")
         val now = System.currentTimeMillis()
         try {
-            DB.getStoredJobs().forEach { j ->
+            DB.printJobs.getStoredJobs().forEach { j ->
 
                 val id = j._id ?: return@forEach
-                DB.updateJob(id) {
+                DB.printJobs.updateJob(id) {
                     if (deleteDataOn < System.currentTimeMillis()) {
 
                         val filePath = file

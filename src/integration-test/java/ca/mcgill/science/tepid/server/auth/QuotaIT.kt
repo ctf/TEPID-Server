@@ -18,6 +18,6 @@ class QuotaIT : AuthIT() {
         val elapsedTime = System.nanoTime() - startTime
 
         println("Fetched in ${elapsedTime*1e-9}")
-        assertNotNull(DB.getUserOrNull(PropsLDAPTestUser.TEST_USER))
+        assertNotNull(DB.users.getUserOrNull(PropsLDAPTestUser.TEST_USER))
     }
 }

@@ -31,7 +31,7 @@ class ScreenSaver {
     @GET
     @Path("queues")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQueues(): List<PrintQueue> = DB.getQueues()
+    fun getQueues(): List<PrintQueue> = DB.queues.getQueues()
 
     /**
      * @param queue The name of the queue to retrieve from
@@ -45,7 +45,7 @@ class ScreenSaver {
         @PathParam("queue") queue: String,
         @QueryParam("limit") @DefaultValue("13") limit: Int,
         @QueryParam("from") @DefaultValue("0") from: Long
-    ): Collection<PrintJob> = DB.getJobsByQueue(queue, maxAge = Date().time - from, sortOrder = Order.DESCENDING)
+    ): Collection<PrintJob> = DB.printJobs.getJobsByQueue(queue, maxAge = Date().time - from, sortOrder = Order.DESCENDING)
 
     /**
      * Gets the Up status for each Queue.
@@ -59,9 +59,9 @@ class ScreenSaver {
     @Path("queues/status")
     @Produces(MediaType.APPLICATION_JSON)
     fun getStatus(): Map<String, Boolean> {
-        val destinations = DB.getDestinations().map { it._id to it }.toMap()
+        val destinations = DB.destinations.getDestinations().map { it._id to it }.toMap()
 
-        val queues = DB.getQueues()
+        val queues = DB.queues.getQueues()
 
         val out = mutableMapOf<String, Boolean>()
 
@@ -84,7 +84,7 @@ class ScreenSaver {
     @GET
     @Path("marquee")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getMarquee(): List<MarqueeData> = DB.getMarquees()
+    fun getMarquee(): List<MarqueeData> = DB.marquee.getMarquees()
 
     /**
      * Note that this is an exact replica of [Destinations.getDestinations]
@@ -96,7 +96,7 @@ class ScreenSaver {
     @Path("destinations")
     @Produces(MediaType.APPLICATION_JSON)
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
-        return DB.getDestinations()
+        return DB.destinations.getDestinations()
             .mapNotNull {
                 val id = it._id ?: return@mapNotNull null
                 id to it.toDestination()

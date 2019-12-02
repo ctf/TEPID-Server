@@ -180,11 +180,11 @@ object Printer : Logging {
                 j2 = QueueManager.assignDestination(j2) ?: throw RuntimeException("TODO REFACTORING WORK IN QueueManager.assignDestination")
                 // todo check destination field
                 val destination = j2.destination
-                    ?: throw PrintException(PrintError.INVALID_DESTINATION)
+                        ?: throw PrintException(PrintError.INVALID_DESTINATION)
 
-                val dest = DB.getDestination(destination)
+                val dest = DB.destinations.getDestination(destination)
                 if (sendToSMB(tmp, dest, debug)) {
-                    DB.updateJob(id) {
+                    DB.printJobs.updateJob(id) {
                         printed = System.currentTimeMillis()
                     }
                     logger.info(logMessage("sent job to destination", "id" to j2._id))
@@ -205,7 +205,7 @@ object Printer : Logging {
 
     // update page count and status in db
     private fun updatePagecount(id: String, psInfo: PsData): PrintJob {
-        return DB.updateJob(id) {
+        return DB.printJobs.updateJob(id) {
             this.pages = psInfo.pages
             this.colorPages = psInfo.colorPages
             this.processed = System.currentTimeMillis()
@@ -278,7 +278,7 @@ object Printer : Logging {
      * Update job db and cancel executor
      */
     private fun failJob(id: String, error: String) {
-        DB.updateJobWithResponse(id) {
+        DB.printJobs.updateJobWithResponse(id) {
             fail(error)
         }
         cancel(id)
@@ -287,9 +287,9 @@ object Printer : Logging {
     fun clearOldJobs() {
         synchronized(lock) {
             try {
-                val jobs = DB.getOldJobs()
+                val jobs = DB.printJobs.getOldJobs()
                 jobs.forEach { j ->
-                    DB.updateJob(j.getId()) {
+                    DB.printJobs.updateJob(j.getId()) {
                         fail("Timed out")
                         val id = _id ?: return@updateJob // TODO: if ID is null, how did we get here?
                         cancel(id)

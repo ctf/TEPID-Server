@@ -45,7 +45,7 @@ class Users {
     @Path("/configured")
     @Produces(MediaType.APPLICATION_JSON)
     fun adminConfigured(): Boolean = try {
-        DB.isAdminConfigured()
+        DB.users.isAdminConfigured()
     } catch (e: Exception) {
         logger.error("localAdmin check failed", e)
         false
@@ -121,7 +121,7 @@ class Users {
         if (session.role == USER && session.user.shortUser != user.shortUser)
             failUnauthorized()
         action(user)
-        return DB.putUser(user)
+        return DB.users.putUser(user)
     }
 
     @PUT
