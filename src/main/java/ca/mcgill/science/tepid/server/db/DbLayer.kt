@@ -63,14 +63,22 @@ interface ICrud<T, P> {
  * Note that layers are categorized based on particular models to help with delegation patterns.
  * Each method in each of the included interfaces should still be unique with respect to all other methods.
  */
-interface DbLayer :
-    DbDestinationLayer,
-    DbJobLayer,
-    DbQueueLayer,
-    DbMarqueeLayer,
-    DbSessionLayer,
-    DbUserLayer,
-    DbQuotaLayer {
+class DbLayer(
+    @JvmField
+    val destinations: DbDestinationLayer,
+    @JvmField
+    val printJobs: DbJobLayer,
+    @JvmField
+    val queues: DbQueueLayer,
+    @JvmField
+    val marquee: DbMarqueeLayer,
+    @JvmField
+    val sessions: DbSessionLayer,
+    @JvmField
+    val users: DbUserLayer,
+    @JvmField
+    val quota: DbQuotaLayer
+) {
     fun <T : Comparable<T>> List<T>.sortAs(order: Order): List<T> = order.sort(this)
 }
 
