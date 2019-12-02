@@ -59,7 +59,7 @@ class ScreenSaver {
     @Path("queues/status")
     @Produces(MediaType.APPLICATION_JSON)
     fun getStatus(): Map<String, Boolean> {
-        val destinations = DB.destinations.getDestinations().map { it._id to it }.toMap()
+        val destinations = DB.destinations.readAll().map { it._id to it }.toMap()
 
         val queues = DB.queues.getQueues()
 
@@ -96,7 +96,7 @@ class ScreenSaver {
     @Path("destinations")
     @Produces(MediaType.APPLICATION_JSON)
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
-        return DB.destinations.getDestinations()
+        return DB.destinations.readAll()
             .mapNotNull {
                 val id = it._id ?: return@mapNotNull null
                 id to it.toDestination()

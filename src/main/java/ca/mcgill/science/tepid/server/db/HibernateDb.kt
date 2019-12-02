@@ -46,11 +46,8 @@ fun makeHibernateDb(emf: EntityManagerFactory): DbLayer {
 }
 
 class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : DbDestinationLayer, IHibernateCrud<FullDestination, String?> by hc {
-    override fun getDestination(id: Id): FullDestination {
-        return read(id) ?: failNotFound(logMessage("could not find destination", "ID" to id))
-    }
 
-    override fun getDestinations(): List<FullDestination> {
+    override fun readAll(): List<FullDestination> {
         return readAll()
     }
 
@@ -78,17 +75,6 @@ class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : 
         } catch (e: Exception) {
             return parsePersistenceErrorToResponse(e)
         }
-    }
-
-    override fun deleteDestination(id: Id): String {
-        val failures = mutableListOf<String>()
-        try {
-            deleteById(id)
-        } catch (e: Exception) {
-            failures.add(e.message ?: "Generic Failure for ID: $id")
-        }
-
-        return mapper.writeValueAsString(if (failures.isEmpty()) "Success" else failures)
     }
 }
 

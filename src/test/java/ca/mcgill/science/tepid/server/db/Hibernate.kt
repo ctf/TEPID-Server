@@ -362,7 +362,7 @@ class HibernateDestinationLayerTest : DbTest() {
     fun testGetDestination() {
         persistMultiple(testItems)
 
-        val retrieved = hl.getDestinations()
+        val retrieved = hl.readAll()
 
         assertEquals(testItems, retrieved)
     }
@@ -374,7 +374,7 @@ class HibernateDestinationLayerTest : DbTest() {
 
         val result = hl.putDestinations(testMap)
 
-        val retrieved = hl.getDestinations()
+        val retrieved = hl.readAll()
         assertEquals(testList, retrieved)
     }
 
@@ -403,7 +403,7 @@ class HibernateDestinationLayerTest : DbTest() {
         testItem._id = id
         persist(testItem)
 
-        val response = hl.deleteDestination(id)
+        val response = hl.deleteById(id)
 
         val retrieved = hl.read(id)
 

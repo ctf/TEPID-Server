@@ -35,7 +35,7 @@ open class QueueManager protected constructor(var printQueue: PrintQueue, var de
     fun refreshDestinations() {
         destinations.clear() // clear out the old Destination objects
         for (d in printQueue.destinations) {
-            val dest = db.destinations.getDestination(d)
+            val dest = db.destinations.read(d)
             destinations.add(dest) // replace with shiny new Destination objects
             val up = dest.up
             log.trace { logMessage("Loadbalancer checking status", "dest" to dest.name, "getUp" to up) }

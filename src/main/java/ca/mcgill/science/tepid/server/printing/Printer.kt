@@ -182,7 +182,7 @@ object Printer : Logging {
                 val destination = j2.destination
                         ?: throw PrintException(PrintError.INVALID_DESTINATION)
 
-                val dest = DB.destinations.getDestination(destination)
+                val dest = DB.destinations.read(destination) ?: throw PrintException(logMessage("Failed to retrieve destination", "id" to destination))
                 if (sendToSMB(tmp, dest, debug)) {
                     DB.printJobs.updateJob(id) {
                         printed = System.currentTimeMillis()

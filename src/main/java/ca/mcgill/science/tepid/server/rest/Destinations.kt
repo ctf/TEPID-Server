@@ -50,7 +50,7 @@ class Destinations {
     @RolesAllowed(USER, CTFER, ELDER)
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
         val session = ctx.getSession()
-        return DB.destinations.getDestinations()
+        return DB.destinations.readAll()
                 .mapNotNull {
                     val id = it._id ?: return@mapNotNull null
                     id to it.toDestination(session.role)
@@ -84,12 +84,13 @@ class Destinations {
         return successText
     }
 
+    // TODO: Response
     @DELETE
     @Path("/{dest}")
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun deleteDestination(@PathParam("dest") destination: String): String =
-            DB.destinations.deleteDestination(destination)
+    fun deleteDestination(@PathParam("dest") destination: String): Unit =
+            DB.destinations.deleteById(destination)
 
     private companion object : Logging
 }

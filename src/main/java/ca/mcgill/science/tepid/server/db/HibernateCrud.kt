@@ -63,16 +63,16 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
 
     override fun create(obj: T): T {
         return dbOpTransaction(
-                { logMessage("error inserting object", "object" to obj) },
-                { em -> em.merge(obj) }
+            { logMessage("error inserting object", "class" to classParameter.simpleName, "object" to obj) },
+            { em -> em.merge(obj) }
         )
     }
 
     override fun read(id: P): T? {
         return try {
             dbOp(
-                    { logMessage("error reading object", "class" to classParameter, "id" to id) },
-                    { em -> em.find(classParameter, id) }
+                { logMessage("error reading object", "class" to classParameter, "id" to id) },
+                { em -> em.find(classParameter, id) }
             )
         } catch (e: NoResultException) {
             null
@@ -81,18 +81,18 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
 
     override fun readAll(): List<T> {
         return dbOp(
-                { logMessage("error reading all objects", "class" to classParameter) },
-                { em ->
-                    em.createQuery("SELECT c FROM ${classParameter.simpleName} c", classParameter).resultList
-                            ?: emptyList()
-                }
+            { logMessage("error reading all objects", "class" to classParameter) },
+            { em ->
+                em.createQuery("SELECT c FROM ${classParameter.simpleName} c", classParameter).resultList
+                        ?: emptyList()
+            }
         )
     }
 
     override fun update(obj: T): T {
         return dbOpTransaction(
-                { logMessage("error updating object", "object" to obj) },
-                { em -> em.merge(obj); return@dbOpTransaction obj }
+            { logMessage("error updating object", "object" to obj) },
+            { em -> em.merge(obj); return@dbOpTransaction obj }
         )
     }
 
@@ -105,8 +105,8 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
 
     override fun delete(obj: T) {
         dbOpTransaction(
-                { logMessage("error deleting object", "object" to obj) },
-                { it.remove(if (it.contains(obj)) obj else it.merge(obj)) }
+            { logMessage("error deleting object", "object" to obj) },
+            { it.remove(if (it.contains(obj)) obj else it.merge(obj)) }
         )
     }
 
@@ -127,8 +127,8 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
         try {
             em.getReference(classParameter, obj._id)
             return dbOpTransaction(
-                    { logMessage("error putting modifications", "object" to obj) },
-                    { t -> t.merge(obj) }
+                { logMessage("error putting modifications", "object" to obj) },
+                { t -> t.merge(obj) }
             )
         } catch (e: EntityNotFoundException) {
             return (create(obj)) // has ID, ID not in DB
