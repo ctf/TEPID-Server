@@ -16,8 +16,8 @@ interface IHibernateConnector : Logging {
     val emf: EntityManagerFactory
     fun <T> dbOp(errorLogger: (Exception) -> String = { logMessage("DB error") }, f: (em: EntityManager) -> T): T
     fun <T> dbOpTransaction(
-            errorLogger: (Exception) -> String = { logMessage("DB error") },
-            f: (em: EntityManager) -> T
+         errorLogger: (Exception) -> String = { logMessage("DB error") },
+         f: (em: EntityManager) -> T
     ): T
 }
 
