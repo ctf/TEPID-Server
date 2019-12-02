@@ -2,7 +2,7 @@ package ca.mcgill.science.tepid.server.auth
 
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.PutResponse
-import ca.mcgill.science.tepid.server.UserFactory
+import ca.mcgill.science.tepid.server.TestHelpers
 import ca.mcgill.science.tepid.server.db.DB
 import io.mockk.every
 import io.mockk.mockkObject
@@ -39,7 +39,7 @@ class SessionIsValidTest {
     }
 
     companion object {
-        private val testUser = UserFactory.makeDbUser().copy(role = "user")
+        private val testUser = TestHelpers.makeDbUser().copy(role = "user")
         private val testSession = FullSession("user", testUser)
         val mockSession = spyk(testSession)
 
@@ -63,8 +63,8 @@ class SessionGetTest {
 
     @Test
     fun testGetInvalidSession() {
-        every { DB.getSessionOrNull("testID") } returns testSession
-        every { DB.deleteSession("testID") } returns "fakeResponse"
+        every { DB.sessions.getSessionOrNull("testID") } returns testSession
+        every { DB.sessions.deleteSession("testID") } returns "fakeResponse"
         every { SessionManager.isValid(testSession) } returns false
 
         assertEquals(null, SessionManager.get("testID"), "Does not return null for invalid session")
@@ -72,15 +72,15 @@ class SessionGetTest {
 
     @Test
     fun testGetValidSession() {
-        every { DB.getSessionOrNull("testID") } returns testSession
-        every { DB.deleteSession("testID") } returns "fakeResponse"
+        every { DB.sessions.getSessionOrNull("testID") } returns testSession
+        every { DB.sessions.deleteSession("testID") } returns "fakeResponse"
         every { SessionManager.isValid(testSession) } returns true
 
         assertEquals(testSession, SessionManager.get("testID"), "Does not return valid session")
     }
 
     companion object {
-        val testUser = UserFactory.makeDbUser().copy(role = "user")
+        val testUser = TestHelpers.makeDbUser().copy(role = "user")
         val testSession = FullSession("user", testUser)
 
         @JvmStatic
@@ -91,7 +91,7 @@ class SessionGetTest {
             mockkObject(SessionManager)
             mockkObject(AuthenticationManager)
             every { AuthenticationManager.queryUserDb(testUser.shortUser!!) } returns testUser
-            mockkObject(DB)
+            DB = TestHelpers.makeMockDb()
         }
 
         @JvmStatic

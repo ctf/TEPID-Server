@@ -4,11 +4,13 @@ import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.server.db.DbLayer
+import io.mockk.spyk
 
-object UserFactory {
+object TestHelpers {
     // note that the shortUsers are the same, since they are the unique key
     fun makeDbUser(SU: String = "SU"): FullUser {
-        val testUser = UserFactory.generateTestUser("db").copy(
+        val testUser = TestHelpers.generateTestUser("db").copy(
             activeSince = 1000,
             shortUser = SU,
             semesters = setOf(Semester(Season.FALL, 4444)),
@@ -22,7 +24,7 @@ object UserFactory {
     }
 
     fun makeLdapUser(SU: String = "SU"): FullUser {
-        val testOtherUser = UserFactory.generateTestUser("ldap").copy(
+        val testOtherUser = TestHelpers.generateTestUser("ldap").copy(
             activeSince = 9999,
             shortUser = SU,
             semesters = setOf(Semester(Season.FALL, 2222)),
@@ -64,5 +66,9 @@ object UserFactory {
             nick = prefix + "Nick",
             preferredName = prefix + "PreferredName"
         )
+    }
+
+    fun makeMockDb(): DbLayer {
+        return DbLayer(spyk(), spyk(), spyk(), spyk(), spyk(), spyk(), spyk())
     }
 }
