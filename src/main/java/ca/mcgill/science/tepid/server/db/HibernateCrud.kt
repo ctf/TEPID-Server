@@ -21,7 +21,7 @@ interface IHibernateConnector : Logging {
     ): T
 }
 
-class HibernateConnector(override val emf: EntityManagerFactory) : IHibernateConnector {
+class HibernateConnector(override val emf: EntityManagerFactory) : IHibernateConnector, Logging {
 
     override fun <T> dbOp(errorLogger: (Exception) -> String, f: (em: EntityManager) -> T): T {
         val em = emf.createEntityManager()
@@ -56,25 +56,7 @@ class HibernateConnector(override val emf: EntityManagerFactory) : IHibernateCon
     }
 }
 
-interface IHibernateCrud<T : Any, P> : Logging, IHibernateConnector {
-    val classParameter: Class<T>
-
-    fun create(obj: T): T
-
-    fun read(id: P): T?
-
-    fun readAll(): List<T>
-
-    fun update(obj: T): T
-
-    fun update(id: P, updater: T.() -> Unit): T
-
-    fun delete(obj: T)
-
-    fun deleteById(id: P)
-
-    fun updateOrCreateIfNotExist(obj: T): T
-}
+interface IHibernateCrud<T, P> : ICrud<T, P>, IHibernateConnector
 
 class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, override val classParameter: Class<T>) : IHibernateCrud<T, P>,
         IHibernateConnector by HibernateConnector(emf) {
