@@ -189,20 +189,12 @@ class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessio
         }
     }
 
-    override fun getSessionOrNull(id: Id): FullSession? {
-        return read(id)
-    }
-
     override fun getSessionIdsForUser(shortUser: ShortUser): List<Id> {
         return dbOp { em ->
             em.createQuery("SELECT c.id FROM FullSession c WHERE c.user.shortUser = :userId", String::class.java)
                 .setParameter("userId", shortUser)
                 .resultList
         }
-    }
-
-    override fun getAllSessions(): List<FullSession> {
-        return readAll()
     }
 
     override fun deleteSession(id: Id): String {

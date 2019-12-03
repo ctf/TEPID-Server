@@ -63,7 +63,7 @@ class SessionGetTest {
 
     @Test
     fun testGetInvalidSession() {
-        every { DB.sessions.getSessionOrNull("testID") } returns testSession
+        every { DB.sessions.readOrNull("testID") } returns testSession
         every { DB.sessions.deleteSession("testID") } returns "fakeResponse"
         every { SessionManager.isValid(testSession) } returns false
 
@@ -72,7 +72,7 @@ class SessionGetTest {
 
     @Test
     fun testGetValidSession() {
-        every { DB.sessions.getSessionOrNull("testID") } returns testSession
+        every { DB.sessions.readOrNull("testID") } returns testSession
         every { DB.sessions.deleteSession("testID") } returns "fakeResponse"
         every { SessionManager.isValid(testSession) } returns true
 

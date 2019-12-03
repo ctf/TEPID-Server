@@ -10,7 +10,7 @@ class SessionMonitor : Runnable {
         logger.info("removing expired sessions from database")
         try {
             var numberRemoved = 0
-            val sessions = DB.sessions.getAllSessions()
+            val sessions = DB.sessions.readAll()
             sessions.filter {
                 !it.isUnexpired()
             }.forEach {

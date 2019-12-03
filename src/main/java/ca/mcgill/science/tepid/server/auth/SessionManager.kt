@@ -29,7 +29,7 @@ object SessionManager : Logging {
     }
 
     operator fun get(token: String): FullSession? {
-        val session = DB.sessions.getSessionOrNull(token) ?: return null
+        val session = DB.sessions.readOrNull(token) ?: return null
         if (isValid(session)) return session
         logger.trace { logMessage("deleting session token", "token" to token, "expiration" to session.expiration, "now" to System.currentTimeMillis()) }
         DB.sessions.deleteSession(token)

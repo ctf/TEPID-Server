@@ -145,11 +145,7 @@ interface DbSessionLayer : ICrud<FullSession, Id?> {
     */
     fun putSession(session: FullSession): Response
 
-    fun getSessionOrNull(id: Id): FullSession?
-
     fun getSessionIdsForUser(shortUser: ShortUser): List<Id>
-
-    fun getAllSessions(): List<FullSession>
 
     fun deleteSession(id: Id): String
 }
