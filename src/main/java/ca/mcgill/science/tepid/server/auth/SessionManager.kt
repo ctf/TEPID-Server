@@ -23,8 +23,7 @@ object SessionManager : Logging {
         session._id = id
         session.role = AuthenticationFilter.getCtfRole(session.user)
         logger.trace { logMessage("starting session", "id" to id, "shortUser" to user.shortUser, "duration" to expiration * HOUR_IN_MILLIS, "expiration" to session.expiration) }
-        val out = DB.sessions.putSession(session)
-        logger.trace { logMessage("response creating session", "response" to out) }
+        DB.sessions.put(session)
         return session
     }
 

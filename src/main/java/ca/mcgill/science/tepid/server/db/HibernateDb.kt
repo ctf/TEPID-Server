@@ -1,15 +1,6 @@
 package ca.mcgill.science.tepid.server.db
 
-import ca.mcgill.science.tepid.models.data.FullDestination
-import ca.mcgill.science.tepid.models.data.FullSession
-import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.MarqueeData
-import ca.mcgill.science.tepid.models.data.PersonalIdentifier
-import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.models.data.PrintQueue
-import ca.mcgill.science.tepid.models.data.PutResponse
-import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.models.data.ShortUser
+import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.server.mapper
 import ca.mcgill.science.tepid.server.util.failNotFound
@@ -181,13 +172,6 @@ class HibernateMarqueeLayer(hc: IHibernateCrud<MarqueeData, String?>) : DbMarque
 }
 
 class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessionLayer, IHibernateCrud<FullSession, String?> by hc {
-    override fun putSession(session: FullSession): Response {
-        try {
-            return Response.ok().entity(put(session)).build()
-        } catch (e: Exception) {
-            return parsePersistenceErrorToResponse(e)
-        }
-    }
 
     override fun getSessionIdsForUser(shortUser: ShortUser): List<Id> {
         return dbOp { em ->

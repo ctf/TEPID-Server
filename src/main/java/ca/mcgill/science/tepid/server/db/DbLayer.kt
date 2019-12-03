@@ -1,14 +1,6 @@
 package ca.mcgill.science.tepid.server.db
 
-import ca.mcgill.science.tepid.models.data.FullDestination
-import ca.mcgill.science.tepid.models.data.FullSession
-import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.models.data.MarqueeData
-import ca.mcgill.science.tepid.models.data.PersonalIdentifier
-import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.models.data.PrintQueue
-import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.models.data.ShortUser
+import ca.mcgill.science.tepid.models.data.*
 import ca.mcgill.science.tepid.server.server.Config
 import java.io.InputStream
 import javax.ws.rs.core.Response
@@ -139,11 +131,6 @@ interface DbMarqueeLayer : ICrud<MarqueeData, Id?> {
 }
 
 interface DbSessionLayer : ICrud<FullSession, Id?> {
-
-    /*
-   On Success: returns Response containing the Session added
-    */
-    fun putSession(session: FullSession): Response
 
     fun getSessionIdsForUser(shortUser: ShortUser): List<Id>
 
