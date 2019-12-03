@@ -48,16 +48,6 @@ class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : 
         return responses
     }
 
-    override fun updateDestinationWithResponse(id: Id, updater: FullDestination.() -> Unit): Response {
-        try {
-            val destination: FullDestination = read(id)
-            updater(destination)
-            update(destination)
-            return Response.ok().entity(destination).build()
-        } catch (e: Exception) {
-            return parsePersistenceErrorToResponse(e)
-        }
-    }
 }
 
 class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHibernateCrud<PrintJob, String?> by hc {

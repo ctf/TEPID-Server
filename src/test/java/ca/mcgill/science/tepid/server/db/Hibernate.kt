@@ -385,14 +385,13 @@ class HibernateDestinationLayerTest : DbTest() {
         testItem._id = id
         persist(testItem)
 
-        val response = hl.updateDestinationWithResponse(id) {
+        val response = hl.update(id) {
             this.name = newName
         }
 
         val retrieved = hl.read(id)
         assertNotNull(retrieved)
         assertEquals(retrieved.name, newName)
-        assertEquals(response.status, 200)
     }
 
     @Test

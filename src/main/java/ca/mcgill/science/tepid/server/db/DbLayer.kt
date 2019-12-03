@@ -77,10 +77,7 @@ class DbLayer(
 }
 
 interface DbDestinationLayer : ICrud<FullDestination, Id?> {
-
     fun putDestinations(destinations: List<FullDestination>): List<PutResponse>
-
-    fun updateDestinationWithResponse(id: Id, updater: FullDestination.() -> Unit): Response
 }
 
 interface DbJobLayer : ICrud<PrintJob, Id?> {

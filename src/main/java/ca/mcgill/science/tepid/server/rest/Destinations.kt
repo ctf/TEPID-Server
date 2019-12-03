@@ -68,20 +68,23 @@ class Destinations {
         val session = crc.getSession()
         ticket.user = session.user.toUser()
         val successText = "$id marked as ${if (ticket.up) "up" else "down"}"
-        val response = DB.destinations.updateDestinationWithResponse(id) {
-            up = ticket.up
-            this.ticket = if (ticket.up) null else ticket
-            logger.info(
-                    logMessage(
-                            "destination status changed",
-                            "status" to if (ticket.up) "up" else "down",
-                            "reason" to ticket.reason,
-                            "by" to ticket.user?.shortUser
-                    )
-            )
-        }
-        if (!response.isSuccessful)
+
+        try {
+            DB.destinations.update(id) {
+                up = ticket.up
+                this.ticket = if (ticket.up) null else ticket
+                logger.info(
+                        logMessage(
+                                "destination status changed",
+                                "status" to if (ticket.up) "up" else "down",
+                                "reason" to ticket.reason,
+                                "by" to ticket.user?.shortUser
+                        )
+                )
+            }
+        } catch (e: Exception) {
             failNotFound("Could not find destination $id")
+        }
         return successText
     }
 
