@@ -31,7 +31,7 @@ object SessionManager : Logging {
         val session = DB.sessions.readOrNull(token) ?: return null
         if (isValid(session)) return session
         logger.trace { logMessage("deleting session token", "token" to token, "expiration" to session.expiration, "now" to System.currentTimeMillis()) }
-        DB.sessions.deleteSession(token)
+        DB.sessions.deleteById(token)
         return null
     }
 
@@ -49,7 +49,7 @@ object SessionManager : Logging {
     }
 
     fun end(token: String) {
-        DB.sessions.deleteSession(token)
+        DB.sessions.deleteById(token)
     }
 
     /**

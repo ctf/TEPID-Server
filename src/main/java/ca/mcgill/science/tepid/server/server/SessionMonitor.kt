@@ -15,7 +15,7 @@ class SessionMonitor : Runnable {
                 !it.isUnexpired()
             }.forEach {
                 val id = it._id ?: return@forEach
-                DB.sessions.deleteSession(id)
+                DB.sessions.deleteById(id)
                 numberRemoved += 1
             }
             logger.info(logAnnounce("removed sessions successfully", "count" to numberRemoved))

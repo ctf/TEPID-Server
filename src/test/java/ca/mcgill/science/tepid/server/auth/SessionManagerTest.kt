@@ -4,10 +4,7 @@ import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.TestHelpers
 import ca.mcgill.science.tepid.server.db.DB
-import io.mockk.every
-import io.mockk.mockkObject
-import io.mockk.spyk
-import io.mockk.unmockkAll
+import io.mockk.*
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -64,7 +61,7 @@ class SessionGetTest {
     @Test
     fun testGetInvalidSession() {
         every { DB.sessions.readOrNull("testID") } returns testSession
-        every { DB.sessions.deleteSession("testID") } returns "fakeResponse"
+        every { DB.sessions.deleteById("testID") } just runs
         every { SessionManager.isValid(testSession) } returns false
 
         assertEquals(null, SessionManager.get("testID"), "Does not return null for invalid session")
@@ -73,7 +70,7 @@ class SessionGetTest {
     @Test
     fun testGetValidSession() {
         every { DB.sessions.readOrNull("testID") } returns testSession
-        every { DB.sessions.deleteSession("testID") } returns "fakeResponse"
+        every { DB.sessions.deleteById("testID") } just runs
         every { SessionManager.isValid(testSession) } returns true
 
         assertEquals(testSession, SessionManager.get("testID"), "Does not return valid session")

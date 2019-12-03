@@ -131,10 +131,7 @@ interface DbMarqueeLayer : ICrud<MarqueeData, Id?> {
 }
 
 interface DbSessionLayer : ICrud<FullSession, Id?> {
-
     fun getSessionIdsForUser(shortUser: ShortUser): List<Id>
-
-    fun deleteSession(id: Id): String
 }
 
 interface DbUserLayer : ICrud<FullUser, Id?> {

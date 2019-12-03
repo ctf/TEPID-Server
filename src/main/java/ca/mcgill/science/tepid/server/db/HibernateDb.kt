@@ -36,10 +36,6 @@ fun makeHibernateDb(emf: EntityManagerFactory): DbLayer {
 
 class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : DbDestinationLayer, IHibernateCrud<FullDestination, String?> by hc {
 
-    override fun readAll(): List<FullDestination> {
-        return readAll()
-    }
-
     override fun putDestinations(destinations: Map<Id, FullDestination>): String {
         val responses = mutableListOf<PutResponse>()
         destinations.map {
@@ -172,23 +168,12 @@ class HibernateMarqueeLayer(hc: IHibernateCrud<MarqueeData, String?>) : DbMarque
 }
 
 class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessionLayer, IHibernateCrud<FullSession, String?> by hc {
-
     override fun getSessionIdsForUser(shortUser: ShortUser): List<Id> {
         return dbOp { em ->
             em.createQuery("SELECT c.id FROM FullSession c WHERE c.user.shortUser = :userId", String::class.java)
                 .setParameter("userId", shortUser)
                 .resultList
         }
-    }
-
-    override fun deleteSession(id: Id): String {
-        val failures = mutableListOf<String>()
-        try {
-            deleteById(id)
-        } catch (e: Exception) {
-            failures.add(e.message ?: "Generic Failure for ID: $id")
-        }
-        return mapper.writeValueAsString(if (failures.isEmpty()) "Success" else failures)
     }
 }
 
