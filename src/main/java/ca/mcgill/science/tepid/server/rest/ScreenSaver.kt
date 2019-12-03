@@ -31,7 +31,7 @@ class ScreenSaver {
     @GET
     @Path("queues")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQueues(): List<PrintQueue> = DB.queues.getQueues()
+    fun getQueues(): List<PrintQueue> = DB.queues.readAll()
 
     /**
      * @param queue The name of the queue to retrieve from
@@ -61,7 +61,7 @@ class ScreenSaver {
     fun getStatus(): Map<String, Boolean> {
         val destinations = DB.destinations.readAll().map { it._id to it }.toMap()
 
-        val queues = DB.queues.getQueues()
+        val queues = DB.queues.readAll()
 
         val out = mutableMapOf<String, Boolean>()
 

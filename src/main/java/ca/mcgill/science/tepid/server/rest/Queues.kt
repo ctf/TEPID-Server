@@ -39,7 +39,7 @@ class Queues {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQueues(): List<PrintQueue> = DB.queues.getQueues()
+    fun getQueues(): List<PrintQueue> = DB.queues.readAll()
 
     @GET
     @Path("/{queue}")

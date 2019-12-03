@@ -548,7 +548,7 @@ class HibernateQueueLayerTest() : DbTest() {
     fun testGetQueues() {
         persistMultiple(testItems)
 
-        val ri = hl.getQueues()
+        val ri = hl.readAll()
 
         assertEquals(testItems.toString(), ri.toString())
     }

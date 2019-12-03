@@ -125,8 +125,6 @@ interface DbQueueLayer : ICrud<PrintQueue, Id?> {
 
     fun getQueue(id: Id): PrintQueue
 
-    fun getQueues(): List<PrintQueue>
-
     /*
        On Success: returns Response containing the collection of PrintQueues Added
      */

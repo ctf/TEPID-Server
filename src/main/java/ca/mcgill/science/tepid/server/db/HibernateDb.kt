@@ -13,14 +13,12 @@ import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.server.mapper
 import ca.mcgill.science.tepid.server.util.failNotFound
-import ca.mcgill.science.tepid.server.util.logError
 import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.utils.PropsDB
 import java.io.InputStream
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import javax.persistence.EntityManagerFactory
-import javax.persistence.EntityNotFoundException
 import javax.persistence.Persistence
 import javax.ws.rs.core.Response
 
@@ -149,10 +147,6 @@ class HibernateQueueLayer(hc: IHibernateCrud<PrintQueue, String?>) : DbQueueLaye
                 "ID" to id
             )
         )
-    }
-
-    override fun getQueues(): List<PrintQueue> {
-        return readAll()
     }
 
     override fun putQueues(queues: Collection<PrintQueue>): Response {
