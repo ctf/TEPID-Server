@@ -57,7 +57,7 @@ class GsTest {
         val k = 0.04558f
         val inkCov = gs.inkCoverage(listOf("$c $m $y $k CMYK OK")).firstOrNull()
         assertNotNull(inkCov)
-        assertEquals(c, inkCov!!.c)
+        assertEquals(c, inkCov.c)
         assertEquals(m, inkCov.m)
         assertEquals(y, inkCov.y)
         assertEquals(k, inkCov.k)

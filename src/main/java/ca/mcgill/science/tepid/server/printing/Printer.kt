@@ -182,7 +182,7 @@ object Printer : Logging {
                 val destination = j2.destination
                         ?: throw PrintException(PrintError.INVALID_DESTINATION)
 
-                val dest = DB.destinations.read(destination) ?: throw PrintException(logMessage("Failed to retrieve destination", "id" to destination))
+                val dest = DB.destinations.read(destination)
                 if (sendToSMB(tmp, dest, debug)) {
                     DB.printJobs.updateJob(id) {
                         printed = System.currentTimeMillis()
@@ -205,11 +205,15 @@ object Printer : Logging {
 
     // update page count and status in db
     private fun updatePagecount(id: String, psInfo: PsData): PrintJob {
-        return DB.printJobs.updateJob(id) {
-            this.pages = psInfo.pages
-            this.colorPages = psInfo.colorPages
-            this.processed = System.currentTimeMillis()
-        } ?: throw PrintException("Could not update")
+        try {
+            return DB.printJobs.update(id) {
+                this.pages = psInfo.pages
+                this.colorPages = psInfo.colorPages
+                this.processed = System.currentTimeMillis()
+            }
+        } catch (e: Exception) {
+            throw PrintException(logError("Could not update", e))
+        }
     }
 
     // check if user has color printing enabled

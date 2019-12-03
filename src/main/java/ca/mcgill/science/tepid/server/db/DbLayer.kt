@@ -42,7 +42,9 @@ interface ICrud<T, P> {
 
     fun create(obj: T): T
 
-    fun read(id: P): T?
+    fun readOrNull(id: P): T?
+
+    fun read(id: P): T
 
     fun readAll(): List<T>
 
@@ -91,8 +93,6 @@ interface DbDestinationLayer : ICrud<FullDestination, Id?> {
 
 interface DbJobLayer : ICrud<PrintJob, Id?> {
 
-    fun getJob(id: Id): PrintJob
-
     /**
      * Get jobs by [queue]
      * If [maxAge] > 0, then only jobs created before (now - [maxAge])ms will be included
@@ -111,11 +111,6 @@ interface DbJobLayer : ICrud<PrintJob, Id?> {
      * Gets jobs which have a value for their file, implying the contents are still stored in TEPID
      */
     fun getStoredJobs(): List<PrintJob>
-
-    /**
-     * Updates the job, and returns the new job if successful
-     */
-    fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob?
 
     fun updateJobWithResponse(id: Id, updater: PrintJob.() -> Unit): Response
 

@@ -115,7 +115,7 @@ class JobIT : ITBase() {
             DestinationTicket(up = false, reason = "reprint test, put me up")
         ).execute()
 
-        if (setStatusResponse?.body()?.contains("down") != true) {
+        if (setStatusResponse.body()?.contains("down") != true) {
             fail("destination was not marked down")
         }
 

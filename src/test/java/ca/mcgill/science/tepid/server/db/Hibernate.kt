@@ -405,8 +405,7 @@ class HibernateDestinationLayerTest : DbTest() {
 
         val response = hl.deleteById(id)
 
-        val retrieved = hl.read(id)
-
+        val retrieved = hl.readOrNull(id)
         assertNull(retrieved)
     }
 
@@ -593,7 +592,7 @@ class HibernateQueueLayerTest() : DbTest() {
 
         val response = hl.deleteQueue(id)
 
-        val retrieved = hl.read(id)
+        val retrieved = hl.readOrNull(id)
         assertNull(retrieved)
     }
 
@@ -641,8 +640,7 @@ class HibernateSessionLayerTest() : DbTest() {
         persistMultiple(testUsers)
         persistMultiple(testItems)
 
-        val ri = hl.getSessionOrNull("FAKEID")
-
+        val ri = hl.readOrNull("FAKEID")
         assertNull(ri)
     }
 

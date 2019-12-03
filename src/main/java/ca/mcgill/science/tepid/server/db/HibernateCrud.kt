@@ -68,15 +68,15 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
         )
     }
 
-    override fun read(id: P): T? {
-        return try {
-            dbOp(
-                { logMessage("error reading object", "class" to classParameter, "id" to id) },
-                { em -> em.find(classParameter, id) }
-            )
-        } catch (e: NoResultException) {
-            null
-        }
+    override fun read(id: P): T {
+            return readOrNull(id) ?: throw EntityNotFoundException()
+    }
+
+    override fun readOrNull(id: P): T? {
+        return dbOp(
+            { logMessage("error reading object", "class" to classParameter, "id" to id) },
+            { em -> em.find(classParameter, id) }
+        )
     }
 
     override fun readAll(): List<T> {
@@ -97,7 +97,7 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
     }
 
     override fun update(id: P, updater: T.() -> Unit): T {
-        val o = read(id) ?: throw EntityNotFoundException()
+        val o = read(id)
         updater(o)
         update(o)
         return o
