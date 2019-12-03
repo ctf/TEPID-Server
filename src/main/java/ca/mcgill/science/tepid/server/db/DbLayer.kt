@@ -78,7 +78,7 @@ class DbLayer(
 
 interface DbDestinationLayer : ICrud<FullDestination, Id?> {
 
-    fun putDestinations(destinations: Map<Id, FullDestination>): String
+    fun putDestinations(destinations: List<FullDestination>): List<PutResponse>
 
     fun updateDestinationWithResponse(id: Id, updater: FullDestination.() -> Unit): Response
 }

@@ -370,9 +370,8 @@ class HibernateDestinationLayerTest : DbTest() {
     @Test
     fun testPutDestination() {
         val testList = testItems.toList().map { it._id = newId(); it }
-        val testMap = testList.map { it._id!! to it }.toMap()
 
-        val result = hl.putDestinations(testMap)
+        val result = hl.putDestinations(testList)
 
         val retrieved = hl.readAll()
         assertEquals(testList, retrieved)

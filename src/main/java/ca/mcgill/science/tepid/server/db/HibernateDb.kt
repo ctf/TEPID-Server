@@ -35,20 +35,17 @@ fun makeHibernateDb(emf: EntityManagerFactory): DbLayer {
 }
 
 class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : DbDestinationLayer, IHibernateCrud<FullDestination, String?> by hc {
-
-    override fun putDestinations(destinations: Map<Id, FullDestination>): String {
+    override fun putDestinations(destinations: List<FullDestination>): List<PutResponse> {
         val responses = mutableListOf<PutResponse>()
         destinations.map {
             try {
-                it.value._id = it.key
-                val u = put(it.value)
+                val u = put(it)
                 responses.add(PutResponse(ok = true, id = u.getId(), rev = u.getRev()))
             } catch (e: Exception) {
-                responses.add(PutResponse(ok = false, id = it.value.getId(), rev = it.value.getRev()))
+                responses.add(PutResponse(ok = false, id = it.getId(), rev = it.getRev()))
             }
         }
-
-        return mapper.writeValueAsString(responses)
+        return responses
     }
 
     override fun updateDestinationWithResponse(id: Id, updater: FullDestination.() -> Unit): Response {
