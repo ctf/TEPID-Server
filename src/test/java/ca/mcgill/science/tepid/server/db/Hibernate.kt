@@ -496,9 +496,9 @@ class HibernateJobLayerTest : DbTest() {
         ti._id = id
         persist(ti)
 
-        hl.updateJob(id) { name = "NEWNAME" }
+        hl.update(id) { name = "NEWNAME" }
 
-        val ri = hl.read(id) ?: fail("Not Persisted")
+        val ri = hl.read(id)
         assertEquals("NEWNAME", ri.name)
         assertEquals(ti.queueId, ri.queueId)
     }

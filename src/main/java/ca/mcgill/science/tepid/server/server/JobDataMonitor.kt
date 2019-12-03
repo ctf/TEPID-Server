@@ -14,7 +14,7 @@ class JobDataMonitor : Runnable {
             DB.printJobs.getStoredJobs().forEach { j ->
 
                 val id = j._id ?: return@forEach
-                DB.printJobs.updateJob(id) {
+                DB.printJobs.update(id) {
                     if (deleteDataOn < System.currentTimeMillis()) {
 
                         val filePath = file

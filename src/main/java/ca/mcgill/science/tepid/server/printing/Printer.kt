@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.enums.PrintError
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.parsePersistenceErrorToResponse
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.copyFrom
 import ca.mcgill.science.tepid.server.util.logError
@@ -94,7 +95,7 @@ object Printer : Logging {
             // todo test and validate
             // write compressed job to disk
             // adding filepath before upload ensures that the file can get deleted even if the job fails during upload
-            DB.printJobs.updateJob(id) {
+            DB.printJobs.update(id) {
                 file = tmpXz.absolutePath
                 logger.info(logMessage("updating job with path", "id" to id, "path" to file))
             }
@@ -117,7 +118,7 @@ object Printer : Logging {
                 if (!tmpXz.delete()) {
                     throw IOException("Failed to delete file in cleanup of failed reception")
                 }
-                DB.printJobs.updateJob(id) {
+                DB.printJobs.update(id) {
                     file = null
                 }
             } catch (e: Exception) {
@@ -184,7 +185,7 @@ object Printer : Logging {
 
                 val dest = DB.destinations.read(destination)
                 if (sendToSMB(tmp, dest, debug)) {
-                    DB.printJobs.updateJob(id) {
+                    DB.printJobs.update(id) {
                         printed = System.currentTimeMillis()
                     }
                     logger.info(logMessage("sent job to destination", "id" to j2._id))
@@ -293,9 +294,9 @@ object Printer : Logging {
             try {
                 val jobs = DB.printJobs.getOldJobs()
                 jobs.forEach { j ->
-                    DB.printJobs.updateJob(j.getId()) {
+                    DB.printJobs.update(j.getId()) {
                         fail("Timed out")
-                        val id = _id ?: return@updateJob // TODO: if ID is null, how did we get here?
+                        val id = _id ?: return@update // TODO: if ID is null, how did we get here?
                         cancel(id)
                     }
                 }

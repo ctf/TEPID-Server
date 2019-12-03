@@ -55,7 +55,7 @@ class Queues {
     @Path("/{queue}/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getJob(@PathParam("queue") queue: String, @PathParam("id") id: String): PrintJob {
-        val j = DB.printJobs.getJob(id)
+        val j = DB.printJobs.read(id)
         if (!j.queueId.equals(queue, ignoreCase = true))
             failBadRequest("Job queue does not match $queue")
         return j
@@ -72,7 +72,7 @@ class Queues {
     @Path("/{queue}/{id}/{file}")
     fun getAttachment(@PathParam("queue") queue: String, @PathParam("id") id: String, @PathParam("file") file: String): InputStream {
         try {
-            val j = DB.printJobs.getJob(id)
+            val j = DB.printJobs.read(id)
             if (!j.queueId.equals(queue, ignoreCase = true))
                 failNotFound("Could not find job $id in queue $queue")
             return DB.printJobs.getJobFile(id, file)!!

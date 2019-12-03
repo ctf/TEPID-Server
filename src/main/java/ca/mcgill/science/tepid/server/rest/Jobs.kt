@@ -90,7 +90,7 @@ class Jobs {
     fun getJob(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Context ctx: ContainerRequestContext): PrintJob {
         val session = ctx.getSession()
         logger.trace(logMessage("queried job", "id" to id))
-        val j = DB.printJobs.getJob(id)
+        val j = DB.printJobs.read(id)
         if (session.role == USER && session.user.shortUser != j.userIdentification)
             failUnauthorized("You cannot access this resource")
         return j
@@ -101,10 +101,10 @@ class Jobs {
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun setJobRefunded(@PathParam("id") id: String, refunded: Boolean): PutResponse {
-        val result = DB.printJobs.updateJob(id) {
+        val result = DB.printJobs.update(id) {
             isRefunded = refunded
             logger.debug(logMessage("refunded job", "id" to id))
-        } ?: failInternal("Could not modify refund status")
+        }
         return PutResponse(result.isRefunded == refunded, result.getId(), result.getRev())
     }
 
@@ -114,7 +114,7 @@ class Jobs {
     @Produces(MediaType.TEXT_PLAIN)
     fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): String {
         val session = ctx.getSession()
-        val j = DB.printJobs.getJob(id)
+        val j = DB.printJobs.read(id)
         val file = Utils.existingFile(j.file) ?: failInternal("Data for this job no longer exists")
         if (session.role == USER && session.user.shortUser != j.userIdentification)
             failUnauthorized("You cannot reprint someone else's job")

@@ -68,7 +68,7 @@ class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : 
 
     override fun updateDestinationWithResponse(id: Id, updater: FullDestination.() -> Unit): Response {
         try {
-            val destination: FullDestination = read(id) ?: throw EntityNotFoundException()
+            val destination: FullDestination = read(id)
             updater(destination)
             update(destination)
             return Response.ok().entity(destination).build()
@@ -79,9 +79,6 @@ class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : 
 }
 
 class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHibernateCrud<PrintJob, String?> by hc {
-    override fun getJob(id: Id): PrintJob {
-        return read(id) ?: failNotFound("{\"id\":\"$id\"}")
-    }
 
     override fun getJobsByQueue(queue: String, maxAge: Long, sortOrder: Order, limit: Int): List<PrintJob> {
         val sort = if (sortOrder == Order.ASCENDING) "ASC" else "DESC"
@@ -113,23 +110,10 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
         }
     }
 
-    override fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob? {
-
-        try {
-            val printJob: PrintJob = read(id) ?: throw EntityNotFoundException()
-            updater(printJob)
-            update(printJob)
-            return printJob
-        } catch (e: Exception) {
-            logger.logError("error updating printjob", e, "id" to id)
-        }
-        return null
-    }
-
     override fun updateJobWithResponse(id: Id, updater: PrintJob.() -> Unit): Response {
         try {
-            val job = updateJob(id, updater)
-            return Response.ok().entity(PutResponse(ok = true, id = id, rev = job?.getRev() ?: "")).build()
+            val job = update(id, updater)
+            return Response.ok().entity(PutResponse(ok = true, id = id, rev = job.getRev())).build()
         } catch (e: Exception) {
             return parsePersistenceErrorToResponse(e)
         }

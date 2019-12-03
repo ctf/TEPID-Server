@@ -45,7 +45,7 @@ open class QueueManager protected constructor(var printQueue: PrintQueue, var de
 
     fun assignDestination(id: String): PrintJob? {
         refreshDestinations()
-        return db.printJobs.updateJob(id) {
+        return db.printJobs.update(id) {
             val results: LoadBalancerResults = loadBalancer.processJob(this) ?: run {
                 this.fail(PrintError.INVALID_DESTINATION)
                 log.info {
@@ -54,7 +54,7 @@ open class QueueManager protected constructor(var printQueue: PrintQueue, var de
                         "printJob" to this.getId(), "printqueue" to printQueue.getId()
                     )
                 }
-                return@updateJob
+                return@update
             }
             this.destination = results.destination
             this.eta = results.eta
