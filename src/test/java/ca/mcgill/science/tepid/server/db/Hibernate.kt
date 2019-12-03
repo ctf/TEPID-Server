@@ -329,7 +329,7 @@ class HibernateMarqueeLayerTest : DbTest() {
 
         em.close()
         em = emf.createEntityManager()
-        val retrieved = hml.getMarquees()
+        val retrieved = hml.readAll()
 
         for (i in 0..testItems.size - 1) {
             assertEquals(testItems[i].title, retrieved[i].title)

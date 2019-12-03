@@ -84,7 +84,7 @@ class ScreenSaver {
     @GET
     @Path("marquee")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getMarquee(): List<MarqueeData> = DB.marquee.getMarquees()
+    fun getMarquee(): List<MarqueeData> = DB.marquee.readAll()
 
     /**
      * Note that this is an exact replica of [Destinations.getDestinations]
