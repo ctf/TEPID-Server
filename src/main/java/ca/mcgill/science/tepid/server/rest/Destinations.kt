@@ -10,7 +10,6 @@ import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.getSession
-import ca.mcgill.science.tepid.server.util.isSuccessful
 import ca.mcgill.science.tepid.server.util.logMessage
 import org.apache.logging.log4j.kotlin.Logging
 import javax.annotation.security.RolesAllowed
@@ -60,7 +59,7 @@ class Destinations {
     }
 
     @POST
-    @Path("/{dest}")
+    @Path("/{dest}/ticket")
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -88,12 +87,11 @@ class Destinations {
         return successText
     }
 
-    // TODO: Response
     @DELETE
-    @Path("/{dest}")
-    @RolesAllowed(ELDER)
+    @Path("/{dest}/ticket")
+    @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun deleteDestination(@PathParam("dest") destination: String): Unit =
+    fun deleteTicket(@PathParam("dest") destination: String): Unit =
             DB.destinations.deleteById(destination)
 
     private companion object : Logging
