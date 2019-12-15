@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.server.Config
 import java.io.InputStream
 import javax.ws.rs.core.Response
@@ -32,7 +33,7 @@ enum class Order {
 interface ICrud<T, P> {
     val classParameter: Class<T>
 
-    fun create(obj: T): T
+    fun create(obj: T): PutResponse
 
     fun readOrNull(id: P): T?
 
@@ -48,7 +49,7 @@ interface ICrud<T, P> {
 
     fun deleteById(id: P)
 
-    fun put(obj: T): T
+    fun put(obj: T): PutResponse
 }
 
 /**

@@ -1,6 +1,15 @@
 package ca.mcgill.science.tepid.server.db
 
-import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.models.data.FullDestination
+import ca.mcgill.science.tepid.models.data.FullSession
+import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.MarqueeData
+import ca.mcgill.science.tepid.models.data.PersonalIdentifier
+import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.PrintQueue
+import ca.mcgill.science.tepid.models.data.PutResponse
+import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.server.mapper
 import ca.mcgill.science.tepid.server.util.failNotFound
@@ -40,7 +49,7 @@ class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : 
         destinations.map {
             try {
                 val u = put(it)
-                responses.add(PutResponse(ok = true, id = u.getId(), rev = u.getRev()))
+                responses.add(u)
             } catch (e: Exception) {
                 responses.add(PutResponse(ok = false, id = it.getId(), rev = it.getRev()))
             }
@@ -94,7 +103,7 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
     override fun postJob(job: PrintJob): Response {
         try {
             val out = create(job)
-            return Response.ok().entity(PutResponse(ok = true, id = out._id ?: "", rev = out.getRev())).build()
+            return Response.ok().entity(out).build()
         } catch (e: Exception) {
             return parsePersistenceErrorToResponse(e)
         }
@@ -167,8 +176,8 @@ class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessio
 class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, IHibernateCrud<FullUser, String?> by hc {
     override fun putUser(user: FullUser): Response {
         try {
-            val updatedUser = put(user)
-            return Response.ok().entity(PutResponse(ok = true, id = updatedUser.getId(), rev = updatedUser.getRev()))
+            val out = put(user)
+            return Response.ok().entity(out)
                 .build()
         } catch (e: Exception) {
             return parsePersistenceErrorToResponse(e)

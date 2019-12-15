@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.bindings.TepidDb
+import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.server.util.text
 import org.apache.logging.log4j.kotlin.Logging
@@ -9,7 +10,6 @@ import javax.persistence.EntityExistsException
 import javax.persistence.EntityManager
 import javax.persistence.EntityManagerFactory
 import javax.persistence.EntityNotFoundException
-import javax.persistence.NoResultException
 import javax.ws.rs.core.Response
 
 interface IHibernateConnector : Logging {
@@ -61,11 +61,12 @@ interface IHibernateCrud<T, P> : ICrud<T, P>, IHibernateConnector
 class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, override val classParameter: Class<T>) : IHibernateCrud<T, P>,
         IHibernateConnector by HibernateConnector(emf) {
 
-    override fun create(obj: T): T {
-        return dbOpTransaction(
+    override fun create(obj: T): PutResponse {
+        val r = dbOpTransaction(
             { logMessage("error inserting object", "class" to classParameter.simpleName, "object" to obj) },
             { em -> em.merge(obj) }
-        )
+        ) ?: return PutResponse(false, obj.getId(), obj.getRev())
+        return PutResponse(true, r.getId(), r.getRev())
     }
 
     override fun read(id: P): T {
@@ -120,16 +121,17 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
         }
     }
 
-    override fun put(obj: T): T {
+    override fun put(obj: T): PutResponse {
         obj._id
                 ?: return run { obj._id = UUID.randomUUID().toString(); create(obj) } // has no ID, needs to be created
         val em = emf.createEntityManager()
         try {
             em.getReference(classParameter, obj._id)
-            return dbOpTransaction(
+            val r = dbOpTransaction(
                 { logMessage("error putting modifications", "object" to obj) },
                 { t -> t.merge(obj) }
-            )
+            ) ?: return PutResponse(false, obj.getId(), obj.getRev())
+            return PutResponse(true, r.getId(), r.getRev())
         } catch (e: EntityNotFoundException) {
             return (create(obj)) // has ID, ID not in DB
         } finally {
