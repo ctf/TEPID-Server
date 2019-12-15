@@ -3,8 +3,10 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
+import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.Order
+import ca.mcgill.science.tepid.server.db.remapExceptions
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer
 import ca.mcgill.science.tepid.server.util.failBadRequest
 import ca.mcgill.science.tepid.server.util.failNotFound
@@ -16,6 +18,7 @@ import javax.ws.rs.Consumes
 import javax.ws.rs.DELETE
 import javax.ws.rs.DefaultValue
 import javax.ws.rs.GET
+import javax.ws.rs.POST
 import javax.ws.rs.PUT
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
@@ -41,6 +44,35 @@ class Queues {
     @Produces(MediaType.APPLICATION_JSON)
     fun getQueues(): List<PrintQueue> = DB.queues.readAll()
 
+    @POST
+    @RolesAllowed(ELDER)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun addQueue(queue: PrintQueue): PutResponse =
+        remapExceptions { DB.queues.create(queue) }
+
+    @GET
+    @Path("/{queue}")
+    @RolesAllowed(ELDER)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getQueue(@PathParam("queue") id: String): PrintQueue =
+        remapExceptions { DB.queues.getQueue(id) }
+
+    @PUT
+    @Path("/{queue}")
+    @RolesAllowed(ELDER)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun putQueue(@PathParam("queue") id: String, queue: PrintQueue): PutResponse =
+        remapExceptions { DB.queues.put(queue) }
+
+    @DELETE
+    @Path("/{queue}")
+    @RolesAllowed(ELDER)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun deleteQueue(@PathParam("queue") id: String): String =
+        remapExceptions { DB.queues.deleteQueue(id) }
+
     @GET
     @Path("/{queue}/jobs")
     @Produces(MediaType.APPLICATION_JSON)
@@ -60,13 +92,6 @@ class Queues {
             failBadRequest("Job queue does not match $queue")
         return j
     }
-
-    @DELETE
-    @Path("/{queue}")
-    @RolesAllowed(ELDER)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun deleteQueue(@PathParam("queue") queue: String): String =
-            DB.queues.deleteQueue(queue)
 
     @GET
     @Path("/{queue}/jobs/{id}/{file}")
