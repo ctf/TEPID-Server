@@ -100,7 +100,7 @@ object Printer : Logging {
             }
             tmpXz.copyFrom(stream)
             // let db know we have received data
-            DB.printJobs.updateJobWithResponse(id) {
+            DB.printJobs.update(id) {
                 received = System.currentTimeMillis()
                 logger.info(logMessage("job file received", "id" to id, "at" to received))
             }
@@ -282,7 +282,7 @@ object Printer : Logging {
      * Update job db and cancel executor
      */
     private fun failJob(id: String, error: String) {
-        DB.printJobs.updateJobWithResponse(id) {
+        DB.printJobs.update(id) {
             fail(error)
         }
         cancel(id)

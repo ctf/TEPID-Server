@@ -7,7 +7,6 @@ import ca.mcgill.science.tepid.models.data.MarqueeData
 import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
-import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
@@ -74,15 +73,6 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
     override fun getStoredJobs(): List<PrintJob> {
         return dbOp { em ->
             em.createQuery("SELECT c FROM PrintJob c WHERE c.file != null", PrintJob::class.java).resultList
-        }
-    }
-
-    override fun updateJobWithResponse(id: Id, updater: PrintJob.() -> Unit): Response {
-        try {
-            val job = update(id, updater)
-            return Response.ok().entity(PutResponse(ok = true, id = id, rev = job.getRev())).build()
-        } catch (e: Exception) {
-            return parsePersistenceErrorToResponse(e)
         }
     }
 

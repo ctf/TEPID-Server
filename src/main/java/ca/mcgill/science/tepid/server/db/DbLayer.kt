@@ -112,8 +112,6 @@ interface DbJobLayer : ICrud<PrintJob, Id?> {
      */
     fun getStoredJobs(): List<PrintJob>
 
-    fun updateJobWithResponse(id: Id, updater: PrintJob.() -> Unit): Response
-
     fun getJobFile(id: Id, file: String): InputStream?
 
     fun getOldJobs(): List<PrintJob>
