@@ -85,7 +85,7 @@ class Queues {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/loadbalancers")
     fun getLoadBalancers(): List<String> {
-        return LoadBalancer.loadBalancers
+        return LoadBalancer._loadBalancers
             .filter { LoadBalancer::class.java.isAssignableFrom(it) }
             .map { it.simpleName }
     }

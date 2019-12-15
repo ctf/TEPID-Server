@@ -3,18 +3,24 @@ package ca.mcgill.science.tepid.server.printing.loadbalancers;
 import ca.mcgill.science.tepid.models.data.PrintJob;
 import ca.mcgill.science.tepid.server.printing.QueueManager;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public abstract class LoadBalancer {
 
-    @SuppressWarnings("unchecked")
-    public static final Class<? extends LoadBalancer>[] loadBalancers = new Class[]{FiftyFifty.class};
+    private static final Map<String, Class<? extends LoadBalancer>> loadBalancers = new HashMap<>();
+    public static void registerLoadBalancer(String name, Class<? extends LoadBalancer> loadBalancerClass){
+        loadBalancers.put(name, loadBalancerClass);
+    }
 
-    //todo check usage. Surely there's a better way such as enums
     @SuppressWarnings("unchecked")
+    public static final Class<? extends LoadBalancer>[] _loadBalancers = new Class[]{FiftyFifty.class};
+
     public static Class<? extends LoadBalancer> getLoadBalancer(String name) {
         try {
             return (Class<? extends LoadBalancer>) Class.forName("ca.science.tepid.server.loadbalancer." + name);
         } catch (ClassNotFoundException e) {
-            return LoadBalancer.loadBalancers[0];
+            return LoadBalancer._loadBalancers[0];
         }
     }
 
