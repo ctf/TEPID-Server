@@ -101,9 +101,9 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
         val startTime = if (maxAge > 0) Date().time - maxAge else 0
         return dbOp() { em ->
             em.createQuery(
-                "SELECT c FROM PrintJob c WHERE c.queueName = :queueName AND c.started > :startTime ORDER BY c.started $sort",
+                "SELECT c FROM PrintJob c WHERE c.queueId = :queueId AND c.started > :startTime ORDER BY c.started $sort",
                 PrintJob::class.java
-            ).setParameter("queueName", queue).setParameter("startTime", startTime)
+            ).setParameter("queueId", queue).setParameter("startTime", startTime)
                 .setMaxResults(if (limit == -1) Int.MAX_VALUE else limit).resultList
         }
     }
