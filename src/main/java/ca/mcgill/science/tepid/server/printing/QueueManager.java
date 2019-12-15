@@ -34,9 +34,8 @@ public class QueueManager {
         return instances.get(id);
     }
 
-    public static PrintJob assignDestination(String id) {
-        PrintJob j = db.getJob(id);
-        return getInstance(j.getQueueName()).assignDestination(j);
+    public static PrintJob assignDestination(PrintJob job) {
+        return getInstance(job.getQueueName()).assignDestination(job.getId());
     }
 
     private QueueManager(String id) {
@@ -55,8 +54,8 @@ public class QueueManager {
         }
     }
 
-    public PrintJob assignDestination(PrintJob job) {
-        PrintJob updatedJob = db.updateJob(job.getId(), (j) -> {
+    public PrintJob assignDestination(String id) {
+        return db.updateJob(id, (j) -> {
             LoadBalancerResults results = this.loadBalancer.processJob(j);
             if (results == null) {
                 j.fail(PrintError.INVALID_DESTINATION);
@@ -68,8 +67,6 @@ public class QueueManager {
             }
             return Unit.INSTANCE;
         });
-
-        return updatedJob;
     }
 
     //TODO check use of args

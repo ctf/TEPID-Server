@@ -177,7 +177,7 @@ object Printer : Logging {
 
                 // add job to the queue
                 logger.trace(logMessage("trying to assign destination", "job" to j2.getId()))
-                j2 = QueueManager.assignDestination(id)
+                j2 = QueueManager.assignDestination(j2)
                 // todo check destination field
                 val destination = j2.destination
                     ?: throw PrintException(PrintError.INVALID_DESTINATION)
