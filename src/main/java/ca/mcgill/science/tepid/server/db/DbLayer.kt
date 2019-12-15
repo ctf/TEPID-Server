@@ -89,9 +89,7 @@ class DbLayer(
     fun <T : Comparable<T>> List<T>.sortAs(order: Order): List<T> = order.sort(this)
 }
 
-interface DbDestinationLayer : ICrud<FullDestination, Id?> {
-    fun putDestinations(destinations: List<FullDestination>): List<PutResponse>
-}
+interface DbDestinationLayer : ICrud<FullDestination, Id?>
 
 interface DbJobLayer : ICrud<PrintJob, Id?> {
 
@@ -127,18 +125,12 @@ interface DbQueueLayer : ICrud<PrintQueue, Id?> {
 
     fun getQueue(id: Id): PrintQueue
 
-    /*
-       On Success: returns Response containing the collection of PrintQueues Added
-     */
-    fun putQueues(queues: Collection<PrintQueue>): Response
-
     fun deleteQueue(id: Id): String
 
     fun getEta(destinationId: Id): Long
 }
 
-interface DbMarqueeLayer : ICrud<MarqueeData, Id?> {
-}
+interface DbMarqueeLayer : ICrud<MarqueeData, Id?>
 
 interface DbSessionLayer : ICrud<FullSession, Id?> {
     fun getSessionIdsForUser(shortUser: ShortUser): List<Id>
@@ -166,10 +158,10 @@ interface DbQuotaLayer {
     fun getAlreadyGrantedUsers(ids: Set<String>, semester: Semester): Set<String>
 }
 
-fun <T> remapExceptions(f: ()->T): T {
+fun <T> remapExceptions(f: () -> T): T {
     try {
         return f()
-    } catch (e:Exception) {
+    } catch (e: Exception) {
         throw WebApplicationException(when (e) {
             is EntityNotFoundException -> Response.Status.NOT_FOUND.text("Not found")
             is IllegalArgumentException -> Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")

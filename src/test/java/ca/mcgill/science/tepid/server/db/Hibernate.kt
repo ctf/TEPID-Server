@@ -371,7 +371,7 @@ class HibernateDestinationLayerTest : DbTest() {
     fun testPutDestination() {
         val testList = testItems.toList().map { it._id = newId(); it }
 
-        val result = hl.putDestinations(testList)
+        val result = testList.forEach { hl.put(it) }
 
         val retrieved = hl.readAll()
         assertEquals(testList, retrieved)
@@ -559,7 +559,7 @@ class HibernateQueueLayerTest() : DbTest() {
             it
         }
 
-        val response = hl.putQueues(ti)
+        val response = ti.forEach { hl.put(it) }
 
         val ri = hc.readAll()
         assertEquals(ti.sortedBy { it.name }.toString(), ri.sortedBy { it.name }.toString())
@@ -573,7 +573,7 @@ class HibernateQueueLayerTest() : DbTest() {
 
         ti.map { it.loadBalancer = "PerfectlyBalanced" }
 
-        val response = hl.putQueues(ti)
+        val response = ti.forEach { hl.put(it) }
 
         val ri = hc.readAll()
         assertEquals(ti.sortedBy { it.name }.toString(), ri.sortedBy { it.name }.toString())

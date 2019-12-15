@@ -43,21 +43,7 @@ fun makeHibernateDb(emf: EntityManagerFactory): DbLayer {
     )
 }
 
-class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : DbDestinationLayer, IHibernateCrud<FullDestination, String?> by hc {
-    override fun putDestinations(destinations: List<FullDestination>): List<PutResponse> {
-        val responses = mutableListOf<PutResponse>()
-        destinations.map {
-            try {
-                val u = put(it)
-                responses.add(u)
-            } catch (e: Exception) {
-                responses.add(PutResponse(ok = false, id = it.getId(), rev = it.getRev()))
-            }
-        }
-        return responses
-    }
-
-}
+class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : DbDestinationLayer, IHibernateCrud<FullDestination, String?> by hc
 
 class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHibernateCrud<PrintJob, String?> by hc {
 
@@ -130,14 +116,6 @@ class HibernateQueueLayer(hc: IHibernateCrud<PrintQueue, String?>) : DbQueueLaye
                 "ID" to id
             )
         )
-    }
-
-    override fun putQueues(queues: Collection<PrintQueue>): Response {
-        try {
-            return Response.ok().entity(queues.map { put(it) }).build()
-        } catch (e: Exception) {
-            return parsePersistenceErrorToResponse(e)
-        }
     }
 
     override fun deleteQueue(id: Id): String {
