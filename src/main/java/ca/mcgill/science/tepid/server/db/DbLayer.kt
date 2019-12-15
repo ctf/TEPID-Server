@@ -1,9 +1,21 @@
 package ca.mcgill.science.tepid.server.db
 
-import ca.mcgill.science.tepid.models.data.*
+import ca.mcgill.science.tepid.models.data.FullDestination
+import ca.mcgill.science.tepid.models.data.FullSession
+import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.MarqueeData
+import ca.mcgill.science.tepid.models.data.PersonalIdentifier
+import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.PutResponse
+import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
+import ca.mcgill.science.tepid.server.util.text
 import java.io.InputStream
+import javax.persistence.EntityExistsException
+import javax.persistence.EntityNotFoundException
+import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 
 var DB: DbLayer = Config.getDb()
@@ -152,4 +164,17 @@ interface DbQuotaLayer {
     fun getTotalPrintedCount(shortUser: ShortUser): Int
 
     fun getAlreadyGrantedUsers(ids: Set<String>, semester: Semester): Set<String>
+}
+
+fun <T> remapExceptions(f: ()->T): T {
+    try {
+        return f()
+    } catch (e:Exception) {
+        throw WebApplicationException(when (e) {
+            is EntityNotFoundException -> Response.Status.NOT_FOUND.text("Not found")
+            is IllegalArgumentException -> Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")
+            is EntityExistsException -> Response.Status.CONFLICT.text("Entity Exists; ${e::class.java.simpleName} occurred")
+            else -> Response.Status.INTERNAL_SERVER_ERROR.text("Ouch! ${e::class.java.simpleName} occurred")
+        })
+    }
 }
