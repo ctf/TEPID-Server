@@ -20,18 +20,18 @@ public class QueueManager {
     private final Logger log;
 
     private static final Map<String, QueueManager> instances = new HashMap<>();
-    public final PrintQueue queueConfig;
+    public final PrintQueue printQueue;
     public static final DbLayer db = DbLayerKt.getDB();
     ;
     private final LoadBalancer loadBalancer;
 
-    public static QueueManager getInstance(String queueName) {
+    public static QueueManager getInstance(String id) {
         synchronized (instances) {
-            if (!instances.containsKey(queueName)) {
-                instances.put(queueName, new QueueManager(queueName));
+            if (!instances.containsKey(id)) {
+                instances.put(id, new QueueManager(id));
             }
         }
-        return instances.get(queueName);
+        return instances.get(id);
     }
 
     public static PrintJob assignDestination(String id) {
@@ -39,17 +39,19 @@ public class QueueManager {
         return getInstance(j.getQueueName()).assignDestination(j);
     }
 
-    private QueueManager(String queueName) {
-        log = LogManager.getLogger("Queue - " + queueName);
-        log.trace("Instantiate queue manager {\'queueName\':\'{}\'}", queueName);
-        if (queueName == null)
+    private QueueManager(String id) {
+        try {
+            this.printQueue = db.getQueue(id);
+        } catch (Exception e) {
             throw new RuntimeException("Could not instantiate null queue manager");
-        this.queueConfig = db.getQueue("q" + queueName);
-        Class<? extends LoadBalancer> lb = LoadBalancer.getLoadBalancer(queueConfig.getLoadBalancer());
+        }
+        log = LogManager.getLogger("Queue - " + this.printQueue.getName());
+        log.trace("Instantiate queue manager {\'queueName\':\'{}\'}", this.printQueue.getName());
+        Class<? extends LoadBalancer> lb = LoadBalancer.getLoadBalancer(printQueue.getLoadBalancer());
         try {
             this.loadBalancer = lb.getConstructor(QueueManager.class).newInstance(this);
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-            throw new RuntimeException("Could not instantiate load balancer " + this.queueConfig.getLoadBalancer(), e);
+            throw new RuntimeException("Could not instantiate load balancer " + this.printQueue.getLoadBalancer(), e);
         }
     }
 
@@ -58,7 +60,7 @@ public class QueueManager {
             LoadBalancerResults results = this.loadBalancer.processJob(j);
             if (results == null) {
                 j.fail(PrintError.INVALID_DESTINATION);
-                log.info("LoadBalancer did not assign a destination {\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\'}", j.getId(), this.queueConfig.getName());
+                log.info("LoadBalancer did not assign a destination {\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\'}", j.getId(), this.printQueue.getId());
             } else {
                 j.setDestination(results.destination);
                 j.setEta(results.eta);

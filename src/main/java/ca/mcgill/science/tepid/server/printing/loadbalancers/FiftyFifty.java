@@ -25,9 +25,9 @@ public class FiftyFifty extends LoadBalancer {
     public FiftyFifty(QueueManager qm) {
         super(qm);
         qM = qm;
-        log = LogManager.getLogger("Queue - " + qm.queueConfig.getName());
-        this.destinations = new ArrayList<>(qm.queueConfig.getDestinations().size());
-        for (String d : qm.queueConfig.getDestinations()) {
+        log = LogManager.getLogger("Queue - " + qm.printQueue.getName());
+        this.destinations = new ArrayList<>(qm.printQueue.getDestinations().size());
+        for (String d : qm.printQueue.getDestinations()) {
             FullDestination dest = db.getDestination(d);
             destinations.add(dest);
             if (dest.getUp()) this.allDown = false;
@@ -39,7 +39,7 @@ public class FiftyFifty extends LoadBalancer {
     private void refreshDestinationsStatus() {
         this.allDown = true;
         destinations.clear(); // clear out the old Destination objects
-        for (String d : qM.queueConfig.getDestinations()) {
+        for (String d : qM.printQueue.getDestinations()) {
             FullDestination dest = db.getDestination(d);
             destinations.add(dest); // replace with shiny new Destination objects
 
@@ -70,7 +70,7 @@ public class FiftyFifty extends LoadBalancer {
         lbr.destination = destinations.get(currentDest).getId();
         FullDestination dest = db.getDestination(lbr.destination);
         lbr.eta = getEta(j, dest);
-        log.trace("Load balancer sending job to destination {\'LoadBalancer\':\'{}\', \'job\':\'{}\', \'destination\':\'{}\'} ", qM.queueConfig.getName(), j.get_id(), dest.getName());
+        log.trace("Load balancer sending job to destination {\'LoadBalancer\':\'{}\', \'job\':\'{}\', \'destination\':\'{}\'} ", qM.printQueue.getName(), j.get_id(), dest.getName());
         return lbr;
     }
 
