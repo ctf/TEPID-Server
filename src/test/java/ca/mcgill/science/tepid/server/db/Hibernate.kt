@@ -588,7 +588,7 @@ class HibernateQueueLayerTest() : DbTest() {
         ti._id = id
         persist(ti)
 
-        val response = hl.deleteQueue(id)
+        val response = hl.deleteById(id)
 
         val retrieved = hl.readOrNull(id)
         assertNull(retrieved)

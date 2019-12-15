@@ -10,7 +10,6 @@ import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.server.server.mapper
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.utils.PropsDB
@@ -97,17 +96,6 @@ class HibernateQueueLayer(hc: IHibernateCrud<PrintQueue, String?>) : DbQueueLaye
                 "ID" to id
             )
         )
-    }
-
-    override fun deleteQueue(id: Id): String {
-        val failures = mutableListOf<String>()
-        try {
-            deleteById(id)
-        } catch (e: Exception) {
-            failures.add(e.message ?: "Generic Failure for ID: $id")
-        }
-
-        return mapper.writeValueAsString(if (failures.isEmpty()) "Success" else failures)
     }
 
     override fun getEta(destinationId: Id): Long {

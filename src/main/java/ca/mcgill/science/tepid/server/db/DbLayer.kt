@@ -121,8 +121,6 @@ interface DbQueueLayer : ICrud<PrintQueue, Id?> {
 
     fun getQueue(id: Id): PrintQueue
 
-    fun deleteQueue(id: Id): String
-
     fun getEta(destinationId: Id): Long
 }
 
