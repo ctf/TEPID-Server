@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.util
 
+import ca.mcgill.science.tepid.models.bindings.TepidDb
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
 import ca.mcgill.science.tepid.server.server.mapper
@@ -14,6 +15,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.container.ContainerRequestContext
+import javax.ws.rs.core.Response
 
 /**
  * Attempts to retrieve a session from a container context,
@@ -69,6 +71,12 @@ fun logAnnounce(msg: String, vararg params: Pair<String, Any?>): String {
             { p -> p.first },
             { p -> p.second.toString() })
     )
+}
+
+fun <E: TepidDb> Collection<E>.toIdentifiedCollection(): Map<String, E> {
+    return map {
+        return@map (it._id ?: return@map) to it
+    }.toMap()
 }
 
 /**
