@@ -10,7 +10,6 @@ import ca.mcgill.science.tepid.server.db.remapExceptions
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer
 import ca.mcgill.science.tepid.server.util.failBadRequest
 import ca.mcgill.science.tepid.server.util.failNotFound
-import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.server.util.toIdentifiedCollection
 import org.apache.logging.log4j.kotlin.Logging
 import java.io.InputStream
@@ -26,20 +25,9 @@ import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
 import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 
 @Path("/queues")
 class Queues {
-
-    @PUT
-    @RolesAllowed(ELDER)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun putQueues(queues: List<PrintQueue>): Response {
-        val response = DB.queues.putQueues(queues)
-        queues.forEach { logger.info(logMessage("added new queue", "name" to it.name)) }
-        return response
-    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

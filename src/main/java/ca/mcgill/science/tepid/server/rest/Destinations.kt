@@ -30,24 +30,6 @@ import javax.ws.rs.core.MediaType
 class Destinations {
 
     /**
-     * @param destinations map of destinations
-     * @return post result
-     */
-    @PUT
-    @RolesAllowed(ELDER)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun putDestinations(destinations: List<FullDestination>): List<PutResponse> =
-        remapExceptions { DB.destinations.putDestinations(destinations) }
-
-    @POST
-    @RolesAllowed(ELDER)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    fun newDestination(destination: FullDestination): PutResponse =
-        remapExceptions { DB.destinations.put(destination) }
-
-    /**
      * Retrieves map of room names as [String] and their details in [Destination]
      *
      * @param ctx context
@@ -67,6 +49,13 @@ class Destinations {
                 .toMap()
         }
     }
+
+    @POST
+    @RolesAllowed(ELDER)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    fun newDestination(destination: FullDestination): PutResponse =
+        remapExceptions { DB.destinations.put(destination) }
 
     @GET
     @Path("/{dest}")
