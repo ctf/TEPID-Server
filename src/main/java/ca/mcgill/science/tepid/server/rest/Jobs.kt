@@ -51,14 +51,14 @@ class Jobs {
     private fun PrintJob.getJobExpiration(): Long {
         val userId = userIdentification ?: return 0
         return System.currentTimeMillis() + (AuthenticationManager.queryUserDb(userId)?.jobExpiration
-                ?: TimeUnit.DAYS.toMillis(7))
+            ?: TimeUnit.DAYS.toMillis(7))
     }
 
     @POST
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): Response {
+    fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): PutResponse {
         val session = ctx.getSession()
         val queueNames: List<String> = DB.queues.readAll().mapNotNull { it.name }
         if (!queueNames.contains(j.queueId))
@@ -66,7 +66,7 @@ class Jobs {
         j.userIdentification = session.user.shortUser
         j.deleteDataOn = j.getJobExpiration()
         logger.debug(logMessage("starting new print job", "name" to j.name, "for" to session.user.longUser))
-        return DB.printJobs.postJob(j)
+        return remapExceptions { DB.printJobs.create(j) }
     }
 
     @PUT
@@ -117,11 +117,11 @@ class Jobs {
         if (session.role == USER && session.user.shortUser != j.userIdentification)
             failUnauthorized("You cannot reprint someone else's job")
         val reprint = PrintJob(
-                name = j.name,
-                originalHost = "REPRINT",
-                queueId = j.queueId,
-                userIdentification = j.userIdentification,
-                deleteDataOn = j.getJobExpiration()
+            name = j.name,
+            originalHost = "REPRINT",
+            queueId = j.queueId,
+            userIdentification = j.userIdentification,
+            deleteDataOn = j.getJobExpiration()
         )
         logger.debug(logMessage("reprinted", "name" to reprint.name))
         val response = remapExceptions { DB.printJobs.create(reprint) }

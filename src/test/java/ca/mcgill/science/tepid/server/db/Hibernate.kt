@@ -507,7 +507,7 @@ class HibernateJobLayerTest : DbTest() {
         val id = newId()
         ti._id = id
 
-        hl.postJob(ti)
+        hl.create(ti)
 
         val ri = hl.read(id)
         assertEquals(ti, ri)

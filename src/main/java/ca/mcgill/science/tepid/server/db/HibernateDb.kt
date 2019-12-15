@@ -86,15 +86,6 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
         }
     }
 
-    override fun postJob(job: PrintJob): Response {
-        try {
-            val out = create(job)
-            return Response.ok().entity(out).build()
-        } catch (e: Exception) {
-            return parsePersistenceErrorToResponse(e)
-        }
-    }
-
     override fun getJobFile(id: Id, file: String): InputStream? {
         throw NotImplementedError()
     }
