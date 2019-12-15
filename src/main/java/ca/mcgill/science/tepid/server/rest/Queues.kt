@@ -38,7 +38,7 @@ class Queues {
     @RolesAllowed(ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun addQueue(queue: PrintQueue): PutResponse =
+    fun newQueue(queue: PrintQueue): PutResponse =
         remapExceptions { DB.queues.create(queue) }
 
     @GET
@@ -70,15 +70,15 @@ class Queues {
         // TODO limit param no longer user, should be replaced by from param in client
         // this should get all jobs in "queue" from the past 2 days
         val twoDaysMs = 1000 * 60 * 60 * 24 * 2L
-        return DB.printJobs.getJobsByQueue(queue, maxAge = twoDaysMs, sortOrder = Order.DESCENDING)
+        return remapExceptions { DB.printJobs.getJobsByQueue(queue, maxAge = twoDaysMs, sortOrder = Order.DESCENDING) }
     }
 
     @GET
     @Path("/{queue}/jobs/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getJob(@PathParam("queue") queue: String, @PathParam("id") id: String): PrintJob {
-        val j = DB.printJobs.read(id)
-        if (!j.queueId.equals(queue, ignoreCase = true))
+        val j = remapExceptions { DB.printJobs.read(id) }
+        if (!j.queueName.equals(queue, ignoreCase = true))
             failBadRequest("Job queue does not match $queue")
         return j
     }
@@ -87,8 +87,8 @@ class Queues {
     @Path("/{queue}/jobs/{id}/{file}")
     fun getAttachment(@PathParam("queue") queue: String, @PathParam("id") id: String, @PathParam("file") file: String): InputStream {
         try {
-            val j = DB.printJobs.read(id)
-            if (!j.queueId.equals(queue, ignoreCase = true))
+            val j = remapExceptions { DB.printJobs.read(id) }
+            if (!j.queueName.equals(queue, ignoreCase = true))
                 failNotFound("Could not find job $id in queue $queue")
             return DB.printJobs.getJobFile(id, file)!!
         } catch (ignored: Exception) {
