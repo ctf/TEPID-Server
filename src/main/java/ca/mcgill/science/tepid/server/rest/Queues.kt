@@ -42,7 +42,7 @@ class Queues {
     fun getQueues(): List<PrintQueue> = DB.queues.readAll()
 
     @GET
-    @Path("/{queue}")
+    @Path("/{queue}/jobs")
     @Produces(MediaType.APPLICATION_JSON)
     fun listJobs(@PathParam("queue") queue: String, @QueryParam("limit") @DefaultValue("-1") limit: Int): Collection<PrintJob> {
         // TODO limit param no longer user, should be replaced by from param in client
@@ -52,7 +52,7 @@ class Queues {
     }
 
     @GET
-    @Path("/{queue}/{id}")
+    @Path("/{queue}/jobs/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getJob(@PathParam("queue") queue: String, @PathParam("id") id: String): PrintJob {
         val j = DB.printJobs.read(id)
@@ -69,7 +69,7 @@ class Queues {
             DB.queues.deleteQueue(queue)
 
     @GET
-    @Path("/{queue}/{id}/{file}")
+    @Path("/{queue}/jobs/{id}/{file}")
     fun getAttachment(@PathParam("queue") queue: String, @PathParam("id") id: String, @PathParam("file") file: String): InputStream {
         try {
             val j = DB.printJobs.read(id)
