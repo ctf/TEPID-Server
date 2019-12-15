@@ -11,6 +11,7 @@ import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer
 import ca.mcgill.science.tepid.server.util.failBadRequest
 import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.logMessage
+import ca.mcgill.science.tepid.server.util.toIdentifiedCollection
 import org.apache.logging.log4j.kotlin.Logging
 import java.io.InputStream
 import javax.annotation.security.RolesAllowed
@@ -42,7 +43,8 @@ class Queues {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQueues(): List<PrintQueue> = DB.queues.readAll()
+    fun getQueues(): Map<String, PrintQueue> =
+        remapExceptions { DB.queues.readAll() }.toIdentifiedCollection()
 
     @POST
     @RolesAllowed(ELDER)
