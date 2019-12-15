@@ -16,11 +16,16 @@ public class FiftyFifty extends LoadBalancer {
 
     private final Logger log;
 
+    public static final String name = "fiftyfifty";
     public static final DbLayer db = DbLayerKt.getDB();
     private final List<FullDestination> destinations;
     private int currentDest;
     private boolean allDown = true;
     private QueueManager qM;
+
+    static {
+        LoadBalancer.registerLoadBalancer(name, FiftyFifty.class);
+    }
 
     public FiftyFifty(QueueManager qm) {
         super(qm);
