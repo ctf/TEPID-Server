@@ -41,7 +41,7 @@ class PrintIT : ITBase() {
     }
 
     companion object {
-        val testJob : PrintJob = PrintJob()
+        val testJob: PrintJob = PrintJob()
 
         @JvmStatic
         @BeforeAll
