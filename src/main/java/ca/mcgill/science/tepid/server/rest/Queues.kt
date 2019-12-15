@@ -60,8 +60,8 @@ class Queues {
     @Path("/{queue}")
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun deleteQueue(@PathParam("queue") id: String): String =
-        remapExceptions { DB.queues.deleteQueue(id) }
+    fun deleteQueue(@PathParam("queue") id: String): Unit =
+        remapExceptions { DB.queues.deleteById(id) }
 
     @GET
     @Path("/{queue}/jobs")
