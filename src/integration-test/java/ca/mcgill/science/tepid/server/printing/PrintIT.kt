@@ -21,7 +21,7 @@ class PrintIT : ITBase() {
     fun testDeleteFileOnFailedUpload() {
         val testId = "testId0"
         val t = testJob.copy().also { it._id = testId }
-        DB.printJobs.postJob(t)
+        DB.printJobs.put(t)
 
         // Produces an error in the pre-submit thread. It's not the best, but apparently mockking a file is deep in the JVM and bascially not possible.
         every { Printer.validateAndSend(any(), any(), any()) } throws IOException("TESTING PLZ IGNORE")
@@ -33,7 +33,7 @@ class PrintIT : ITBase() {
     fun testFileStillExistsIfPrintingSuccessful() {
         val testId = "testId1"
         val t = testJob.copy().also { it._id = testId }
-        DB.printJobs.postJob(t)
+        DB.printJobs.put(t)
 
         every { Printer.validateAndSend(any(), any(), any()) } returns { Unit }
         Printer.print(testId, ByteArrayInputStream("TEST".toByteArray()), true)
@@ -41,7 +41,7 @@ class PrintIT : ITBase() {
     }
 
     companion object {
-        val testJob: PrintJob = PrintJob()
+        val testJob : PrintJob = PrintJob()
 
         @JvmStatic
         @BeforeAll
