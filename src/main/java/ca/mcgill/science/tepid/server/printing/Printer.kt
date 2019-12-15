@@ -6,7 +6,6 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.enums.PrintError
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.db.parsePersistenceErrorToResponse
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.copyFrom
 import ca.mcgill.science.tepid.server.util.logError

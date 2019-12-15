@@ -138,8 +138,7 @@ class HibernateQueueLayer(hc: IHibernateCrud<PrintQueue, String?>) : DbQueueLaye
     }
 }
 
-class HibernateMarqueeLayer(hc: IHibernateCrud<MarqueeData, String?>) : DbMarqueeLayer, IHibernateCrud<MarqueeData, String?> by hc {
-}
+class HibernateMarqueeLayer(hc: IHibernateCrud<MarqueeData, String?>) : DbMarqueeLayer, IHibernateCrud<MarqueeData, String?> by hc
 
 class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessionLayer, IHibernateCrud<FullSession, String?> by hc {
     override fun getSessionIdsForUser(shortUser: ShortUser): List<Id> {

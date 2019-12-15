@@ -16,8 +16,8 @@ interface IHibernateConnector : Logging {
     val emf: EntityManagerFactory
     fun <T> dbOp(errorLogger: (Exception) -> String = { logMessage("DB error") }, f: (em: EntityManager) -> T): T
     fun <T> dbOpTransaction(
-         errorLogger: (Exception) -> String = { logMessage("DB error") },
-         f: (em: EntityManager) -> T
+        errorLogger: (Exception) -> String = { logMessage("DB error") },
+        f: (em: EntityManager) -> T
     ): T
 }
 
@@ -37,8 +37,8 @@ class HibernateConnector(override val emf: EntityManagerFactory) : IHibernateCon
     }
 
     override fun <T> dbOpTransaction(
-            errorLogger: (Exception) -> String,
-            f: (em: EntityManager) -> T
+        errorLogger: (Exception) -> String,
+        f: (em: EntityManager) -> T
     ): T {
         return dbOp(errorLogger) {
             try {
@@ -58,8 +58,9 @@ class HibernateConnector(override val emf: EntityManagerFactory) : IHibernateCon
 
 interface IHibernateCrud<T, P> : ICrud<T, P>, IHibernateConnector
 
-class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, override val classParameter: Class<T>) : IHibernateCrud<T, P>,
-        IHibernateConnector by HibernateConnector(emf) {
+class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, override val classParameter: Class<T>) :
+    IHibernateCrud<T, P>,
+    IHibernateConnector by HibernateConnector(emf) {
 
     override fun create(obj: T): PutResponse {
         val r = dbOpTransaction(
@@ -70,7 +71,7 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
     }
 
     override fun read(id: P): T {
-            return readOrNull(id) ?: throw EntityNotFoundException()
+        return readOrNull(id) ?: throw EntityNotFoundException()
     }
 
     override fun readOrNull(id: P): T? {
@@ -85,7 +86,7 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
             { logMessage("error reading all objects", "class" to classParameter) },
             { em ->
                 em.createQuery("SELECT c FROM ${classParameter.simpleName} c", classParameter).resultList
-                        ?: emptyList()
+                    ?: emptyList()
             }
         )
     }
@@ -123,7 +124,7 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
 
     override fun put(obj: T): PutResponse {
         obj._id
-                ?: return run { obj._id = UUID.randomUUID().toString(); create(obj) } // has no ID, needs to be created
+            ?: return run { obj._id = UUID.randomUUID().toString(); create(obj) } // has no ID, needs to be created
         val em = emf.createEntityManager()
         try {
             em.getReference(classParameter, obj._id)
