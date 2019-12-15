@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.server.printing.QueueManager;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class LoadBalancer {
 
@@ -12,16 +13,12 @@ public abstract class LoadBalancer {
     public static void registerLoadBalancer(String name, Class<? extends LoadBalancer> loadBalancerClass){
         loadBalancers.put(name, loadBalancerClass);
     }
-
-    @SuppressWarnings("unchecked")
-    public static final Class<? extends LoadBalancer>[] _loadBalancers = new Class[]{FiftyFifty.class};
+    public static Set<Map.Entry<String, Class<? extends LoadBalancer>>> getLoadBalancers(){
+        return loadBalancers.entrySet();
+    }
 
     public static Class<? extends LoadBalancer> getLoadBalancer(String name) {
-        try {
-            return (Class<? extends LoadBalancer>) Class.forName("ca.science.tepid.server.loadbalancer." + name);
-        } catch (ClassNotFoundException e) {
-            return LoadBalancer._loadBalancers[0];
-        }
+        return loadBalancers.getOrDefault(name, FiftyFifty.class);
     }
 
     protected final QueueManager queueManager;
