@@ -5,7 +5,7 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.server.printing.QueueManager
 import ca.mcgill.science.tepid.server.util.logMessage
 
-class FiftyFifty(qm: QueueManager?) : LoadBalancer(qm!!) {
+class FiftyFifty(qm: QueueManager) : LoadBalancer(qm) {
     private var currentDest = 0
 
     companion object {
@@ -22,13 +22,13 @@ class FiftyFifty(qm: QueueManager?) : LoadBalancer(qm!!) {
      * @param j PrintJob
      * @return result
      */
-    override fun processJob(j: PrintJob?): LoadBalancerResults? {
+    override fun processJob(j: PrintJob): LoadBalancerResults? {
         refreshDestinations()
         if (allDown) {
             log.warn {
                 logMessage(
                     "Rejecting job as all printers are down",
-                    "jobId" to j!!.getId(),
+                    "jobId" to j.getId(),
                     "destinationCount" to destinations.size
                 )
             }
@@ -41,7 +41,7 @@ class FiftyFifty(qm: QueueManager?) : LoadBalancer(qm!!) {
             logMessage(
                 "Load balancer sending job to destination",
                 "printqueue" to queueManager.printQueue.name,
-                "job" to j!!._id,
+                "job" to j._id,
                 "destination" to dest.name
             )
         }
@@ -55,10 +55,10 @@ class FiftyFifty(qm: QueueManager?) : LoadBalancer(qm!!) {
      * @param d destination for print
      * @return long for estimation
      */
-    private fun getEta(j: PrintJob?, d: FullDestination): Long {
+    private fun getEta(j: PrintJob, d: FullDestination): Long {
         var eta = Math.max(queueManager.getEta(d.getId()), System.currentTimeMillis())
         log.trace { logMessage("Current max", "eta" to eta) }
-        eta += Math.round(j!!.pages / d.ppm.toDouble() * 60.0 * 1000.0)
+        eta += Math.round(j.pages / d.ppm.toDouble() * 60.0 * 1000.0)
         log.debug { logMessage("New eta", "ppm" to d.ppm, "eta" to eta) }
         return eta
     }

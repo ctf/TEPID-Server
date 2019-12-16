@@ -12,14 +12,14 @@ import org.apache.logging.log4j.kotlin.KotlinLogger
 import org.apache.logging.log4j.kotlin.logger
 import java.util.*
 
-class QueueManager private constructor(id: String?) {
+class QueueManager private constructor(id: String) {
     private val log: KotlinLogger
     var printQueue: PrintQueue
     private val loadBalancer: LoadBalancer
 
     init {
         try {
-            printQueue = db.getQueue(id!!)
+            printQueue = db.getQueue(id)
         } catch (e: Exception) {
             throw RuntimeException("Could not instantiate queue manager", e)
         }
@@ -29,10 +29,9 @@ class QueueManager private constructor(id: String?) {
         loadBalancer = getLoadBalancerFactory(printQueue.loadBalancer!!)(this)
     }
 
-    fun assignDestination(id: String?): PrintJob? {
-        return db.updateJob(id!!) {
-            val results: LoadBalancerResults? = loadBalancer.processJob(this)
-            if (results == null) {
+    fun assignDestination(id: String): PrintJob? {
+        return db.updateJob(id) {
+            val results: LoadBalancerResults = loadBalancer.processJob(this) ?: run {
                 this.fail(PrintError.INVALID_DESTINATION)
                 log.info {
                     logMessage(
@@ -40,19 +39,19 @@ class QueueManager private constructor(id: String?) {
                         "printJob" to this.getId(), "printqueue" to printQueue.getId()
                     )
                 }
-            } else {
-                this.destination = results.destination
-                this.eta = results.eta
-                log.info { logMessage("Setting destination", "id" to this.getId(), "destination" to results.destination) }
+                return@updateJob
             }
+            this.destination = results.destination
+            this.eta = results.eta
+            log.info { logMessage("Setting destination", "id" to this.getId(), "destination" to results.destination) }
         }
     }
 
     // TODO check use of args
-    fun getEta(destination: String?): Long {
+    fun getEta(destination: String): Long {
         var maxEta: Long = 0
         try {
-            maxEta = db.getEta(destination!!)
+            maxEta = db.getEta(destination)
         } catch (ignored: Exception) {
         }
         return maxEta
@@ -61,15 +60,15 @@ class QueueManager private constructor(id: String?) {
     companion object {
         val db = DB
 
-        private val instances: MutableMap<String?, QueueManager> =
+        private val instances: MutableMap<String, QueueManager> =
             HashMap()
 
-        fun getInstance(queueId: String?): QueueManager {
+        fun getInstance(queueId: String): QueueManager {
             synchronized(instances) { return instances.computeIfAbsent(queueId, ::QueueManager) }
         }
 
         fun assignDestination(job: PrintJob): PrintJob? {
-            return getInstance(job.queueId).assignDestination(job.getId())
+            return job.queueId?.let { getInstance(it).assignDestination(job.getId()) }
         }
     }
 }

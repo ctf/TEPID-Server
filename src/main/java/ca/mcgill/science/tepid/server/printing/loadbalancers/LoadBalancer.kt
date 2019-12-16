@@ -45,7 +45,7 @@ abstract class LoadBalancer(queueManager: QueueManager) {
 
     data class LoadBalancerResults(var destination: String, var eta: Long)
 
-    abstract fun processJob(j: PrintJob?): LoadBalancerResults?
+    abstract fun processJob(j: PrintJob): LoadBalancerResults?
 
     companion object {
 
