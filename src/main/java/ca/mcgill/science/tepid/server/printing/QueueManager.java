@@ -22,16 +22,16 @@ public class QueueManager {
     private static final Map<String, QueueManager> instances = new HashMap<>();
     public final PrintQueue printQueue;
     public static final DbLayer db = DbLayerKt.getDB();
-    ;
+
     private final LoadBalancer loadBalancer;
 
-    public static QueueManager getInstance(String id) {
+    public static QueueManager getInstance(String queueId) {
         synchronized (instances) {
-            if (!instances.containsKey(id)) {
-                instances.put(id, new QueueManager(id));
+            if (!instances.containsKey(queueId)) {
+                instances.put(queueId, new QueueManager(queueId));
             }
         }
-        return instances.get(id);
+        return instances.get(queueId);
     }
 
     public static PrintJob assignDestination(PrintJob job) {
