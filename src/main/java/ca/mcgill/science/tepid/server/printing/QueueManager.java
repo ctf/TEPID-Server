@@ -27,11 +27,8 @@ public class QueueManager {
 
     public static QueueManager getInstance(String queueId) {
         synchronized (instances) {
-            if (!instances.containsKey(queueId)) {
-                instances.put(queueId, new QueueManager(queueId));
-            }
+            return instances.computeIfAbsent(queueId, QueueManager::new);
         }
-        return instances.get(queueId);
     }
 
     public static PrintJob assignDestination(PrintJob job) {
