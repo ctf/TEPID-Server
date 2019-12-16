@@ -37,11 +37,12 @@ abstract class LoadBalancer(queueManager: QueueManager) {
 
     companion object {
 
-        @JvmField
+        @JvmStatic
         protected val db = DB
+
         /*
-     * Registry
-     */
+         * Registry
+         */
         private val loadBalancerFactories: MutableMap<String, Function<QueueManager, out LoadBalancer>> =
             HashMap()
 
