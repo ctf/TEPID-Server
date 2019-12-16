@@ -11,17 +11,20 @@ import kotlin.Unit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class QueueManager {
 
     private final Logger log;
+    public static final DbLayer db = DbLayerKt.getDB();
 
     private static final Map<String, QueueManager> instances = new HashMap<>();
+
     public final PrintQueue printQueue;
-    public static final DbLayer db = DbLayerKt.getDB();
+    public PrintQueue getPrintQueue() {
+        return printQueue;
+    }
 
     private final LoadBalancer loadBalancer;
 
@@ -43,12 +46,7 @@ public class QueueManager {
         }
         log = LogManager.getLogger("Queue - " + this.printQueue.getName());
         log.trace("Instantiate queue manager {\'queueName\':\'{}\'}", this.printQueue.getName());
-        Class<? extends LoadBalancer> lb = LoadBalancer.getLoadBalancer(printQueue.getLoadBalancer());
-        try {
-            this.loadBalancer = lb.getConstructor(QueueManager.class).newInstance(this);
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-            throw new RuntimeException("Could not instantiate load balancer " + this.printQueue.getLoadBalancer(), e);
-        }
+        this.loadBalancer = LoadBalancer.getLoadBalancerFactory(printQueue.getLoadBalancer()).apply(this);
     }
 
     public PrintJob assignDestination(String id) {

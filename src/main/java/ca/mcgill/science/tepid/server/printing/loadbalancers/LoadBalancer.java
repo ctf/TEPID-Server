@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 public abstract class LoadBalancer {
 
@@ -56,15 +57,15 @@ public abstract class LoadBalancer {
      * Registry
      */
 
-    private static final Map<String, Class<? extends LoadBalancer>> loadBalancers = new HashMap<>();
-    public static void registerLoadBalancer(String name, Class<? extends LoadBalancer> loadBalancerClass){
-        loadBalancers.put(name, loadBalancerClass);
+    private static final Map<String, Function<QueueManager, ? extends LoadBalancer>> loadBalancerFactories = new HashMap<>();
+    public static void registerLoadBalancer(String name, Function<QueueManager,? extends LoadBalancer> loadBalancerFactory){
+        loadBalancerFactories.put(name, loadBalancerFactory);
     }
-    public static Set<Map.Entry<String, Class<? extends LoadBalancer>>> getLoadBalancers(){
-        return loadBalancers.entrySet();
+    public static Set<Map.Entry<String, Function<QueueManager, ? extends LoadBalancer>>> getLoadBalancerFactories(){
+        return loadBalancerFactories.entrySet();
     }
 
-    public static Class<? extends LoadBalancer> getLoadBalancer(String name) {
-        return loadBalancers.getOrDefault(name, FiftyFifty.class);
+    public static Function<QueueManager,? extends LoadBalancer> getLoadBalancerFactory(String name) {
+        return loadBalancerFactories.getOrDefault(name, FiftyFifty::new);
     }
 }

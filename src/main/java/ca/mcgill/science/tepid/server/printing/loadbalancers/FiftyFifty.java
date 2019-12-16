@@ -11,7 +11,7 @@ public class FiftyFifty extends LoadBalancer {
     private int currentDest;
 
     static {
-        LoadBalancer.registerLoadBalancer(name, FiftyFifty.class);
+        LoadBalancer.registerLoadBalancer(name, FiftyFifty::new);
     }
 
     public FiftyFifty(QueueManager qm) {
