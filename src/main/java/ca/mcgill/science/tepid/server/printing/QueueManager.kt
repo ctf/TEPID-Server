@@ -7,12 +7,13 @@ import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer.Companion.getLoadBalancerFactory
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer.LoadBalancerResults
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.Logger
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.KotlinLogger
+import org.apache.logging.log4j.kotlin.logger
 import java.util.*
 
 class QueueManager private constructor(id: String?) {
-    private val log: Logger
+    private val log: KotlinLogger
     var printQueue: PrintQueue
     private val loadBalancer: LoadBalancer
 
@@ -22,8 +23,9 @@ class QueueManager private constructor(id: String?) {
         } catch (e: Exception) {
             throw RuntimeException("Could not instantiate queue manager", e)
         }
-        log = LogManager.getLogger("Queue - " + printQueue.name)
-        log.trace("Instantiate queue manager {\'queueName\':\'{}\'}", printQueue.name)
+        // log = LogManager.getLogger("Queue - " + printQueue.name)
+        log = logger("Queue - " + printQueue.name)
+        log.trace { logMessage("Instantiate queue manager", "queueName" to printQueue.name) }
         loadBalancer = getLoadBalancerFactory(printQueue.loadBalancer!!)(this)
     }
 
@@ -32,15 +34,16 @@ class QueueManager private constructor(id: String?) {
             val results: LoadBalancerResults? = loadBalancer.processJob(this)
             if (results == null) {
                 this.fail(PrintError.INVALID_DESTINATION)
-                log.info(
-                    "LoadBalancer did not assign a destination {\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\'}",
-                    this.getId(),
-                    printQueue.getId()
-                )
+                log.info {
+                    logMessage(
+                        "LoadBalancer did not assign a destination",
+                        "printJob" to this.getId(), "printqueue" to printQueue.getId()
+                    )
+                }
             } else {
                 this.destination = results.destination
                 this.eta = results.eta
-                log.info(this.getId() + " setting destination (" + results.destination + ")")
+                log.info { logMessage("Setting destination", "id" to this.getId(), "destination" to results.destination) }
             }
         }
     }
