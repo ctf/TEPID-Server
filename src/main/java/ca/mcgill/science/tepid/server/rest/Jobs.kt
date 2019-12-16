@@ -62,9 +62,10 @@ class Jobs {
     @Consumes(MediaType.APPLICATION_JSON)
     fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): Response {
         val session = ctx.getSession()
-        val queueNames: List<String> = DB.getQueues().mapNotNull { it.name }
-        if (!queueNames.contains(j.queueName))
-            failBadRequest("Invalid queue name ${j.queueName}")
+        val queueNames: List<String> = DB.getQueues().mapNotNull { it._id }
+
+        if (!queueNames.contains(j.queueId))
+            failBadRequest("Invalid queue name ${j.queueId}")
         j.userIdentification = session.user.shortUser
         j.deleteDataOn = j.getJobExpiration()
         logger.debug(logMessage("starting new print job", "name" to j.name, "for" to session.user.longUser))
@@ -121,7 +122,7 @@ class Jobs {
         val reprint = PrintJob(
             name = j.name,
             originalHost = "REPRINT",
-            queueName = j.queueName,
+            queueId = j.queueId,
             userIdentification = j.userIdentification,
             deleteDataOn = j.getJobExpiration()
         )

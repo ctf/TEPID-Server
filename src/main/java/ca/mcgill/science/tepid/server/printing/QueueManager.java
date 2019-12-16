@@ -35,7 +35,7 @@ public class QueueManager {
     }
 
     public static PrintJob assignDestination(PrintJob job) {
-        return getInstance(job.getQueueName()).assignDestination(job.getId());
+        return getInstance(job.getQueueId()).assignDestination(job.getId());
     }
 
     private QueueManager(String id) {
