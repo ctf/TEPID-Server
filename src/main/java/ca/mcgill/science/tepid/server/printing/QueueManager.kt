@@ -22,9 +22,9 @@ class QueueManager private constructor(id: String?) {
         } catch (e: Exception) {
             throw RuntimeException("Could not instantiate queue manager", e)
         }
-        log = LogManager.getLogger("Queue - " + printQueue?.name)
-        log.trace("Instantiate queue manager {\'queueName\':\'{}\'}", printQueue?.name)
-        loadBalancer = getLoadBalancerFactory(printQueue?.loadBalancer!!).apply(this)
+        log = LogManager.getLogger("Queue - " + printQueue.name)
+        log.trace("Instantiate queue manager {\'queueName\':\'{}\'}", printQueue.name)
+        loadBalancer = getLoadBalancerFactory(printQueue.loadBalancer!!)(this)
     }
 
     fun assignDestination(id: String?): PrintJob? {
@@ -35,7 +35,7 @@ class QueueManager private constructor(id: String?) {
                 log.info(
                     "LoadBalancer did not assign a destination {\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\'}",
                     this.getId(),
-                    printQueue?.getId()
+                    printQueue.getId()
                 )
             } else {
                 this.destination = results.destination
@@ -45,7 +45,7 @@ class QueueManager private constructor(id: String?) {
         }
     }
 
-    //TODO check use of args
+    // TODO check use of args
     fun getEta(destination: String?): Long {
         var maxEta: Long = 0
         try {
@@ -54,6 +54,7 @@ class QueueManager private constructor(id: String?) {
         }
         return maxEta
     }
+
     companion object {
         val db = DB
 
@@ -61,18 +62,9 @@ class QueueManager private constructor(id: String?) {
             HashMap()
 
         fun getInstance(queueId: String?): QueueManager {
-            synchronized(
-                instances
-            ) {
-                return instances.computeIfAbsent(
-                    queueId
-                ) { id: String? ->
-                    QueueManager(
-                        id
-                    )
-                }
-            }
+            synchronized(instances) { return instances.computeIfAbsent(queueId, ::QueueManager) }
         }
+
         fun assignDestination(job: PrintJob): PrintJob? {
             return getInstance(job.queueId).assignDestination(job.getId())
         }

@@ -7,7 +7,6 @@ import ca.mcgill.science.tepid.server.printing.QueueManager
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.util.*
-import java.util.function.Function
 
 abstract class LoadBalancer(queueManager: QueueManager) {
     @JvmField
@@ -18,6 +17,14 @@ abstract class LoadBalancer(queueManager: QueueManager) {
     protected val destinations: MutableList<FullDestination>
     @JvmField
     protected var allDown = true
+
+    init {
+        log = LogManager.getLogger("Queue - " + queueManager.printQueue.name)
+        destinations = ArrayList(queueManager.printQueue.destinations.size)
+        refreshDestinations()
+        log.trace("Initialized with {}; allDown {}", destinations.size, allDown)
+    }
+
     fun refreshDestinations() {
         allDown = true
         destinations.clear() // clear out the old Destination objects
@@ -43,34 +50,21 @@ abstract class LoadBalancer(queueManager: QueueManager) {
         /*
          * Registry
          */
-        private val loadBalancerFactories: MutableMap<String, Function<QueueManager, out LoadBalancer>> =
+        private val loadBalancerFactories: MutableMap<String, (QueueManager) -> LoadBalancer> =
             HashMap()
 
         @JvmStatic
-        fun registerLoadBalancer(
-            name: String,
-            loadBalancerFactory: Function<QueueManager, out LoadBalancer>
-        ) {
+        fun registerLoadBalancer(name: String, loadBalancerFactory: (QueueManager) -> LoadBalancer) {
             loadBalancerFactories[name] = loadBalancerFactory
         }
 
-        fun getLoadBalancerFactories(): Set<Map.Entry<String, Function<QueueManager, out LoadBalancer>>> {
+        fun getLoadBalancerFactories(): Set<Map.Entry<String, (QueueManager) -> LoadBalancer>> {
             return loadBalancerFactories.entries
         }
 
         @JvmStatic
-        fun getLoadBalancerFactory(name: String): Function<QueueManager, out LoadBalancer> {
-            return loadBalancerFactories.getOrDefault(
-                name,
-                Function<QueueManager, LoadBalancer> { qm: QueueManager? -> FiftyFifty(qm) }
-            )
+        fun getLoadBalancerFactory(name: String): (QueueManager) -> LoadBalancer {
+            return loadBalancerFactories.getOrDefault(name, ::FiftyFifty)
         }
-    }
-
-    init {
-        log = LogManager.getLogger("Queue - " + queueManager.printQueue.name)
-        destinations = ArrayList(queueManager.printQueue.destinations.size)
-        refreshDestinations()
-        log.trace("Initialized with {}; allDown {}", destinations.size, allDown)
     }
 }

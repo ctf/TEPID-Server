@@ -3,7 +3,6 @@ package ca.mcgill.science.tepid.server.printing.loadbalancers
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.server.printing.QueueManager
-import java.util.function.Function
 
 class FiftyFifty(qm: QueueManager?) : LoadBalancer(qm!!) {
     private var currentDest = 0
@@ -12,10 +11,7 @@ class FiftyFifty(qm: QueueManager?) : LoadBalancer(qm!!) {
         const val name = "fiftyfifty"
 
         init {
-            registerLoadBalancer(
-                name,
-                Function<QueueManager, LoadBalancer> { qm: QueueManager? -> FiftyFifty(qm) }
-            )
+            registerLoadBalancer(name, ::FiftyFifty)
         }
     }
 
