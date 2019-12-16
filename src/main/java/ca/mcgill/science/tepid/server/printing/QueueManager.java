@@ -42,7 +42,7 @@ public class QueueManager {
         try {
             this.printQueue = db.getQueue(id);
         } catch (Exception e) {
-            throw new RuntimeException("Could not instantiate null queue manager");
+            throw new RuntimeException("Could not instantiate queue manager", e);
         }
         log = LogManager.getLogger("Queue - " + this.printQueue.getName());
         log.trace("Instantiate queue manager {\'queueName\':\'{}\'}", this.printQueue.getName());
