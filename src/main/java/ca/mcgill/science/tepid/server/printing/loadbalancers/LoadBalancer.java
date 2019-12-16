@@ -51,6 +51,11 @@ public abstract class LoadBalancer {
     public static class LoadBalancerResults {
         public String destination;
         public long eta;
+
+        public LoadBalancerResults(String destination, long eta) {
+            this.destination = destination;
+            this.eta = eta;
+        }
     }
 
     /*

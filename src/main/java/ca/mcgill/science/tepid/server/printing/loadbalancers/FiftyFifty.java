@@ -33,12 +33,12 @@ public class FiftyFifty extends LoadBalancer {
             return null;
         }
         do currentDest = (currentDest + 1) % destinations.size(); while (!destinations.get(currentDest).getUp());
-        LoadBalancerResults lbr = new LoadBalancerResults();
-        lbr.destination = destinations.get(currentDest).getId();
-        FullDestination dest = db.getDestination(lbr.destination);
-        lbr.eta = getEta(j, dest);
+
+        String destinationId = destinations.get(currentDest).getId();
+        FullDestination dest = db.getDestination(destinationId);
+
         log.trace("Load balancer sending job to destination {\'LoadBalancer\':\'{}\', \'job\':\'{}\', \'destination\':\'{}\'} ", queueManager.printQueue.getName(), j.get_id(), dest.getName());
-        return lbr;
+        return new LoadBalancerResults(destinationId, getEta(j, dest));
     }
 
     /**
