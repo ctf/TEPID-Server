@@ -56,9 +56,9 @@ public class QueueManager {
                 j.fail(PrintError.INVALID_DESTINATION);
                 log.info("LoadBalancer did not assign a destination {\'PrintJob\':\'{}\', \'LoadBalancer\':\'{}\'}", j.getId(), this.printQueue.getId());
             } else {
-                j.setDestination(results.destination);
-                j.setEta(results.eta);
-                log.info(j.getId() + " setting destination (" + results.destination + ")");
+                j.setDestination(results.getDestination());
+                j.setEta(results.getEta());
+                log.info(j.getId() + " setting destination (" + results.getDestination() + ")");
             }
             return Unit.INSTANCE;
         });
