@@ -13,20 +13,16 @@ import org.apache.logging.log4j.kotlin.KotlinLogger
 import org.apache.logging.log4j.kotlin.logger
 import java.util.*
 
-open class QueueManager protected constructor(queue: PrintQueue) {
-    private val log: KotlinLogger
-    var printQueue: PrintQueue
-    var destinations: MutableList<FullDestination>
-    private val loadBalancer: LoadBalancer
+open class QueueManager protected constructor(var printQueue: PrintQueue, var destinations: MutableList<FullDestination>) {
+    protected val log: KotlinLogger
+    protected val loadBalancer: LoadBalancer
 
     init {
-        printQueue = queue
         // log = LogManager.getLogger("Queue - " + printQueue.name)
         log = logger("Queue - " + printQueue.name)
         log.trace { logMessage("Instantiate queue manager", "queueName" to printQueue.name) }
 
-        destinations = ArrayList(printQueue.destinations.size)
-        refreshDestinations()
+
         log.trace {
             logMessage(
                 "Initialized loadbalancer",
@@ -85,7 +81,10 @@ open class QueueManager protected constructor(queue: PrintQueue) {
 
         private fun getFromDb(id: String): QueueManager {
             try {
-                return QueueManager(db.getQueue(id))
+                val printQueue = db.getQueue(id)
+                val QM = QueueManager(printQueue, mutableListOf())
+                QM.refreshDestinations()
+                return QM
             } catch (e: Exception) {
                 throw RuntimeException("Could not instantiate queue manager", e)
             }
