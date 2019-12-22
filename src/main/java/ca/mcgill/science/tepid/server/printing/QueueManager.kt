@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.printing
 
+import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.enums.PrintError
@@ -15,6 +16,7 @@ import java.util.*
 open class QueueManager protected constructor(queue: PrintQueue) {
     private val log: KotlinLogger
     var printQueue: PrintQueue
+    var destinations: MutableList<FullDestination>
     private val loadBalancer: LoadBalancer
 
     init {
@@ -22,7 +24,28 @@ open class QueueManager protected constructor(queue: PrintQueue) {
         // log = LogManager.getLogger("Queue - " + printQueue.name)
         log = logger("Queue - " + printQueue.name)
         log.trace { logMessage("Instantiate queue manager", "queueName" to printQueue.name) }
+
+        destinations = ArrayList(printQueue.destinations.size)
+        refreshDestinations()
+        log.trace {
+            logMessage(
+                "Initialized loadbalancer",
+                "destinationCount" to destinations.size
+            )
+        }
+
         loadBalancer = getLoadBalancerFactory(printQueue.loadBalancer!!)(this)
+    }
+
+    fun refreshDestinations() {
+        destinations.clear() // clear out the old Destination objects
+        for (d in printQueue.destinations) {
+            val dest = db.getDestination(d)
+            destinations.add(dest) // replace with shiny new Destination objects
+            val up = dest.up
+            log.trace { logMessage("Loadbalancer checking status", "dest" to dest.name, "getUp" to up) }
+        }
+        // maybe we should be concerned about the efficiency of a db query for every dest in the queue on every print job...
     }
 
     fun assignDestination(id: String): PrintJob? {
