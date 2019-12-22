@@ -34,8 +34,7 @@ class FiftyFifty(qm: QueueManager) : LoadBalancer(qm) {
             return null
         }
         do currentDest = (currentDest + 1) % queueManager.destinations.size while (!queueManager.destinations[currentDest].up)
-        val destinationId = queueManager.destinations[currentDest].getId()
-        val dest = db.getDestination(destinationId)
+        val dest = queueManager.destinations[currentDest]
         log.trace {
             logMessage(
                 "Load balancer sending job to destination",
@@ -44,7 +43,7 @@ class FiftyFifty(qm: QueueManager) : LoadBalancer(qm) {
                 "destination" to dest.name
             )
         }
-        return LoadBalancerResults(destinationId, getEta(j, dest))
+        return LoadBalancerResults(dest.getId(), getEta(j, dest))
     }
 
     /**
