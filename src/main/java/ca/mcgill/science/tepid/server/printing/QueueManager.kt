@@ -22,7 +22,6 @@ open class QueueManager protected constructor(var printQueue: PrintQueue, var de
         log = logger("Queue - " + printQueue.name)
         log.trace { logMessage("Instantiate queue manager", "queueName" to printQueue.name) }
 
-
         log.trace {
             logMessage(
                 "Initialized loadbalancer",
@@ -64,7 +63,7 @@ open class QueueManager protected constructor(var printQueue: PrintQueue, var de
     }
 
     // TODO check use of args
-    fun getEta(destination: String): Long {
+    open fun getEta(destination: String): Long {
         var maxEta: Long = 0
         try {
             maxEta = db.getEta(destination)
