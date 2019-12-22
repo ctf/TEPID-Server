@@ -12,17 +12,13 @@ import org.apache.logging.log4j.kotlin.KotlinLogger
 import org.apache.logging.log4j.kotlin.logger
 import java.util.*
 
-class QueueManager private constructor(id: String) {
+open class QueueManager protected constructor(queue: PrintQueue) {
     private val log: KotlinLogger
     var printQueue: PrintQueue
     private val loadBalancer: LoadBalancer
 
     init {
-        try {
-            printQueue = db.getQueue(id)
-        } catch (e: Exception) {
-            throw RuntimeException("Could not instantiate queue manager", e)
-        }
+        printQueue = queue
         // log = LogManager.getLogger("Queue - " + printQueue.name)
         log = logger("Queue - " + printQueue.name)
         log.trace { logMessage("Instantiate queue manager", "queueName" to printQueue.name) }
@@ -63,8 +59,16 @@ class QueueManager private constructor(id: String) {
         private val instances: MutableMap<String, QueueManager> =
             HashMap()
 
+        private fun getFromDb(id: String): QueueManager {
+            try {
+                return QueueManager(db.getQueue(id))
+            } catch (e: Exception) {
+                throw RuntimeException("Could not instantiate queue manager", e)
+            }
+        }
+
         fun getInstance(queueId: String): QueueManager {
-            synchronized(instances) { return instances.computeIfAbsent(queueId, ::QueueManager) }
+            synchronized(instances) { return instances.computeIfAbsent(queueId, ::getFromDb) }
         }
 
         fun assignDestination(job: PrintJob): PrintJob? {
