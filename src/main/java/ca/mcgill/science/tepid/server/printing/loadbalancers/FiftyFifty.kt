@@ -23,19 +23,18 @@ class FiftyFifty(qm: QueueManager) : LoadBalancer(qm) {
      * @return result
      */
     override fun processJob(j: PrintJob): LoadBalancerResults? {
-        refreshDestinations()
-        if (allDown) {
+        if (allDown()) {
             log.warn {
                 logMessage(
                     "Rejecting job as all printers are down",
                     "jobId" to j.getId(),
-                    "destinationCount" to destinations.size
+                    "destinationCount" to queueManager.destinations.size
                 )
             }
             return null
         }
-        do currentDest = (currentDest + 1) % destinations.size while (!destinations[currentDest].up)
-        val destinationId = destinations[currentDest].getId()
+        do currentDest = (currentDest + 1) % queueManager.destinations.size while (!queueManager.destinations[currentDest].up)
+        val destinationId = queueManager.destinations[currentDest].getId()
         val dest = db.getDestination(destinationId)
         log.trace {
             logMessage(

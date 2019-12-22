@@ -49,6 +49,7 @@ open class QueueManager protected constructor(queue: PrintQueue) {
     }
 
     fun assignDestination(id: String): PrintJob? {
+        refreshDestinations()
         return db.updateJob(id) {
             val results: LoadBalancerResults = loadBalancer.processJob(this) ?: run {
                 this.fail(PrintError.INVALID_DESTINATION)
