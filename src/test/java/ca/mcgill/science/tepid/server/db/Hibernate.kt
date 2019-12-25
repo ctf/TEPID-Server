@@ -445,7 +445,7 @@ class HibernateJobLayerTest : DbTest() {
 
         assertEquals(3, retrieved.size)
         assertEquals(listOf("1", "2", "3").sorted(), retrieved.map { it.name }.sorted())
-        assertTrue(retrieved.fold(true) { res, e -> (e.queueName == "Queue1") && res })
+        assertTrue(retrieved.fold(true) { res, e -> (e.queueId == "Queue1") && res })
     }
 
     @Test
@@ -456,7 +456,7 @@ class HibernateJobLayerTest : DbTest() {
 
         assertEquals(3, retrieved.size)
         assertEquals(listOf("3", "2", "1").sorted(), retrieved.map { it.name }.sorted())
-        assertTrue(retrieved.fold(true) { res, e -> (e.queueName == "Queue1") && res })
+        assertTrue(retrieved.fold(true) { res, e -> (e.queueId == "Queue1") && res })
     }
 
     @Test
@@ -501,7 +501,7 @@ class HibernateJobLayerTest : DbTest() {
 
         val ri = hl.read(id) ?: fail("Not Persisted")
         assertEquals("NEWNAME", ri.name)
-        assertEquals(ti.queueName, ri.queueName)
+        assertEquals(ti.queueId, ri.queueId)
     }
 
     @Test
@@ -525,10 +525,10 @@ class HibernateJobLayerTest : DbTest() {
     companion object {
         val now = Date().time
         val testItems = listOf(
-            PrintJob("1", userIdentification = "USER1", queueName = "Queue1", started = now - 40000),
-            PrintJob("2", userIdentification = "USER2", queueName = "Queue1", started = now - 30000),
-            PrintJob("3", userIdentification = "USER1", queueName = "Queue1", started = now - 20000),
-            PrintJob("4", userIdentification = "USER1", queueName = "Queue2", started = now - 10000)
+            PrintJob("1", userIdentification = "USER1", queueId = "Queue1", started = now - 40000),
+            PrintJob("2", userIdentification = "USER2", queueId = "Queue1", started = now - 30000),
+            PrintJob("3", userIdentification = "USER1", queueId = "Queue1", started = now - 20000),
+            PrintJob("4", userIdentification = "USER1", queueId = "Queue2", started = now - 10000)
         )
 
         lateinit var hc: HibernateCrud<PrintJob, String?>

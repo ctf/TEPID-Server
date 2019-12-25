@@ -47,7 +47,7 @@ class JobIT : ITBase() {
 
         testJob = PrintJob(
             name = "Server Test ${System.currentTimeMillis()}",
-            queueName = "0",
+            queueId = q0,
             userIdentification = server.testUser
         )
     }
