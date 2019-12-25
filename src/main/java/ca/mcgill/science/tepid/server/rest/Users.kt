@@ -44,16 +44,6 @@ import javax.ws.rs.core.UriInfo
 class Users {
 
     @GET
-    @Path("/configured")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun adminConfigured(): Boolean = try {
-        DB.users.isAdminConfigured()
-    } catch (e: Exception) {
-        logger.error("localAdmin check failed", e)
-        false
-    }
-
-    @GET
     @Path("/{sam}")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)

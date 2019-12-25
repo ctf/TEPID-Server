@@ -11,3 +11,4 @@
 ## !128
 
 - setNick, setJobExpiration, setcolor return a PutResponse, instead of a FullUser
+- deprecate useless adminConfigured endpoint

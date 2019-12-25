@@ -135,8 +135,6 @@ interface DbUserLayer : ICrud<FullUser, Id?> {
     fun getAllIfPresent(ids: Set<String>): Set<FullUser>
 
     fun find(sam: PersonalIdentifier): FullUser?
-
-    fun isAdminConfigured(): Boolean
 }
 
 interface DbQuotaLayer {

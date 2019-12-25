@@ -145,13 +145,6 @@ class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, I
                 .resultList.toSet()
         }
     }
-
-    override fun isAdminConfigured(): Boolean {
-        return (dbOp { em ->
-            em.createQuery("SELECT COUNT(c) FROM FullUser c")
-                .singleResult
-        } as? Long ?: 0) > 0
-    }
 }
 
 class HibernateQuotaLayer(emf: EntityManagerFactory) : DbQuotaLayer, IHibernateConnector by HibernateConnector(emf) {

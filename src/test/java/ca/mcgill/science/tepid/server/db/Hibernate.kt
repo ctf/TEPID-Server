@@ -685,22 +685,6 @@ class HibernateSessionLayerTest() : DbTest() {
 class HibernateUserLayerTest() : DbTest() {
 
     @Test
-    fun testIsAdminConfiguredTrue() {
-        persist(testItems[0])
-
-        val ri = hul.isAdminConfigured()
-
-        assertTrue(ri)
-    }
-
-    @Test
-    fun testIsAdminConfiguredFalse() {
-        val ri = hul.isAdminConfigured()
-
-        assertFalse(ri)
-    }
-
-    @Test
     fun testGetTotalPrintedCount() {
         persistMultiple(testItems)
         persistMultiple(testPrints)
