@@ -41,9 +41,7 @@ class Jobs {
     @Consumes(MediaType.APPLICATION_JSON)
     fun newJob(j: PrintJob, @Context ctx: ContainerRequestContext): PutResponse {
         val session = ctx.getSession()
-        val queueNames: List<String> = DB.queues.readAll().mapNotNull { it.name }
-        if (!queueNames.contains(j.queueId))
-            failBadRequest("Invalid queue name ${j.queueId}")
+        remapExceptions { DB.queues.read(j.queueId) }
         j.userIdentification = session.user.shortUser
         j.deleteDataOn = j.getJobExpiration()
         logger.debug(logMessage("starting new print job", "name" to j.name, "for" to session.user.longUser))
@@ -122,5 +120,5 @@ class Jobs {
             ?: TimeUnit.DAYS.toMillis(7))
     }
 
-    private companion object : Logging {}
+    private companion object : Logging
 }
