@@ -90,12 +90,12 @@ class Users {
      * @return updated status of the user; false if anything goes wrong
      */
     @PUT
-    @Path("/{sam}/exchange")
+    @Path("/{id}/exchange")
     @RolesAllowed(CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setExchange(@PathParam("sam") shortUser: ShortUser, exchange: Boolean): Boolean =
-        ExchangeManager.setExchangeStudent(shortUser, exchange)
+    fun setExchange(@PathParam("id") id: Id, exchange: Boolean): Boolean =
+        ExchangeManager.setExchangeStudent(remapExceptions { DB.users.read(id).shortUser ?: "" }, exchange)
 
     /**
      * Abstract implementation of modifying user data
