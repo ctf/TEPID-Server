@@ -22,3 +22,5 @@
     - invalidateSessions
     
 - setExchange now takes _id, like all the other endpoints. Also clarified that all these endpoints take _id, not shortUser...
+
+- **API** change listJobsByUser from `/jobs/{sam}` to `/users/{id}/jobs`

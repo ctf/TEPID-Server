@@ -164,6 +164,18 @@ class Users {
         }
     }
 
+    @GET
+    @Path("/{id}/jobs")
+    @RolesAllowed(USER, CTFER, ELDER)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun listJobs(@PathParam("id") id: Id, @Context req: ContainerRequestContext): Collection<PrintJob> {
+        val session = req.getSession()
+        if (session.role == USER && session.user.shortUser != id) {
+            return emptyList()
+        }
+        return DB.printJobs.getJobsByUser(id, Order.DESCENDING)
+    }
+
     @POST
     @Path("/{id}/refresh")
     @RolesAllowed(CTFER, ELDER)

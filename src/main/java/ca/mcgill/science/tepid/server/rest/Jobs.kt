@@ -37,24 +37,6 @@ import javax.ws.rs.core.UriInfo
 @Path("/jobs")
 class Jobs {
 
-    @GET
-    @Path("/{sam}")
-    @RolesAllowed(USER, CTFER, ELDER)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun listJobs(@PathParam("sam") id: Id, @Context req: ContainerRequestContext): Collection<PrintJob> {
-        val session = req.getSession()
-        if (session.role == USER && session.user.shortUser != id) {
-            return emptyList()
-        }
-        return DB.printJobs.getJobsByUser(id, Order.DESCENDING)
-    }
-
-    private fun PrintJob.getJobExpiration(): Long {
-        val userId = userIdentification ?: return 0
-        return System.currentTimeMillis() + (AuthenticationManager.queryUserDb(userId)?.jobExpiration
-            ?: TimeUnit.DAYS.toMillis(7))
-    }
-
     @POST
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
