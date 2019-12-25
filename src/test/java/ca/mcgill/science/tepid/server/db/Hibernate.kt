@@ -689,7 +689,7 @@ class HibernateUserLayerTest() : DbTest() {
         persistMultiple(testItems)
         persistMultiple(testPrints)
 
-        val ri = hql.getTotalPrintedCount(testItems[0].shortUser!!)
+        val ri = hql.getTotalPrintedCount(testItems[0]._id!!)
 
         assertEquals(140, ri)
     }
@@ -702,7 +702,7 @@ class HibernateUserLayerTest() : DbTest() {
         persistMultiple(testItems)
         persistMultiple(testPrints)
 
-        val ri = hql.getTotalPrintedCount(otherUser.shortUser!!)
+        val ri = hql.getTotalPrintedCount(otherUser._id!!)
 
         assertEquals(0, ri)
     }

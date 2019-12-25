@@ -128,7 +128,7 @@ interface DbUserLayer : ICrud<FullUser, Id?> {
 }
 
 interface DbQuotaLayer {
-    fun getTotalPrintedCount(shortUser: ShortUser): Int
+    fun getTotalPrintedCount(id: Id): Int
 
     fun getAlreadyGrantedUsers(ids: Set<String>, semester: Semester): Set<String>
 }

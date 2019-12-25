@@ -152,10 +152,10 @@ class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, I
 }
 
 class HibernateQuotaLayer(emf: EntityManagerFactory) : DbQuotaLayer, IHibernateConnector by HibernateConnector(emf) {
-    override fun getTotalPrintedCount(shortUser: ShortUser): Int {
+    override fun getTotalPrintedCount(id: Id): Int {
         return (dbOp { em ->
             em.createQuery("SELECT SUM(c.pages)+2*SUM(c.colorPages) FROM PrintJob c WHERE c.userIdentification = :userId AND c.isRefunded = FALSE AND c.failed <= 0")
-                .setParameter("userId", shortUser).singleResult
+                .setParameter("userId", id).singleResult
         } as? Long ?: 0).toInt()
     }
 
