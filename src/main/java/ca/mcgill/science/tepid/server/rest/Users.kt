@@ -81,7 +81,7 @@ class Users {
         // A PersonalIdentifier can be used as the query, but the url should be for the _id
         if (personalIdentifier != returnedUser._id && !uriInfo.queryParameters.containsKey("noRedirect")) {
             try {
-                return Response.seeOther(URI("users/" + returnedUser.shortUser)).build()
+                return Response.seeOther(URI("users/" + returnedUser._id)).build()
             } catch (ignored: URISyntaxException) {
             }
         }
@@ -167,7 +167,7 @@ class Users {
     fun ldapAutoSuggest(@PathParam("like") like: String, @DefaultValue("10") @QueryParam("limit") limit: Int): List<UserQuery> {
         val resultsPromise = AutoSuggest.autoSuggest(like, limit)
         return resultsPromise.getResult(20000)
-            .map{it.toUser().toUserQuery()}
+            .map { it.toUser().toUserQuery() }
     }
 
     @POST
