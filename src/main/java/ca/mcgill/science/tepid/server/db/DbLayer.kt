@@ -9,7 +9,6 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.text
 import java.io.InputStream
@@ -95,7 +94,7 @@ interface DbJobLayer : ICrud<PrintJob, Id?> {
         limit: Int = -1
     ): List<PrintJob>
 
-    fun getJobsByUser(su: ShortUser, sortOrder: Order = Order.DESCENDING): List<PrintJob>
+    fun getJobsByUser(id: Id, sortOrder: Order = Order.DESCENDING): List<PrintJob>
 
     /**
      * Gets jobs which have a value for their file, implying the contents are still stored in TEPID

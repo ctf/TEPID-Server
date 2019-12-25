@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.Id
 import ca.mcgill.science.tepid.server.db.Order
 import ca.mcgill.science.tepid.server.db.remapExceptions
 import ca.mcgill.science.tepid.server.printing.Printer
@@ -40,12 +41,12 @@ class Jobs {
     @Path("/{sam}")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun listJobs(@PathParam("sam") sam: String, @Context req: ContainerRequestContext): Collection<PrintJob> {
+    fun listJobs(@PathParam("sam") id: Id, @Context req: ContainerRequestContext): Collection<PrintJob> {
         val session = req.getSession()
-        if (session.role == USER && session.user.shortUser != sam) {
+        if (session.role == USER && session.user.shortUser != id) {
             return emptyList()
         }
-        return DB.printJobs.getJobsByUser(sam, Order.DESCENDING)
+        return DB.printJobs.getJobsByUser(id, Order.DESCENDING)
     }
 
     private fun PrintJob.getJobExpiration(): Long {

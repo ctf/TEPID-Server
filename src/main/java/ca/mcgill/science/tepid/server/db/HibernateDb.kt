@@ -8,7 +8,6 @@ import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.PropsDB
 import java.io.InputStream
@@ -55,14 +54,14 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
         }
     }
 
-    override fun getJobsByUser(su: ShortUser, sortOrder: Order): List<PrintJob> {
+    override fun getJobsByUser(id: Id, sortOrder: Order): List<PrintJob> {
         val sort = if (sortOrder == Order.ASCENDING) "ASC" else "DESC"
         return dbOp { em ->
             em.createQuery(
                 "SELECT c FROM PrintJob c WHERE c.userIdentification = :userId ORDER BY c.started $sort",
                 PrintJob::class.java
             )
-                .setParameter("userId", su)
+                .setParameter("userId", id)
                 .resultList
         }
     }

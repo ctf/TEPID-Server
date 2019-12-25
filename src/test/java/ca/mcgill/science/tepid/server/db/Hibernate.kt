@@ -25,7 +25,6 @@ import javax.persistence.EntityManagerFactory
 import javax.persistence.ManyToOne
 import javax.persistence.Persistence
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -127,8 +126,8 @@ open class DbTest {
         em.transaction.begin()
         list.toList().map { e ->
             em.detach(e)
-//            e._id = e._id ?: newId()
-            e._id = newId()
+           e._id = e._id ?: newId()
+            // e._id = newId()
             em.merge(e)
         }
         em.transaction.commit()
@@ -756,17 +755,21 @@ class HibernateUserLayerTest() : DbTest() {
 
     companion object {
         val testPrints = listOf(
-            PrintJob(name = "1", pages = 29, colorPages = 11, userIdentification = "USER1", isRefunded = false),
-            PrintJob(name = "1", pages = 31, colorPages = 13, userIdentification = "USER1", isRefunded = true),
-            PrintJob(name = "1", pages = 37, colorPages = 17, userIdentification = "USER2", isRefunded = true),
-            PrintJob(name = "1", pages = 41, colorPages = 19, userIdentification = "USER2", isRefunded = false),
-            PrintJob(name = "1", pages = 43, colorPages = 23, userIdentification = "USER1", isRefunded = false)
+            PrintJob(name = "1", pages = 29, colorPages = 11, userIdentification = "uUSER1", isRefunded = false),
+            PrintJob(name = "1", pages = 31, colorPages = 13, userIdentification = "uUSER1", isRefunded = true),
+            PrintJob(name = "1", pages = 37, colorPages = 17, userIdentification = "uUSER2", isRefunded = true),
+            PrintJob(name = "1", pages = 41, colorPages = 19, userIdentification = "uUSER2", isRefunded = false),
+            PrintJob(name = "1", pages = 43, colorPages = 23, userIdentification = "uUSER1", isRefunded = false)
         )
 
         val testItems = listOf(
             FullUser(shortUser = "USER1"),
             FullUser(shortUser = "USER2")
         )
+
+        init {
+            testItems.forEach { it._id = "u${it.shortUser}" }
+        }
 
         lateinit var hc: HibernateCrud<FullUser, String?>
         lateinit var hul: HibernateUserLayer
