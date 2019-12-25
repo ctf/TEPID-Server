@@ -79,18 +79,19 @@ class Destinations {
     fun deleteDestination(@PathParam("dest") id: String): Unit =
         remapExceptions { DB.destinations.deleteById(id) }
 
+    // Tickets
+
     @POST
     @Path("/{dest}/ticket")
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    fun setTicket(@PathParam("dest") id: String, ticket: DestinationTicket, @Context crc: ContainerRequestContext): String {
+    fun setTicket(@PathParam("dest") id: String, ticket: DestinationTicket, @Context crc: ContainerRequestContext): PutResponse {
         val session = crc.getSession()
         ticket.user = session.user.toUser()
-        val successText = "$id marked as ${if (ticket.up) "up" else "down"}"
 
         try {
-            DB.destinations.update(id) {
+            val result = DB.destinations.update(id) {
                 up = ticket.up
                 this.ticket = if (ticket.up) null else ticket
                 logger.info(
@@ -102,10 +103,10 @@ class Destinations {
                     )
                 )
             }
+            return PutResponse(true, result.getId(), result.getRev())
         } catch (e: Exception) {
             failNotFound("Could not find destination $id")
         }
-        return successText
     }
 
     @DELETE
