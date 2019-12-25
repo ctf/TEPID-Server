@@ -63,7 +63,7 @@ class Sessions {
 
     @DELETE
     @RolesAllowed(USER, CTFER, ELDER)
-    fun endCurrentSession(@Context ctx: ContainerRequestContext): Unit {
+    fun endCurrentSession(@Context ctx: ContainerRequestContext) {
         val requestSession = ctx.getSession()
         endSession(requestSession.getId(), ctx)
     }
@@ -72,7 +72,7 @@ class Sessions {
     @RolesAllowed(USER, CTFER, ELDER)
     @Path("/{id}")
     @Produces(MediaType.TEXT_PLAIN)
-    fun endSession(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): Unit {
+    fun endSession(@PathParam("id") id: String, @Context ctx: ContainerRequestContext) {
         val requestSession = ctx.getSession()
         val targetSession = SessionManager[id] ?: failNotFound("")
         if (requestSession.user.shortUser == targetSession.user.shortUser) {

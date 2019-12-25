@@ -119,8 +119,6 @@ interface DbJobLayer : ICrud<PrintJob, Id?> {
 
 interface DbQueueLayer : ICrud<PrintQueue, Id?> {
 
-    fun getQueue(id: Id): PrintQueue
-
     fun getEta(destinationId: Id): Long
 }
 

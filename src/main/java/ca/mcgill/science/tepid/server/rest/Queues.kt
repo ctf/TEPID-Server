@@ -47,7 +47,7 @@ class Queues {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun getQueue(@PathParam("queue") id: String): PrintQueue =
-        remapExceptions { DB.queues.getQueue(id) }
+        remapExceptions { DB.queues.read(id) }
 
     @PUT
     @Path("/{queue}")

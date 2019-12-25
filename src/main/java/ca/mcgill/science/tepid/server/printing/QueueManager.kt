@@ -80,7 +80,7 @@ open class QueueManager protected constructor(var printQueue: PrintQueue, var de
 
         private fun getFromDb(id: String): QueueManager {
             try {
-                val printQueue = db.queues.getQueue(id)
+                val printQueue = db.queues.read(id)
                 val QM = QueueManager(printQueue, mutableListOf())
                 QM.refreshDestinations()
                 return QM

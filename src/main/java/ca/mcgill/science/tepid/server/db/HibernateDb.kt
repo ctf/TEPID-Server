@@ -10,8 +10,6 @@ import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.server.util.failNotFound
-import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.utils.PropsDB
 import java.io.InputStream
 import java.util.*
@@ -88,15 +86,6 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
 }
 
 class HibernateQueueLayer(hc: IHibernateCrud<PrintQueue, String?>) : DbQueueLayer, IHibernateCrud<PrintQueue, String?> by hc {
-    override fun getQueue(id: Id): PrintQueue {
-        val allQueues = readAll()
-        return allQueues.find { it._id == id.padEnd(36) } ?: failNotFound(
-            logMessage(
-                "could not find PrintQueue",
-                "ID" to id
-            )
-        )
-    }
 
     override fun getEta(destinationId: Id): Long {
         return dbOp { em ->
