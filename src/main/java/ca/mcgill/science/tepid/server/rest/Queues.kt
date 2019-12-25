@@ -84,19 +84,6 @@ class Queues {
     }
 
     @GET
-    @Path("/{queue}/jobs/{id}/{file}")
-    fun getAttachment(@PathParam("queue") queue: String, @PathParam("id") id: String, @PathParam("file") file: String): InputStream {
-        try {
-            val j = remapExceptions { DB.printJobs.read(id) }
-            if (!j.queueId.equals(queue, ignoreCase = true))
-                failNotFound("Could not find job $id in queue $queue")
-            return DB.printJobs.getJobFile(id, file)!!
-        } catch (ignored: Exception) {
-        }
-        failNotFound("Could not find $file for job $id")
-    }
-
-    @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/loadbalancers")
     fun getLoadBalancers(): List<String> {
