@@ -5,14 +5,15 @@ import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.PutResponse
-import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.AutoSuggest
 import ca.mcgill.science.tepid.server.auth.ExchangeManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.Id
 import ca.mcgill.science.tepid.server.db.remapExceptions
 import ca.mcgill.science.tepid.server.printing.IQuotaCounter
 import ca.mcgill.science.tepid.server.printing.QuotaCounter
@@ -44,17 +45,17 @@ import javax.ws.rs.core.UriInfo
 class Users {
 
     @GET
-    @Path("/{sam}")
+    @Path("/{personalIdentifier}")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun queryLdap(@PathParam("sam") sam: String, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
+    fun queryLdap(@PathParam("personalIdentifier") personalIdentifier: PersonalIdentifier, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getSession()
 
         val returnedUser: FullUser // an explicit return, so that nothing is accidentally returned
 
         when (session.role) {
             USER -> {
-                val queriedUser = AuthenticationManager.queryUser(sam)
+                val queriedUser = AuthenticationManager.queryUser(personalIdentifier)
                 if (queriedUser == null || session.user.shortUser != queriedUser.shortUser) {
                     failForbidden()
                 }
@@ -63,10 +64,10 @@ class Users {
                 returnedUser = queriedUser
             }
             CTFER, ELDER -> {
-                val queriedUser = AuthenticationManager.queryUser(sam)
+                val queriedUser = AuthenticationManager.queryUser(personalIdentifier)
                 if (queriedUser == null) {
-                    logger.warn(logMessage("could not find user", "sam" to sam))
-                    failNotFound("Could not find user $sam")
+                    logger.warn(logMessage("could not find user", "sam" to personalIdentifier))
+                    failNotFound("Could not find user $personalIdentifier")
                 }
                 returnedUser = queriedUser
             }
@@ -75,8 +76,8 @@ class Users {
             }
         }
 
-        // A SAM can be used as the query, but the url should be for the uname 
-        if (sam != returnedUser.shortUser && !uriInfo.queryParameters.containsKey("noRedirect")) {
+        // A PersonalIdentifier can be used as the query, but the url should be for the _id
+        if (personalIdentifier != returnedUser._id && !uriInfo.queryParameters.containsKey("noRedirect")) {
             try {
                 return Response.seeOther(URI("users/" + returnedUser.shortUser)).build()
             } catch (ignored: URISyntaxException) {
@@ -103,77 +104,76 @@ class Users {
      * and where the roles allowed are at least of level "user"
      */
     private inline fun putUserData(
-        sam: String,
+        id: Id,
         ctx: ContainerRequestContext,
         action: (user: FullUser) -> Unit
     ): PutResponse {
         val session = ctx.getSession()
-        val user = AuthenticationManager.queryUser(sam)
-            ?: failNotFound("Could not find user $sam")
-        if (session.role == USER && session.user.shortUser != user.shortUser)
+        val user = DB.users.read(id)
+        if ((session.role.isBlank()) || (session.role == USER && session.user.shortUser != user.shortUser))
             failUnauthorized()
         action(user)
         return remapExceptions { DB.users.put(user) }
     }
 
     @PUT
-    @Path("/{sam}/nick")
+    @Path("/{id}/nick")
     @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setNick(@PathParam("sam") sam: String, nick: String, @Context ctx: ContainerRequestContext): PutResponse =
-        putUserData(sam, ctx) {
+    fun setNick(@PathParam("id") id: Id, nick: String, @Context ctx: ContainerRequestContext): PutResponse =
+        putUserData(id, ctx) {
             it.nick = if (nick.isBlank()) null else nick
-            logger.debug { "Setting nick for ${it.shortUser} to ${it.nick}" }
+            logger.debug { "Setting nick for ${it._id} to ${it.nick}" }
             it.updateUserNameInformation()
         }
 
     @PUT
-    @Path("/{sam}/jobExpiration")
+    @Path("/{id}/jobExpiration")
     @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context ctx: ContainerRequestContext): PutResponse =
-        putUserData(sam, ctx) {
+    fun setJobExpiration(@PathParam("id") id: Id, jobExpiration: Long, @Context ctx: ContainerRequestContext): PutResponse =
+        putUserData(id, ctx) {
             it.jobExpiration = jobExpiration
-            logger.trace { "Job expiration for ${it.shortUser} set to $jobExpiration" }
+            logger.trace { "Job expiration for ${it._id} set to $jobExpiration" }
         }
 
     @PUT
-    @Path("/{sam}/color")
+    @Path("/{id}/color")
     @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context ctx: ContainerRequestContext): PutResponse =
-        putUserData(sam, ctx) {
+    fun setColor(@PathParam("id") id: Id, color: Boolean, @Context ctx: ContainerRequestContext): PutResponse =
+        putUserData(id, ctx) {
             it.colorPrinting = color
-            logger.trace { "Set color for ${it.shortUser} to ${it.colorPrinting}" }
+            logger.trace { "Set color for ${it._id} to ${it.colorPrinting}" }
         }
 
     @GET
-    @Path("/{sam}/quota")
+    @Path("/{id}/quota")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQuota(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): QuotaData {
+    fun getQuota(@PathParam("id") id: Id, @Context ctx: ContainerRequestContext): QuotaData {
         val session = ctx.getSession()
-        if (session.role == USER && session.user.shortUser != shortUser)
+        if (session.role == USER && session.user.shortUser != id)
             failForbidden()
         else {
-            val user = AuthenticationManager.queryUser(shortUser) ?: failNotFound()
+            val user = AuthenticationManager.queryUser(id) ?: failNotFound()
             return quotaCounter.getQuotaData(user)
         }
     }
 
     @POST
-    @Path("/{sam}/refresh")
+    @Path("/{id}/refresh")
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.TEXT_PLAIN)
-    fun forceRefresh(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext) {
+    fun forceRefresh(@PathParam("id") id: Id, @Context ctx: ContainerRequestContext) {
         try {
-            AuthenticationManager.refreshUser(shortUser)
-            SessionManager.invalidateSessions(shortUser)
+            AuthenticationManager.refreshUser(id)
+            SessionManager.invalidateSessions(id)
         } catch (e: Exception) {
-            failNotFound("Could not find user $shortUser")
+            failNotFound("Could not find user $id")
         }
     }
 

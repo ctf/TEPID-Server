@@ -16,3 +16,9 @@
 - **DB** apply migration 7
 - changes the semantics of the PrintJob.userIdentification field to use the FullUser._id instead of the FullUser.shortUser
     - affects listJobs endpoint
+    
+- add missing Sessions methods to retrofit interface
+    - endCurrentSession
+    - invalidateSessions
+    
+- setExchange now takes _id, like all the other endpoints. Also clarified that all these endpoints take _id, not shortUser...
