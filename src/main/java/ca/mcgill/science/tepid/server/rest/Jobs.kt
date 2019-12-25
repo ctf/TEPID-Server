@@ -7,8 +7,6 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.db.Id
-import ca.mcgill.science.tepid.server.db.Order
 import ca.mcgill.science.tepid.server.db.remapExceptions
 import ca.mcgill.science.tepid.server.printing.Printer
 import ca.mcgill.science.tepid.server.util.Utils
@@ -52,20 +50,8 @@ class Jobs {
         return remapExceptions { DB.printJobs.create(j) }
     }
 
-    @PUT
-    @RolesAllowed(USER, CTFER, ELDER)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/{id}")
-    fun addJobData(input: InputStream, @PathParam("id") id: String): PutResponse {
-        logger.debug(logMessage("receiving job data", "id" to id))
-        val (success, message) = Printer.print(id, input)
-        if (!success)
-            failBadRequest(message)
-        return PutResponse(true, id, "")
-    }
-
     @GET
-    @Path("/job/{id}")
+    @Path("/{id}")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun getJob(@PathParam("id") id: String, @Context uriInfo: UriInfo, @Context ctx: ContainerRequestContext): PrintJob {
@@ -78,7 +64,19 @@ class Jobs {
     }
 
     @PUT
-    @Path("/job/{id}/refunded")
+    @RolesAllowed(USER, CTFER, ELDER)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{id}/data")
+    fun addJobData(input: InputStream, @PathParam("id") id: String): PutResponse {
+        logger.debug(logMessage("receiving job data", "id" to id))
+        val (success, message) = Printer.print(id, input)
+        if (!success)
+            failBadRequest(message)
+        return PutResponse(true, id, "")
+    }
+
+    @PUT
+    @Path("/{id}/refunded")
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun setJobRefunded(@PathParam("id") id: String, refunded: Boolean): PutResponse {
@@ -90,7 +88,7 @@ class Jobs {
     }
 
     @POST
-    @Path("/job/{id}/reprint")
+    @Path("/{id}/reprint")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.TEXT_PLAIN)
     fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): String {
@@ -118,5 +116,11 @@ class Jobs {
         return "Reprinted $id, new id $newId"
     }
 
-    private companion object : Logging
+    private fun PrintJob.getJobExpiration(): Long {
+        val userId = userIdentification ?: return 0
+        return System.currentTimeMillis() + (AuthenticationManager.queryUserDb(userId)?.jobExpiration
+            ?: TimeUnit.DAYS.toMillis(7))
+    }
+
+    private companion object : Logging {}
 }
