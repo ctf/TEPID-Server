@@ -7,3 +7,7 @@
 - Changed semantics of printing to use the PrintQueue_id and not the PrintQueue.name, and to no longer require coupling between them.
 
 - **DB** apply migration 6 
+
+## !128
+
+- setNick, setJobExpiration, setcolor return a PutResponse, instead of a FullUser

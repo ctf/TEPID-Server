@@ -4,15 +4,19 @@ import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.TestHelpers
 import ca.mcgill.science.tepid.server.db.DB
-import io.mockk.*
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockkObject
+import io.mockk.runs
+import io.mockk.spyk
+import io.mockk.unmockkAll
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import javax.ws.rs.core.Response
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
-val okPutResponse = Response.ok().entity(PutResponse(id = "TEST")).build()
+val okPutResponse = PutResponse(id = "TEST")
 
 class SessionIsValidTest {
 

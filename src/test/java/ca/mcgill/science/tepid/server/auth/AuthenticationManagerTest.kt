@@ -268,7 +268,7 @@ class AuthenticateTest {
     fun testAuthenticateLdap() {
         every { AuthenticationManager.queryUserDb(any()) } returns testUserFromDb
         every { Ldap.authenticate(testShortUser, testPassword) } returns testUser
-        every { mockDb.users.putUser(any()) } returns okPutResponse
+        every { mockDb.users.put(any()) } returns okPutResponse
 
         val actual = AuthenticationManager.authenticate(testShortUser, testPassword)
         val expected = AuthenticationManager.mergeUsers(testUser, testUserFromDb)
@@ -280,7 +280,7 @@ class AuthenticateTest {
                 testUserFromDb
             )
         }
-        verify { mockDb.users.putUser(expected) }
+        verify { mockDb.users.put(expected) }
         // a check that mergeUsers has merged some DB stuff into ldapUser
         assertFalse(expected.colorPrinting)
         assertEquals(expected, actual, "")
@@ -300,7 +300,7 @@ class RefreshUserTest {
         assertEquals(TestHelpers.makeMergedUser(), actual)
 
         verify {
-            mockDb.users.putUser(
+            mockDb.users.put(
                 TestHelpers.makeMergedUser()
             )
         }
@@ -328,7 +328,7 @@ class RefreshUserTest {
             } returns TestHelpers.makeLdapUser()
 
             every {
-                mockDb.users.putUser(ofType(FullUser::class))
+                mockDb.users.put(ofType(FullUser::class))
             } returns okPutResponse
 
             mockkObject(Config)
@@ -394,7 +394,7 @@ class QueryUserTest : Logging {
         val actual = am.queryUser("db.LU@example.com")
         val expected = null
 
-        verify(inverse = true) { mockDb.users.putUser(any()) }
+        verify(inverse = true) { mockDb.users.put(any()) }
         assertEquals(expected, actual, "AuthenticationManager doesn't return null if SAM is not shortUser")
     }
 
@@ -406,7 +406,7 @@ class QueryUserTest : Logging {
         val actual = am.queryUser("SU")
         val expected = null
 
-        verify(inverse = true) { mockDb.users.putUser(any()) }
+        verify(inverse = true) { mockDb.users.put(any()) }
         assertEquals(expected, actual, "AuthenticationManager doesn't return null if Ldap returns null")
     }
 
@@ -414,13 +414,13 @@ class QueryUserTest : Logging {
     fun testQueryUserWithLdap() {
         every { am.queryUserDb("SU") } returns null
 
-        every { mockDb.users.putUser(any()) } returns okPutResponse
+        every { mockDb.users.put(any()) } returns okPutResponse
         every { am.queryUserLdap(any()) } returns testUser
 
         val actual = am.queryUser("SU")
         val expected = testUser
 
-        verify { mockDb.users.putUser(testUser) }
+        verify { mockDb.users.put(testUser) }
         assertEquals(expected, actual, "AuthenticationManager doesn't return null if Ldap returns null")
     }
 }

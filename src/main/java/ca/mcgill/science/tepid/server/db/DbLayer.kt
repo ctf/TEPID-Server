@@ -130,11 +130,6 @@ interface DbSessionLayer : ICrud<FullSession, Id?> {
 
 interface DbUserLayer : ICrud<FullUser, Id?> {
 
-    /*
-   On Success: returns Response containing the User added
-    */
-    fun putUser(user: FullUser): Response
-
     fun putUsers(users: Collection<FullUser>): Unit
 
     fun getAllIfPresent(ids: Set<String>): Set<FullUser>

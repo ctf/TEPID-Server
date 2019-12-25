@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.models.data.User
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
@@ -12,6 +13,7 @@ import ca.mcgill.science.tepid.server.auth.AutoSuggest
 import ca.mcgill.science.tepid.server.auth.ExchangeManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.remapExceptions
 import ca.mcgill.science.tepid.server.printing.IQuotaCounter
 import ca.mcgill.science.tepid.server.printing.QuotaCounter
 import ca.mcgill.science.tepid.server.util.failForbidden
@@ -114,14 +116,14 @@ class Users {
         sam: String,
         ctx: ContainerRequestContext,
         action: (user: FullUser) -> Unit
-    ): Response {
+    ): PutResponse {
         val session = ctx.getSession()
         val user = AuthenticationManager.queryUser(sam)
             ?: failNotFound("Could not find user $sam")
         if (session.role == USER && session.user.shortUser != user.shortUser)
             failUnauthorized()
         action(user)
-        return DB.users.putUser(user)
+        return remapExceptions { DB.users.put(user) }
     }
 
     @PUT
@@ -129,7 +131,7 @@ class Users {
     @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setNick(@PathParam("sam") sam: String, nick: String, @Context ctx: ContainerRequestContext): Response =
+    fun setNick(@PathParam("sam") sam: String, nick: String, @Context ctx: ContainerRequestContext): PutResponse =
         putUserData(sam, ctx) {
             it.nick = if (nick.isBlank()) null else nick
             logger.debug { "Setting nick for ${it.shortUser} to ${it.nick}" }
@@ -141,7 +143,7 @@ class Users {
     @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context ctx: ContainerRequestContext): Response =
+    fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context ctx: ContainerRequestContext): PutResponse =
         putUserData(sam, ctx) {
             it.jobExpiration = jobExpiration
             logger.trace { "Job expiration for ${it.shortUser} set to $jobExpiration" }
@@ -152,7 +154,7 @@ class Users {
     @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context ctx: ContainerRequestContext): Response =
+    fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context ctx: ContainerRequestContext): PutResponse =
         putUserData(sam, ctx) {
             it.colorPrinting = color
             logger.trace { "Set color for ${it.shortUser} to ${it.colorPrinting}" }

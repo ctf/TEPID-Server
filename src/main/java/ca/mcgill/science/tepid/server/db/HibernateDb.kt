@@ -16,7 +16,6 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import javax.persistence.EntityManagerFactory
 import javax.persistence.Persistence
-import javax.ws.rs.core.Response
 
 fun makeEntityManagerFactory(persistenceUnitName: String): EntityManagerFactory {
     val props = HashMap<String, String>()
@@ -109,15 +108,6 @@ class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessio
 }
 
 class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, IHibernateCrud<FullUser, String?> by hc {
-    override fun putUser(user: FullUser): Response {
-        try {
-            val out = put(user)
-            return Response.ok().entity(out)
-                .build()
-        } catch (e: Exception) {
-            return parsePersistenceErrorToResponse(e)
-        }
-    }
 
     override fun putUsers(users: Collection<FullUser>) {
         dbOpTransaction { em ->

@@ -62,7 +62,7 @@ object AuthenticationManager : Logging, IAuthenticationManager {
 
         val ldapUser = Ldap.authenticate(shortUser, pw) ?: return null
         val mergedUser = mergeUsers(ldapUser, dbUser)
-        DB.users.putUser(mergedUser)
+        DB.users.put(mergedUser)
         return mergedUser
     }
 
@@ -82,7 +82,7 @@ object AuthenticationManager : Logging, IAuthenticationManager {
 
         val ldapUser = queryUserLdap(identifier) ?: return null
 
-        DB.users.putUser(ldapUser)
+        DB.users.put(ldapUser)
 
         logger.trace { logMessage("found user from ldap", "identifier" to identifier, "longUser" to ldapUser.longUser) }
         return ldapUser
@@ -147,7 +147,7 @@ object AuthenticationManager : Logging, IAuthenticationManager {
         if (dbUser.role != refreshedUser.role) {
             SessionManager.invalidateSessions(shortUser)
         }
-        DB.users.putUser(refreshedUser)
+        DB.users.put(refreshedUser)
         return refreshedUser
     }
 
