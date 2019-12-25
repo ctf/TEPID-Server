@@ -167,10 +167,10 @@ data class PsData(val pages: Int, val colorPages: Int) {
 }
 
 class GSException : RuntimeException {
-    constructor() {}
-    constructor(msg: String?) : super(msg) {}
-    constructor(parent: Throwable?) : super(parent) {}
-    constructor(msg: String?, parent: Throwable?) : super(msg, parent) {}
+    constructor()
+    constructor(msg: String?) : super(msg)
+    constructor(parent: Throwable?) : super(parent)
+    constructor(msg: String?, parent: Throwable?) : super(msg, parent)
 
     companion object {
         private const val serialVersionUID = -2212386613903764979L

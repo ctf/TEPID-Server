@@ -3,14 +3,11 @@ package ca.mcgill.science.tepid.server.db
 import ca.mcgill.science.tepid.models.bindings.TepidDb
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.util.logMessage
-import ca.mcgill.science.tepid.server.util.text
 import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
-import javax.persistence.EntityExistsException
 import javax.persistence.EntityManager
 import javax.persistence.EntityManagerFactory
 import javax.persistence.EntityNotFoundException
-import javax.ws.rs.core.Response
 
 interface IHibernateConnector : Logging {
     val emf: EntityManagerFactory
@@ -138,14 +135,5 @@ class HibernateCrud<T : TepidDb, P>(override val emf: EntityManagerFactory, over
         } finally {
             em.close()
         }
-    }
-}
-
-fun parsePersistenceErrorToResponse(e: Exception): Response {
-    return when (e) {
-        is EntityNotFoundException -> Response.Status.NOT_FOUND.text("Not found")
-        is IllegalArgumentException -> Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")
-        is EntityExistsException -> Response.Status.CONFLICT.text("Entity Exists; ${e::class.java.simpleName} occurred")
-        else -> Response.Status.INTERNAL_SERVER_ERROR.text("Ouch! ${e::class.java.simpleName} occurred")
     }
 }

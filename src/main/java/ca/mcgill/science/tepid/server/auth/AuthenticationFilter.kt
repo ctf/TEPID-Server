@@ -125,7 +125,7 @@ class AuthenticationFilter : ContainerRequestFilter {
             get() = Response.Status.FORBIDDEN.text("403 You cannot access this resource")
         private inline val AUTH_REQUIRED: Response
             get() = Response.status(Response.Status.UNAUTHORIZED).entity("401 Please authenticate to access this resource")
-                    .header("WWW-Authenticate", "Basic realm=\"Restricted Resource\"").type(MediaType.TEXT_PLAIN).build()
+                .header("WWW-Authenticate", "Basic realm=\"Restricted Resource\"").type(MediaType.TEXT_PLAIN).build()
         private inline val ACCESS_FORBIDDEN: Response
             get() = Response.Status.FORBIDDEN.text("403 No access to this resource")
 

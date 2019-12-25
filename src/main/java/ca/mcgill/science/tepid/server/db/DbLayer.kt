@@ -20,10 +20,6 @@ import javax.ws.rs.core.Response
 
 var DB: DbLayer = Config.getDb()
 
-// TODO deleteDestination should return Response instead of String
-// TODO, all outputs returning response should likely return models that can then be wrapped inside a response
-// TODO outputs should be nullable
-
 /**
  * Ids are unique string keys in dbs
  */
@@ -64,12 +60,6 @@ interface ICrud<T, P> {
     fun put(obj: T): PutResponse
 }
 
-/**
- * Abstraction layer for all db transactions.
- * Inputs and outputs must be pure JVM models that are separated from db models.
- * Note that layers are categorized based on particular models to help with delegation patterns.
- * Each method in each of the included interfaces should still be unique with respect to all other methods.
- */
 class DbLayer(
     @JvmField
     val destinations: DbDestinationLayer,
@@ -147,11 +137,13 @@ fun <T> remapExceptions(f: () -> T): T {
     try {
         return f()
     } catch (e: Exception) {
-        throw WebApplicationException(when (e) {
-            is EntityNotFoundException -> Response.Status.NOT_FOUND.text("Not found")
-            is IllegalArgumentException -> Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")
-            is EntityExistsException -> Response.Status.CONFLICT.text("Entity Exists; ${e::class.java.simpleName} occurred")
-            else -> Response.Status.INTERNAL_SERVER_ERROR.text("Ouch! ${e::class.java.simpleName} occurred")
-        })
+        throw WebApplicationException(
+            when (e) {
+                is EntityNotFoundException -> Response.Status.NOT_FOUND.text("Not found")
+                is IllegalArgumentException -> Response.Status.BAD_REQUEST.text("${e::class.java.simpleName} occurred")
+                is EntityExistsException -> Response.Status.CONFLICT.text("Entity Exists; ${e::class.java.simpleName} occurred")
+                else -> Response.Status.INTERNAL_SERVER_ERROR.text("Ouch! ${e::class.java.simpleName} occurred")
+            }
+        )
     }
 }

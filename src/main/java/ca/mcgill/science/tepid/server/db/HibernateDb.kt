@@ -28,24 +28,25 @@ fun makeEntityManagerFactory(persistenceUnitName: String): EntityManagerFactory 
 
 fun makeHibernateDb(emf: EntityManagerFactory): DbLayer {
     return DbLayer(
-            HibernateDestinationLayer(HibernateCrud(emf, FullDestination::class.java)),
-            HibernateJobLayer(HibernateCrud(emf, PrintJob::class.java)),
-            HibernateQueueLayer(HibernateCrud(emf, PrintQueue::class.java)),
-            HibernateMarqueeLayer(HibernateCrud(emf, MarqueeData::class.java)),
-            HibernateSessionLayer(HibernateCrud(emf, FullSession::class.java)),
-            HibernateUserLayer(HibernateCrud(emf, FullUser::class.java)),
-            HibernateQuotaLayer(emf)
+        HibernateDestinationLayer(HibernateCrud(emf, FullDestination::class.java)),
+        HibernateJobLayer(HibernateCrud(emf, PrintJob::class.java)),
+        HibernateQueueLayer(HibernateCrud(emf, PrintQueue::class.java)),
+        HibernateMarqueeLayer(HibernateCrud(emf, MarqueeData::class.java)),
+        HibernateSessionLayer(HibernateCrud(emf, FullSession::class.java)),
+        HibernateUserLayer(HibernateCrud(emf, FullUser::class.java)),
+        HibernateQuotaLayer(emf)
     )
 }
 
-class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : DbDestinationLayer, IHibernateCrud<FullDestination, String?> by hc
+class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : DbDestinationLayer,
+    IHibernateCrud<FullDestination, String?> by hc
 
 class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHibernateCrud<PrintJob, String?> by hc {
 
     override fun getJobsByQueue(queue: String, maxAge: Long, sortOrder: Order, limit: Int): List<PrintJob> {
         val sort = if (sortOrder == Order.ASCENDING) "ASC" else "DESC"
         val startTime = if (maxAge > 0) Date().time - maxAge else 0
-        return dbOp() { em ->
+        return dbOp { em ->
             em.createQuery(
                 "SELECT c FROM PrintJob c WHERE c.queueId = :queueId AND c.started > :startTime ORDER BY c.started $sort",
                 PrintJob::class.java
@@ -84,7 +85,8 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
     }
 }
 
-class HibernateQueueLayer(hc: IHibernateCrud<PrintQueue, String?>) : DbQueueLayer, IHibernateCrud<PrintQueue, String?> by hc {
+class HibernateQueueLayer(hc: IHibernateCrud<PrintQueue, String?>) : DbQueueLayer,
+    IHibernateCrud<PrintQueue, String?> by hc {
 
     override fun getEta(destinationId: Id): Long {
         return dbOp { em ->
@@ -95,9 +97,11 @@ class HibernateQueueLayer(hc: IHibernateCrud<PrintQueue, String?>) : DbQueueLaye
     }
 }
 
-class HibernateMarqueeLayer(hc: IHibernateCrud<MarqueeData, String?>) : DbMarqueeLayer, IHibernateCrud<MarqueeData, String?> by hc
+class HibernateMarqueeLayer(hc: IHibernateCrud<MarqueeData, String?>) : DbMarqueeLayer,
+    IHibernateCrud<MarqueeData, String?> by hc
 
-class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessionLayer, IHibernateCrud<FullSession, String?> by hc {
+class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessionLayer,
+    IHibernateCrud<FullSession, String?> by hc {
     override fun getSessionIdsForUser(shortUser: ShortUser): List<Id> {
         return dbOp { em ->
             em.createQuery("SELECT c.id FROM FullSession c WHERE c.user.shortUser = :userId", String::class.java)

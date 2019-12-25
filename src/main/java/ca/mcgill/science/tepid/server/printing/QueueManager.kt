@@ -13,7 +13,10 @@ import org.apache.logging.log4j.kotlin.KotlinLogger
 import org.apache.logging.log4j.kotlin.logger
 import java.util.*
 
-open class QueueManager protected constructor(var printQueue: PrintQueue, var destinations: MutableList<FullDestination>) {
+open class QueueManager protected constructor(
+    var printQueue: PrintQueue,
+    var destinations: MutableList<FullDestination>
+) {
     protected val log: KotlinLogger
     protected val loadBalancer: LoadBalancer
 

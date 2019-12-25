@@ -165,7 +165,8 @@ object Printer : Logging {
                 )
 
                 var j2: PrintJob = updatePagecount(id, psInfo)
-                val userIdentification = j2.userIdentification ?: throw PrintException("Could not retrieve userIdentification {\"job\":\"${j2.getId()}\", \"userIdentification\":\"${j2.userIdentification}\"}")
+                val userIdentification = j2.userIdentification
+                    ?: throw PrintException("Could not retrieve userIdentification {\"job\":\"${j2.getId()}\", \"userIdentification\":\"${j2.userIdentification}\"}")
                 val user = AuthenticationManager.queryUser(userIdentification)
                     ?: throw PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
 
@@ -177,10 +178,11 @@ object Printer : Logging {
 
                 // add job to the queue
                 logger.trace(logMessage("trying to assign destination", "job" to j2.getId()))
-                j2 = QueueManager.assignDestination(j2) ?: throw RuntimeException("TODO REFACTORING WORK IN QueueManager.assignDestination")
+                j2 = QueueManager.assignDestination(j2)
+                    ?: throw RuntimeException("TODO REFACTORING WORK IN QueueManager.assignDestination")
                 // todo check destination field
                 val destination = j2.destination
-                        ?: throw PrintException(PrintError.INVALID_DESTINATION)
+                    ?: throw PrintException(PrintError.INVALID_DESTINATION)
 
                 val dest = DB.destinations.read(destination)
                 if (sendToSMB(tmp, dest, debug)) {

@@ -36,15 +36,15 @@ class LdapHelper {
         fun AttributesToUser(attributes: Attributes, ctx: LdapContext): FullUser {
             fun attr(name: String) = attributes.get(name)?.get()?.toString() ?: ""
             var out = FullUser(
-                    displayName = attr("displayName"),
-                    givenName = attr("givenName"),
-                    lastName = attr("sn"),
-                    shortUser = attr("sAMAccountName"),
-                    longUser = attr("userPrincipalName").toLowerCase(),
-                    email = attr("mail"),
-                    middleName = attr("middleName"),
-                    faculty = attr("department"),
-                    studentId = attr("employeeID").toIntOrNull() ?: -1
+                displayName = attr("displayName"),
+                givenName = attr("givenName"),
+                lastName = attr("sn"),
+                shortUser = attr("sAMAccountName"),
+                longUser = attr("userPrincipalName").toLowerCase(),
+                email = attr("mail"),
+                middleName = attr("middleName"),
+                faculty = attr("department"),
+                studentId = attr("employeeID").toIntOrNull() ?: -1
             )
             out._id = "u${attr("sAMAccountName")}"
             out.updateUserNameInformation()
@@ -69,7 +69,12 @@ class LdapHelper {
                         ParsedLdapGroup.group(AdGroup(cn))
                     }
                 } catch (e: NamingException) {
-                    logger.logError("error instantiating LDAP Groups", e, "user" to out, "memberOF" to attributes.get("memberOf"))
+                    logger.logError(
+                        "error instantiating LDAP Groups",
+                        e,
+                        "user" to out,
+                        "memberOF" to attributes.get("memberOf")
+                    )
                     null
                 }
             }

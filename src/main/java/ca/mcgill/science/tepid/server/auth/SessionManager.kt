@@ -22,7 +22,15 @@ object SessionManager : Logging {
         val id = BigInteger(130, random).toString(32)
         session._id = id
         session.role = AuthenticationFilter.getCtfRole(session.user)
-        logger.trace { logMessage("starting session", "id" to id, "shortUser" to user.shortUser, "duration" to expiration * HOUR_IN_MILLIS, "expiration" to session.expiration) }
+        logger.trace {
+            logMessage(
+                "starting session",
+                "id" to id,
+                "shortUser" to user.shortUser,
+                "duration" to expiration * HOUR_IN_MILLIS,
+                "expiration" to session.expiration
+            )
+        }
         DB.sessions.put(session)
         return session
     }
@@ -30,7 +38,14 @@ object SessionManager : Logging {
     operator fun get(token: String): FullSession? {
         val session = DB.sessions.readOrNull(token) ?: return null
         if (isValid(session)) return session
-        logger.trace { logMessage("deleting session token", "token" to token, "expiration" to session.expiration, "now" to System.currentTimeMillis()) }
+        logger.trace {
+            logMessage(
+                "deleting session token",
+                "token" to token,
+                "expiration" to session.expiration,
+                "now" to System.currentTimeMillis()
+            )
+        }
         DB.sessions.deleteById(token)
         return null
     }

@@ -45,7 +45,8 @@ class ScreenSaver {
         @PathParam("queue") queue: String,
         @QueryParam("limit") @DefaultValue("13") limit: Int,
         @QueryParam("from") @DefaultValue("0") from: Long
-    ): Collection<PrintJob> = DB.printJobs.getJobsByQueue(queue, maxAge = Date().time - from, sortOrder = Order.DESCENDING)
+    ): Collection<PrintJob> =
+        DB.printJobs.getJobsByQueue(queue, maxAge = Date().time - from, sortOrder = Order.DESCENDING)
 
     /**
      * Gets the Up status for each Queue.

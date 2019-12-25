@@ -33,7 +33,10 @@ object AutoSuggest : Logging {
 
     fun queryLdap(like: String, limit: Int): List<FullUser> {
         try {
-            return ldapConnector.executeSearch("(&(objectClass=user)(|(userPrincipalName=$like*)(samaccountname=$like*)))", limit.toLong()).toList()
+            return ldapConnector.executeSearch(
+                "(&(objectClass=user)(|(userPrincipalName=$like*)(samaccountname=$like*)))",
+                limit.toLong()
+            ).toList()
         } catch (ne: NamingException) {
             logger.logError("could not get autosuggest", ne, "like" to like)
             return emptyList()
