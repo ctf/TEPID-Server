@@ -6,14 +6,16 @@ import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PersonalIdentifier
+import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PutResponse
-import ca.mcgill.science.tepid.models.data.User
+import ca.mcgill.science.tepid.models.data.UserQuery
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.AutoSuggest
 import ca.mcgill.science.tepid.server.auth.ExchangeManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.Id
+import ca.mcgill.science.tepid.server.db.Order
 import ca.mcgill.science.tepid.server.db.remapExceptions
 import ca.mcgill.science.tepid.server.printing.IQuotaCounter
 import ca.mcgill.science.tepid.server.printing.QuotaCounter
@@ -86,6 +88,17 @@ class Users {
         return Response.ok(returnedUser).build()
     }
 
+    @PUT
+    @Path("/{id}/color")
+    @RolesAllowed(USER, CTFER, ELDER)
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun setColor(@PathParam("id") id: Id, color: Boolean, @Context ctx: ContainerRequestContext): PutResponse =
+        putUserData(id, ctx) {
+            it.colorPrinting = color
+            logger.trace { "Set color for ${it._id} to ${it.colorPrinting}" }
+        }
+
     /**
      * Attempts to add the supplied ShortUser to the exchange group
      * @return updated status of the user; false if anything goes wrong
@@ -97,36 +110,6 @@ class Users {
     @Produces(MediaType.APPLICATION_JSON)
     fun setExchange(@PathParam("id") id: Id, exchange: Boolean): Boolean =
         ExchangeManager.setExchangeStudent(remapExceptions { DB.users.read(id).shortUser ?: "" }, exchange)
-
-    /**
-     * Abstract implementation of modifying user data
-     * Note that this is called from an endpoint where [ctx] holds a session (valid or not),
-     * and where the roles allowed are at least of level "user"
-     */
-    private inline fun putUserData(
-        id: Id,
-        ctx: ContainerRequestContext,
-        action: (user: FullUser) -> Unit
-    ): PutResponse {
-        val session = ctx.getSession()
-        val user = DB.users.read(id)
-        if ((session.role.isBlank()) || (session.role == USER && session.user.shortUser != user.shortUser))
-            failUnauthorized()
-        action(user)
-        return remapExceptions { DB.users.put(user) }
-    }
-
-    @PUT
-    @Path("/{id}/nick")
-    @RolesAllowed(USER, CTFER, ELDER)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun setNick(@PathParam("id") id: Id, nick: String, @Context ctx: ContainerRequestContext): PutResponse =
-        putUserData(id, ctx) {
-            it.nick = if (nick.isBlank()) null else nick
-            logger.debug { "Setting nick for ${it._id} to ${it.nick}" }
-            it.updateUserNameInformation()
-        }
 
     @PUT
     @Path("/{id}/jobExpiration")
@@ -140,14 +123,15 @@ class Users {
         }
 
     @PUT
-    @Path("/{id}/color")
+    @Path("/{id}/nick")
     @RolesAllowed(USER, CTFER, ELDER)
-    @Consumes(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setColor(@PathParam("id") id: Id, color: Boolean, @Context ctx: ContainerRequestContext): PutResponse =
+    fun setNick(@PathParam("id") id: Id, nick: String, @Context ctx: ContainerRequestContext): PutResponse =
         putUserData(id, ctx) {
-            it.colorPrinting = color
-            logger.trace { "Set color for ${it._id} to ${it.colorPrinting}" }
+            it.nick = if (nick.isBlank()) null else nick
+            logger.debug { "Setting nick for ${it._id} to ${it.nick}" }
+            it.updateUserNameInformation()
         }
 
     @GET
@@ -176,6 +160,16 @@ class Users {
         return DB.printJobs.getJobsByUser(id, Order.DESCENDING)
     }
 
+    @GET
+    @Path("/autosuggest/{like}")
+    @RolesAllowed(CTFER, ELDER)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun ldapAutoSuggest(@PathParam("like") like: String, @DefaultValue("10") @QueryParam("limit") limit: Int): List<UserQuery> {
+        val resultsPromise = AutoSuggest.autoSuggest(like, limit)
+        return resultsPromise.getResult(20000)
+            .map{it.toUser().toUserQuery()}
+    }
+
     @POST
     @Path("/{id}/refresh")
     @RolesAllowed(CTFER, ELDER)
@@ -189,14 +183,22 @@ class Users {
         }
     }
 
-    @GET
-    @Path("/autosuggest/{like}")
-    @RolesAllowed(CTFER, ELDER)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun ldapAutoSuggest(@PathParam("like") like: String, @DefaultValue("10") @QueryParam("limit") limit: Int): List<User> {
-        val resultsPromise = AutoSuggest.autoSuggest(like, limit)
-        return resultsPromise.getResult(20000)
-            .map(FullUser::toUser) // todo check if we should further simplify to userquery
+    /**
+     * Abstract implementation of modifying user data
+     * Note that this is called from an endpoint where [ctx] holds a session (valid or not),
+     * and where the roles allowed are at least of level "user"
+     */
+    private inline fun putUserData(
+        id: Id,
+        ctx: ContainerRequestContext,
+        action: (user: FullUser) -> Unit
+    ): PutResponse {
+        val session = ctx.getSession()
+        val user = DB.users.read(id)
+        if ((session.role.isBlank()) || (session.role == USER && session.user.shortUser != user.shortUser))
+            failUnauthorized()
+        action(user)
+        return remapExceptions { DB.users.put(user) }
     }
 
     companion object : Logging {
