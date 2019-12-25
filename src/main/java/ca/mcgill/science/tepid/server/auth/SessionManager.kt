@@ -3,6 +3,7 @@ package ca.mcgill.science.tepid.server.auth
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.Id
 import ca.mcgill.science.tepid.server.util.logMessage
 import org.apache.logging.log4j.kotlin.Logging
 import java.math.BigInteger
@@ -69,10 +70,8 @@ object SessionManager : Logging {
 
     /**
      * Invalidates all of the sessions belonging to a certain user.
-     *
-     * @param shortUser the shortUser
      */
-    fun invalidateSessions(shortUser: String) {
-        DB.sessions.getSessionIdsForUser(shortUser).forEach { end(it) }
+    fun invalidateSessions(id: Id) {
+        DB.sessions.getSessionIdsForUser(id).forEach { end(it) }
     }
 }

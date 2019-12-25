@@ -626,7 +626,7 @@ class HibernateSessionLayerTest() : DbTest() {
         persistMultiple(testUsers)
         persistMultiple(testItems)
 
-        val ri = hl.getSessionIdsForUser(testUsers[0].shortUser!!)
+        val ri = hl.getSessionIdsForUser(testUsers[0]._id!!)
 
         assertEquals(2, ri.size)
         assertTrue { ri.contains(testItems[0]._id) }

@@ -115,7 +115,7 @@ interface DbQueueLayer : ICrud<PrintQueue, Id?> {
 interface DbMarqueeLayer : ICrud<MarqueeData, Id?>
 
 interface DbSessionLayer : ICrud<FullSession, Id?> {
-    fun getSessionIdsForUser(shortUser: ShortUser): List<Id>
+    fun getSessionIdsForUser(id: Id): List<Id>
 }
 
 interface DbUserLayer : ICrud<FullUser, Id?> {

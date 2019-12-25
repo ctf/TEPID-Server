@@ -102,10 +102,10 @@ class HibernateMarqueeLayer(hc: IHibernateCrud<MarqueeData, String?>) : DbMarque
 
 class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessionLayer,
     IHibernateCrud<FullSession, String?> by hc {
-    override fun getSessionIdsForUser(shortUser: ShortUser): List<Id> {
+    override fun getSessionIdsForUser(id: Id): List<Id> {
         return dbOp { em ->
-            em.createQuery("SELECT c.id FROM FullSession c WHERE c.user.shortUser = :userId", String::class.java)
-                .setParameter("userId", shortUser)
+            em.createQuery("SELECT c.id FROM FullSession c WHERE c.user._id = :userId", String::class.java)
+                .setParameter("userId", id)
                 .resultList
         }
     }
