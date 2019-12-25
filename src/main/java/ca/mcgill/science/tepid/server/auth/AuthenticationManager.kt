@@ -132,7 +132,7 @@ object AuthenticationManager : Logging, IAuthenticationManager {
      * short user, long user, or student id
      */
     fun queryUserDb(identifier: PersonalIdentifier): FullUser? {
-        val dbUser = DB.users.getUserOrNull(identifier)
+        val dbUser = DB.users.find(identifier)
         dbUser?._id ?: return null
         logger.trace { logMessage("found db user", "identifier" to identifier, "db_id" to dbUser._id, "dislayName" to dbUser.displayName) }
         return dbUser

@@ -33,7 +33,7 @@ class DbIT : DbTest() {
         persist(u)
 //        em.clear()
 
-        val ri = hl.getUserOrNull(u.shortUser!!) ?: fail("Did not retieve user")
+        val ri = hl.find(u.shortUser!!) ?: fail("Did not retieve user")
 
         assertEquals(3, ri.groups.size)
         assertEquals(2, ri.semesters.size)

@@ -729,7 +729,7 @@ class HibernateUserLayerTest() : DbTest() {
         otherUser._id = "TEST"
         persist(otherUser)
 
-        val ri = hul.getUserOrNull(otherUser.studentId.toString()) ?: fail("User was not retrieved")
+        val ri = hul.find(otherUser.studentId.toString()) ?: fail("User was not retrieved")
 
         assertEquals(ri.shortUser, testItems[0].shortUser)
     }
@@ -754,7 +754,7 @@ class HibernateUserLayerTest() : DbTest() {
         persist(u)
 //        em.clear()
 
-        val ri = hul.getUserOrNull(u.shortUser!!) ?: fail("Did not retieve user")
+        val ri = hul.find(u.shortUser!!) ?: fail("Did not retieve user")
 
         assertEquals(3, ri.groups.size)
         assertEquals(2, ri.semesters.size)

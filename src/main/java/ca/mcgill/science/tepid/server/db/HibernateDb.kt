@@ -117,7 +117,7 @@ class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, I
 
     private val numRegex = Regex("[0-9]+")
 
-    override fun getUserOrNull(sam: PersonalIdentifier): FullUser? {
+    override fun find(sam: PersonalIdentifier): FullUser? {
         try {
             return when {
                 sam.contains(".") -> dbOp { em ->

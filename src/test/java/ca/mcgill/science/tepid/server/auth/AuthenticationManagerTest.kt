@@ -108,98 +108,98 @@ class QueryUserDbTest {
     @Test
     fun testQueryUserDbByEmail() {
         every {
-            mockDb.users.getUserOrNull(testUser.email!!)
+            mockDb.users.find(testUser.email!!)
         } returns testUser
 
         val actual = AuthenticationManager.queryUserDb(testUser.email!!)
 
-        verify { mockDb.users.getUserOrNull(testUser.email!!) }
+        verify { mockDb.users.find(testUser.email!!) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
     }
 
     @Test
     fun testQueryUserDbByEmailNull() {
         every {
-            mockDb.users.getUserOrNull(testUser.email!!)
+            mockDb.users.find(testUser.email!!)
         } returns null
 
         val actual = AuthenticationManager.queryUserDb(testUser.email!!)
 
-        verify { mockDb.users.getUserOrNull(testUser.email!!) }
+        verify { mockDb.users.find(testUser.email!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
     }
 
     @Test
     fun testQueryUserDbByFullUser() {
         every {
-            mockDb.users.getUserOrNull(testUser.longUser!!)
+            mockDb.users.find(testUser.longUser!!)
         } returns testUser
 
         val actual = AuthenticationManager.queryUserDb(testUser.longUser!!)
 
-        verify { mockDb.users.getUserOrNull(testUser.longUser!!) }
+        verify { mockDb.users.find(testUser.longUser!!) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
     }
 
     @Test
     fun testQueryUserDbByFullUserNull() {
         every {
-            mockDb.users.getUserOrNull(testUser.longUser!!)
+            mockDb.users.find(testUser.longUser!!)
         } returns null
 
         val actual = AuthenticationManager.queryUserDb(testUser.longUser!!)
 
-        verify { mockDb.users.getUserOrNull(testUser.longUser!!) }
+        verify { mockDb.users.find(testUser.longUser!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
     }
 
     @Test
     fun testQueryUserDbByStudentId() {
         every {
-            mockDb.users.getUserOrNull(testUser.studentId.toString())
+            mockDb.users.find(testUser.studentId.toString())
         } returns testUser
 
         val actual =
             AuthenticationManager.queryUserDb(testUser.studentId.toString())
 
-        verify { mockDb.users.getUserOrNull(testUser.studentId.toString()) }
+        verify { mockDb.users.find(testUser.studentId.toString()) }
         assertEquals(testUser, actual, "User was not returned when searched by studentId")
     }
 
     @Test
     fun testQueryUserDbByStudentIdNull() {
         every {
-            mockDb.users.getUserOrNull(testUser.studentId.toString())
+            mockDb.users.find(testUser.studentId.toString())
         } returns null
 
         val actual =
             AuthenticationManager.queryUserDb(testUser.studentId.toString())
 
-        verify { mockDb.users.getUserOrNull(testUser.studentId.toString()) }
+        verify { mockDb.users.find(testUser.studentId.toString()) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by studentId")
     }
 
     @Test
     fun testQueryUserDbByShortUser() {
         every {
-            mockDb.users.getUserOrNull(testUser.shortUser!!)
+            mockDb.users.find(testUser.shortUser!!)
         } returns testUser
 
         val actual = AuthenticationManager.queryUserDb(testUser.shortUser!!)
 
-        verify { mockDb.users.getUserOrNull(testUser.shortUser!!) }
+        verify { mockDb.users.find(testUser.shortUser!!) }
         assertEquals(testUser, actual, "User was not returned when searched by shortUser")
     }
 
     @Test
     fun testQueryUserDbByShortUserNull() {
         every {
-            mockDb.users.getUserOrNull(testUser.shortUser!!)
+            mockDb.users.find(testUser.shortUser!!)
         } returns null
 
         val actual = AuthenticationManager.queryUserDb(testUser.shortUser!!)
 
-        verify { mockDb.users.getUserOrNull(testUser.shortUser!!) }
+        verify { mockDb.users.find(testUser.shortUser!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by shortUser")
     }
 
