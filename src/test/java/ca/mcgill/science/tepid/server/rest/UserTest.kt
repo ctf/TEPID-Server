@@ -34,8 +34,8 @@ class UserTest : Logging {
         Users()
     }
 
-    var queryingUser: FullUser = TestHelpers.generateTestUser("querying")
-    var targetUser: FullUser = TestHelpers.generateTestUser("target")
+    var queryingUser: FullUser = run { val u = TestHelpers.generateTestUser("querying"); u._id = "querying"; u }
+    var targetUser: FullUser = run { val u = TestHelpers.generateTestUser("target"); u._id = "target"; u }
 
     lateinit var uriInfo: UriInfo
     lateinit var rc: ContainerRequestContext

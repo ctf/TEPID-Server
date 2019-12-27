@@ -55,9 +55,10 @@ class MergeUsersTest {
     // I see no sane way to proceed automatically in that case
     @Test()
     fun testMergeUsersNonMatchDbUser() {
-        val dbUser: FullUser? = TestHelpers.makeDbUser()
-            .copy(shortUser = "dbSU")
-        val ldapUser = TestHelpers.makeLdapUser().copy(shortUser = "ldapSU")
+        val dbUser: FullUser = TestHelpers.makeDbUser()
+        dbUser.shortUser = "dbSU"
+        val ldapUser = TestHelpers.makeLdapUser()
+        ldapUser.shortUser = "ldapSU"
         Assertions.assertThrows(RuntimeException::class.java) {
             AuthenticationManager.mergeUsers(
                 ldapUser,
@@ -77,7 +78,8 @@ class MergeUsersTest {
 
     @Test
     fun testMergeUsersNoStudentIdInLdapUser() {
-        val ldapUser = TestHelpers.makeLdapUser().copy(studentId = -1)
+        val ldapUser = TestHelpers.makeLdapUser()
+        ldapUser.studentId = -1
         val actual = AuthenticationManager.mergeUsers(
             ldapUser,
             TestHelpers.makeDbUser()
@@ -90,10 +92,13 @@ class MergeUsersTest {
     @Test
     fun testMergeUsersCombineSemesters() {
         val testSemester = Semester(Season.FALL, 1111)
-        val ldapUser = TestHelpers.makeLdapUser().copy(semesters = setOf(Semester.current))
+        val ldapUser = TestHelpers.makeLdapUser()
+        ldapUser.semesters = setOf(Semester.current)
+        val dbUser = TestHelpers.makeDbUser()
+        dbUser.semesters = setOf(testSemester)
         val actual = AuthenticationManager.mergeUsers(
             ldapUser,
-            TestHelpers.makeDbUser().copy(semesters = setOf(testSemester))
+            dbUser
         )
         val expected = TestHelpers.makeMergedUser()
             .copy(semesters = setOf(Semester.current, testSemester))
@@ -236,12 +241,13 @@ class AuthenticateTest {
         mockDb = TestHelpers.makeMockDb()
         DB = mockDb
         testUser = TestHelpers.generateTestUser("test")
-            .copy(shortUser = testShortUser, colorPrinting = true)
+            .copy(colorPrinting = true)
+        testUser._id = testShortUser
         testUserFromDb = TestHelpers.generateTestUser("db").copy(
-            shortUser = testUser.shortUser,
             studentId = 5555,
             colorPrinting = false
         )
+        testUserFromDb._id = testShortUser
         mockkObject(AuthenticationManager)
         mockkObject(Ldap)
     }

@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.bindings.TepidDb
+import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.FullSession
@@ -70,7 +71,7 @@ class WtfTest : DbTest() {
 
     @Test
     fun testFk() {
-        val embed0 = FullUser(shortUser = "shortUname")
+        val embed0 = FullUser(nick = "nick")
         embed0._id = "TESTFU"
         val e0 = TestForeignKey(datum = embed0)
         e0._id = "TEST"
@@ -94,9 +95,14 @@ class WtfTest : DbTest() {
 
     companion object {
         val testUsers = listOf(
-            FullUser(shortUser = "USER1"),
-            FullUser(shortUser = "USER2")
+            FullUser(),
+            FullUser()
         )
+
+        init {
+            testUsers[0]._id = "USER0"
+            testUsers[1]._id = "USER1"
+        }
 
         val testItems = listOf(
             fs(user = testUsers[0], expiration = 100),
@@ -126,7 +132,7 @@ open class DbTest {
         em.transaction.begin()
         list.toList().map { e ->
             em.detach(e)
-           e._id = e._id ?: newId()
+            e._id = e._id ?: newId()
             // e._id = newId()
             em.merge(e)
         }
@@ -659,9 +665,14 @@ class HibernateSessionLayerTest() : DbTest() {
 
     companion object {
         val testUsers = listOf(
-            FullUser(shortUser = "USER1"),
-            FullUser(shortUser = "USER2")
+            FullUser(),
+            FullUser()
         )
+
+        init {
+            testUsers[0]._id = "USER0"
+            testUsers[1]._id = "USER1"
+        }
 
         val testItems = listOf(
             FullSession(user = testUsers[0], expiration = 100),
@@ -695,8 +706,8 @@ class HibernateUserLayerTest() : DbTest() {
 
     @Test
     fun testGetTotalPrintedCountNoJobs() {
-        val otherUser = testItems[0].copy(shortUser = "OTHERUSER")
-        otherUser._id = "uOTHERUSER"
+        val otherUser = testItems[0].copy(nick = "OTHERUSER")
+        otherUser._id = "OTHERUSER"
         persist(otherUser)
         persistMultiple(testItems)
         persistMultiple(testPrints)
@@ -708,19 +719,19 @@ class HibernateUserLayerTest() : DbTest() {
 
     @Test
     fun testGetUserById() {
+        val targetId = "TEST"
         val otherUser = testItems[0].copy(studentId = 1337)
-        otherUser._id = "TEST"
+        otherUser._id = targetId
         persist(otherUser)
 
         val ri = hul.find(otherUser.studentId.toString()) ?: fail("User was not retrieved")
 
-        assertEquals(ri.shortUser, testItems[0].shortUser)
+        assertEquals(ri.shortUser, targetId)
     }
 
     @Test
     fun testGetSemesters() {
-        val u = testItems[0].copy()
-        u._id = "u${u.shortUser}"
+        val u = testItems[0].copy().withDbData(testItems[0])
         val groups = mutableSetOf(
             AdGroup("Group0"),
             AdGroup("Group1"),
@@ -755,20 +766,21 @@ class HibernateUserLayerTest() : DbTest() {
 
     companion object {
         val testPrints = listOf(
-            PrintJob(name = "1", pages = 29, colorPages = 11, userIdentification = "uUSER1", isRefunded = false),
-            PrintJob(name = "1", pages = 31, colorPages = 13, userIdentification = "uUSER1", isRefunded = true),
-            PrintJob(name = "1", pages = 37, colorPages = 17, userIdentification = "uUSER2", isRefunded = true),
-            PrintJob(name = "1", pages = 41, colorPages = 19, userIdentification = "uUSER2", isRefunded = false),
-            PrintJob(name = "1", pages = 43, colorPages = 23, userIdentification = "uUSER1", isRefunded = false)
+            PrintJob(name = "1", pages = 29, colorPages = 11, userIdentification = "USER0", isRefunded = false),
+            PrintJob(name = "1", pages = 31, colorPages = 13, userIdentification = "USER0", isRefunded = true),
+            PrintJob(name = "1", pages = 37, colorPages = 17, userIdentification = "USER1", isRefunded = true),
+            PrintJob(name = "1", pages = 41, colorPages = 19, userIdentification = "USER1", isRefunded = false),
+            PrintJob(name = "1", pages = 43, colorPages = 23, userIdentification = "USER0", isRefunded = false)
         )
 
         val testItems = listOf(
-            FullUser(shortUser = "USER1"),
-            FullUser(shortUser = "USER2")
+            FullUser(),
+            FullUser()
         )
 
         init {
-            testItems.forEach { it._id = "u${it.shortUser}" }
+            testItems[0]._id = "USER0"
+            testItems[1]._id = "USER1"
         }
 
         lateinit var hc: HibernateCrud<FullUser, String?>

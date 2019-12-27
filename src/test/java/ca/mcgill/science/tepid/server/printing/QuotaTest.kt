@@ -12,7 +12,10 @@ import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.db.DbQuotaLayer
 import ca.mcgill.science.tepid.server.server.Config
-import io.mockk.*
+import io.mockk.every
+import io.mockk.mockkObject
+import io.mockk.spyk
+import io.mockk.unmockkAll
 import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -38,8 +41,9 @@ class QuotaTest : Logging {
     }
 
     private fun userGetQuotaTest(tailoredUser: FullUser, tailoredUserRole: String, expected: Int, message: String) {
-        tailoredUser.role = tailoredUserRole
-        userGetQuotaTest(tailoredUser.copy(shortUser = "tailoredUser"), expected, message)
+        val u = tailoredUser.copy(role = tailoredUserRole, nick = "tailoredUser")
+        u._id = "tailoredUser"
+        userGetQuotaTest(u, expected, message)
     }
 
     private fun setPrintedPages(printedPages: Int) {

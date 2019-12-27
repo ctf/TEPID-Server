@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.auth
 
+import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.server.TestHelpers
@@ -40,7 +41,7 @@ class SessionIsValidTest {
     }
 
     companion object {
-        private val testUser = TestHelpers.makeDbUser().copy(role = "user")
+        private val testUser = TestHelpers.makeDbUser().copy(role = "user").withDbData(TestHelpers.makeDbUser())
         private val testSession = FullSession("user", testUser)
         val mockSession = spyk(testSession)
 
@@ -81,7 +82,7 @@ class SessionGetTest {
     }
 
     companion object {
-        val testUser = TestHelpers.makeDbUser().copy(role = "user")
+        val testUser = TestHelpers.makeDbUser().copy(role = "user").withDbData(TestHelpers.makeDbUser())
         val testSession = FullSession("user", testUser)
 
         @JvmStatic
