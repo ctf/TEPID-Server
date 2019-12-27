@@ -89,7 +89,7 @@ class Jobs {
     @Path("/{id}/reprint")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.TEXT_PLAIN)
-    fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): String {
+    fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): PutResponse {
         val session = ctx.getSession()
         val j = DB.printJobs.read(id)
         val file = Utils.existingFile(j.file) ?: failInternal("Data for this job no longer exists")
@@ -111,7 +111,7 @@ class Jobs {
                 logger.error { "Failed to reprint job: $message" }
         }
         logger.debug(logMessage("reprinted job", "id" to id, "newId" to newId))
-        return "Reprinted $id, new id $newId"
+        return response
     }
 
     private fun PrintJob.getJobExpiration(): Long {

@@ -35,3 +35,4 @@
     - file tickets more intelligently, instead of @POST("destinations/{dest}") use @POST(/"destinations/{dest}/ticket")
     - clear tickets more intelligently, instead of @POST("destinations/{dest}") use @DELETE(/"destinations/{dest}/ticket")
     - deprecate @PUT(/"destinations"). Use individual @PUT("destinations/{dest})
+- **API** Reprint returns PutResponse
