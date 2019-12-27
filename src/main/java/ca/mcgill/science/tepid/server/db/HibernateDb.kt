@@ -133,7 +133,7 @@ class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, I
                         .setParameter("id", sam.toInt())
                         .singleResult
                 }
-                else -> read("u$sam")
+                else -> read(sam)
             }
         } catch (e: Exception) {
             // TODO: More judicious error handling

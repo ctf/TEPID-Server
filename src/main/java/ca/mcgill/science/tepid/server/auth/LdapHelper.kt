@@ -39,14 +39,13 @@ class LdapHelper {
                 displayName = attr("displayName"),
                 givenName = attr("givenName"),
                 lastName = attr("sn"),
-                shortUser = attr("sAMAccountName"),
                 longUser = attr("userPrincipalName").toLowerCase(),
                 email = attr("mail"),
                 middleName = attr("middleName"),
                 faculty = attr("department"),
                 studentId = attr("employeeID").toIntOrNull() ?: -1
             )
-            out._id = "u${attr("sAMAccountName")}"
+            out._id = attr("sAMAccountName")
             out.updateUserNameInformation()
             try {
                 out.activeSince = SimpleDateFormat("yyyyMMddHHmmss.SX").parse(attr("whenCreated")).time

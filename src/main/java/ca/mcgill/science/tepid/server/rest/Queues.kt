@@ -9,10 +9,8 @@ import ca.mcgill.science.tepid.server.db.Order
 import ca.mcgill.science.tepid.server.db.remapExceptions
 import ca.mcgill.science.tepid.server.printing.loadbalancers.LoadBalancer
 import ca.mcgill.science.tepid.server.util.failBadRequest
-import ca.mcgill.science.tepid.server.util.failNotFound
 import ca.mcgill.science.tepid.server.util.toIdentifiedCollection
 import org.apache.logging.log4j.kotlin.Logging
-import java.io.InputStream
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.Consumes
 import javax.ws.rs.DELETE

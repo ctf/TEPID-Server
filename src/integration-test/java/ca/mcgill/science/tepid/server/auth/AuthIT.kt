@@ -53,7 +53,7 @@ open class AuthIT {
         Config.emf
         val userDb = HibernateCrud<FullUser, String?>(emf!!, FullUser::class.java)
         try {
-            userDb.deleteById("u$shortUser")
+            userDb.deleteById(shortUser)
         } catch (e: IllegalStateException) {
         }
     }

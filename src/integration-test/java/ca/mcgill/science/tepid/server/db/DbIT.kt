@@ -16,7 +16,7 @@ class DbIT : DbTest() {
     @Test
     fun testGetCourses() {
         val u = testItems[0].copy()
-        u._id = "u${u.shortUser}"
+        u._id = "${u.shortUser}"
         val groups = mutableSetOf(
             AdGroup("Group0"),
             AdGroup("Group1"),
