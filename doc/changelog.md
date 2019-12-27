@@ -13,15 +13,14 @@
 - setNick, setJobExpiration, setcolor return a PutResponse, instead of a FullUser
 - deprecate useless adminConfigured endpoint
 
-- **DB** apply migration 7
-- changes the semantics of the PrintJob.userIdentification field to use the FullUser._id instead of the FullUser.shortUser
-    - affects listJobs endpoint
+- change semantics of the FullUser._id field to be harmonised with FullUser.shortUser
+    - **DB** apply migration 7
+    - changes the semantics of the PrintJob.userIdentification field
+    - **API** User methods now accept only _id, except for @GET("users/{personalIdentifier}") which will point to the _id.
     
 - add missing Sessions methods to retrofit interface
     - endCurrentSession
     - invalidateSessions
-    
-- setExchange now takes _id, like all the other endpoints. Also clarified that all these endpoints take _id, not shortUser...
 
 - **API** change listJobsByUser from `/jobs/{sam}` to `/users/{id}/jobs`
 - **API** autosuggest returns UserQuery instead of User
@@ -36,4 +35,3 @@
     - file tickets more intelligently, instead of @POST("destinations/{dest}") use @POST(/"destinations/{dest}/ticket")
     - clear tickets more intelligently, instead of @POST("destinations/{dest}") use @DELETE(/"destinations/{dest}/ticket")
     - deprecate @PUT(/"destinations"). Use individual @PUT("destinations/{dest})
-- **API** User methods now accept only _id, except for @GET("users/{personalIdentifier}") which will point to the _id.
