@@ -104,6 +104,17 @@ class MergeUsersTest {
             .copy(semesters = setOf(Semester.current, testSemester))
         assertEquals(expected, actual)
     }
+
+    @Test
+    fun testMergeUsersNewUser() {
+        val dbUser: FullUser? = null
+        val ldapUser = TestHelpers.makeLdapUser()
+        val result = AuthenticationManager.mergeUsers(
+            ldapUser,
+            dbUser
+        )
+        assertEquals(ldapUser.shortUser, result.shortUser)
+    }
 }
 
 class QueryUserDbTest {
