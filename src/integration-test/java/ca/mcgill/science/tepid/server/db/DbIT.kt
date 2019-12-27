@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.server.TestHelpers
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -52,8 +53,8 @@ class DbIT : DbTest() {
     companion object {
 
         val testItems = listOf(
-            FullUser(shortUser = "USER1"),
-            FullUser(shortUser = "USER2")
+            TestHelpers.generateTestUser("U0"),
+            TestHelpers.generateTestUser("U1")
         )
 
         lateinit var hc: HibernateCrud<FullUser, String?>

@@ -30,20 +30,16 @@ class JobIT : ITBase() {
 
         server.testApi.enableColor(server.testUser, true).executeDirect()
 
-        val d0 = "d0".padEnd(36)
-        val d1 = "d1".padEnd(36)
-        val q0 = "q0".padEnd(36)
+        val d0 = "d0"
+        val d1 = "d1"
+        val q0 = "q0"
 
-        server.testApi.putDestinations(
-            mapOf(
-                d0 to FullDestination(name = d0, up = true),
-                d1 to FullDestination(name = d1, up = true)
-            )
-        ).executeDirect()
+        server.testApi.putDestination(d0, FullDestination(name = d0, up = true)).executeDirect()
+        server.testApi.putDestination(d1, FullDestination(name = d1, up = true)).executeDirect()
 
         val q = PrintQueue(loadBalancer = "fiftyfifty", name = "0", destinations = listOf(d0, d1))
         q._id = q0
-        server.testApi.putQueues(listOf(q)).executeDirect()
+        server.testApi.putQueue(q0, q).executeDirect()
 
         testJob = PrintJob(
             name = "Server Test ${System.currentTimeMillis()}",
@@ -110,12 +106,12 @@ class JobIT : ITBase() {
         }
         val dest = printedJob?.destination ?: fail("printed job did not have destination")
 
-        val setStatusResponse = TestUtils.testApi.setPrinterStatus(
+        val setStatusResponse = TestUtils.testApi.setTicket(
             dest,
             DestinationTicket(up = false, reason = "reprint test, put me up")
-        ).execute()
+        ).executeDirect() ?: fail("destination was not marked down")
 
-        if (setStatusResponse.body()?.contains("down") != true) {
+        if (!setStatusResponse.ok){
             fail("destination was not marked down")
         }
 
