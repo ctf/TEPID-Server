@@ -41,7 +41,7 @@ class JobIT : ITBase() {
 
         val q = PrintQueue(loadBalancer = "fiftyfifty", name = "0", destinations = testDestinations.mapNotNull(FullDestination::_id))
         q._id = q0
-        server.testApi.putQueue(q0, q).executeDirect()
+        server.testApi.putQueue(q0, q).get()
 
         testJob = PrintJob(
             name = "Server Test ${System.currentTimeMillis()}",
@@ -115,7 +115,7 @@ class JobIT : ITBase() {
         val setStatusResponse = TestUtils.testApi.setTicket(
             dest,
             DestinationTicket(up = false, reason = "reprint test, put me up")
-        ).executeDirect() ?: fail("destination was not marked down")
+        ).get()
 
         if (!setStatusResponse.ok) {
             fail("destination was not marked down")

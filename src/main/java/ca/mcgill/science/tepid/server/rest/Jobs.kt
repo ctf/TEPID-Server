@@ -88,7 +88,7 @@ class Jobs {
     @POST
     @Path("/{id}/reprint")
     @RolesAllowed(USER, CTFER, ELDER)
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     fun reprintJob(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): PutResponse {
         val session = ctx.getSession()
         val j = DB.printJobs.read(id)
