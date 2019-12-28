@@ -15,8 +15,6 @@ import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -75,6 +73,8 @@ class JobIT : ITBase() {
         ).executeDirect()
             ?: fail("null response received sending job contents")
         println("Job sent: $response")
+        val refundResponse = server.testApi.refundJob(response.id, true).get()
+        println("Job refunded")
 
         assertTrue(response.ok)
     }
@@ -97,8 +97,10 @@ class JobIT : ITBase() {
         )
             .executeDirect() ?: fail("null response received sending job contents")
         println("Job sent: $response")
-
         assertTrue(response.ok)
+
+        var refundResponse = server.testApi.refundJob(response.id, true).get()
+        println("Job refunded")
 
         // turn off original destination
         var printedJob: PrintJob? = null
@@ -123,11 +125,10 @@ class JobIT : ITBase() {
         val reprintResponse = server.testApi.reprintJob(jobId).execute().body()
             ?: fail("did not retrieve response after reprint")
 
-        assertFalse(reprintResponse.contains("Failed"))
+        assertTrue(reprintResponse.ok)
+        assertNotEquals(jobId, reprintResponse.id)
 
-        val foundIds = server.GUID_REGEX.findAll(reprintResponse).map { f -> f.value }.toList()
-        assertEquals(2, foundIds.size)
-        assertEquals(jobId, foundIds[0])
-        assertNotEquals(jobId, foundIds[1])
+        refundResponse = server.testApi.refundJob(response.id, true).get()
+        println("Job refunded")
     }
 }
