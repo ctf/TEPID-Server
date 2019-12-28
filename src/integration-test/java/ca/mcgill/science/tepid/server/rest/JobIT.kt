@@ -3,11 +3,8 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.api.addJobDataFromInput
 import ca.mcgill.science.tepid.api.executeDirect
 import ca.mcgill.science.tepid.models.data.DestinationTicket
-import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.server.ITBase
-import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.test.TestUtils
 import ca.mcgill.science.tepid.test.get
 import org.junit.jupiter.api.BeforeEach
@@ -25,27 +22,12 @@ class JobIT : ITBase() {
 
     @BeforeEach
     fun initTest() {
-        Config.DEBUG
-
-        server.testApi.enableColor(server.testUser, true).executeDirect()
-
-        val d0 = "d0"
-        val d1 = "d1"
-        val testDestinations = {
-            listOf(d0, d1).map { FullDestination(name = it, up = true) }.map { it.apply { _id = "mangle$name" } }
-        }()
-        val destinationResponses = testDestinations.map { server.testApi.putDestination(it._id!!, it).get() }
-        destinationResponses.forEach { assertTrue { it.ok } }
-
-        val q0 = "q0"
-
-        val q = PrintQueue(loadBalancer = "fiftyfifty", name = "0", destinations = testDestinations.mapNotNull(FullDestination::_id))
-        q._id = q0
-        server.testApi.putQueue(q0, q).get()
+        createTestQueues()
+        server.testApi.enableColor(server.testUser, true).get()
 
         testJob = PrintJob(
             name = "Server Test ${System.currentTimeMillis()}",
-            queueId = q0,
+            queueId = q1,
             userIdentification = server.testUser
         )
     }
