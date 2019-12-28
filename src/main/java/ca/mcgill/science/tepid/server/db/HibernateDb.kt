@@ -80,7 +80,7 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
         return dbOp { em ->
             em.createQuery("SELECT c FROM PrintJob c WHERE c.processed = -1 AND c.failed = -1", PrintJob::class.java)
                 .resultList
-        }
+        }.filter { maxOf(it.started, it.received, it.processed) < expireBefore }
     }
 }
 
