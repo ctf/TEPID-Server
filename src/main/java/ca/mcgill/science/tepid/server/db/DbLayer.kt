@@ -103,7 +103,7 @@ interface DbJobLayer : ICrud<PrintJob, Id?> {
 
     fun getJobFile(id: Id, file: String): InputStream?
 
-    fun getOldJobs(): List<PrintJob>
+    fun getOldJobs(expireBefore: Long): List<PrintJob>
 }
 
 interface DbQueueLayer : ICrud<PrintQueue, Id?> {
