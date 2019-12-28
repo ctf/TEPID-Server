@@ -290,10 +290,10 @@ object Printer : Logging {
         cancel(id)
     }
 
-    fun clearOldJobs() {
+    fun clearOldJobs(timeOut: Long = oldJobTimeout) {
         synchronized(lock) {
             try {
-                val jobs = DB.printJobs.getOldJobs()
+                val jobs = DB.printJobs.getOldJobs(System.currentTimeMillis() - timeOut)
                 jobs.forEach { j ->
                     DB.printJobs.update(j.getId()) {
                         fail("Timed out")
@@ -306,4 +306,6 @@ object Printer : Logging {
             }
         }
     }
+
+    val oldJobTimeout: Long = 5 * 60 * 1000
 }
