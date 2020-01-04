@@ -71,7 +71,7 @@ class Destinations {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     fun putDestination(@PathParam("dest") id: String, destination: FullDestination): PutResponse =
-        remapExceptions { DB.destinations.put(destination) }
+        remapExceptions { DB.destinations.put(destination.apply { this._id = id }) }
 
     @DELETE
     @Path("/{dest}")

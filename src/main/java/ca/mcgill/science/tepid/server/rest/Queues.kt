@@ -52,7 +52,7 @@ class Queues {
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun putQueue(@PathParam("queue") id: String, queue: PrintQueue): PutResponse =
-        remapExceptions { DB.queues.put(queue) }
+        remapExceptions { DB.queues.put(queue.apply { this._id = id }) }
 
     @DELETE
     @Path("/{queue}")
