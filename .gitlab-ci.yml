@@ -74,6 +74,7 @@ integrationTest:
   extends: .base
   stage: integrationTest
   script:
+    - ./gradlew clean
     - ./gradlew test -i
     - ./gradlew integrationTest -i
   artifacts:
