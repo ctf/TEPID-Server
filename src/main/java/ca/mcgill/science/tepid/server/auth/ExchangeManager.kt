@@ -28,9 +28,9 @@ object ExchangeManager : Logging {
      */
     fun setExchangeStudent(shortUser: ShortUser, exchange: Boolean): Boolean {
         logger.info { logMessage("setting exchange status", "shortUser" to shortUser, "exchange_status" to exchange) }
-        val success = setExchangeStudentLdap(shortUser, exchange)
+        val newStatus = setExchangeStudentLdap(shortUser, exchange)
         AuthenticationManager.refreshUser(shortUser)
-        return success
+        return newStatus
     }
 
     /**
