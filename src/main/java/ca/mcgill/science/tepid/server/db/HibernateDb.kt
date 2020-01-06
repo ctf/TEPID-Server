@@ -76,11 +76,11 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
         throw NotImplementedError()
     }
 
-    override fun getOldJobs(): List<PrintJob> {
+    override fun getOldJobs(expireBefore: Long): List<PrintJob> {
         return dbOp { em ->
-            em.createQuery("SELECT c FROM PrintJob c WHERE c.processed = -1 AND c.failed = -1", PrintJob::class.java)
+            em.createQuery("SELECT p FROM PrintJob p WHERE p.printed = -1 AND p.failed = -1", PrintJob::class.java)
                 .resultList
-        }
+        }.filter { maxOf(it.started, it.received, it.processed) < expireBefore }
     }
 }
 

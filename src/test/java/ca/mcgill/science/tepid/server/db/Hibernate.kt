@@ -26,6 +26,7 @@ import javax.persistence.EntityManagerFactory
 import javax.persistence.ManyToOne
 import javax.persistence.Persistence
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -516,6 +517,51 @@ class HibernateJobLayerTest : DbTest() {
 
         val ri = hl.read(id)
         assertEquals(ti, ri)
+    }
+
+    @Test
+    fun testGetOldJobs() {
+        val failedJob = testItems.first().copy(failed = now - 200)
+        val oldFailedJob = testItems.first().copy(failed = now - 2000)
+        val wipStartedJob = testItems.first().copy(started = now - 500)
+        val wipReceivedJob = testItems.first().copy(started = now - 500, received = now - 400)
+        val wipProcessedJob = testItems.first().copy(started = now - 500, received = now - 400, processed = now - 300)
+        val expiredStartedJob = testItems.first().copy(started = now - 1500)
+        val expiredReceivedJob = testItems.first().copy(started = now - 1500, received = now - 1400)
+        val expiredProcessedJob =
+            testItems.first().copy(started = now - 1500, received = now - 1400, processed = now - 1300)
+        val completedJob = testItems.first().copy(received = now - 200, processed = now - 155, printed = now - 133)
+        val oldCompletedJob =
+            testItems.first().copy(received = now - 2000, processed = now - 1555, printed = now - 1333)
+
+        persistMultiple(
+            listOf(
+                failedJob,
+                oldFailedJob,
+                wipStartedJob,
+                wipReceivedJob,
+                wipProcessedJob,
+                expiredStartedJob,
+                expiredReceivedJob,
+                expiredProcessedJob,
+                completedJob,
+                oldCompletedJob
+            )
+        )
+
+        val oldJobs = hl.getOldJobs(now - 1000)
+
+        assertTrue { oldJobs.contains(expiredStartedJob) }
+        assertTrue { oldJobs.contains(expiredReceivedJob) }
+        assertTrue { oldJobs.contains(expiredProcessedJob) }
+
+        assertFalse { oldJobs.contains(failedJob) }
+        assertFalse { oldJobs.contains(oldFailedJob) }
+        assertFalse { oldJobs.contains(wipStartedJob) }
+        assertFalse { oldJobs.contains(wipReceivedJob) }
+        assertFalse { oldJobs.contains(wipProcessedJob) }
+        assertFalse { oldJobs.contains(completedJob) }
+        assertFalse { oldJobs.contains(oldCompletedJob) }
     }
 
     @AfterEach
