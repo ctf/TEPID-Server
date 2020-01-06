@@ -48,15 +48,17 @@ object Printer : Logging {
         val future = executor.submit {
             try {
                 action()
+            } catch (e: Exception) {
+                logger.warn { logError("cancelling task", e, "id" to id) }
             } finally {
                 cancel(id)
             }
+            logger.info { logMessage("completed job thread", "id" to id) }
         }
         runningTasks[id] = future
     }
 
     private fun cancel(id: String) {
-        logger.warn(logMessage("cancelling task", "id" to id))
         try {
             val future = runningTasks.remove(id)
             if (future?.isDone == false)
