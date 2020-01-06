@@ -23,7 +23,7 @@ class LdapTest {
 
     private fun FullUser?.assertEqualsTestUser() {
         assertNotNull(this)
-        println(this!!)
+        println(this)
         assertEquals(
             PropsLDAPTestUser.TEST_USER,
             shortUser,
@@ -35,7 +35,7 @@ class LdapTest {
 
     private fun FullUser?.assertValidUser() {
         assertNotNull(this)
-        println(this!!)
+        println(this)
         mapOf(
             "givenName" to givenName,
             "lastName" to lastName,

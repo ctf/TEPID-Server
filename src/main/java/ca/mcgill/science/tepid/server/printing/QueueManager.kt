@@ -13,7 +13,10 @@ import org.apache.logging.log4j.kotlin.KotlinLogger
 import org.apache.logging.log4j.kotlin.logger
 import java.util.*
 
-open class QueueManager protected constructor(var printQueue: PrintQueue, var destinations: MutableList<FullDestination>) {
+open class QueueManager protected constructor(
+    var printQueue: PrintQueue,
+    var destinations: MutableList<FullDestination>
+) {
     protected val log: KotlinLogger
     protected val loadBalancer: LoadBalancer
 
@@ -35,7 +38,7 @@ open class QueueManager protected constructor(var printQueue: PrintQueue, var de
     fun refreshDestinations() {
         destinations.clear() // clear out the old Destination objects
         for (d in printQueue.destinations) {
-            val dest = db.getDestination(d)
+            val dest = db.destinations.read(d)
             destinations.add(dest) // replace with shiny new Destination objects
             val up = dest.up
             log.trace { logMessage("Loadbalancer checking status", "dest" to dest.name, "getUp" to up) }
@@ -45,7 +48,7 @@ open class QueueManager protected constructor(var printQueue: PrintQueue, var de
 
     fun assignDestination(id: String): PrintJob? {
         refreshDestinations()
-        return db.updateJob(id) {
+        return db.printJobs.update(id) {
             val results: LoadBalancerResults = loadBalancer.processJob(this) ?: run {
                 this.fail(PrintError.INVALID_DESTINATION)
                 log.info {
@@ -54,7 +57,7 @@ open class QueueManager protected constructor(var printQueue: PrintQueue, var de
                         "printJob" to this.getId(), "printqueue" to printQueue.getId()
                     )
                 }
-                return@updateJob
+                return@update
             }
             this.destination = results.destination
             this.eta = results.eta
@@ -66,7 +69,7 @@ open class QueueManager protected constructor(var printQueue: PrintQueue, var de
     open fun getEta(destination: String): Long {
         var maxEta: Long = 0
         try {
-            maxEta = db.getEta(destination)
+            maxEta = db.queues.getEta(destination)
         } catch (ignored: Exception) {
         }
         return maxEta
@@ -80,7 +83,7 @@ open class QueueManager protected constructor(var printQueue: PrintQueue, var de
 
         private fun getFromDb(id: String): QueueManager {
             try {
-                val printQueue = db.getQueue(id)
+                val printQueue = db.queues.read(id)
                 val QM = QueueManager(printQueue, mutableListOf())
                 QM.refreshDestinations()
                 return QM

@@ -94,13 +94,13 @@ object Printer : Logging {
             // todo test and validate
             // write compressed job to disk
             // adding filepath before upload ensures that the file can get deleted even if the job fails during upload
-            DB.updateJob(id) {
+            DB.printJobs.update(id) {
                 file = tmpXz.absolutePath
                 logger.info(logMessage("updating job with path", "id" to id, "path" to file))
             }
             tmpXz.copyFrom(stream)
             // let db know we have received data
-            DB.updateJobWithResponse(id) {
+            DB.printJobs.update(id) {
                 received = System.currentTimeMillis()
                 logger.info(logMessage("job file received", "id" to id, "at" to received))
             }
@@ -117,7 +117,7 @@ object Printer : Logging {
                 if (!tmpXz.delete()) {
                     throw IOException("Failed to delete file in cleanup of failed reception")
                 }
-                DB.updateJob(id) {
+                DB.printJobs.update(id) {
                     file = null
                 }
             } catch (e: Exception) {
@@ -165,7 +165,8 @@ object Printer : Logging {
                 )
 
                 var j2: PrintJob = updatePagecount(id, psInfo)
-                val userIdentification = j2.userIdentification ?: throw PrintException("Could not retrieve userIdentification {\"job\":\"${j2.getId()}\", \"userIdentification\":\"${j2.userIdentification}\"}")
+                val userIdentification = j2.userIdentification
+                    ?: throw PrintException("Could not retrieve userIdentification {\"job\":\"${j2.getId()}\", \"userIdentification\":\"${j2.userIdentification}\"}")
                 val user = AuthenticationManager.queryUser(userIdentification)
                     ?: throw PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
 
@@ -177,14 +178,15 @@ object Printer : Logging {
 
                 // add job to the queue
                 logger.trace(logMessage("trying to assign destination", "job" to j2.getId()))
-                j2 = QueueManager.assignDestination(j2) ?: throw RuntimeException("TODO REFACTORING WORK IN QueueManager.assignDestination")
+                j2 = QueueManager.assignDestination(j2)
+                    ?: throw RuntimeException("TODO REFACTORING WORK IN QueueManager.assignDestination")
                 // todo check destination field
                 val destination = j2.destination
                     ?: throw PrintException(PrintError.INVALID_DESTINATION)
 
-                val dest = DB.getDestination(destination)
+                val dest = DB.destinations.read(destination)
                 if (sendToSMB(tmp, dest, debug)) {
-                    DB.updateJob(id) {
+                    DB.printJobs.update(id) {
                         printed = System.currentTimeMillis()
                     }
                     logger.info(logMessage("sent job to destination", "id" to j2._id))
@@ -205,11 +207,15 @@ object Printer : Logging {
 
     // update page count and status in db
     private fun updatePagecount(id: String, psInfo: PsData): PrintJob {
-        return DB.updateJob(id) {
-            this.pages = psInfo.pages
-            this.colorPages = psInfo.colorPages
-            this.processed = System.currentTimeMillis()
-        } ?: throw PrintException("Could not update")
+        try {
+            return DB.printJobs.update(id) {
+                this.pages = psInfo.pages
+                this.colorPages = psInfo.colorPages
+                this.processed = System.currentTimeMillis()
+            }
+        } catch (e: Exception) {
+            throw PrintException(logError("Could not update", e))
+        }
     }
 
     // check if user has color printing enabled
@@ -278,7 +284,7 @@ object Printer : Logging {
      * Update job db and cancel executor
      */
     private fun failJob(id: String, error: String) {
-        DB.updateJobWithResponse(id) {
+        DB.printJobs.update(id) {
             fail(error)
         }
         cancel(id)
@@ -287,11 +293,11 @@ object Printer : Logging {
     fun clearOldJobs() {
         synchronized(lock) {
             try {
-                val jobs = DB.getOldJobs()
+                val jobs = DB.printJobs.getOldJobs()
                 jobs.forEach { j ->
-                    DB.updateJob(j.getId()) {
+                    DB.printJobs.update(j.getId()) {
                         fail("Timed out")
-                        val id = _id ?: return@updateJob // TODO: if ID is null, how did we get here?
+                        val id = _id ?: return@update // TODO: if ID is null, how did we get here?
                         cancel(id)
                     }
                 }

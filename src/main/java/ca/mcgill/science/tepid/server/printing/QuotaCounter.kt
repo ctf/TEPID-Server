@@ -21,10 +21,12 @@ interface IQuotaCounter {
 
 object QuotaCounter : IQuotaCounter {
 
-    override fun getQuotaData(user: FullUser): QuotaData {
-        val shortUser = user.shortUser ?: return nullQuotaData
+    var dbQuotaLayer = DB.quota
 
-        val totalPrinted = DB.getTotalPrintedCount(shortUser)
+    override fun getQuotaData(user: FullUser): QuotaData {
+        val id = user._id ?: return nullQuotaData
+
+        val totalPrinted = dbQuotaLayer.getTotalPrintedCount(id)
 
         val currentSemester = Semester.current
         // TODO: incorporate summer escape into mapper

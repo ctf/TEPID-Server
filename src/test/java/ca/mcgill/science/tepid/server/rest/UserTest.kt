@@ -6,7 +6,7 @@ import ca.mcgill.science.tepid.models.bindings.USER
 import ca.mcgill.science.tepid.models.data.ErrorResponse
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.FullUser
-import ca.mcgill.science.tepid.server.UserFactory
+import ca.mcgill.science.tepid.server.TestHelpers
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.server.mapper
@@ -34,8 +34,8 @@ class UserTest : Logging {
         Users()
     }
 
-    var queryingUser: FullUser = UserFactory.generateTestUser("querying")
-    var targetUser: FullUser = UserFactory.generateTestUser("target")
+    var queryingUser: FullUser = run { val u = TestHelpers.generateTestUser("querying"); u._id = "querying"; u }
+    var targetUser: FullUser = run { val u = TestHelpers.generateTestUser("target"); u._id = "target"; u }
 
     lateinit var uriInfo: UriInfo
     lateinit var rc: ContainerRequestContext

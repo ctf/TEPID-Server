@@ -33,7 +33,8 @@ class FiftyFifty(qm: QueueManager) : LoadBalancer(qm) {
             }
             return null
         }
-        do currentDest = (currentDest + 1) % queueManager.destinations.size while (!queueManager.destinations[currentDest].up)
+        do currentDest =
+            (currentDest + 1) % queueManager.destinations.size while (!queueManager.destinations[currentDest].up)
         val dest = queueManager.destinations[currentDest]
         log.trace {
             logMessage(

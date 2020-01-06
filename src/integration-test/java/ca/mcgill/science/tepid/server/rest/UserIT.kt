@@ -12,11 +12,6 @@ class UserIT : ITBase() {
     }
 
     @Test
-    fun configured() {
-        assertTrue(endpoints.adminConfigured(), "Tepid is not configured")
-    }
-
-    @Test
     fun testAutoSuggest() {
         val u = server.testApi.queryUsers(server.testUser, 10).execute().body() ?: fail("derp")
 

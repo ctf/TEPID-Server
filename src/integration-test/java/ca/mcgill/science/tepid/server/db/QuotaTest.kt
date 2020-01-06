@@ -16,7 +16,7 @@ class QuotaTest : Logging {
         val monitor = UserMembershipMonitor()
         monitor.run()
 
-        val u = DB.getUserOrNull(PropsLDAPTestUser.TEST_USER) ?: fail("did not retrieve test user")
+        val u = DB.users.find(PropsLDAPTestUser.TEST_USER) ?: fail("did not retrieve test user")
         assertTrue { u.semesters.contains(Semester.current) }
     }
 }

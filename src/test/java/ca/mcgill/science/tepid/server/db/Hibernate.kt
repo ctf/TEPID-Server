@@ -1,6 +1,7 @@
 package ca.mcgill.science.tepid.server.db
 
 import ca.mcgill.science.tepid.models.bindings.TepidDb
+import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.FullSession
@@ -25,7 +26,6 @@ import javax.persistence.EntityManagerFactory
 import javax.persistence.ManyToOne
 import javax.persistence.Persistence
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -71,7 +71,7 @@ class WtfTest : DbTest() {
 
     @Test
     fun testFk() {
-        val embed0 = FullUser(shortUser = "shortUname")
+        val embed0 = FullUser(nick = "nick")
         embed0._id = "TESTFU"
         val e0 = TestForeignKey(datum = embed0)
         e0._id = "TEST"
@@ -95,9 +95,14 @@ class WtfTest : DbTest() {
 
     companion object {
         val testUsers = listOf(
-            FullUser(shortUser = "USER1"),
-            FullUser(shortUser = "USER2")
+            FullUser(),
+            FullUser()
         )
+
+        init {
+            testUsers[0]._id = "USER0"
+            testUsers[1]._id = "USER1"
+        }
 
         val testItems = listOf(
             fs(user = testUsers[0], expiration = 100),
@@ -127,8 +132,8 @@ open class DbTest {
         em.transaction.begin()
         list.toList().map { e ->
             em.detach(e)
-//            e._id = e._id ?: newId()
-            e._id = newId()
+            e._id = e._id ?: newId()
+            // e._id = newId()
             em.merge(e)
         }
         em.transaction.commit()
@@ -289,13 +294,13 @@ class HibernateCrudTest() : DbTest() {
         val te = TestEntity("TEST")
         if (id != null) te._id = id
 
-        pc.updateOrCreateIfNotExist(te)
+        pc.put(te)
         val reCreated = em.find(TestEntity::class.java, te._id)
         assertEquals(te, reCreated)
 
         te.content = "NEW"
 
-        pc.updateOrCreateIfNotExist(te)
+        pc.put(te)
 
         em.close()
         em = emf.createEntityManager()
@@ -329,7 +334,7 @@ class HibernateMarqueeLayerTest : DbTest() {
 
         em.close()
         em = emf.createEntityManager()
-        val retrieved = hml.getMarquees()
+        val retrieved = hml.readAll()
 
         for (i in 0..testItems.size - 1) {
             assertEquals(testItems[i].title, retrieved[i].title)
@@ -362,7 +367,7 @@ class HibernateDestinationLayerTest : DbTest() {
     fun testGetDestination() {
         persistMultiple(testItems)
 
-        val retrieved = hl.getDestinations()
+        val retrieved = hl.readAll()
 
         assertEquals(testItems, retrieved)
     }
@@ -370,11 +375,10 @@ class HibernateDestinationLayerTest : DbTest() {
     @Test
     fun testPutDestination() {
         val testList = testItems.toList().map { it._id = newId(); it }
-        val testMap = testList.map { it._id!! to it }.toMap()
 
-        val result = hl.putDestinations(testMap)
+        val result = testList.forEach { hl.put(it) }
 
-        val retrieved = hl.getDestinations()
+        val retrieved = hl.readAll()
         assertEquals(testList, retrieved)
     }
 
@@ -386,14 +390,13 @@ class HibernateDestinationLayerTest : DbTest() {
         testItem._id = id
         persist(testItem)
 
-        val response = hl.updateDestinationWithResponse(id) {
+        val response = hl.update(id) {
             this.name = newName
         }
 
         val retrieved = hl.read(id)
         assertNotNull(retrieved)
         assertEquals(retrieved.name, newName)
-        assertEquals(response.status, 200)
     }
 
     @Test
@@ -403,10 +406,9 @@ class HibernateDestinationLayerTest : DbTest() {
         testItem._id = id
         persist(testItem)
 
-        val response = hl.deleteDestination(id)
+        val response = hl.deleteById(id)
 
-        val retrieved = hl.read(id)
-
+        val retrieved = hl.readOrNull(id)
         assertNull(retrieved)
     }
 
@@ -497,9 +499,9 @@ class HibernateJobLayerTest : DbTest() {
         ti._id = id
         persist(ti)
 
-        hl.updateJob(id) { name = "NEWNAME" }
+        hl.update(id) { name = "NEWNAME" }
 
-        val ri = hl.read(id) ?: fail("Not Persisted")
+        val ri = hl.read(id)
         assertEquals("NEWNAME", ri.name)
         assertEquals(ti.queueId, ri.queueId)
     }
@@ -510,7 +512,7 @@ class HibernateJobLayerTest : DbTest() {
         val id = newId()
         ti._id = id
 
-        hl.postJob(ti)
+        hl.create(ti)
 
         val ri = hl.read(id)
         assertEquals(ti, ri)
@@ -549,7 +551,7 @@ class HibernateQueueLayerTest() : DbTest() {
     fun testGetQueues() {
         persistMultiple(testItems)
 
-        val ri = hl.getQueues()
+        val ri = hl.readAll()
 
         assertEquals(testItems.toString(), ri.toString())
     }
@@ -562,7 +564,7 @@ class HibernateQueueLayerTest() : DbTest() {
             it
         }
 
-        val response = hl.putQueues(ti)
+        val response = ti.forEach { hl.put(it) }
 
         val ri = hc.readAll()
         assertEquals(ti.sortedBy { it.name }.toString(), ri.sortedBy { it.name }.toString())
@@ -576,7 +578,7 @@ class HibernateQueueLayerTest() : DbTest() {
 
         ti.map { it.loadBalancer = "PerfectlyBalanced" }
 
-        val response = hl.putQueues(ti)
+        val response = ti.forEach { hl.put(it) }
 
         val ri = hc.readAll()
         assertEquals(ti.sortedBy { it.name }.toString(), ri.sortedBy { it.name }.toString())
@@ -591,9 +593,9 @@ class HibernateQueueLayerTest() : DbTest() {
         ti._id = id
         persist(ti)
 
-        val response = hl.deleteQueue(id)
+        val response = hl.deleteById(id)
 
-        val retrieved = hl.read(id)
+        val retrieved = hl.readOrNull(id)
         assertNull(retrieved)
     }
 
@@ -629,7 +631,7 @@ class HibernateSessionLayerTest() : DbTest() {
         persistMultiple(testUsers)
         persistMultiple(testItems)
 
-        val ri = hl.getSessionIdsForUser(testUsers[0].shortUser!!)
+        val ri = hl.getSessionIdsForUser(testUsers[0]._id!!)
 
         assertEquals(2, ri.size)
         assertTrue { ri.contains(testItems[0]._id) }
@@ -641,8 +643,7 @@ class HibernateSessionLayerTest() : DbTest() {
         persistMultiple(testUsers)
         persistMultiple(testItems)
 
-        val ri = hl.getSessionOrNull("FAKEID")
-
+        val ri = hl.readOrNull("FAKEID")
         assertNull(ri)
     }
 
@@ -664,9 +665,14 @@ class HibernateSessionLayerTest() : DbTest() {
 
     companion object {
         val testUsers = listOf(
-            FullUser(shortUser = "USER1"),
-            FullUser(shortUser = "USER2")
+            FullUser(),
+            FullUser()
         )
+
+        init {
+            testUsers[0]._id = "USER0"
+            testUsers[1]._id = "USER1"
+        }
 
         val testItems = listOf(
             FullSession(user = testUsers[0], expiration = 100),
@@ -689,59 +695,43 @@ class HibernateSessionLayerTest() : DbTest() {
 class HibernateUserLayerTest() : DbTest() {
 
     @Test
-    fun testIsAdminConfiguredTrue() {
-        persist(testItems[0])
-
-        val ri = hul.isAdminConfigured()
-
-        assertTrue(ri)
-    }
-
-    @Test
-    fun testIsAdminConfiguredFalse() {
-        val ri = hul.isAdminConfigured()
-
-        assertFalse(ri)
-    }
-
-    @Test
     fun testGetTotalPrintedCount() {
         persistMultiple(testItems)
         persistMultiple(testPrints)
 
-        val ri = hql.getTotalPrintedCount(testItems[0].shortUser!!)
+        val ri = hql.getTotalPrintedCount(testItems[0]._id!!)
 
         assertEquals(140, ri)
     }
 
     @Test
     fun testGetTotalPrintedCountNoJobs() {
-        val otherUser = testItems[0].copy(shortUser = "OTHERUSER")
-        otherUser._id = "uOTHERUSER"
+        val otherUser = testItems[0].copy(nick = "OTHERUSER")
+        otherUser._id = "OTHERUSER"
         persist(otherUser)
         persistMultiple(testItems)
         persistMultiple(testPrints)
 
-        val ri = hql.getTotalPrintedCount(otherUser.shortUser!!)
+        val ri = hql.getTotalPrintedCount(otherUser._id!!)
 
         assertEquals(0, ri)
     }
 
     @Test
     fun testGetUserById() {
+        val targetId = "TEST"
         val otherUser = testItems[0].copy(studentId = 1337)
-        otherUser._id = "TEST"
+        otherUser._id = targetId
         persist(otherUser)
 
-        val ri = hul.getUserOrNull(otherUser.studentId.toString()) ?: fail("User was not retrieved")
+        val ri = hul.find(otherUser.studentId.toString()) ?: fail("User was not retrieved")
 
-        assertEquals(ri.shortUser, testItems[0].shortUser)
+        assertEquals(ri.shortUser, targetId)
     }
 
     @Test
     fun testGetSemesters() {
-        val u = testItems[0].copy()
-        u._id = "u${u.shortUser}"
+        val u = testItems[0].copy().withDbData(testItems[0])
         val groups = mutableSetOf(
             AdGroup("Group0"),
             AdGroup("Group1"),
@@ -758,7 +748,7 @@ class HibernateUserLayerTest() : DbTest() {
         persist(u)
 //        em.clear()
 
-        val ri = hul.getUserOrNull(u.shortUser!!) ?: fail("Did not retieve user")
+        val ri = hul.find(u.shortUser!!) ?: fail("Did not retieve user")
 
         assertEquals(3, ri.groups.size)
         assertEquals(2, ri.semesters.size)
@@ -776,17 +766,22 @@ class HibernateUserLayerTest() : DbTest() {
 
     companion object {
         val testPrints = listOf(
-            PrintJob(name = "1", pages = 29, colorPages = 11, userIdentification = "USER1", isRefunded = false),
-            PrintJob(name = "1", pages = 31, colorPages = 13, userIdentification = "USER1", isRefunded = true),
-            PrintJob(name = "1", pages = 37, colorPages = 17, userIdentification = "USER2", isRefunded = true),
-            PrintJob(name = "1", pages = 41, colorPages = 19, userIdentification = "USER2", isRefunded = false),
-            PrintJob(name = "1", pages = 43, colorPages = 23, userIdentification = "USER1", isRefunded = false)
+            PrintJob(name = "1", pages = 29, colorPages = 11, userIdentification = "USER0", isRefunded = false),
+            PrintJob(name = "1", pages = 31, colorPages = 13, userIdentification = "USER0", isRefunded = true),
+            PrintJob(name = "1", pages = 37, colorPages = 17, userIdentification = "USER1", isRefunded = true),
+            PrintJob(name = "1", pages = 41, colorPages = 19, userIdentification = "USER1", isRefunded = false),
+            PrintJob(name = "1", pages = 43, colorPages = 23, userIdentification = "USER0", isRefunded = false)
         )
 
         val testItems = listOf(
-            FullUser(shortUser = "USER1"),
-            FullUser(shortUser = "USER2")
+            FullUser(),
+            FullUser()
         )
+
+        init {
+            testItems[0]._id = "USER0"
+            testItems[1]._id = "USER1"
+        }
 
         lateinit var hc: HibernateCrud<FullUser, String?>
         lateinit var hul: HibernateUserLayer

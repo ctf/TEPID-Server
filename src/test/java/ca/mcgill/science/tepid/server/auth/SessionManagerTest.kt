@@ -1,21 +1,23 @@
 package ca.mcgill.science.tepid.server.auth
 
+import ca.mcgill.science.tepid.models.bindings.withDbData
 import ca.mcgill.science.tepid.models.data.FullSession
 import ca.mcgill.science.tepid.models.data.PutResponse
-import ca.mcgill.science.tepid.server.UserFactory
+import ca.mcgill.science.tepid.server.TestHelpers
 import ca.mcgill.science.tepid.server.db.DB
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockkObject
+import io.mockk.runs
 import io.mockk.spyk
 import io.mockk.unmockkAll
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import javax.ws.rs.core.Response
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
-val okPutResponse = Response.ok().entity(PutResponse(id = "TEST")).build()
+val okPutResponse = PutResponse(id = "TEST")
 
 class SessionIsValidTest {
 
@@ -39,7 +41,7 @@ class SessionIsValidTest {
     }
 
     companion object {
-        private val testUser = UserFactory.makeDbUser().copy(role = "user")
+        private val testUser = TestHelpers.makeDbUser().copy(role = "user").withDbData(TestHelpers.makeDbUser())
         private val testSession = FullSession("user", testUser)
         val mockSession = spyk(testSession)
 
@@ -63,8 +65,8 @@ class SessionGetTest {
 
     @Test
     fun testGetInvalidSession() {
-        every { DB.getSessionOrNull("testID") } returns testSession
-        every { DB.deleteSession("testID") } returns "fakeResponse"
+        every { DB.sessions.readOrNull("testID") } returns testSession
+        every { DB.sessions.deleteById("testID") } just runs
         every { SessionManager.isValid(testSession) } returns false
 
         assertEquals(null, SessionManager.get("testID"), "Does not return null for invalid session")
@@ -72,15 +74,15 @@ class SessionGetTest {
 
     @Test
     fun testGetValidSession() {
-        every { DB.getSessionOrNull("testID") } returns testSession
-        every { DB.deleteSession("testID") } returns "fakeResponse"
+        every { DB.sessions.readOrNull("testID") } returns testSession
+        every { DB.sessions.deleteById("testID") } just runs
         every { SessionManager.isValid(testSession) } returns true
 
         assertEquals(testSession, SessionManager.get("testID"), "Does not return valid session")
     }
 
     companion object {
-        val testUser = UserFactory.makeDbUser().copy(role = "user")
+        val testUser = TestHelpers.makeDbUser().copy(role = "user").withDbData(TestHelpers.makeDbUser())
         val testSession = FullSession("user", testUser)
 
         @JvmStatic
@@ -91,7 +93,7 @@ class SessionGetTest {
             mockkObject(SessionManager)
             mockkObject(AuthenticationManager)
             every { AuthenticationManager.queryUserDb(testUser.shortUser!!) } returns testUser
-            mockkObject(DB)
+            DB = TestHelpers.makeMockDb()
         }
 
         @JvmStatic

@@ -22,7 +22,6 @@ import javax.ws.rs.Produces
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 
 @Path("/sessions")
 class Sessions {
@@ -64,32 +63,32 @@ class Sessions {
 
     @DELETE
     @RolesAllowed(USER, CTFER, ELDER)
-    fun endCurrentSession(@Context ctx: ContainerRequestContext): Response {
+    fun endCurrentSession(@Context ctx: ContainerRequestContext) {
         val requestSession = ctx.getSession()
-        return endSession(requestSession.getId(), ctx)
+        endSession(requestSession.getId(), ctx)
     }
 
     @DELETE
     @RolesAllowed(USER, CTFER, ELDER)
     @Path("/{id}")
     @Produces(MediaType.TEXT_PLAIN)
-    fun endSession(@PathParam("id") id: String, @Context ctx: ContainerRequestContext): Response {
+    fun endSession(@PathParam("id") id: String, @Context ctx: ContainerRequestContext) {
         val requestSession = ctx.getSession()
         val targetSession = SessionManager[id] ?: failNotFound("")
         if (requestSession.user.shortUser == targetSession.user.shortUser) {
             logger.info(logMessage("deleting session", "session" to targetSession, "t" to 0))
             SessionManager.end(id)
-            return Response.ok("ok").build()
-        }
-        logger.warn(
-            logMessage(
-                "Unauthorized attempt to delete session",
-                "of" to requestSession.user.shortUser,
-                "by" to targetSession.user.shortUser
+        } else {
+            logger.warn(
+                logMessage(
+                    "Unauthorized attempt to delete session",
+                    "of" to requestSession.user.shortUser,
+                    "by" to targetSession.user.shortUser
+                )
             )
-        )
-        // returns failNotFound for uniformity with the case when the session doesn't exist
-        failNotFound("")
+            // returns failNotFound for uniformity with the case when the session doesn't exist
+            failNotFound("")
+        }
     }
 
     @POST

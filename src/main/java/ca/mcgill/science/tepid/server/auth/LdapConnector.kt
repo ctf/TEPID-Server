@@ -48,7 +48,11 @@ class LdapConnector(val timeout: Int? = 5000) : Logging {
         }
     }
 
-    fun executeSearch(searchFilter: String, limit: Long = 10, ctx: LdapContext? = bindLdapWithResource()): Set<FullUser> {
+    fun executeSearch(
+        searchFilter: String,
+        limit: Long = 10,
+        ctx: LdapContext? = bindLdapWithResource()
+    ): Set<FullUser> {
         ctx ?: return emptySet()
         val results: List<SearchResult>
         try {

@@ -4,7 +4,8 @@ import ca.mcgill.science.tepid.models.data.About
 import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
-import ca.mcgill.science.tepid.server.db.HibernateDbLayer
+import ca.mcgill.science.tepid.server.db.makeEntityManagerFactory
+import ca.mcgill.science.tepid.server.db.makeHibernateDb
 import ca.mcgill.science.tepid.server.printing.GSException
 import ca.mcgill.science.tepid.server.printing.Gs
 import ca.mcgill.science.tepid.server.util.Utils
@@ -198,6 +199,8 @@ object Config : Logging {
     }
 
     fun getDb(): DbLayer {
-        return HibernateDbLayer(HibernateDbLayer.makeEntityManagerFactory(if (DEBUG) "hibernate-pu-test" else "tepid-pu").also { emf = it })
+        return makeHibernateDb(makeEntityManagerFactory(if (DEBUG) "hibernate-pu-test" else "tepid-pu").also {
+            emf = it
+        })
     }
 }

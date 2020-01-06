@@ -3,13 +3,12 @@ package ca.mcgill.science.tepid.server.auth
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.server.UserFactory
+import ca.mcgill.science.tepid.server.TestHelpers
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.server.Config
 import io.mockk.every
 import io.mockk.just
-import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.runs
 import io.mockk.spyk
@@ -45,9 +44,9 @@ class MergeUsersTest {
     @Test
     fun testMergeUsersNonMatchNullDbUser() {
         val dbUser: FullUser? = null
-        val ldapUser = UserFactory.makeLdapUser()
+        val ldapUser = TestHelpers.makeLdapUser()
         val actual = AuthenticationManager.mergeUsers(ldapUser, dbUser)
-        assertEquals(UserFactory.makeLdapUser(), actual)
+        assertEquals(TestHelpers.makeLdapUser(), actual)
     }
 
     // This should never happen, but it would cause so much trouble downstream that we need to guard against it.
@@ -56,9 +55,10 @@ class MergeUsersTest {
     // I see no sane way to proceed automatically in that case
     @Test()
     fun testMergeUsersNonMatchDbUser() {
-        val dbUser: FullUser? = UserFactory.makeDbUser()
-            .copy(shortUser = "dbSU")
-        val ldapUser = UserFactory.makeLdapUser().copy(shortUser = "ldapSU")
+        val dbUser: FullUser = TestHelpers.makeDbUser()
+        dbUser.shortUser = "dbSU"
+        val ldapUser = TestHelpers.makeLdapUser()
+        ldapUser.shortUser = "ldapSU"
         Assertions.assertThrows(RuntimeException::class.java) {
             AuthenticationManager.mergeUsers(
                 ldapUser,
@@ -70,137 +70,152 @@ class MergeUsersTest {
     @Test
     fun testMergeUsers() {
         val actual = AuthenticationManager.mergeUsers(
-            UserFactory.makeLdapUser(),
-            UserFactory.makeDbUser()
+            TestHelpers.makeLdapUser(),
+            TestHelpers.makeDbUser()
         )
-        assertEquals(UserFactory.makeMergedUser(), actual)
+        assertEquals(TestHelpers.makeMergedUser(), actual)
     }
 
     @Test
     fun testMergeUsersNoStudentIdInLdapUser() {
-        val ldapUser = UserFactory.makeLdapUser().copy(studentId = -1)
+        val ldapUser = TestHelpers.makeLdapUser()
+        ldapUser.studentId = -1
         val actual = AuthenticationManager.mergeUsers(
             ldapUser,
-            UserFactory.makeDbUser()
+            TestHelpers.makeDbUser()
         )
-        val expected = UserFactory.makeMergedUser()
-            .copy(studentId = UserFactory.makeDbUser().studentId)
+        val expected = TestHelpers.makeMergedUser()
+            .copy(studentId = TestHelpers.makeDbUser().studentId)
         assertEquals(expected, actual)
     }
 
     @Test
     fun testMergeUsersCombineSemesters() {
         val testSemester = Semester(Season.FALL, 1111)
-        val ldapUser = UserFactory.makeLdapUser().copy(semesters = setOf(Semester.current))
+        val ldapUser = TestHelpers.makeLdapUser()
+        ldapUser.semesters = setOf(Semester.current)
+        val dbUser = TestHelpers.makeDbUser()
+        dbUser.semesters = setOf(testSemester)
         val actual = AuthenticationManager.mergeUsers(
             ldapUser,
-            UserFactory.makeDbUser().copy(semesters = setOf(testSemester))
+            dbUser
         )
-        val expected = UserFactory.makeMergedUser()
+        val expected = TestHelpers.makeMergedUser()
             .copy(semesters = setOf(Semester.current, testSemester))
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun testMergeUsersNewUser() {
+        val dbUser: FullUser? = null
+        val ldapUser = TestHelpers.makeLdapUser()
+        val result = AuthenticationManager.mergeUsers(
+            ldapUser,
+            dbUser
+        )
+        assertEquals(ldapUser.shortUser, result.shortUser)
     }
 }
 
 class QueryUserDbTest {
-    var testUser = UserFactory.makeDbUser()
-    var testOtherUser = UserFactory.makeLdapUser()
+    var testUser = TestHelpers.makeDbUser()
+    var testOtherUser = TestHelpers.makeLdapUser()
 
     @Test
     fun testQueryUserDbByEmail() {
         every {
-            mockDb.getUserOrNull(testUser.email!!)
+            mockDb.users.find(testUser.email!!)
         } returns testUser
 
         val actual = AuthenticationManager.queryUserDb(testUser.email!!)
 
-        verify { mockDb.getUserOrNull(testUser.email!!) }
+        verify { mockDb.users.find(testUser.email!!) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
     }
 
     @Test
     fun testQueryUserDbByEmailNull() {
         every {
-            mockDb.getUserOrNull(testUser.email!!)
+            mockDb.users.find(testUser.email!!)
         } returns null
 
         val actual = AuthenticationManager.queryUserDb(testUser.email!!)
 
-        verify { mockDb.getUserOrNull(testUser.email!!) }
+        verify { mockDb.users.find(testUser.email!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
     }
 
     @Test
     fun testQueryUserDbByFullUser() {
         every {
-            mockDb.getUserOrNull(testUser.longUser!!)
+            mockDb.users.find(testUser.longUser!!)
         } returns testUser
 
         val actual = AuthenticationManager.queryUserDb(testUser.longUser!!)
 
-        verify { mockDb.getUserOrNull(testUser.longUser!!) }
+        verify { mockDb.users.find(testUser.longUser!!) }
         assertEquals(testUser, actual, "User was not returned when searched by Email")
     }
 
     @Test
     fun testQueryUserDbByFullUserNull() {
         every {
-            mockDb.getUserOrNull(testUser.longUser!!)
+            mockDb.users.find(testUser.longUser!!)
         } returns null
 
         val actual = AuthenticationManager.queryUserDb(testUser.longUser!!)
 
-        verify { mockDb.getUserOrNull(testUser.longUser!!) }
+        verify { mockDb.users.find(testUser.longUser!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by Email")
     }
 
     @Test
     fun testQueryUserDbByStudentId() {
         every {
-            mockDb.getUserOrNull(testUser.studentId.toString())
+            mockDb.users.find(testUser.studentId.toString())
         } returns testUser
 
         val actual =
             AuthenticationManager.queryUserDb(testUser.studentId.toString())
 
-        verify { mockDb.getUserOrNull(testUser.studentId.toString()) }
+        verify { mockDb.users.find(testUser.studentId.toString()) }
         assertEquals(testUser, actual, "User was not returned when searched by studentId")
     }
 
     @Test
     fun testQueryUserDbByStudentIdNull() {
         every {
-            mockDb.getUserOrNull(testUser.studentId.toString())
+            mockDb.users.find(testUser.studentId.toString())
         } returns null
 
         val actual =
             AuthenticationManager.queryUserDb(testUser.studentId.toString())
 
-        verify { mockDb.getUserOrNull(testUser.studentId.toString()) }
+        verify { mockDb.users.find(testUser.studentId.toString()) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by studentId")
     }
 
     @Test
     fun testQueryUserDbByShortUser() {
         every {
-            mockDb.getUserOrNull(testUser.shortUser!!)
+            mockDb.users.find(testUser.shortUser!!)
         } returns testUser
 
         val actual = AuthenticationManager.queryUserDb(testUser.shortUser!!)
 
-        verify { mockDb.getUserOrNull(testUser.shortUser!!) }
+        verify { mockDb.users.find(testUser.shortUser!!) }
         assertEquals(testUser, actual, "User was not returned when searched by shortUser")
     }
 
     @Test
     fun testQueryUserDbByShortUserNull() {
         every {
-            mockDb.getUserOrNull(testUser.shortUser!!)
+            mockDb.users.find(testUser.shortUser!!)
         } returns null
 
         val actual = AuthenticationManager.queryUserDb(testUser.shortUser!!)
 
-        verify { mockDb.getUserOrNull(testUser.shortUser!!) }
+        verify { mockDb.users.find(testUser.shortUser!!) }
         assertEquals(null, actual, "Null was not returned when nonexistent searched by shortUser")
     }
 
@@ -212,7 +227,7 @@ class QueryUserDbTest {
         fun initTest() {
             mockkObject(Config)
             every { Config.ACCOUNT_DOMAIN } returns "config.example.com"
-            mockDb = mockk<DbLayer>(relaxed = true)
+            mockDb = TestHelpers.makeMockDb()
             DB = mockDb
         }
 
@@ -226,13 +241,6 @@ class QueryUserDbTest {
 }
 
 class AuthenticateTest {
-    /**
-     * These tests do not exhaustively test the authenticate function.
-     * Rather, they test the most difficult situations
-     * For example, they don't test local auth with LDAP disabled, since this case should be less difficult to handle than with LDAP enabled
-     * Basically, if this is something which needs testing, the actual function has logic which breaks the general description
-     */
-
     private lateinit var testUser: FullUser
     private lateinit var testUserFromDb: FullUser
     private var testShortUser = "testShortUser"
@@ -241,15 +249,16 @@ class AuthenticateTest {
 
     @BeforeEach
     fun initTest() {
-        mockDb = mockk<DbLayer>(relaxed = true)
+        mockDb = TestHelpers.makeMockDb()
         DB = mockDb
-        testUser = UserFactory.generateTestUser("test")
-            .copy(shortUser = testShortUser, colorPrinting = true)
-        testUserFromDb = UserFactory.generateTestUser("db").copy(
-            shortUser = testUser.shortUser,
+        testUser = TestHelpers.generateTestUser("test")
+            .copy(colorPrinting = true)
+        testUser._id = testShortUser
+        testUserFromDb = TestHelpers.generateTestUser("db").copy(
             studentId = 5555,
             colorPrinting = false
         )
+        testUserFromDb._id = testShortUser
         mockkObject(AuthenticationManager)
         mockkObject(Ldap)
     }
@@ -276,7 +285,7 @@ class AuthenticateTest {
     fun testAuthenticateLdap() {
         every { AuthenticationManager.queryUserDb(any()) } returns testUserFromDb
         every { Ldap.authenticate(testShortUser, testPassword) } returns testUser
-        every { mockDb.putUser(any()) } returns okPutResponse
+        every { mockDb.users.put(any()) } returns okPutResponse
 
         val actual = AuthenticationManager.authenticate(testShortUser, testPassword)
         val expected = AuthenticationManager.mergeUsers(testUser, testUserFromDb)
@@ -288,7 +297,7 @@ class AuthenticateTest {
                 testUserFromDb
             )
         }
-        verify { mockDb.putUser(expected) }
+        verify { mockDb.users.put(expected) }
         // a check that mergeUsers has merged some DB stuff into ldapUser
         assertFalse(expected.colorPrinting)
         assertEquals(expected, actual, "")
@@ -305,11 +314,11 @@ class RefreshUserTest {
 
         val actual = AuthenticationManager.refreshUser(testSam)
 
-        assertEquals(UserFactory.makeMergedUser(), actual)
+        assertEquals(TestHelpers.makeMergedUser(), actual)
 
         verify {
-            mockDb.putUser(
-                UserFactory.makeMergedUser()
+            mockDb.users.put(
+                TestHelpers.makeMergedUser()
             )
         }
     }
@@ -325,18 +334,18 @@ class RefreshUserTest {
 
             mockkObject(SessionManager)
             mockkObject(AuthenticationManager)
-            mockDb = mockk<DbLayer>(relaxed = true)
+            mockDb = TestHelpers.makeMockDb()
             DB = mockDb
 
             every {
                 AuthenticationManager.queryUserDb(testSam)
-            } returns UserFactory.makeDbUser()
+            } returns TestHelpers.makeDbUser()
             every {
                 AuthenticationManager.queryUserLdap(testSam)
-            } returns UserFactory.makeLdapUser()
+            } returns TestHelpers.makeLdapUser()
 
             every {
-                mockDb.putUser(ofType(FullUser::class))
+                mockDb.users.put(ofType(FullUser::class))
             } returns okPutResponse
 
             mockkObject(Config)
@@ -353,11 +362,11 @@ class RefreshUserTest {
 
 class QueryUserTest : Logging {
 
-    var testUser = UserFactory.makeDbUser()
+    var testUser = TestHelpers.makeDbUser()
 
     @BeforeEach
     fun createMockDb() {
-        mockDb = mockk<DbLayer>(relaxed = true)
+        mockDb = TestHelpers.makeMockDb()
         DB = mockDb
     }
     @AfterEach
@@ -402,7 +411,7 @@ class QueryUserTest : Logging {
         val actual = am.queryUser("db.LU@example.com")
         val expected = null
 
-        verify(inverse = true) { mockDb.putUser(any()) }
+        verify(inverse = true) { mockDb.users.put(any()) }
         assertEquals(expected, actual, "AuthenticationManager doesn't return null if SAM is not shortUser")
     }
 
@@ -414,20 +423,21 @@ class QueryUserTest : Logging {
         val actual = am.queryUser("SU")
         val expected = null
 
-        verify(inverse = true) { mockDb.putUser(any()) }
+        verify(inverse = true) { mockDb.users.put(any()) }
         assertEquals(expected, actual, "AuthenticationManager doesn't return null if Ldap returns null")
     }
 
     @Test
     fun testQueryUserWithLdap() {
         every { am.queryUserDb("SU") } returns null
-        every { mockDb.putUser(any()) } returns okPutResponse
+
+        every { mockDb.users.put(any()) } returns okPutResponse
         every { am.queryUserLdap(any()) } returns testUser
 
         val actual = am.queryUser("SU")
         val expected = testUser
 
-        verify { mockDb.putUser(testUser) }
+        verify { mockDb.users.put(testUser) }
         assertEquals(expected, actual, "AuthenticationManager doesn't return null if Ldap returns null")
     }
 }

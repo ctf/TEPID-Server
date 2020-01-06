@@ -55,14 +55,14 @@ object AuthenticationManager : Logging, IAuthenticationManager {
         logger.debug { logMessage("authenticating against ldap", "identifier" to identifier) }
 
         val shortUser = (
-                if (identifier.matches(LdapHelper.shortUserRegex)) identifier
-                else queryUser(identifier)?.shortUser
-                )
-                ?: return null
+            if (identifier.matches(LdapHelper.shortUserRegex)) identifier
+            else queryUser(identifier)?.shortUser
+            )
+            ?: return null
 
         val ldapUser = Ldap.authenticate(shortUser, pw) ?: return null
         val mergedUser = mergeUsers(ldapUser, dbUser)
-        DB.putUser(mergedUser)
+        DB.users.put(mergedUser)
         return mergedUser
     }
 
@@ -82,7 +82,7 @@ object AuthenticationManager : Logging, IAuthenticationManager {
 
         val ldapUser = queryUserLdap(identifier) ?: return null
 
-        DB.putUser(ldapUser)
+        DB.users.put(ldapUser)
 
         logger.trace { logMessage("found user from ldap", "identifier" to identifier, "longUser" to ldapUser.longUser) }
         return ldapUser
@@ -111,8 +111,20 @@ object AuthenticationManager : Logging, IAuthenticationManager {
         if (dbUser == null) return ldapUser
         // ensure that short users actually match before attempting any merge
         val ldapShortUser = ldapUser.shortUser
-                ?: throw RuntimeException(logMessage("LDAP user does not have a short user. Maybe this will help", "ldapUser" to ldapUser, "dbUser" to dbUser))
-        if (ldapShortUser != dbUser.shortUser) throw RuntimeException(logMessage("attempt to merge to different users", "ldapUser" to ldapUser, "dbUser" to dbUser))
+            ?: throw RuntimeException(
+                logMessage(
+                    "LDAP user does not have a short user. Maybe this will help",
+                    "ldapUser" to ldapUser,
+                    "dbUser" to dbUser
+                )
+            )
+        if (ldapShortUser != dbUser.shortUser) throw RuntimeException(
+            logMessage(
+                "attempt to merge to different users",
+                "ldapUser" to ldapUser,
+                "dbUser" to dbUser
+            )
+        )
         // proceed with data merge
         val newUser = ldapUser.copy(
             studentId = if (ldapUser.studentId != -1) ldapUser.studentId else dbUser.studentId,
@@ -132,30 +144,43 @@ object AuthenticationManager : Logging, IAuthenticationManager {
      * short user, long user, or student id
      */
     fun queryUserDb(identifier: PersonalIdentifier): FullUser? {
-        val dbUser = DB.getUserOrNull(identifier)
+        val dbUser = DB.users.find(identifier)
         dbUser?._id ?: return null
-        logger.trace { logMessage("found db user", "identifier" to identifier, "db_id" to dbUser._id, "dislayName" to dbUser.displayName) }
+        logger.trace {
+            logMessage(
+                "found db user",
+                "identifier" to identifier,
+                "db_id" to dbUser._id,
+                "dislayName" to dbUser.displayName
+            )
+        }
         return dbUser
     }
 
     override fun refreshUser(shortUser: ShortUser): FullUser {
         val dbUser = queryUser(shortUser)
-                ?: throw RuntimeException(logMessage("could not fetch user from anywhere", "shortUser" to shortUser))
+            ?: throw RuntimeException(logMessage("could not fetch user from anywhere", "shortUser" to shortUser))
         val ldapUser = queryUserLdap(shortUser)
-                ?: throw RuntimeException(logMessage("could not fetch user from LDAP", "shortUser" to shortUser))
+            ?: throw RuntimeException(logMessage("could not fetch user from LDAP", "shortUser" to shortUser))
         val refreshedUser = mergeUsers(ldapUser, dbUser)
         if (dbUser.role != refreshedUser.role) {
             SessionManager.invalidateSessions(shortUser)
         }
-        DB.putUser(refreshedUser)
+        DB.users.put(refreshedUser)
         return refreshedUser
     }
 
     override fun addAllCurrentlyEligible() {
-        val ldap = Ldap.getAllCurrentlyEligible().mapNotNull { p -> p.shortUser?.let { Pair<String, FullUser>(it, p) } }.toMap()
-        val fromDb = DB.getAllIfPresent(ldap.keys).mapNotNull { p -> p.shortUser?.let { Pair<String, FullUser>(it, p) } }.toMap()
+        val ldap =
+            Ldap.getAllCurrentlyEligible()
+                .mapNotNull { p -> p.shortUser?.let { Pair<String, FullUser>(it, p) } }
+                .toMap()
+        val fromDb =
+            DB.users.getAllIfPresent(ldap.keys)
+                .mapNotNull { p -> p.shortUser?.let { Pair<String, FullUser>(it, p) } }
+                .toMap()
 
         val merged = ldap.mapNotNull { mergeUsers(it.value, fromDb[it.key]) }
-        DB.putUsers(merged)
+        DB.users.putUsers(merged)
     }
 }

@@ -7,11 +7,10 @@ import ca.mcgill.science.tepid.models.data.AdGroup
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.server.UserFactory
-import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
-import ca.mcgill.science.tepid.server.auth.AuthenticationManager
+import ca.mcgill.science.tepid.server.TestHelpers
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
+import ca.mcgill.science.tepid.server.db.DbQuotaLayer
 import ca.mcgill.science.tepid.server.server.Config
 import io.mockk.every
 import io.mockk.mockkObject
@@ -36,31 +35,20 @@ class QuotaTest : Logging {
     val s2018w = Semester(Season.WINTER, 2018)
     val s2018w0 = Semester(Season.WINTER, 2018)
 
-    /**
-     * Runs a test of Users.getQuota, Mockking [tailoredUser] as the user returned by AuthenticationManager
-     */
     private fun userGetQuotaTest(tailoredUser: FullUser, expected: Int, message: String) {
-        mockUser(tailoredUser)
         val actual = QuotaCounter.getQuotaData(tailoredUser).quota
         assertEquals(expected, actual, message)
     }
 
     private fun userGetQuotaTest(tailoredUser: FullUser, tailoredUserRole: String, expected: Int, message: String) {
-        every {
-            AuthenticationFilter.getCtfRole(ofType(FullUser::class))
-        } returns tailoredUserRole
-        userGetQuotaTest(tailoredUser.copy(shortUser = "tailoredUser"), expected, message)
-    }
-
-    private fun mockUser(tailoredUser: FullUser?) {
-        every {
-            AuthenticationManager.queryUser("targetUser")
-        } returns (tailoredUser)
+        val u = tailoredUser.copy(role = tailoredUserRole, nick = "tailoredUser")
+        u._id = "tailoredUser"
+        userGetQuotaTest(u, expected, message)
     }
 
     private fun setPrintedPages(printedPages: Int) {
         every {
-            mockDb.getTotalPrintedCount(ofType(String::class))
+            mockDbQ.getTotalPrintedCount(ofType(String::class))
         } returns printedPages
     }
 
@@ -189,17 +177,13 @@ class QuotaTest : Logging {
 
     companion object {
         lateinit var mockDb: DbLayer
+        lateinit var mockDbQ: DbQuotaLayer
 
         @JvmStatic
         @BeforeAll
         fun initTest() {
-            mockkObject(AuthenticationManager)
-            mockkObject(AuthenticationFilter)
-            mockDb = spyk<DbLayer>(Config.getDb())
-            DB = mockDb
-            every {
-                AuthenticationManager.queryUser("targetUser")
-            } returns (FullUser())
+            mockDbQ = spyk()
+            QuotaCounter.dbQuotaLayer = mockDbQ
         }
 
         @JvmStatic
@@ -215,13 +199,13 @@ class QuotaEligibilityTest : Logging {
 
     @Test
     fun testEligibilityElder() {
-        QuotaCounter.hasCurrentSemesterEligible(UserFactory.generateTestUser("tu").copy(groups = setOf(quotaGroup), role = ELDER))
+        QuotaCounter.hasCurrentSemesterEligible(TestHelpers.generateTestUser("tu").copy(groups = setOf(quotaGroup), role = ELDER))
     }
 
     @Test
     fun testEligibilityUserInGroup() {
         every { Config.QUOTA_GROUP } returns listOf(quotaGroup)
-        QuotaCounter.hasCurrentSemesterEligible(UserFactory.generateTestUser("tu").copy(groups = setOf(quotaGroup), role = USER))
+        QuotaCounter.hasCurrentSemesterEligible(TestHelpers.generateTestUser("tu").copy(groups = setOf(quotaGroup), role = USER))
     }
 
     @Ignore("I'm too tired to deal with this as part of #135. ref #151")
@@ -234,7 +218,7 @@ class QuotaEligibilityTest : Logging {
     @Test
     fun testEligibilityNotInGroup() {
         every { Config.QUOTA_GROUP } returns listOf(quotaGroup)
-        QuotaCounter.hasCurrentSemesterEligible(UserFactory.generateTestUser("tu").copy(groups = setOf(), role = USER))
+        QuotaCounter.hasCurrentSemesterEligible(TestHelpers.generateTestUser("tu").copy(groups = setOf(), role = USER))
     }
 
     companion object : Logging {

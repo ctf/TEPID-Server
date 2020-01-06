@@ -64,7 +64,8 @@ object Ldap : Logging {
      * Gets all currently eligible users
      */
     fun getAllCurrentlyEligible(): Set<FullUser> {
-        val filter = "(&(objectClass=user)(|${Config.QUOTA_GROUP.map { "(memberOf:1.2.840.113556.1.4.1941:=cn=${it.name},${Config.GROUPS_LOCATION})" }.joinToString()}))"
+        val filter =
+            "(&(objectClass=user)(|${Config.QUOTA_GROUP.map { "(memberOf:1.2.840.113556.1.4.1941:=cn=${it.name},${Config.GROUPS_LOCATION})" }.joinToString()}))"
         return LdapConnector(0).executeSearch(filter, Long.MAX_VALUE)
     }
 }

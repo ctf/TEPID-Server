@@ -1,6 +1,6 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.server.UserFactory
+import ca.mcgill.science.tepid.server.TestHelpers
 import ca.mcgill.science.tepid.server.server.Config
 import io.mockk.every
 import io.mockk.mockkObject
@@ -17,8 +17,8 @@ class SetExchangeStudentTest {
         ExchangeManager.setExchangeStudent(testSam, true)
 
         val targetUser = AuthenticationManager.mergeUsers(
-            UserFactory.makeLdapUser(),
-            UserFactory.makeDbUser()
+            TestHelpers.makeLdapUser(),
+            TestHelpers.makeDbUser()
         )
         verify {
             AuthenticationManager.refreshUser(
@@ -46,7 +46,7 @@ class SetExchangeStudentTest {
             mockkObject(AuthenticationManager)
             every {
                 AuthenticationManager.refreshUser(testSam)
-            } returns UserFactory.makeDbUser()
+            } returns TestHelpers.makeDbUser()
             mockkObject(Config)
         }
 

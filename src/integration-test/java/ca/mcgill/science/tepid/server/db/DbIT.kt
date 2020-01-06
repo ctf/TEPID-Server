@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.server.TestHelpers
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -16,7 +17,7 @@ class DbIT : DbTest() {
     @Test
     fun testGetCourses() {
         val u = testItems[0].copy()
-        u._id = "u${u.shortUser}"
+        u._id = "${u.shortUser}"
         val groups = mutableSetOf(
             AdGroup("Group0"),
             AdGroup("Group1"),
@@ -33,7 +34,7 @@ class DbIT : DbTest() {
         persist(u)
 //        em.clear()
 
-        val ri = hl.getUserOrNull(u.shortUser!!) ?: fail("Did not retieve user")
+        val ri = hl.find(u.shortUser!!) ?: fail("Did not retieve user")
 
         assertEquals(3, ri.groups.size)
         assertEquals(2, ri.semesters.size)
@@ -52,8 +53,8 @@ class DbIT : DbTest() {
     companion object {
 
         val testItems = listOf(
-            FullUser(shortUser = "USER1"),
-            FullUser(shortUser = "USER2")
+            TestHelpers.generateTestUser("U0"),
+            TestHelpers.generateTestUser("U1")
         )
 
         lateinit var hc: HibernateCrud<FullUser, String?>

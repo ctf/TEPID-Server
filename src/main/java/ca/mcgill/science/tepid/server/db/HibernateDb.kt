@@ -7,99 +7,45 @@ import ca.mcgill.science.tepid.models.data.MarqueeData
 import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
-import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.server.server.mapper
-import ca.mcgill.science.tepid.server.util.failNotFound
-import ca.mcgill.science.tepid.server.util.logError
-import ca.mcgill.science.tepid.server.util.logMessage
 import ca.mcgill.science.tepid.utils.PropsDB
 import java.io.InputStream
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import javax.persistence.EntityManagerFactory
-import javax.persistence.EntityNotFoundException
 import javax.persistence.Persistence
-import javax.ws.rs.core.Response
 
-class HibernateDbLayer(val emf: EntityManagerFactory) : DbLayer,
-    DbDestinationLayer by HibernateDestinationLayer(HibernateCrud(emf, FullDestination::class.java)),
-    DbJobLayer by HibernateJobLayer(HibernateCrud(emf, PrintJob::class.java)),
-    DbQueueLayer by HibernateQueueLayer(HibernateCrud(emf, PrintQueue::class.java)),
-    DbMarqueeLayer by HibernateMarqueeLayer(HibernateCrud(emf, MarqueeData::class.java)),
-    DbSessionLayer by HibernateSessionLayer(HibernateCrud(emf, FullSession::class.java)),
-    DbUserLayer by HibernateUserLayer(HibernateCrud(emf, FullUser::class.java)),
-    DbQuotaLayer by HibernateQuotaLayer(emf) {
-    companion object {
-        fun makeEntityManagerFactory(persistenceUnitName: String): EntityManagerFactory {
-            val props = HashMap<String, String>()
-            props.put("javax.persistence.jdbc.url", PropsDB.URL)
-            props.put("javax.persistence.jdbc.user", PropsDB.USERNAME)
-            props.put("javax.persistence.jdbc.password", PropsDB.PASSWORD)
-            val emf = Persistence.createEntityManagerFactory(persistenceUnitName, props)
-            return emf
-        }
-    }
+fun makeEntityManagerFactory(persistenceUnitName: String): EntityManagerFactory {
+    val props = HashMap<String, String>()
+    props.put("javax.persistence.jdbc.url", PropsDB.URL)
+    props.put("javax.persistence.jdbc.user", PropsDB.USERNAME)
+    props.put("javax.persistence.jdbc.password", PropsDB.PASSWORD)
+    val emf = Persistence.createEntityManagerFactory(persistenceUnitName, props)
+    return emf
 }
 
-class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : DbDestinationLayer, IHibernateCrud<FullDestination, String?> by hc {
-    override fun getDestination(id: Id): FullDestination {
-        return read(id) ?: failNotFound(logMessage("could not find destination", "ID" to id))
-    }
-
-    override fun getDestinations(): List<FullDestination> {
-        return readAll()
-    }
-
-    override fun putDestinations(destinations: Map<Id, FullDestination>): String {
-        val responses = mutableListOf<PutResponse>()
-        destinations.map {
-            try {
-                it.value._id = it.key
-                val u = updateOrCreateIfNotExist(it.value)
-                responses.add(PutResponse(ok = true, id = u.getId(), rev = u.getRev()))
-            } catch (e: Exception) {
-                responses.add(PutResponse(ok = false, id = it.value.getId(), rev = it.value.getRev()))
-            }
-        }
-
-        return mapper.writeValueAsString(responses)
-    }
-
-    override fun updateDestinationWithResponse(id: Id, updater: FullDestination.() -> Unit): Response {
-        try {
-            val destination: FullDestination = read(id) ?: throw EntityNotFoundException()
-            updater(destination)
-            update(destination)
-            return Response.ok().entity(destination).build()
-        } catch (e: Exception) {
-            return parsePersistenceErrorToResponse(e)
-        }
-    }
-
-    override fun deleteDestination(id: Id): String {
-        val failures = mutableListOf<String>()
-        try {
-            deleteById(id)
-        } catch (e: Exception) {
-            failures.add(e.message ?: "Generic Failure for ID: $id")
-        }
-
-        return mapper.writeValueAsString(if (failures.isEmpty()) "Success" else failures)
-    }
+fun makeHibernateDb(emf: EntityManagerFactory): DbLayer {
+    return DbLayer(
+        HibernateDestinationLayer(HibernateCrud(emf, FullDestination::class.java)),
+        HibernateJobLayer(HibernateCrud(emf, PrintJob::class.java)),
+        HibernateQueueLayer(HibernateCrud(emf, PrintQueue::class.java)),
+        HibernateMarqueeLayer(HibernateCrud(emf, MarqueeData::class.java)),
+        HibernateSessionLayer(HibernateCrud(emf, FullSession::class.java)),
+        HibernateUserLayer(HibernateCrud(emf, FullUser::class.java)),
+        HibernateQuotaLayer(emf)
+    )
 }
+
+class HibernateDestinationLayer(hc: IHibernateCrud<FullDestination, String?>) : DbDestinationLayer,
+    IHibernateCrud<FullDestination, String?> by hc
 
 class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHibernateCrud<PrintJob, String?> by hc {
-    override fun getJob(id: Id): PrintJob {
-        return read(id) ?: failNotFound("{\"id\":\"$id\"}")
-    }
 
     override fun getJobsByQueue(queue: String, maxAge: Long, sortOrder: Order, limit: Int): List<PrintJob> {
         val sort = if (sortOrder == Order.ASCENDING) "ASC" else "DESC"
         val startTime = if (maxAge > 0) Date().time - maxAge else 0
-        return dbOp() { em ->
+        return dbOp { em ->
             em.createQuery(
                 "SELECT c FROM PrintJob c WHERE c.queueId = :queueId AND c.started > :startTime ORDER BY c.started $sort",
                 PrintJob::class.java
@@ -108,14 +54,14 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
         }
     }
 
-    override fun getJobsByUser(su: ShortUser, sortOrder: Order): List<PrintJob> {
+    override fun getJobsByUser(id: Id, sortOrder: Order): List<PrintJob> {
         val sort = if (sortOrder == Order.ASCENDING) "ASC" else "DESC"
         return dbOp { em ->
             em.createQuery(
                 "SELECT c FROM PrintJob c WHERE c.userIdentification = :userId ORDER BY c.started $sort",
                 PrintJob::class.java
             )
-                .setParameter("userId", su)
+                .setParameter("userId", id)
                 .resultList
         }
     }
@@ -123,37 +69,6 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
     override fun getStoredJobs(): List<PrintJob> {
         return dbOp { em ->
             em.createQuery("SELECT c FROM PrintJob c WHERE c.file != null", PrintJob::class.java).resultList
-        }
-    }
-
-    override fun updateJob(id: Id, updater: PrintJob.() -> Unit): PrintJob? {
-
-        try {
-            val printJob: PrintJob = read(id) ?: throw EntityNotFoundException()
-            updater(printJob)
-            update(printJob)
-            return printJob
-        } catch (e: Exception) {
-            logger.logError("error updating printjob", e, "id" to id)
-        }
-        return null
-    }
-
-    override fun updateJobWithResponse(id: Id, updater: PrintJob.() -> Unit): Response {
-        try {
-            val job = updateJob(id, updater)
-            return Response.ok().entity(PutResponse(ok = true, id = id, rev = job?.getRev() ?: "")).build()
-        } catch (e: Exception) {
-            return parsePersistenceErrorToResponse(e)
-        }
-    }
-
-    override fun postJob(job: PrintJob): Response {
-        try {
-            val out = create(job)
-            return Response.ok().entity(PutResponse(ok = true, id = out._id ?: "", rev = out.getRev())).build()
-        } catch (e: Exception) {
-            return parsePersistenceErrorToResponse(e)
         }
     }
 
@@ -169,39 +84,8 @@ class HibernateJobLayer(hc: IHibernateCrud<PrintJob, String?>) : DbJobLayer, IHi
     }
 }
 
-class HibernateQueueLayer(hc: IHibernateCrud<PrintQueue, String?>) : DbQueueLayer, IHibernateCrud<PrintQueue, String?> by hc {
-    override fun getQueue(id: Id): PrintQueue {
-        val allQueues = readAll()
-        return allQueues.find { it._id == id.padEnd(36) } ?: failNotFound(
-            logMessage(
-                "could not find PrintQueue",
-                "ID" to id
-            )
-        )
-    }
-
-    override fun getQueues(): List<PrintQueue> {
-        return readAll()
-    }
-
-    override fun putQueues(queues: Collection<PrintQueue>): Response {
-        try {
-            return Response.ok().entity(queues.map { updateOrCreateIfNotExist(it) }).build()
-        } catch (e: Exception) {
-            return parsePersistenceErrorToResponse(e)
-        }
-    }
-
-    override fun deleteQueue(id: Id): String {
-        val failures = mutableListOf<String>()
-        try {
-            deleteById(id)
-        } catch (e: Exception) {
-            failures.add(e.message ?: "Generic Failure for ID: $id")
-        }
-
-        return mapper.writeValueAsString(if (failures.isEmpty()) "Success" else failures)
-    }
+class HibernateQueueLayer(hc: IHibernateCrud<PrintQueue, String?>) : DbQueueLayer,
+    IHibernateCrud<PrintQueue, String?> by hc {
 
     override fun getEta(destinationId: Id): Long {
         return dbOp { em ->
@@ -212,59 +96,21 @@ class HibernateQueueLayer(hc: IHibernateCrud<PrintQueue, String?>) : DbQueueLaye
     }
 }
 
-class HibernateMarqueeLayer(hc: IHibernateCrud<MarqueeData, String?>) : DbMarqueeLayer, IHibernateCrud<MarqueeData, String?> by hc {
+class HibernateMarqueeLayer(hc: IHibernateCrud<MarqueeData, String?>) : DbMarqueeLayer,
+    IHibernateCrud<MarqueeData, String?> by hc
 
-    override fun getMarquees(): List<MarqueeData> {
-        return readAll()
-    }
-}
-
-class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessionLayer, IHibernateCrud<FullSession, String?> by hc {
-    override fun putSession(session: FullSession): Response {
-        try {
-            return Response.ok().entity(updateOrCreateIfNotExist(session)).build()
-        } catch (e: Exception) {
-            return parsePersistenceErrorToResponse(e)
-        }
-    }
-
-    override fun getSessionOrNull(id: Id): FullSession? {
-        return read(id)
-    }
-
-    override fun getSessionIdsForUser(shortUser: ShortUser): List<Id> {
+class HibernateSessionLayer(hc: IHibernateCrud<FullSession, String?>) : DbSessionLayer,
+    IHibernateCrud<FullSession, String?> by hc {
+    override fun getSessionIdsForUser(id: Id): List<Id> {
         return dbOp { em ->
-            em.createQuery("SELECT c.id FROM FullSession c WHERE c.user.shortUser = :userId", String::class.java)
-                .setParameter("userId", shortUser)
+            em.createQuery("SELECT c.id FROM FullSession c WHERE c.user._id = :userId", String::class.java)
+                .setParameter("userId", id)
                 .resultList
         }
-    }
-
-    override fun getAllSessions(): List<FullSession> {
-        return readAll()
-    }
-
-    override fun deleteSession(id: Id): String {
-        val failures = mutableListOf<String>()
-        try {
-            deleteById(id)
-        } catch (e: Exception) {
-            failures.add(e.message ?: "Generic Failure for ID: $id")
-        }
-        return mapper.writeValueAsString(if (failures.isEmpty()) "Success" else failures)
     }
 }
 
 class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, IHibernateCrud<FullUser, String?> by hc {
-    override fun putUser(user: FullUser): Response {
-        try {
-            val updatedUser = updateOrCreateIfNotExist(user)
-            return Response.ok().entity(PutResponse(ok = true, id = updatedUser.getId(), rev = updatedUser.getRev()))
-                .build()
-        } catch (e: Exception) {
-            return parsePersistenceErrorToResponse(e)
-        }
-    }
 
     override fun putUsers(users: Collection<FullUser>) {
         dbOpTransaction { em ->
@@ -274,7 +120,7 @@ class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, I
 
     private val numRegex = Regex("[0-9]+")
 
-    override fun getUserOrNull(sam: PersonalIdentifier): FullUser? {
+    override fun find(sam: PersonalIdentifier): FullUser? {
         try {
             return when {
                 sam.contains(".") -> dbOp { em ->
@@ -287,7 +133,7 @@ class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, I
                         .setParameter("id", sam.toInt())
                         .singleResult
                 }
-                else -> read("u$sam")
+                else -> read(sam)
             }
         } catch (e: Exception) {
             // TODO: More judicious error handling
@@ -302,20 +148,13 @@ class HibernateUserLayer(hc: IHibernateCrud<FullUser, String?>) : DbUserLayer, I
                 .resultList.toSet()
         }
     }
-
-    override fun isAdminConfigured(): Boolean {
-        return (dbOp { em ->
-            em.createQuery("SELECT COUNT(c) FROM FullUser c")
-                .singleResult
-        } as? Long ?: 0) > 0
-    }
 }
 
 class HibernateQuotaLayer(emf: EntityManagerFactory) : DbQuotaLayer, IHibernateConnector by HibernateConnector(emf) {
-    override fun getTotalPrintedCount(shortUser: ShortUser): Int {
+    override fun getTotalPrintedCount(id: Id): Int {
         return (dbOp { em ->
             em.createQuery("SELECT SUM(c.pages)+2*SUM(c.colorPages) FROM PrintJob c WHERE c.userIdentification = :userId AND c.isRefunded = FALSE AND c.failed <= 0")
-                .setParameter("userId", shortUser).singleResult
+                .setParameter("userId", id).singleResult
         } as? Long ?: 0).toInt()
     }
 

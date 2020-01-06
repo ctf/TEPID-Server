@@ -3,19 +3,15 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.api.addJobDataFromInput
 import ca.mcgill.science.tepid.api.executeDirect
 import ca.mcgill.science.tepid.models.data.DestinationTicket
-import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.PrintJob
-import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.server.ITBase
-import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.test.TestUtils
+import ca.mcgill.science.tepid.test.get
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -26,28 +22,12 @@ class JobIT : ITBase() {
 
     @BeforeEach
     fun initTest() {
-        Config.DEBUG
-
-        server.testApi.enableColor(server.testUser, true).executeDirect()
-
-        val d0 = "d0".padEnd(36)
-        val d1 = "d1".padEnd(36)
-        val q0 = "q0".padEnd(36)
-
-        server.testApi.putDestinations(
-            mapOf(
-                d0 to FullDestination(name = d0, up = true),
-                d1 to FullDestination(name = d1, up = true)
-            )
-        ).executeDirect()
-
-        val q = PrintQueue(loadBalancer = "fiftyfifty", name = "0", destinations = listOf(d0, d1))
-        q._id = q0
-        server.testApi.putQueues(listOf(q)).executeDirect()
+        createTestQueues()
+        server.testApi.enableColor(server.testUser, true).get()
 
         testJob = PrintJob(
             name = "Server Test ${System.currentTimeMillis()}",
-            queueId = q0,
+            queueId = q1,
             userIdentification = server.testUser
         )
     }
@@ -75,6 +55,8 @@ class JobIT : ITBase() {
         ).executeDirect()
             ?: fail("null response received sending job contents")
         println("Job sent: $response")
+        val refundResponse = server.testApi.refundJob(response.id, true).get()
+        println("Job refunded")
 
         assertTrue(response.ok)
     }
@@ -97,8 +79,10 @@ class JobIT : ITBase() {
         )
             .executeDirect() ?: fail("null response received sending job contents")
         println("Job sent: $response")
-
         assertTrue(response.ok)
+
+        var refundResponse = server.testApi.refundJob(response.id, true).get()
+        println("Job refunded")
 
         // turn off original destination
         var printedJob: PrintJob? = null
@@ -110,12 +94,12 @@ class JobIT : ITBase() {
         }
         val dest = printedJob?.destination ?: fail("printed job did not have destination")
 
-        val setStatusResponse = TestUtils.testApi.setPrinterStatus(
+        val setStatusResponse = TestUtils.testApi.setTicket(
             dest,
             DestinationTicket(up = false, reason = "reprint test, put me up")
-        ).execute()
+        ).get()
 
-        if (setStatusResponse?.body()?.contains("down") != true) {
+        if (!setStatusResponse.ok) {
             fail("destination was not marked down")
         }
 
@@ -123,11 +107,10 @@ class JobIT : ITBase() {
         val reprintResponse = server.testApi.reprintJob(jobId).execute().body()
             ?: fail("did not retrieve response after reprint")
 
-        assertFalse(reprintResponse.contains("Failed"))
+        assertTrue(reprintResponse.ok)
+        assertNotEquals(jobId, reprintResponse.id)
 
-        val foundIds = server.GUID_REGEX.findAll(reprintResponse).map { f -> f.value }.toList()
-        assertEquals(2, foundIds.size)
-        assertEquals(jobId, foundIds[0])
-        assertNotEquals(jobId, foundIds[1])
+        refundResponse = server.testApi.refundJob(response.id, true).get()
+        println("Job refunded")
     }
 }
