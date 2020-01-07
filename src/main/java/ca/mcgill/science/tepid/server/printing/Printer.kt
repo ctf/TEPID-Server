@@ -4,29 +4,38 @@ import ca.mcgill.science.tepid.models.data.FullDestination
 import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.enums.PrintError
-import ca.mcgill.science.tepid.server.auth.SessionManager
+import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.rest.Users
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.copyFrom
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.logError
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 import org.tukaani.xz.XZInputStream
 import java.io.File
 import java.io.FileInputStream
+import java.io.IOException
 import java.io.InputStream
-import java.util.concurrent.*
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Future
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 /**
  * Handler that manages all job requests
  */
-object Printer : WithLogging() {
+object Printer : Logging {
 
     class PrintException(message: String) : RuntimeException(message) {
         constructor(printError: PrintError) : this(printError.display)
     }
 
-    private val executor: ExecutorService = ThreadPoolExecutor(5, 30, 10, TimeUnit.MINUTES,
-            ArrayBlockingQueue<Runnable>(300, true))
+    private val executor: ExecutorService = ThreadPoolExecutor(
+        5, 30, 10, TimeUnit.MINUTES,
+        ArrayBlockingQueue<Runnable>(300, true)
+    )
     private val runningTasks: MutableMap<String, Future<*>> = ConcurrentHashMap()
     private val lock: Any = Any()
 
@@ -35,25 +44,27 @@ object Printer : WithLogging() {
      * Upon completion, it will remove itself from [runningTasks]
      */
     private fun submit(id: String, action: () -> Unit) {
-        log.info("Submitting task $id")
+        logger.info(logMessage("submitting task", "id" to id))
         val future = executor.submit {
             try {
                 action()
+            } catch (e: Exception) {
+                logger.warn { logError("cancelling task", e, "id" to id) }
             } finally {
                 cancel(id)
             }
+            logger.info { logMessage("completed job thread", "id" to id) }
         }
         runningTasks[id] = future
     }
 
     private fun cancel(id: String) {
-        log.warn("Cancelling task $id")
         try {
             val future = runningTasks.remove(id)
             if (future?.isDone == false)
                 future.cancel(true)
         } catch (e: Exception) {
-            log.error("Failed to cancel job $id", e)
+            logger.logError("failed to cancel job", e, "id" to id)
         }
     }
 
@@ -72,152 +83,202 @@ object Printer : WithLogging() {
      */
     fun print(id: String, stream: InputStream, debug: Boolean = Config.DEBUG): Pair<Boolean, String> {
 
-        log.debug("Receiving job data $id")
+        logger.debug(logMessage("receiving job data", "id" to id))
         val tmpDir = File(tmpPath)
         if (!tmpDir.exists() && !tmpDir.mkdirs()) {
-            log.error("Failed to create tmp path $tmpPath")
+            logger.error(logMessage("failed to create tmp path", "path" to tmpPath, "id" to id))
             return false to "Failed to create tmp path"
         }
 
+        val tmpXz = File("${tmpDir.absolutePath}/$id.ps.xz")
+
         try {
             // todo test and validate
-            //write compressed job to disk
-            val tmpXz = File("${tmpDir.absolutePath}/$id.ps.xz")
-            tmpXz.copyFrom(stream)
-            //let db know we have received data
-            DB.updateJobWithResponse(id) {
+            // write compressed job to disk
+            // adding filepath before upload ensures that the file can get deleted even if the job fails during upload
+            DB.printJobs.update(id) {
                 file = tmpXz.absolutePath
-                log.info("Updating job $id with path $file")
+                logger.info(logMessage("updating job with path", "id" to id, "path" to file))
+            }
+            tmpXz.copyFrom(stream)
+            // let db know we have received data
+            DB.printJobs.update(id) {
                 received = System.currentTimeMillis()
+                logger.info(logMessage("job file received", "id" to id, "at" to received))
             }
 
-            submit(id) {
+            submit(id, validateAndSend(tmpXz, id, debug))
 
-                /*
+            logger.trace(logMessage("returning true for job", "id" to id))
+            return true to "Successfully created request $id"
+        } catch (e: Exception) {
+            logger.error(logMessage("job failed", "id" to id, "error" to e))
+            failJob(id, "Failed to process")
+
+            try {
+                if (!tmpXz.delete()) {
+                    throw IOException("Failed to delete file in cleanup of failed reception")
+                }
+                DB.printJobs.update(id) {
+                    file = null
+                }
+            } catch (e: Exception) {
+                logger.logError("failed to delete file", e, "id" to id)
+            }
+
+            return false to "Failed to process"
+        }
+    }
+
+    fun validateAndSend(tmpXz: File, id: String, debug: Boolean): () -> Unit {
+        return {
+
+            /*
                  * Note that this is a runnable that will be submitted to the executor service
                  * This block does not run in the same thread!
                  */
 
-                // Generates a random file name with our prefix and suffix
-                val tmp = File.createTempFile("tepid", ".ps")
-                try {
-                    //decompress data
-                    val decompress = XZInputStream(FileInputStream(tmpXz))
-                    tmp.copyFrom(decompress)
+            // Generates a random file name with our prefix and suffix
+            val tmp = File.createTempFile("tepid", ".ps")
+            try {
+                // decompress data
+                val decompress = XZInputStream(FileInputStream(tmpXz))
+                tmp.copyFrom(decompress)
 
-                    val now = System.currentTimeMillis()
+                val now = System.currentTimeMillis()
 
-                    //count pages
-                    val psInfo = Gs.psInfo(tmp)
-                    log.trace("Detected ${if (psInfo.isColor) "color" else "monochrome"} for job $id in ${System.currentTimeMillis() - now} ms")
-                    log.trace("Job $id has ${psInfo.pages} pages, ${psInfo.colorPages} in color")
+                // count pages
+                val psInfo = Gs.psInfo(tmp)
+                logger.trace(
+                    logMessage(
+                        "detecting color for job",
+                        "color" to if (psInfo.isColor) "color" else "monochrome",
+                        "id" to id,
+                        "processingTime" to "${System.currentTimeMillis() - now} ms"
+                    )
+                )
+                logger.trace(
+                    logMessage(
+                        "detecting job pages",
+                        "id" to id,
+                        "pages" to psInfo.pages,
+                        "colorPages" to psInfo.colorPages
+                    )
+                )
 
-                    var j2: PrintJob = updatePagecount(id, psInfo)
-                    val user = SessionManager.queryUser(j2.userIdentification, null)
-                            ?: throw Printer.PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
+                var j2: PrintJob = updatePagecount(id, psInfo)
+                val userIdentification = j2.userIdentification
+                    ?: throw PrintException("Could not retrieve userIdentification {\"job\":\"${j2.getId()}\", \"userIdentification\":\"${j2.userIdentification}\"}")
+                val user = AuthenticationManager.queryUser(userIdentification)
+                    ?: throw PrintException("Could not retrieve user {\"job\":\"${j2.getId()}\"}")
 
-                    validateColorAvailable(user, j2, psInfo)
+                validateColorAvailable(user, j2, psInfo)
 
-                    validateAvailableQuota(user, j2, psInfo)
+                validateAvailableQuota(user, j2, psInfo)
 
-                    validateJobSize(j2)
+                validateJobSize(j2)
 
-                    //add job to the queue
-                    log.trace("Trying to assign destination {\"job\":\"{}\"}", j2.getId())
-                    j2 = QueueManager.assignDestination(id)
-                    //todo check destination field
-                    val destination = j2.destination
-                            ?: throw PrintException(PrintError.INVALID_DESTINATION)
+                // add job to the queue
+                logger.trace(logMessage("trying to assign destination", "job" to j2.getId()))
+                j2 = QueueManager.assignDestination(j2)
+                    ?: throw RuntimeException("TODO REFACTORING WORK IN QueueManager.assignDestination")
+                // todo check destination field
+                val destination = j2.destination
+                    ?: throw PrintException(PrintError.INVALID_DESTINATION)
 
-                    val dest = DB.getDestination(destination)
-                    if (sendToSMB(tmp, dest, debug)) {
-                        DB.updateJob(id) {
-                            printed = System.currentTimeMillis()
-                        }
-                        log.info("${j2._id} sent to destination")
-                    } else {
-                        throw PrintException("Could not send to destination")
+                val dest = DB.destinations.read(destination)
+                if (sendToSMB(tmp, dest, debug)) {
+                    DB.printJobs.update(id) {
+                        printed = System.currentTimeMillis()
                     }
-                } catch (e: Exception) {
-                    log.error("Job $id failed", e)
-                    val msg = (e as? PrintException)?.message
-                            ?: "Failed to process"
-                    failJob(id, msg)
-                } finally {
-                    tmp.delete()
-                    log.trace("Successfully deleted tmp {\"file\":{}}", tmp.absoluteFile)
+                    logger.info(logMessage("sent job to destination", "id" to j2._id))
+                } else {
+                    throw PrintException("Could not send to destination")
                 }
+            } catch (e: Exception) {
+                logger.logError("job failed", e, "id" to id)
+                val msg = (e as? PrintException)?.message
+                    ?: "Failed to process"
+                failJob(id, msg)
+            } finally {
+                tmp.delete()
+                logger.trace(logMessage("successfully deleted tmp file", "id" to id, "file" to tmp.absoluteFile))
             }
-            log.trace("Returning true for {\"job\":\"{}\"}", id)
-            return true to "Successfully created request $id"
-        } catch (e: Exception) {
-            // todo check if this is necessary, given that the submit code is handled separately
-            log.error("Job $id failed", e)
-            failJob(id, "Failed to process")
-            return false to "Failed to process"
         }
     }
 
     // update page count and status in db
     private fun updatePagecount(id: String, psInfo: PsData): PrintJob {
-        return DB.updateJob(id) {
-            this.pages = psInfo.pages
-            this.colorPages = psInfo.colorPages
-            this.processed = System.currentTimeMillis()
-        } ?: throw PrintException("Could not update")
+        try {
+            return DB.printJobs.update(id) {
+                this.pages = psInfo.pages
+                this.colorPages = psInfo.colorPages
+                this.processed = System.currentTimeMillis()
+            }
+        } catch (e: Exception) {
+            throw PrintException(logError("Could not update", e))
+        }
     }
 
-    //check if user has color printing enabled
+    // check if user has color printing enabled
     private fun validateColorAvailable(user: FullUser, job: PrintJob, psInfo: PsData) {
-        log.trace("Testing for color {\"job\":\"{}\"}", job.getId())
+        logger.trace(logMessage("testing for color for job", "id" to job.getId()))
         if (psInfo.colorPages > 0 && !user.colorPrinting)
             throw PrintException(PrintError.COLOR_DISABLED)
     }
 
-    //check if user has sufficient quota to print this job
+    // check if user has sufficient quota to print this job
     private fun validateAvailableQuota(user: FullUser, job: PrintJob, psInfo: PsData) {
-        log.trace("Testing for quota {\"job\":\"{}\"}", job.getId())
-        if (Users.getQuota(user) < psInfo.pages + psInfo.colorPages * 2)
+        logger.trace(logMessage("testing for quota for job", "id" to job.getId()))
+        if (QuotaCounter.getQuotaData(user).quota < psInfo.pages + psInfo.colorPages * 2)
             throw PrintException(PrintError.INSUFFICIENT_QUOTA)
     }
 
-    //check if job is below max pages
+    // check if job is below max pages
     fun validateJobSize(j2: PrintJob) {
-        log.trace("Testing for job length {\"job\":\"{}\"}")
+        logger.trace(logMessage("testing for job length", "id" to j2.getId()))
         if (
-                Config.MAX_PAGES_PER_JOB > 0                // valid max pages per job
-                && j2.pages > Config.MAX_PAGES_PER_JOB
+            Config.MAX_PAGES_PER_JOB > 0 && // valid max pages per job
+            j2.pages > Config.MAX_PAGES_PER_JOB
         ) {
             throw PrintException(PrintError.TOO_MANY_PAGES)
         }
     }
 
-
     internal fun sendToSMB(f: File, destination: FullDestination, debug: Boolean): Boolean {
         if (!f.isFile) {
-            log.error("File does not exist at ${f.absolutePath}")
+            logger.error("File does not exist at ${f.absolutePath}")
             return false
         }
 
-        log.trace("Sending file ${f.name} ${f.length()} to ${destination.name}")
+        logger.trace(
+            logMessage(
+                "sending file",
+                "name" to f.name,
+                "length" to f.length(),
+                "destination" to destination.name
+            )
+        )
         if (debug || destination.path?.isBlank() != false) {
-            //this is a dummy destination
+            // this is a dummy destination
             try {
                 Thread.sleep(1000)
             } catch (e: InterruptedException) {
             }
-            log.info("Sent dummy ${f.name} to ${destination.name}")
+            logger.info(logMessage("sent dummy job", "name" to f.name, "destination" to destination.name))
             return true
         }
         try {
-            val p = ProcessBuilder("smbclient", "//${destination.path}", destination.password, "-c",
-                    "print ${f.absolutePath}", "-U", destination.domain + "\\${destination.username}", "-mSMB3").start()
+            val p = ProcessBuilder(
+                "smbclient", "//${destination.path}", destination.password, "-c",
+                "print ${f.absolutePath}", "-U", destination.domain + "\\${destination.username}", "-mSMB3"
+            ).start()
             p.waitFor()
         } catch (e: Exception) {
-            log.error("File ${f.name} failed", e)
+            logger.error("File ${f.name} failed", e)
             return false
         }
-        log.trace("File ${f.name} sent to ${destination.name}")
+        logger.trace("File ${f.name} sent to ${destination.name}")
         return true
     }
 
@@ -225,26 +286,28 @@ object Printer : WithLogging() {
      * Update job db and cancel executor
      */
     private fun failJob(id: String, error: String) {
-        DB.updateJobWithResponse(id) {
+        DB.printJobs.update(id) {
             fail(error)
         }
         cancel(id)
     }
 
-    fun clearOldJobs() {
+    fun clearOldJobs(timeOut: Long = oldJobTimeout) {
         synchronized(lock) {
             try {
-                val jobs = DB.getOldJobs()
+                val jobs = DB.printJobs.getOldJobs(System.currentTimeMillis() - timeOut)
                 jobs.forEach { j ->
-                    DB.updateJob(j.getId()) {
+                    DB.printJobs.update(j.getId()) {
                         fail("Timed out")
-                        val id = _id ?: return@updateJob // TODO: if ID is null, how did we get here?
+                        val id = _id ?: return@update // TODO: if ID is null, how did we get here?
                         cancel(id)
                     }
                 }
             } catch (e: Exception) {
-                log.error("General failure", e)
+                logger.error("General failure", e)
             }
         }
     }
+
+    val oldJobTimeout: Long = 5 * 60 * 1000
 }

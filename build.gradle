@@ -4,15 +4,17 @@ version '2.3.0'
 buildscript {
     repositories {
         mavenCentral()
-        maven { url "https://jitpack.io" }
+        maven { url "https://www.jitpack.io" }
         maven { url "https://plugins.gradle.org/m2/" } // for swagger
+        maven { url "https://plugins.gradle.org/m2/" } // for ktlint-gradle
         jcenter()
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$KOTLIN"
         classpath "ca.mcgill:tepid-commons:$TEPID_COMMONS"
-        classpath "io.swagger.core.v3:swagger-gradle-plugin:2.0.6"      // For Swagger
-        classpath "org.jetbrains.kotlin:kotlin-noarg:$KOTLIN"   // For Hibernate
+        classpath "io.swagger.core.v3:swagger-gradle-plugin:2.1.0"      // For Swagger
+        classpath "org.jetbrains.kotlin:kotlin-noarg:$KOTLIN"           // For Hibernate
+        classpath "org.jlleitschuh.gradle:ktlint-gradle:8.2.0"          // For ktlint-gradle
     }
 }
 
@@ -23,6 +25,7 @@ apply plugin: 'ca.mcgill.science.tepid.commons'
 
 apply plugin: "io.swagger.core.v3.swagger-gradle-plugin"    // For Swagger
 apply plugin: "kotlin-jpa"                                  // For Hibernate
+apply plugin: "org.jlleitschuh.gradle.ktlint"               // For ktlint-gradle
 
 sourceCompatibility = JavaVersion.VERSION_11
 war.baseName = 'tepid'
@@ -54,12 +57,8 @@ sourceSets {
 dependencies {
     integrationTestRuntime("org.junit.jupiter:junit-jupiter-engine:5.3.1")
 
-    testCompileOnly(
-            'junit:junit:4.12'
-    )
     testRuntimeOnly(
             'org.junit.jupiter:junit-jupiter-engine:5.1.0',
-            'org.junit.vintage:junit-vintage-engine:5.1.0'
     )
     testCompile "org.junit.jupiter:junit-jupiter-params:5.1.0"
     testCompile "org.junit.jupiter:junit-jupiter-engine:5.3.1"
@@ -98,8 +97,8 @@ dependencies {
     compile "org.glassfish.jersey.core:jersey-common:$GLASSFISH_JERSEY"
     compile "org.glassfish.jersey.media:jersey-media-json-jackson:$GLASSFISH_JERSEY"
 
-    
-    
+    compile "org.apache.logging.log4j:log4j-api-kotlin:1.0.0"
+
     compile "org.tukaani:xz:1.6"
     
 

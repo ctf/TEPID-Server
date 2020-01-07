@@ -1,28 +1,28 @@
 package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.utils.WithLogging
+import ca.mcgill.science.tepid.server.util.logAnnounce
+import org.apache.logging.log4j.kotlin.Logging
 
 class SessionMonitor : Runnable {
 
     override fun run() {
-        log.info("Removing expired sessions from database.")
+        logger.info("removing expired sessions from database")
         try {
             var numberRemoved = 0
-            val sessions = DB.getAllSessions()
+            val sessions = DB.sessions.readAll()
             sessions.filter {
                 !it.isUnexpired()
             }.forEach {
                 val id = it._id ?: return@forEach
-                DB.deleteSession(id)
+                DB.sessions.deleteById(id)
                 numberRemoved += 1
             }
-            log.info("Removed $numberRemoved sessions successfully")
+            logger.info(logAnnounce("removed sessions successfully", "count" to numberRemoved))
         } catch (e: Exception) {
-            log.error("General failure", e)
+            logger.error("general failure removing expired sessions", e)
         }
     }
 
-    private companion object : WithLogging()
-
+    private companion object : Logging
 }

@@ -2,24 +2,31 @@ package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.About
 import ca.mcgill.science.tepid.models.data.AdGroup
-import ca.mcgill.science.tepid.server.db.CouchDbLayer
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
-import ca.mcgill.science.tepid.server.db.HibernateDbLayer
+import ca.mcgill.science.tepid.server.db.makeEntityManagerFactory
+import ca.mcgill.science.tepid.server.db.makeHibernateDb
 import ca.mcgill.science.tepid.server.printing.GSException
 import ca.mcgill.science.tepid.server.printing.Gs
 import ca.mcgill.science.tepid.server.util.Utils
-import ca.mcgill.science.tepid.utils.*
+import ca.mcgill.science.tepid.utils.DefaultProps
+import ca.mcgill.science.tepid.utils.FilePropLoader
+import ca.mcgill.science.tepid.utils.JarPropLoader
+import ca.mcgill.science.tepid.utils.PropsCreationInfo
+import ca.mcgill.science.tepid.utils.PropsDB
+import ca.mcgill.science.tepid.utils.PropsLDAP
+import ca.mcgill.science.tepid.utils.PropsLDAPGroups
+import ca.mcgill.science.tepid.utils.PropsLDAPResource
+import ca.mcgill.science.tepid.utils.PropsPrinting
+import ca.mcgill.science.tepid.utils.PropsURL
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.LoggerContext
+import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
 import javax.persistence.EntityManagerFactory
 
-object Config : WithLogging() {
-
-
-    private val illegalLDAPCharacters = "[,+\"\\\\<>;=]".toRegex()
+object Config : Logging {
 
     /**
      * Global definition for whether a the build is in debug mode or not
@@ -38,38 +45,26 @@ object Config : WithLogging() {
     val DB_URL: String
     val DB_USERNAME: String
     val DB_PASSWORD: String
-    var emf : EntityManagerFactory? = null
-    /*
-     * Barcode data
-     */
-    val BARCODES_USERNAME: String
-    val BARCODES_PASSWORD: String
-    val BARCODES_URL: String
-    /*
-     * TEM data
-     */
-    val TEM_URL: String
+    var emf: EntityManagerFactory? = null
 
     /*
      * LDAP and Permission Groups
      */
 
-    val LDAP_ENABLED: Boolean
+    val LDAP_SEARCH_BASE: String
+    val ACCOUNT_DOMAIN: String
+    val PROVIDER_URL: String
+    val SECURITY_PRINCIPAL_PREFIX: String
 
-    val LDAP_SEARCH_BASE : String
-    val ACCOUNT_DOMAIN : String
-    val PROVIDER_URL : String
-    val SECURITY_PRINCIPAL_PREFIX : String
-
-    val RESOURCE_USER : String
+    val RESOURCE_USER: String
     val RESOURCE_CREDENTIALS: String
 
-    val EXCHANGE_STUDENTS_GROUP_BASE : String
-    val GROUPS_LOCATION : String
-    val ELDERS_GROUP : List<AdGroup>
-    val CTFERS_GROUP : List<AdGroup>
-    val CURRENT_EXCHANGE_GROUP : AdGroup
-    val USERS_GROUP : List<AdGroup>
+    val EXCHANGE_STUDENTS_GROUP_BASE: String
+    val GROUPS_LOCATION: String
+    val ELDERS_GROUP: List<AdGroup>
+    val CTFERS_GROUP: List<AdGroup>
+    val CURRENT_EXCHANGE_GROUP: AdGroup
+    val QUOTA_GROUP: List<AdGroup>
 
     /*
      * Printing configuration
@@ -92,18 +87,20 @@ object Config : WithLogging() {
     val PUBLIC: About
 
     init {
-        //TODO: revise to use getNonNull, possibly implement a get with default
+        // TODO: revise to use getNonNull, possibly implement a get with default
 
-        log.info("**********************************")
-        log.info("*       Setting up Configs       *")
-        log.info("**********************************")
+        logger.info("**********************************")
+        logger.info("*       Setting up Configs       *")
+        logger.info("**********************************")
 
-        DefaultProps.withName = {fileName -> listOf(
+        DefaultProps.withName = { fileName ->
+            listOf(
                 FilePropLoader("/etc/tepid/$fileName"),
                 FilePropLoader("webapps/tepid/$fileName"),
                 JarPropLoader("/$fileName"),
                 FilePropLoader("/config/$fileName")
-        )}
+            )
+        }
 
         DEBUG = PropsURL.TESTING?.toBoolean() ?: true
 
@@ -114,11 +111,6 @@ object Config : WithLogging() {
         DB_USERNAME = PropsDB.USERNAME
         DB_PASSWORD = PropsDB.PASSWORD
 
-        BARCODES_URL = PropsBarcode.BARCODES_URL ?: ""
-        BARCODES_USERNAME = PropsBarcode.BARCODES_DB_USERNAME ?: ""
-        BARCODES_PASSWORD = PropsBarcode.BARCODES_DB_PASSWORD ?: ""
-
-        LDAP_ENABLED = PropsLDAP.LDAP_ENABLED?.toBoolean() ?: true
         LDAP_SEARCH_BASE = PropsLDAP.LDAP_SEARCH_BASE ?: ""
         ACCOUNT_DOMAIN = PropsLDAP.ACCOUNT_DOMAIN ?: ""
         PROVIDER_URL = PropsLDAP.PROVIDER_URL ?: ""
@@ -128,20 +120,17 @@ object Config : WithLogging() {
         RESOURCE_CREDENTIALS = PropsLDAPResource.LDAP_RESOURCE_CREDENTIALS ?: ""
 
         EXCHANGE_STUDENTS_GROUP_BASE = PropsLDAPGroups.EXCHANGE_STUDENTS_GROUP_BASE ?: ""
-        GROUPS_LOCATION = PropsLDAPGroups.GROUPS_LOCATION ?: ""
-        ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS?.split(illegalLDAPCharacters)?.map { AdGroup(it) } ?: emptyList()
-        CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS?.split(illegalLDAPCharacters)?.map { AdGroup(it) } ?: emptyList()
-        
+        GROUPS_LOCATION = PropsLDAPGroups.GROUPS_LOCATION
+        ELDERS_GROUP = PropsLDAPGroups.ELDERS_GROUPS
+        CTFERS_GROUP = PropsLDAPGroups.CTFERS_GROUPS
+
         CURRENT_EXCHANGE_GROUP = {
             val cal = Calendar.getInstance()
-            val groupName = EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
+            val groupName =
+                EXCHANGE_STUDENTS_GROUP_BASE + cal.get(Calendar.YEAR) + if (cal.get(Calendar.MONTH) < 8) "W" else "F"
             AdGroup(groupName)
         }()
-        USERS_GROUP = (PropsLDAPGroups.USERS_GROUPS?.split(illegalLDAPCharacters))?.map { AdGroup(it) }
-                ?.plus(CURRENT_EXCHANGE_GROUP)
-                ?: emptyList()
-
-        TEM_URL = PropsTEM.TEM_URL ?: ""
+        QUOTA_GROUP = PropsLDAPGroups.QUOTA_GROUPS.plus(CURRENT_EXCHANGE_GROUP).plus(CTFERS_GROUP).plus(ELDERS_GROUP)
 
         HASH = PropsCreationInfo.HASH ?: ""
         TAG = PropsCreationInfo.TAG ?: ""
@@ -152,56 +141,56 @@ object Config : WithLogging() {
 
         if (DEBUG)
             setLoggingLevel(Level.TRACE)
-            log.trace(ELDERS_GROUP)
-            log.trace(CTFERS_GROUP)
-            log.trace(USERS_GROUP)
+        logger.trace(ELDERS_GROUP)
+        logger.trace(CTFERS_GROUP)
+        logger.trace(QUOTA_GROUP)
 
         /*
          * For logging
          */
         val warnings = mutableListOf<String>()
 
-        log.trace("Validating configs settings")
+        logger.trace("Validating configs settings")
 
-        log.info("Debug mode: $DEBUG")
-        log.info("LDAP mode: $LDAP_ENABLED")
+        logger.info("Debug mode: $DEBUG")
         if (DB_URL.isEmpty())
-            log.fatal("COUCHDB_URL not set")
+            logger.fatal("DB_URL not set")
         if (DB_PASSWORD.isEmpty())
-            log.fatal("DB_PASSWORD not set")
+            logger.fatal("DB_PASSWORD not set")
         if (RESOURCE_CREDENTIALS.isEmpty())
-            log.error("RESOURCE_CREDENTIALS not set")
+            logger.error("RESOURCE_CREDENTIALS not set")
 
-        try {
-            Gs.testRequiredDevicesInstalled()
-        } catch (e: GSException){
-            log.fatal("GS ink_cov device unavailable")
-        }
+        logger.info("Build hash: $HASH")
 
-        log.info("Build hash: $HASH")
+        PUBLIC = About(
+            debug = DEBUG,
+            ldapEnabled = true,
+            startTimestamp = System.currentTimeMillis(),
+            startTime = Utils.now(),
+            hash = HASH,
+            warnings = warnings,
+            tag = TAG,
+            creationTime = CREATION_TIME,
+            creationTimestamp = CREATION_TIMESTAMP
+        )
 
-        PUBLIC = About(debug = DEBUG,
-                ldapEnabled = LDAP_ENABLED,
-                startTimestamp = System.currentTimeMillis(),
-                startTime = Utils.now(),
-                hash = HASH,
-                warnings = warnings,
-                tag = TAG,
-                creationTime = CREATION_TIME,
-                creationTimestamp = CREATION_TIMESTAMP)
+        logger.trace("Completed setting configs")
+
+        logger.trace("Initialising subsystems")
 
         DB = getDb()
 
-        log.trace("Completed setting configs")
+        try {
+            Gs.testRequiredDevicesInstalled()
+        } catch (e: GSException) {
+            logger.fatal("GS ink_cov device unavailable")
+        }
 
-        log.trace("Initialising subsystems")
-
-        log.trace("Completed initialising subsystems")
-
+        logger.trace("Completed initialising subsystems")
     }
 
     fun setLoggingLevel(level: Level) {
-        log.info("Updating log level to $level")
+        logger.info("Updating log level to $level")
         val ctx = LogManager.getContext(false) as LoggerContext
         val config = ctx.configuration
         val loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME)
@@ -210,22 +199,8 @@ object Config : WithLogging() {
     }
 
     fun getDb(): DbLayer {
-        try {
-            when (PropsDB.DB_TYPE) {
-                "CouchDB" -> return CouchDbLayer()
-                "Hibernate" -> {
-                    val emf = HibernateDbLayer.makeEntityManagerFactory("tepid-pu")
-                    return HibernateDbLayer(emf)
-                }
-                else -> log.fatal("DB type not set")
-            }
-            log.trace("Db initialised to ${PropsDB.DB_TYPE}")
-            return CouchDbLayer()
-        } catch (e:Exception){
-            e.printStackTrace()
-            println(e.message)
-            throw e
-        }
+        return makeHibernateDb(makeEntityManagerFactory(if (DEBUG) "hibernate-pu-test" else "tepid-pu").also {
+            emf = it
+        })
     }
-
 }

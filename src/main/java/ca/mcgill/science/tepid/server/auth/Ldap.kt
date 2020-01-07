@@ -1,117 +1,71 @@
 package ca.mcgill.science.tepid.server.auth
 
-import `in`.waffl.q.Promise
-import `in`.waffl.q.Q
 import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.PersonalIdentifier
+import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.utils.WithLogging
-import java.util.*
-import javax.naming.NamingException
-import javax.naming.directory.*
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 
-object Ldap : WithLogging(), LdapHelperContract by LdapHelperDelegate() {
+object Ldap : Logging {
 
-    private val ldap = LdapManager()
-
-    private val shortUserRegex = Regex("[a-zA-Z]+[0-9]*")
+    private val ldapConnector = LdapConnector()
 
     private val auth = Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
 
-
     /**
-     * Retrieve a [FullUser] from ldap
-     * [sam] must be a valid short user or long user
-     * The resource account will be used as auth if [pw] is null
+     * Type for defining the query string used for searching by specific attributes
      */
-    fun queryUserLdap(sam: String, pw: String?): FullUser? {
-        if (!Config.LDAP_ENABLED) return null
-        val auth = if (pw != null && shortUserRegex.matches(sam)) {
-            log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"$sam\"}")
-            sam to pw
-        } else {
-            log.trace("Querying user from LDAP {\"sam\":\"$sam\", \"by\":\"resource\"}")
-            Config.RESOURCE_USER to Config.RESOURCE_CREDENTIALS
+    enum class SearchBy(private val query: String) {
+        sAMAccountName("sAMAccountName"),
+        longUser("userPrincipalName"),
+        email("mail");
+
+        override fun toString(): String {
+            return query
         }
-        val user = ldap.queryUser(sam, auth)
-        user?.updateUserNameInformation()
-        return user
     }
 
-    fun autoSuggest(like: String, limit: Int): Promise<List<FullUser>> {
-        val q = Q.defer<List<FullUser>>()
-        object : Thread("LDAP AutoSuggest: " + like) {
-            override fun run() {
-                val out = ldap.autoSuggest(like, auth, limit)
-                q.resolve(out)
-            }
-        }.start()
-        return q.promise
+    internal fun queryByShortUser(username: ShortUser): FullUser? {
+        return queryLdap(username, auth, SearchBy.sAMAccountName)
+    }
+
+    internal fun queryByLongUser(username: String): FullUser? {
+        return queryLdap("$username@${Config.ACCOUNT_DOMAIN}", auth, SearchBy.longUser)
+    }
+
+    internal fun queryByEmail(userEmail: String): FullUser? {
+        return queryLdap(userEmail, auth, SearchBy.email)
+    }
+
+    /**
+     * Queries [userName] (short user or long user)
+     * with [auth] credentials (username to password).
+     * Resulting user is nonnull if it exists
+     *
+     * Note that [auth] may use different credentials than the [userName] in question.
+     * However, if a different auth is provided (eg from our science account),
+     * the studentId cannot be queried
+     */
+    private fun queryLdap(userName: PersonalIdentifier, auth: Pair<String, String>, searchName: SearchBy): FullUser? {
+        val ctx = ldapConnector.bindLdap(auth.first, auth.second) ?: return null
+        return ldapConnector.executeSearch("(&(objectClass=user)($searchName=$userName))", 1, ctx).firstOrNull()
     }
 
     /**
      * Returns user data, but guarantees a pass through ldap
      */
-    fun authenticate(sam: String, pw: String): FullUser? {
-        log.debug("Authenticating against ldap {\"sam\":\"$sam\"}")
-
-        val shortUser = if (sam.matches(shortUserRegex)) sam else SessionManager.queryUser(sam, null)?.shortUser
-                ?: ldap.autoSuggest(sam, auth, 1).getOrNull(0)?.shortUser
-        if (shortUser == null) return null
-
-        log.info("Authenticating {\"sam\":\"$sam\", \"shortUser\":\"$shortUser\"}")
-
-        return ldap.queryUser(shortUser, shortUser to pw)
+    fun authenticate(shortUser: ShortUser, pw: String): FullUser? {
+        logger.info { logMessage("authenticating", "shortUser" to shortUser) }
+        return queryLdap(shortUser, shortUser to pw, SearchBy.sAMAccountName)
     }
-
 
     /**
-     * Adds the supplied user to the exchange group
-     *
-     * @return updated status of the user; false if anything goes wrong
+     * Gets all currently eligible users
      */
-    fun setExchangeStudent(sam: String, exchange: Boolean): Boolean {
-        val longUser = sam.contains(".")
-        val ldapSearchBase = Config.LDAP_SEARCH_BASE
-        val searchFilter = "(&(objectClass=user)(" + (if (longUser) "userPrincipalName" else "sAMAccountName") + "=" + sam + (if (longUser) ("@" + Config.ACCOUNT_DOMAIN) else "") + "))"
-        val ctx = ldap.bindLdap(auth) ?: return false
-        val searchControls = SearchControls()
-        searchControls.searchScope = SearchControls.SUBTREE_SCOPE
-        var searchResult: SearchResult? = null
-        try {
-            val results = ctx.search(ldapSearchBase, searchFilter, searchControls)
-            searchResult = results.nextElement()
-            results.close()
-        } catch (e: Exception) {
-        }
-
-        if (searchResult == null) return false
-        val cal = Calendar.getInstance()
-        val userDn = searchResult.nameInNamespace
-        val year = cal.get(Calendar.YEAR)
-        val season = if (cal.get(Calendar.MONTH) < 8) "W" else "F"
-        val groupDn = "CN=" + Config.EXCHANGE_STUDENTS_GROUP_BASE + "$year$season, " + Config.GROUPS_LOCATION
-        val mods = arrayOfNulls<ModificationItem>(1)
-        val mod = BasicAttribute("member", userDn)
-        // todo check if we should ignore modification action if the user is already in/not in the exchange group?
-        mods[0] = ModificationItem(if (exchange) DirContext.ADD_ATTRIBUTE else DirContext.REMOVE_ATTRIBUTE, mod)
-        return try {
-            ctx.modifyAttributes(groupDn, mods)
-            log.info("${if(exchange)"Added $sam to" else "Removed $sam from"} exchange students.")
-            exchange
-        } catch (e: NamingException) {
-            if (e.message!!.contains("LDAP: error code 53")) {
-                log.warn("Error removing user from Exchange: {\"sam\":\"$sam\", \"cause\":\"not in group\")")
-                false
-            } else if (e.message!!.contains("LDAP: error code 68")) {
-                log.warn("Error adding user from Exchange: {\"sam\":\"$sam\", \"cause\":\"already in group\")")
-                true
-            } else {
-                log.warn("Error adding to exchange students. {\"sam\":\"$sam\", \"userDN\":\"$userDn\",\"groupDN\":\"$groupDn\", \"cause\":null}")
-                e.printStackTrace()
-                false
-            }
-        }
+    fun getAllCurrentlyEligible(): Set<FullUser> {
+        val filter =
+            "(&(objectClass=user)(|${Config.QUOTA_GROUP.map { "(memberOf:1.2.840.113556.1.4.1941:=cn=${it.name},${Config.GROUPS_LOCATION})" }.joinToString()}))"
+        return LdapConnector(0).executeSearch(filter, Long.MAX_VALUE)
     }
-
-
 }

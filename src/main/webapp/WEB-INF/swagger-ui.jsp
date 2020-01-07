@@ -6,12 +6,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Swagger UI</title>
-    <link rel="stylesheet" type="text/css" href="/tepid/webjars/swagger-ui/3.20.5/swagger-ui.css" >
-    <link rel="icon" type="image/png" href="/tepid/webjars/swagger-ui/3.20.5/favicon-32x32.png" sizes="32x32" />
-    <link rel="icon" type="image/png" href="/tepid/webjars/swagger-ui/3.20.5/favicon-16x16.png" sizes="16x16" />
+    <link rel="stylesheet" type="text/css" href="/tepid/webjars/swagger-ui/3.20.5/swagger-ui.css">
+    <link rel="icon" type="image/png" href="/tepid/webjars/swagger-ui/3.20.5/favicon-32x32.png" sizes="32x32"/>
+    <link rel="icon" type="image/png" href="/tepid/webjars/swagger-ui/3.20.5/favicon-16x16.png" sizes="16x16"/>
     <style>
-        html
-        {
+        html {
             box-sizing: border-box;
             overflow: -moz-scrollbars-vertical;
             overflow-y: scroll;
@@ -19,14 +18,12 @@
 
         *,
         *:before,
-        *:after
-        {
+        *:after {
             box-sizing: inherit;
         }
 
-        body
-        {
-            margin:0;
+        body {
+            margin: 0;
             background: #fafafa;
         }
     </style>
@@ -35,13 +32,13 @@
 <body>
 <div id="swagger-ui"></div>
 
-<script src="/tepid/webjars/swagger-ui/3.20.5/swagger-ui-bundle.js"> </script>
-<script src="/tepid/webjars/swagger-ui/3.20.5/swagger-ui-standalone-preset.js"> </script>
+<script src="/tepid/webjars/swagger-ui/3.20.5/swagger-ui-bundle.js"></script>
+<script src="/tepid/webjars/swagger-ui/3.20.5/swagger-ui-standalone-preset.js"></script>
 <script>
-    window.onload = function() {
+    window.onload = function () {
         // Begin Swagger UI call region
         const ui = SwaggerUIBundle({
-            url: "<%out.print("https://"+Config.INSTANCE.getTEPID_URL_PRODUCTION()+"/openapi.json"); %>",
+            url: "<%out.print("https://"+Config.INSTANCE.getTEPID_URL_PRODUCTION()+"openapi.json"); %>",
             dom_id: '#swagger-ui',
             deepLinking: true,
             presets: [

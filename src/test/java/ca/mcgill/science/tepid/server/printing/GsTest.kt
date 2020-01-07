@@ -9,8 +9,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 
-
-
 class GsTest {
 
     private val gs = GsDelegate()
@@ -59,13 +57,12 @@ class GsTest {
         val k = 0.04558f
         val inkCov = gs.inkCoverage(listOf("$c $m $y $k CMYK OK")).firstOrNull()
         assertNotNull(inkCov)
-        assertEquals(c, inkCov!!.c)
+        assertEquals(c, inkCov.c)
         assertEquals(m, inkCov.m)
         assertEquals(y, inkCov.y)
         assertEquals(k, inkCov.k)
         assertFalse(inkCov.monochrome)
     }
-
 }
 
 class PsInfoTest {
@@ -89,7 +86,7 @@ class PsInfoTest {
         "V4/ADOBE COLORED IMAGE.prn, 1, 1",
         "V4/ADOBE COLORED.prn, 1, 1",
         "V4/ADOBE GRAYSCALE.prn, 1, 0",
-        //"V4/ADOBE GRAYSCALE BUT COLOR.prn, 1, 0",
+        // "V4/ADOBE GRAYSCALE BUT COLOR.prn, 1, 0",
         "V4/CHROME BW.prn, 1, 0",
         "V4/CHROME COLORED.prn, 1, 1",
         "V4/PDF FIREFOX BW.prn, 1, 0",
@@ -97,11 +94,10 @@ class PsInfoTest {
         "V4/PINGU BW PHOTO.prn, 1, 0",
         "V4/PINGU COLORED PHOTO.prn, 1, 1"
     )
-    fun psInfoTest(fileName:String, pages: Int, colorPages: Int){
-        val tmp = File(this::class.java.classLoader.getResource("ps").file+"/"+fileName)
+    fun psInfoTest(fileName: String, pages: Int, colorPages: Int) {
+        val tmp = File(this::class.java.classLoader.getResource("ps").file + "/" + fileName)
         val r = gs.psInfo(tmp)
         assertEquals(pages, r.pages, "Total page count incorrect")
         assertEquals(colorPages, r.colorPages, "Color page count incorrect")
     }
-
 }

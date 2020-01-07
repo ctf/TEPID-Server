@@ -1,268 +1,207 @@
 package ca.mcgill.science.tepid.server.rest
 
-import ca.mcgill.science.tepid.models.bindings.*
-import ca.mcgill.science.tepid.models.data.*
-import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
+import ca.mcgill.science.tepid.models.DTO.QuotaData
+import ca.mcgill.science.tepid.models.bindings.CTFER
+import ca.mcgill.science.tepid.models.bindings.ELDER
+import ca.mcgill.science.tepid.models.bindings.USER
+import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.models.data.PersonalIdentifier
+import ca.mcgill.science.tepid.models.data.PrintJob
+import ca.mcgill.science.tepid.models.data.PutResponse
+import ca.mcgill.science.tepid.models.data.UserQuery
+import ca.mcgill.science.tepid.server.auth.AuthenticationManager
+import ca.mcgill.science.tepid.server.auth.AutoSuggest
+import ca.mcgill.science.tepid.server.auth.ExchangeManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.db.Id
+import ca.mcgill.science.tepid.server.db.Order
+import ca.mcgill.science.tepid.server.db.remapExceptions
+import ca.mcgill.science.tepid.server.printing.IQuotaCounter
+import ca.mcgill.science.tepid.server.printing.QuotaCounter
+import ca.mcgill.science.tepid.server.util.failForbidden
 import ca.mcgill.science.tepid.server.util.failNotFound
+import ca.mcgill.science.tepid.server.util.failUnauthorized
 import ca.mcgill.science.tepid.server.util.getSession
-import ca.mcgill.science.tepid.server.util.text
-import ca.mcgill.science.tepid.utils.WithLogging
-import org.mindrot.jbcrypt.BCrypt
+import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 import java.net.URI
 import java.net.URISyntaxException
 import javax.annotation.security.RolesAllowed
-import javax.ws.rs.*
+import javax.ws.rs.Consumes
+import javax.ws.rs.DefaultValue
+import javax.ws.rs.GET
+import javax.ws.rs.POST
+import javax.ws.rs.PUT
+import javax.ws.rs.Path
+import javax.ws.rs.PathParam
+import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
-import kotlin.math.max
 
 @Path("/users")
 class Users {
 
     @GET
-    @Path("/configured")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun adminConfigured(): Boolean = try {
-        DB.isAdminConfigured()
-    } catch (e: Exception) {
-        log.error("localAdmin check failed", e)
-        false
-    }
-
-    @GET
-    @Path("/{sam}")
+    @Path("/{personalIdentifier}")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun queryLdap(@PathParam("sam") sam: String, @QueryParam("pw") pw: String?, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
+    fun queryLdap(@PathParam("personalIdentifier") personalIdentifier: PersonalIdentifier, @Context crc: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
         val session = crc.getSession()
 
         val returnedUser: FullUser // an explicit return, so that nothing is accidentally returned
 
         when (session.role) {
             USER -> {
-                val queriedUser = SessionManager.queryUser(sam, pw)
+                val queriedUser = AuthenticationManager.queryUser(personalIdentifier)
                 if (queriedUser == null || session.user.shortUser != queriedUser.shortUser) {
-                    return Response.Status.FORBIDDEN.text("You cannot access this resource")
+                    failForbidden()
                 }
                 // queried user is the querying user
 
                 returnedUser = queriedUser
             }
             CTFER, ELDER -> {
-                val queriedUser = SessionManager.queryUser(sam, pw)
+                val queriedUser = AuthenticationManager.queryUser(personalIdentifier)
                 if (queriedUser == null) {
-                    log.warn("Could not find user {}.", sam)
-                    throw NotFoundException(Response.status(404).entity("Could not find user " + sam).type(MediaType.TEXT_PLAIN).build())
+                    logger.warn(logMessage("could not find user", "sam" to personalIdentifier))
+                    failNotFound("Could not find user $personalIdentifier")
                 }
                 returnedUser = queriedUser
             }
             else -> {
-                return Response.Status.FORBIDDEN.text("You cannot access this resource")
+                failForbidden()
             }
         }
 
-
-        // A SAM can be used as the query, but the url should be for the uname 
-        if (sam != returnedUser.shortUser && !uriInfo.queryParameters.containsKey("noRedirect")) {
+        // A PersonalIdentifier can be used as the query, but the url should be for the _id
+        if (personalIdentifier != returnedUser._id && !uriInfo.queryParameters.containsKey("noRedirect")) {
             try {
-                return Response.seeOther(URI("users/" + returnedUser.shortUser)).build()
+                return Response.seeOther(URI("users/" + returnedUser._id)).build()
             } catch (ignored: URISyntaxException) {
             }
         }
         return Response.ok(returnedUser).build()
-
     }
 
     @PUT
-    @Path("/{sam}")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun createLocalAdmin(@PathParam("sam") shortUser: String, newAdmin: FullUser, @Context req: ContainerRequestContext, @Context uriInfo: UriInfo): Response {
-        if (this.adminConfigured()) {
-            val session = req.getSession()
-            log.warn("Unauthorized attempt to add a local admin by {}.", session.user.longUser)
-            return Response.Status.UNAUTHORIZED.text("Local admin already exists")
-        }
-        val hashedPw = BCrypt.hashpw(newAdmin.password, BCrypt.gensalt())
-        newAdmin.shortUser = shortUser
-        newAdmin.password = hashedPw
-        newAdmin.role = ADMIN
-        newAdmin.authType = LOCAL
-        newAdmin.activeSince = System.currentTimeMillis()
-        newAdmin.displayName = "${newAdmin.givenName} ${newAdmin.lastName}"
-        newAdmin.salutation = newAdmin.givenName
-        newAdmin.longUser = newAdmin.email
-        return DB.putUser(newAdmin)
-    }
-
-    /**
-     * Attempts to add the supplied sam to the exchange group
-     * @return updated status of the user; false if anything goes wrong
-     */
-    @PUT
-    @Path("/{sam}/exchange")
-    @RolesAllowed(CTFER, ELDER)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun setExchange(@PathParam("sam") sam: String, exchange: Boolean): Boolean =
-            SessionManager.setExchangeStudent(sam, exchange)
-
-    /**
-     * Abstract implementation of modifying user data
-     * Note that this is called from an endpoint where [ctx] holds a session (valid or not),
-     * and where the roles allowed are at least of level "user"
-     */
-    private inline fun putUserData(sam: String, ctx: ContainerRequestContext, action: (user: FullUser) -> Unit): Response {
-        val session = ctx.getSession()
-        val user = SessionManager.queryUser(sam, null) ?: return Response.Status.NOT_FOUND.text("User $sam not found")
-        if (session.role == USER && session.user.shortUser != user.shortUser)
-            return Response.Status.UNAUTHORIZED.text("You cannot change this resource")
-        action(user)
-        return DB.putUser(user)
-    }
-
-
-    @PUT
-    @Path("/{sam}/nick")
-    @RolesAllowed(USER, CTFER, ELDER)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun setNick(@PathParam("sam") sam: String, nick: String, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
-        it.nick = if (nick.isBlank()) null else nick
-        log.debug("Setting nick for ${it.shortUser} to ${it.nick}")
-    }
-
-    @PUT
-    @Path("/{sam}/jobExpiration")
-    @RolesAllowed(USER, CTFER, ELDER)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    fun setJobExpiration(@PathParam("sam") sam: String, jobExpiration: Long, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
-        it.jobExpiration = jobExpiration
-        log.trace("Job expiration for ${it.shortUser} set to $jobExpiration")
-    }
-
-    @PUT
-    @Path("/{sam}/color")
+    @Path("/{id}/color")
     @RolesAllowed(USER, CTFER, ELDER)
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.APPLICATION_JSON)
-    fun setColor(@PathParam("sam") sam: String, color: Boolean, @Context ctx: ContainerRequestContext): Response = putUserData(sam, ctx) {
-        it.colorPrinting = color
-        log.trace("Set color for ${it.shortUser} to ${it.colorPrinting}")
-    }
+    fun setColor(@PathParam("id") id: Id, color: Boolean, @Context ctx: ContainerRequestContext): PutResponse =
+        putUserData(id, ctx) {
+            it.colorPrinting = color
+            logger.trace { "Set color for ${it._id} to ${it.colorPrinting}" }
+        }
+
+    /**
+     * Attempts to add the supplied ShortUser to the exchange group
+     * @return updated status of the user; false if anything goes wrong
+     */
+    @PUT
+    @Path("/{id}/exchange")
+    @RolesAllowed(CTFER, ELDER)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun setExchange(@PathParam("id") id: Id, exchange: Boolean): Boolean =
+        ExchangeManager.setExchangeStudent(remapExceptions { DB.users.read(id).shortUser ?: "" }, exchange)
+
+    @PUT
+    @Path("/{id}/jobExpiration")
+    @RolesAllowed(USER, CTFER, ELDER)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun setJobExpiration(@PathParam("id") id: Id, jobExpiration: Long, @Context ctx: ContainerRequestContext): PutResponse =
+        putUserData(id, ctx) {
+            it.jobExpiration = jobExpiration
+            logger.trace { "Job expiration for ${it._id} set to $jobExpiration" }
+        }
+
+    @PUT
+    @Path("/{id}/nick")
+    @RolesAllowed(USER, CTFER, ELDER)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun setNick(@PathParam("id") id: Id, nick: String, @Context ctx: ContainerRequestContext): PutResponse =
+        putUserData(id, ctx) {
+            it.nick = if (nick.isBlank()) null else nick
+            logger.debug { "Setting nick for ${it._id} to ${it.nick}" }
+            it.updateUserNameInformation()
+        }
 
     @GET
-    @Path("/{sam}/quota")
+    @Path("/{id}/quota")
     @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQuota(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): Int {
+    fun getQuota(@PathParam("id") id: Id, @Context ctx: ContainerRequestContext): QuotaData {
         val session = ctx.getSession()
-        return if (session.role == USER && session.user.shortUser != shortUser)
-            -1
+        if (session.role == USER && session.user.shortUser != id)
+            failForbidden()
         else {
-            val user = SessionManager.queryUser(shortUser, null)
-            getQuota(user)
+            val user = AuthenticationManager.queryUser(id) ?: failNotFound()
+            return quotaCounter.getQuotaData(user)
         }
     }
 
     @GET
-    @Path("/{sam}/quota/debug")
-    @RolesAllowed(CTFER, ELDER)
+    @Path("/{id}/jobs")
+    @RolesAllowed(USER, CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQuotaDebug(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext): QuotaData {
-        val user = SessionManager.queryUser(shortUser, null)
-        return getQuotaData(user) ?: failNotFound("Could not calculate quota")
-    }
-
-    @POST
-    @Path("/{sam}/refresh")
-    @RolesAllowed(CTFER, ELDER)
-    @Produces(MediaType.TEXT_PLAIN)
-    fun forceRefresh(@PathParam("sam") shortUser: String, @Context ctx: ContainerRequestContext) {
-        try {
-            SessionManager.refreshUser(shortUser)
-            SessionManager.invalidateSessions(shortUser)
-        } catch (e: Exception) {
-            throw NotFoundException(Response.status(404).entity("Could not find user " + shortUser).type(MediaType.TEXT_PLAIN).build())
+    fun listJobs(@PathParam("id") id: Id, @Context req: ContainerRequestContext): Collection<PrintJob> {
+        val session = req.getSession()
+        if (session.role == USER && session.user.shortUser != id) {
+            return emptyList()
         }
+        return DB.printJobs.getJobsByUser(id, Order.DESCENDING)
     }
 
     @GET
     @Path("/autosuggest/{like}")
     @RolesAllowed(CTFER, ELDER)
     @Produces(MediaType.APPLICATION_JSON)
-    fun ldapAutoSuggest(@PathParam("like") like: String, @DefaultValue("10") @QueryParam("limit") limit: Int): List<User> {
-        val resultsPromise = SessionManager.autoSuggest(like, limit)
-        return resultsPromise.getResult(20000).map(FullUser::toUser) // todo check if we should further simplify to userquery
+    fun ldapAutoSuggest(@PathParam("like") like: String, @DefaultValue("10") @QueryParam("limit") limit: Int): List<UserQuery> {
+        val resultsPromise = AutoSuggest.autoSuggest(like, limit)
+        return resultsPromise.getResult(20000)
+            .map { it.toUser().toUserQuery() }
     }
 
-    companion object : WithLogging() {
-
-        data class QuotaData(val shortUser: String,
-                             val quota: Int,
-                             val maxQuota: Int,
-                             val totalPrinted: Int,
-                             val semesters: List<Semester>)
-
-        fun getQuotaData(user: FullUser?): QuotaData? {
-            val shortUser = user?.shortUser ?: return null
-
-            if (AuthenticationFilter.getCtfRole(user).isEmpty()) return null
-
-            val totalPrinted = getTotalPrinted(shortUser)
-
-            val currentSemester = Semester.current
-            // TODO: incorporate summer escape into mapper
-            val semesters = user.getSemesters()
-                    .filter { it.season != Season.SUMMER } // we don't add quota for the summer
-                    .filter { it >= Semester.fall(2016) }      // TEPID didn't exist before fall 2016
-                    .filter { it <= currentSemester }      // only add quota for valid semesters
-
-            val newMaxQuota = semesters.map { semester ->
-                /*
-                 * The following mapper allows you to customize
-                 * The quota/semester
-                 *
-                 * Granted that semesters are comparable,
-                 * you may specify ranges (inclusive) when matching
-                 */
-
-                // for NUS, which has a separate contract
-                if (user.groups.contains(AdGroup("520-NUS Users")) && semester > Semester.fall(2018)) {
-                    return@map 1000
-                }
-
-                when {
-                    semester == Semester.fall(2016) -> 500         // the first semester had 500 pages only
-                    (semester > Semester.fall(2016) && semester < Semester.fall(2019)) -> 1000  // semesters used to add 1000 pages to the base quota
-                    else -> 250                  // then we came to our senses
-                }
-            }.sum()
-
-            val quota = max(newMaxQuota - totalPrinted, 0)
-
-            return QuotaData(shortUser = shortUser,
-                    quota = quota,
-                    maxQuota = newMaxQuota,
-                    totalPrinted = totalPrinted,
-                    semesters = semesters)
+    @POST
+    @Path("/{id}/refresh")
+    @RolesAllowed(CTFER, ELDER)
+    @Produces(MediaType.TEXT_PLAIN)
+    fun forceRefresh(@PathParam("id") id: Id, @Context ctx: ContainerRequestContext) {
+        try {
+            AuthenticationManager.refreshUser(id)
+            SessionManager.invalidateSessions(id)
+        } catch (e: Exception) {
+            failNotFound("Could not find user $id")
         }
-
-        /**
-         * Given a shortUser, query for the number of pages remaining
-         * Returns 0 if an error has occurred
-         */
-        fun getQuota(user: FullUser?): Int = getQuotaData(user)?.quota ?: 0
-
-        fun getTotalPrinted(shortUser: String?) =
-                if (shortUser == null) 0
-                else DB.getTotalPrintedCount(shortUser)
-
     }
 
+    /**
+     * Abstract implementation of modifying user data
+     * Note that this is called from an endpoint where [ctx] holds a session (valid or not),
+     * and where the roles allowed are at least of level "user"
+     */
+    private inline fun putUserData(
+        id: Id,
+        ctx: ContainerRequestContext,
+        action: (user: FullUser) -> Unit
+    ): PutResponse {
+        val session = ctx.getSession()
+        val user = DB.users.read(id)
+        if ((session.role.isBlank()) || (session.role == USER && session.user.shortUser != user.shortUser))
+            failUnauthorized()
+        action(user)
+        return remapExceptions { DB.users.put(user) }
+    }
+
+    companion object : Logging {
+        val quotaCounter: IQuotaCounter = QuotaCounter
+    }
 }

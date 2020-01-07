@@ -2,9 +2,13 @@
   except:
   - /^(wip|test).*$/
 
+variables:
+  CONTAINER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+
+
 stages:
-  - build
   - test
+  - build
   - staging
   - integrationTest
   - deploy
@@ -13,49 +17,82 @@ clean:
   extends: .base
   stage: build
   script:
-  - chmod +x gradlew
   - ./gradlew clean
 
 test:
   extends: .base
   stage: test
   script:
-  - chmod +x gradlew
+  - ./gradlew clean
   - ./gradlew test -i
   artifacts:
     when: always
     reports:
       junit: [build/test-results/test/TEST-*.xml]
 
+lint:
+  extends: .base
+  stage: test
+  script:
+    - ./gradlew ktlintCheck
+  allow_failure: true
+
+war:
+  extends: .base
+  stage: build
+  script:
+    - ./gradlew war
+    - cp ./build/libs/tepid*.war ~/tepid.war
+  artifacts:
+    when: always
+    paths:
+      - ./build/libs/tepid*.war
+
+build docker:
+  extends: .base
+  stage: build
+  tags:
+    - docker
+  only:
+    - dev
+    - master
+  before_script:
+    - sudo -g docker docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - sudo -g docker docker build -t $CONTAINER_IMAGE .
+    - sudo -g docker docker push $CONTAINER_IMAGE
+
 staging:
   extends: .base
   stage: staging
   script:
+    - rm -r /var/lib/tomcat8/webapps/tepid.war || true
+    - rm -r /var/lib/tomcat8/webapps/tepid || true
     - cp ~/tepid.war /var/lib/tomcat8/webapps/
-  artifacts:
-    when: always
-    paths:
-      - ~/tepid*.war
 
 integrationTest:
   extends: .base
   stage: integrationTest
   script:
-  - chmod +x gradlew
-  - ./gradlew integrationTest -i
+    - ./gradlew clean
+    - ./gradlew test -i
+    - ./gradlew integrationTest -i
   artifacts:
     when: always
     reports:
       junit: [build/test-results/integrationTest/TEST-*.xml]
 
-war:
+deploy:
   extends: .base
   stage: deploy
+  tags:
+    - docker
+  only:
+    - dev
+    - master
+  before_script:
+    - sudo -g docker docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-  - chmod +x gradlew
-  - ./gradlew war
-  - cp ./build/libs/tepid*.war ~/tepid.war
-  artifacts:
-    when: always
-    paths:
-    - ./build/libs/tepid*.war
+    - cd $COMPOSE_DIR
+    - sudo -g docker docker-compose up -d
+

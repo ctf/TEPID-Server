@@ -26,7 +26,6 @@ class About {
 
     fun api(@Context ctxRequest: HttpServletRequest, @Context ctxResponse: HttpServletResponse) {
 
-            ctxRequest.getRequestDispatcher("/swagger-ui.jsp").forward(ctxRequest,ctxResponse)
+        ctxRequest.getRequestDispatcher("/swagger-ui.jsp").forward(ctxRequest, ctxResponse)
     }
-
 }

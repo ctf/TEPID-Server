@@ -4,17 +4,21 @@ import ca.mcgill.science.tepid.models.data.Destination
 import ca.mcgill.science.tepid.models.data.MarqueeData
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
-import ca.mcgill.science.tepid.server.auth.SessionManager
+import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.Order
 import ca.mcgill.science.tepid.server.util.failNotFound
-import ca.mcgill.science.tepid.utils.WithLogging
+import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
-import javax.ws.rs.*
+import javax.ws.rs.DefaultValue
+import javax.ws.rs.GET
+import javax.ws.rs.Path
+import javax.ws.rs.PathParam
+import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
-
 
 @Path("/screensaver")
 class ScreenSaver {
@@ -27,7 +31,7 @@ class ScreenSaver {
     @GET
     @Path("queues")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getQueues(): List<PrintQueue> = DB.getQueues()
+    fun getQueues(): List<PrintQueue> = DB.queues.readAll()
 
     /**
      * @param queue The name of the queue to retrieve from
@@ -37,10 +41,12 @@ class ScreenSaver {
     @GET
     @Path("queues/{queue}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun listJobs(@PathParam("queue") queue: String,
-                 @QueryParam("limit") @DefaultValue("13") limit: Int,
-                 @QueryParam("from") @DefaultValue("0") from: Long): Collection<PrintJob> =
-            DB.getJobsByQueue(queue, maxAge = Date().time - from, sortOrder = Order.DESCENDING)
+    fun listJobs(
+        @PathParam("queue") queue: String,
+        @QueryParam("limit") @DefaultValue("13") limit: Int,
+        @QueryParam("from") @DefaultValue("0") from: Long
+    ): Collection<PrintJob> =
+        DB.printJobs.getJobsByQueue(queue, maxAge = Date().time - from, sortOrder = Order.DESCENDING)
 
     /**
      * Gets the Up status for each Queue.
@@ -54,15 +60,15 @@ class ScreenSaver {
     @Path("queues/status")
     @Produces(MediaType.APPLICATION_JSON)
     fun getStatus(): Map<String, Boolean> {
-        val destinations = DB.getDestinations().map { it._id to it }.toMap()
+        val destinations = DB.destinations.readAll().map { it._id to it }.toMap()
 
-        val queues = DB.getQueues()
+        val queues = DB.queues.readAll()
 
         val out = mutableMapOf<String, Boolean>()
 
-        queues.forEach forQueue@ { q ->
+        queues.forEach forQueue@{ q ->
             val name = q.name ?: return@forQueue
-            q.destinations.forEach forDest@ {
+            q.destinations.forEach forDest@{
                 val isUp = destinations[it]?.up ?: return@forDest
                 out[name] = isUp || out[name] ?: false
             }
@@ -79,7 +85,7 @@ class ScreenSaver {
     @GET
     @Path("marquee")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getMarquee(): List<MarqueeData> = DB.getMarquees()
+    fun getMarquee(): List<MarqueeData> = DB.marquee.readAll()
 
     /**
      * Note that this is an exact replica of [Destinations.getDestinations]
@@ -91,21 +97,21 @@ class ScreenSaver {
     @Path("destinations")
     @Produces(MediaType.APPLICATION_JSON)
     fun getDestinations(@Context ctx: ContainerRequestContext): Map<String, Destination> {
-        return DB.getDestinations()
-                .mapNotNull {
-                    val id = it._id ?: return@mapNotNull null
-                    id to it.toDestination()
-                }
-                .toMap()
+        return DB.destinations.readAll()
+            .mapNotNull {
+                val id = it._id ?: return@mapNotNull null
+                id to it.toDestination()
+            }
+            .toMap()
     }
 
     @GET
     @Path("/user/{username}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getUserInfo(@PathParam("username") username: String): String {
-        return SessionManager.queryUser(username, null)?.nick
-                ?: failNotFound("No nick associated with $username")
+        return AuthenticationManager.queryUser(username)?.nick
+            ?: failNotFound("No nick associated with $username")
     }
 
-    private companion object : WithLogging()
+    private companion object : Logging
 }

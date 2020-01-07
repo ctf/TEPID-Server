@@ -3,179 +3,46 @@ package ca.mcgill.science.tepid.server.rest
 import ca.mcgill.science.tepid.models.bindings.CTFER
 import ca.mcgill.science.tepid.models.bindings.ELDER
 import ca.mcgill.science.tepid.models.bindings.USER
-import ca.mcgill.science.tepid.models.data.*
-import ca.mcgill.science.tepid.server.UserFactory
-import ca.mcgill.science.tepid.server.auth.AuthenticationFilter
+import ca.mcgill.science.tepid.models.data.ErrorResponse
+import ca.mcgill.science.tepid.models.data.FullSession
+import ca.mcgill.science.tepid.models.data.FullUser
+import ca.mcgill.science.tepid.server.TestHelpers
+import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
+import ca.mcgill.science.tepid.server.server.mapper
+import ca.mcgill.science.tepid.server.util.TepidException
 import ca.mcgill.science.tepid.server.util.getSession
-import ca.mcgill.science.tepid.utils.WithLogging
-import io.mockk.*
+import com.fasterxml.jackson.module.kotlin.readValue
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.mockkStatic
+import io.mockk.unmockkAll
+import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
-import javax.ws.rs.ClientErrorException
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriInfo
 import kotlin.test.assertEquals
-import kotlin.test.fail
 
-
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class TestUserGetQuota : WithLogging () {
-
-    val c2019f = Course("2019f", Season.FALL, 2019)
-    val c2018s = Course("2018s", Season.SUMMER, 2018)
-    val c1066f = Course("1066f", Season.FALL, 1066)
-    val c2016f = Course("2016f", Season.FALL, 2016)
-    val c2018f = Course("2018f", Season.FALL, 2018)
-    val c2018w = Course("2018w", Season.WINTER, 2018)
-    val c2018w0 = Course("2018w other", Season.WINTER, 2018)
-
-    /**
-     * Runs a test of Users.getQuota, Mockking [tailoredUser] as the user returned by SessionManager
-     */
-    private fun userGetQuotaTest (tailoredUser: FullUser?, expected: Int, message: String){
-        mockUser(tailoredUser)
-        val actual = Users.getQuota(tailoredUser)
-        assertEquals(expected, actual, message)
-    }
-
-    private fun userGetQuotaTest(tailoredUser: FullUser, tailoredUserRole: String, expected: Int, message: String) {
-        every {
-            AuthenticationFilter.getCtfRole(ofType(FullUser::class))
-        } returns tailoredUserRole
-        userGetQuotaTest(tailoredUser.copy(shortUser="tailoredUser"), expected, message)
-    }
-
-    private fun mockUser(tailoredUser: FullUser?){
-        every {
-            SessionManager.queryUser("targetUser", null)
-        } returns (tailoredUser)
-    }
-
-    private fun setPrintedPages(printedPages:Int) {
-        every {
-            Users.getTotalPrinted(ofType(String::class))
-        } returns printedPages
-    }
-
-
-    @Test
-    fun testGetQuotaQueriedUserNull(){
-        userGetQuotaTest(null, 0, "Null user is not assigned 0 quota")
-    }
-
-    @Test
-    fun testGetQuotaQueriedUserNoRole(){
-        userGetQuotaTest(FullUser(), "", 0, "Null user is not assigned 0 quota")
-    }
-
-    @Test
-    fun testGetQuotaElder(){
-        setPrintedPages(0)
-        userGetQuotaTest(FullUser(role = ELDER, courses = setOf(c2019f)), ELDER, 250, "Elder is not given correct quota")
-    }
-
-    @Test
-    fun testGetQuotaCTFer(){
-        setPrintedPages(0)
-        userGetQuotaTest(FullUser(role = CTFER, courses = setOf(c2019f)), CTFER, 250, "CTFER is not given correct quota")
-    }
-
-    @Test
-    fun testGetQuotaNUS(){
-        setPrintedPages(0)
-        userGetQuotaTest(FullUser(role = USER, courses = setOf(c2019f), groups=setOf(AdGroup("520-NUS Users"))), CTFER, 1000, "NUS is not given correct quota")
-    }
-
-    @Test
-    fun testGetQuotaUserIgnoreSummerSemester(){
-        setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018s)), USER, 0,"Summer gives quota")
-    }
-
-    @Test
-    fun testGetQuotaUserSemesterPre2016() {
-        setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = setOf(c1066f)), USER, 0,"Ancient semester gives quota")
-    }
-
-    @Test
-    fun testGetQuotaUserSemester2016F () {
-        setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2016f)), USER, 500,"500 pages not given for 2016F")
-    }
-
-    @Test
-    fun testGetQuotaUserSemesterPost2016F () {
-        setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018f)), USER, 1000,"1000 pages not given for semester")
-    }
-
-    @Test
-    fun testGetQuotaUserSemesterPost2019F () {
-        setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2019f)), USER, 250,"250 pages not given for semester post 2019f")
-    }
-
-    @Test
-    fun testGetQuotaUserSpanMultipleSemesters () {
-        setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018f, c2018w)), USER, 2000,"multiple semesters not counted")
-    }
-
-    @Test
-    fun testGetQuotaTotalPrintedSubtracted(){
-        setPrintedPages(300)
-        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018f)), USER, 700,"Printed pages not subtracted (you had one job)")
-    }
-
-    //Tests that if there are multiple courses in the same semester they only contribute as one semester
-    @Test
-    fun testGetQuotaMultipleCoursesReduced(){
-        setPrintedPages(0)
-        userGetQuotaTest(FullUser(role= USER, courses = setOf(c2018w0, c2018w)), USER, 1000,"multiple courses in same semester counted as other semesters")
-    }
-
-    companion object {
-        @JvmStatic
-        @BeforeAll
-        fun initTest() {
-            mockkObject(SessionManager)
-            mockkObject(AuthenticationFilter)
-            mockkObject(Users)
-            every {
-                SessionManager.queryUser("targetUser", null)
-            } returns (FullUser())
-
-        }
-
-        @JvmStatic
-        @AfterAll
-        fun tearTest(){
-            unmockkAll()
-        }
-    }
-
-}
-
-class getUserBySamTest : WithLogging() {
+class UserTest : Logging {
 
     val endpoints: Users by lazy {
         Users()
     }
 
-    var queryingUser: FullUser = UserFactory.generateTestUser("querying")
-    var targetUser: FullUser = UserFactory.generateTestUser("target")
+    var queryingUser: FullUser = run { val u = TestHelpers.generateTestUser("querying"); u._id = "querying"; u }
+    var targetUser: FullUser = run { val u = TestHelpers.generateTestUser("target"); u._id = "target"; u }
 
     lateinit var uriInfo: UriInfo
-    lateinit var rc : ContainerRequestContext
+    lateinit var rc: ContainerRequestContext
 
-    fun mockSession(role:String){
+    fun mockSession(role: String) {
         uriInfo = mockk<UriInfo>()
-        every {uriInfo.getQueryParameters().containsKey("noRedirect")} returns true
+        every { uriInfo.getQueryParameters().containsKey("noRedirect") } returns true
 
         val session = FullSession(role, queryingUser)
 
@@ -184,32 +51,33 @@ class getUserBySamTest : WithLogging() {
         every {
             rc.getSession()
         } returns session
-
-
     }
-    fun mockUserQuery(user:FullUser?){
+
+    fun mockUserQuery(user: FullUser?) {
         mockkObject(SessionManager)
+        mockkObject(AuthenticationManager)
         every {
-            SessionManager.queryUser("targetUser", null)
+            AuthenticationManager.queryUser("targetUser")
         } returns (user)
     }
-    fun doTestUserQuery(role:String, queryResult: FullUser?, expected: FullUser?): Response {
+
+    fun doTestUserQuery(role: String, queryResult: FullUser?, expected: FullUser?): Response {
         mockSession(role)
         mockUserQuery(queryResult)
-        val result = endpoints.queryLdap("targetUser", null, rc, uriInfo)
+        val result = endpoints.queryLdap("targetUser", rc, uriInfo)
         assertEquals(expected, result.entity)
         return result
     }
 
-    fun doTestUserQuery403(role:String, queryResult: FullUser?) {
+    fun doTestUserQuery403(role: String, queryResult: FullUser?) {
         mockSession(role)
         mockUserQuery(queryResult)
-        val response = endpoints.queryLdap("targetUser", null, rc, uriInfo)
-        assertEquals(403, response.status)
+        val exception = assertThrows(TepidException::class.java) { endpoints.queryLdap("targetUser", rc, uriInfo) }
+        assertEquals(403, exception.response.status)
 
         // This line makes sure that a 403 response doesn't also leak an attached user.
         // In case the user is added to the response before the response is marked as forbidden
-        assertEquals("You cannot access this resource", response.entity)
+        assertEquals("You cannot access this resource", mapper.readValue<ErrorResponse>(exception.response.entity as String).error)
     }
 
     @Test
@@ -218,14 +86,13 @@ class getUserBySamTest : WithLogging() {
     }
 
     @Test
-    fun getUserBySamElderAndInvalidUser(){
-
-        try {
-            doTestUserQuery(ELDER, null, null)
-            fail("Did not throw 404 error when an Elder queried for a nonexistant user")
-        } catch (e: ClientErrorException) {
-            assertEquals(404, e.response.status)
-        }
+    fun getUserBySamElderAndInvalidUser() {
+        val exception = assertThrows(
+            TepidException::class.java,
+            { doTestUserQuery(ELDER, null, null) },
+            "Did not throw 404 error when an Elder queried for a nonexistant user"
+        )
+        assertEquals(404, exception.response.status)
     }
 
     @Test
@@ -234,31 +101,29 @@ class getUserBySamTest : WithLogging() {
     }
 
     @Test
-    fun getUserBySamCtferAndInvalidUser(){
-
-        try {
-            doTestUserQuery(CTFER, null, null)
-            fail("Did not throw 404 error when a CTFer queried for a nonexistant user")
-        } catch (e: ClientErrorException) {
-            assertEquals(404, e.response.status)
-        }
+    fun getUserBySamCtferAndInvalidUser() {
+        val exception = assertThrows(
+            TepidException::class.java,
+            { doTestUserQuery(CTFER, null, null) },
+            "Did not throw 404 error when a CTFer queried for a nonexistant user"
+        )
+        assertEquals(404, exception.response.status)
     }
 
     @Test
-    fun getUserBySamUserAndInvalidUser(){
-        doTestUserQuery403(USER,null)
+    fun getUserBySamUserAndInvalidUser() {
+        doTestUserQuery403(USER, null)
     }
 
     @Test
-    fun getUserBySamUserAndOtherUser(){
-        doTestUserQuery403(USER,targetUser)
+    fun getUserBySamUserAndOtherUser() {
+        doTestUserQuery403(USER, targetUser)
     }
 
     @Test
-    fun getUserBySamUserAndSelfUser(){
+    fun getUserBySamUserAndSelfUser() {
         doTestUserQuery(USER, queryingUser, queryingUser)
     }
-
 
     /*
     I am aware that this is technically overkill; the AuthenticationFilter should already reject sessions without any role.
@@ -266,12 +131,12 @@ class getUserBySamTest : WithLogging() {
      */
     @Test
     fun getUserBySamNoneAndValidUser() {
-        doTestUserQuery403("",targetUser)
+        doTestUserQuery403("", targetUser)
     }
 
     @Test
-    fun getUserBySamNoneAndInvalidUser(){
-        doTestUserQuery403("",null)
+    fun getUserBySamNoneAndInvalidUser() {
+        doTestUserQuery403("", null)
     }
 
     companion object {
@@ -279,6 +144,7 @@ class getUserBySamTest : WithLogging() {
         @BeforeAll
         fun initTest() {
         }
+
         @JvmStatic
         @AfterAll
         fun tearTest() {

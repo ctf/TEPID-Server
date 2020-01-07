@@ -21,6 +21,7 @@ TEPID has several advantages over other print servers:
 * __Clean Web Interface:__ An easy-to-use web interface allows easy management of all the things Tier 1 techs or people operating a print pool would need to do, including changing the status of printers and refunding failed print jobs. Additional rights can be delegated to configure the queues themselves.
 * __Easily Deployed Client:__ The TEPID client builds to a JAR, which can be deployed easily enough, but it also uses WIX to build an MSI for easy deployment on Windows systems with Active Directory.
 * __Extra Informational Screensaver:__ The TEPID screensaver displays the time and room of people's print jobs, so if they forgot where it was sent they can look and find out. It also displays the statuses of the print queues themselves. Check it out! 
+* __Selectively Assign Quota:__ You can give users quota in one semester, and they'll keep it and still be able to print even if they don't get it next semester. 
 
 Tepid Server acts as Tepid's REST API to fulfill various requests for the printing service.
 In most cases, this simply means transferring data to and from our [database](#couchdb), but there are other instances (such as login and printing files) where some more extensive processes occur.
@@ -38,12 +39,12 @@ Procedure:
 
 1. Download the repo
 1. Open the project in your IDE (`import project > select folder`)
-1. Add your `priv.properties`. See the `priv.sample.properties` file for more info.
+1. Add your properties. See the tepid-commons repo for more info.
 1. Build the war file: `gradle war`. For IntelliJ, open `Gradle` on the right side, click the green gradle button, type `war`, and press enter. This builds the file holding all the Tepid data, which is used for deployment.
 
 That's it!
 
-For the most part, you won't need to build the war file. Much of testing involves simply running the unit tests or making use of integration. Whenever a commit is pushed to a non test branch (starting with `test-` or `wip-`), the files will be rebuild and deployed at `http://testpid.science.mcgill.ca/`. There is a public endpoint located at `http://testpid.science.mcgill.ca:8080/tepid/about` to see the status of the deployment.
+There's also a convenient GitlabCI pipeline set up to handle testing, staging, and building the WAR. Much of testing involves simply running the unit tests or making use of integration. Whenever a commit is pushed to a non test branch (starting with `test-` or `wip-`), the files will be rebuild and deployed at `http://testpid.science.mcgill.ca/`. There is a public endpoint located at `http://testpid.science.mcgill.ca:8443/tepid/about` to see the status of the deployment.
 
 ## Configuration
 
@@ -58,6 +59,8 @@ A lookup for the environment variable only occurs if the project property is not
 Configuration files can also be modified on the server, similarly to other applications one could install. Config files can be placed in /etc/tepid/ . These files will supersede those bundled in the WAR. This allows you to better care for their configuration using a configuration management tool, without having to rebuild the WAR.
 
 The TEPID server depends on DB, LDAP, LDAPGroups, LDAPResource, LDAPTest, TEM, and URL property files. 
+
+For testing, the included sample configs should provide placeholders sufficient for the unit tests.
 
 ## Endpoints
 
@@ -106,11 +109,9 @@ The method must then take in some variable labelled with `@PathParam("data")`, w
 | `@Suspended ar: AsyncResponse` | Used to handle long running responses. Instead of returning data once, an `ar` may consume data until it is done or cancelled
 | `@Context uriInfo: UriInfo` | For uri info. (<b>TODO remove as we don't seem to use it</b>)
 
-## CouchDb
+## DB
 
-All of our persistent data is stored in CouchDb. Without getting into much detail, we may navigate to a path with optional queries to get a `WebTarget`, and then retrieve, delete, or edit data from that target.
-
-A lot of the methods have been simplified and abstracted in our [`CouchDb` object](https://gitlab.science.mcgill.ca/TEPID/webserver/blob/kotlin-3/src/main/java/ca/mcgill/science/tepid/server/util/CouchDb.kt) and [`WebTarget` extensions](https://gitlab.science.mcgill.ca/TEPID/webserver/blob/kotlin-3/src/main/java/ca/mcgill/science/tepid/server/util/WebTargets.kt), so all queries should be called from there. More info can be seen in the class file.
+The DB has a neat layer for abstracting interaction. The DB uses Hibernate to interface with a variety of DB types, but we only use Postgres. 
 
 ## Misc Functionality
 
@@ -125,32 +126,11 @@ Logging is straightforward. Assuming you have a logger `log`,
 * Log misc content with `log.debug(msg)` or `log.info(msg)` (debug is more verbose than info)
 * Log very verbose content with `log.trace(msg)`. This is automatically disabled when debug mode is off.
 
-You may create a logger using:
-
-### Directly through Apache
-See `LogManager.getLogger(...)`
-
-### Through Companions
-Loggers are typically per class type. You can create it directly in the class,
-but the best practice is to only make one per all instance of the same class.
-
-To do so, create a companion object extending our logger:
-
-```kotlin
-companion object : WithLogging()
-```
-
-This will lazy load a logger when it is first used, and the class can call the methods through a `log` variable.
-
-If your companion already extends something, use the delegation pattern:
-
-```kotlin
-companion object : Loggable by WithLogging()
-```
+You may create a logger simply by inheriting from the Apache extension for that, which is `org.apache.logging.log4j.kotlin.Logging`
 
 ## VMs
 
-Due to the setup required, all of our full testing is done through VMs.
+Testing is done through a docker-compose deployment. The production system is still on a VM.
 
 Our main VM is at `tepid.science.mcgill.ca`, and our test VM is at `testpid.science.mcgill.ca`.
 
