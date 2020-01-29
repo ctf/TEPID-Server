@@ -1,7 +1,7 @@
 #### Build ####
 FROM    gradle:jdk11 as build
 
-COPY    --chown=gradle:gradle ./* /home/gradle/tepid-server/
+COPY    --chown=gradle:gradle . /home/gradle/tepid-server/
 WORKDIR /home/gradle/tepid-server
 RUN     gradle war
 
