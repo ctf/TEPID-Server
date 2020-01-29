@@ -3,7 +3,7 @@ FROM    gradle:jdk11 as build
 
 COPY    --chown=gradle:gradle . /home/gradle/tepid-server/
 WORKDIR /home/gradle/tepid-server
-RUN     gradle war
+RUN     gradle clean war
 
 #### Tomcat ####
 FROM    tomcat:8-jdk11
