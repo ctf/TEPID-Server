@@ -139,6 +139,8 @@ object Config : Logging {
 
         MAX_PAGES_PER_JOB = PropsPrinting.MAX_PAGES_PER_JOB ?: -1
 
+        getDb()
+
         if (DEBUG)
             setLoggingLevel(Level.TRACE)
         logger.trace(ELDERS_GROUP)

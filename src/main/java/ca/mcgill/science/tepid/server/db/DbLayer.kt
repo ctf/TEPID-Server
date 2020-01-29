@@ -9,7 +9,6 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.text
 import java.io.InputStream
 import javax.persistence.EntityExistsException
@@ -17,7 +16,7 @@ import javax.persistence.EntityNotFoundException
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 
-var DB: DbLayer = Config.getDb()
+lateinit var DB: DbLayer;
 
 /**
  * Ids are unique string keys in dbs
