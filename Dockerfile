@@ -12,6 +12,7 @@ RUN     apt-get install -y samba-client ghostscript postgresql-client
 
 COPY    server.xml conf/server.xml
 
-COPY    --from=build /home/gradle/tepid-server/build/libs/tepid*.war /var/lib/tomcat8/webapps/tepid.war
+RUN	rm -rf /usr/local/tomcat/webapps/*
+COPY    --from=build /home/gradle/tepid-server/build/libs/tepid*.war /usr/local/tomcat/webapps/tepid.war
 
 CMD     ["catalina.sh", "run"]
