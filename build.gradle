@@ -28,7 +28,7 @@ apply plugin: "kotlin-jpa"                                  // For Hibernate
 apply plugin: "org.jlleitschuh.gradle.ktlint"               // For ktlint-gradle
 
 sourceCompatibility = JavaVersion.VERSION_11
-war.baseName = 'tepid'
+war.archiveBaseName = 'tepid'
 
 ext {
     // can be passed with -Ptepid_config_dir=CONFIG_DIR, or set in an environment variable "tepid_config_dir
@@ -158,13 +158,12 @@ task copyConfigs(type: Copy) {
             "$tepid_config_dir/LDAPGroups.properties",
             "$tepid_config_dir/LDAPResource.properties",
             "$tepid_config_dir/LDAPTestUser.properties",
-            "$tepid_config_dir/TEM.properties",
+            "$tepid_config_dir/printing.properties",
             "$tepid_config_dir/URL.properties"
     into "config"
 }
 
 war {
-
     from('config') {
         include '*.properties'
     }
