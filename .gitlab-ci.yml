@@ -52,23 +52,20 @@ build docker:
   extends: .base
   stage: build
   tags:
-    - docker
-  only:
-    - dev
-    - master
+    - docker-build
   before_script:
     - sudo -g docker docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - sudo -g docker docker build -t $CONTAINER_IMAGE .
+    - sudo -g docker docker build -t $CONTAINER_IMAGE -t $CI_REGISTRY_IMAGE:test .
     - sudo -g docker docker push $CONTAINER_IMAGE
 
-staging:
+deploy test:
   extends: .base
   stage: staging
+  tags:
+    - docker-build
   script:
-    - rm -r /var/lib/tomcat8/webapps/tepid.war || true
-    - rm -r /var/lib/tomcat8/webapps/tepid || true
-    - cp ~/tepid.war /var/lib/tomcat8/webapps/
+    - /deploy.sh sums test
 
 integrationTest:
   extends: .base
