@@ -199,8 +199,11 @@ object Config : Logging {
     }
 
     fun getDb(): DbLayer {
-        return makeHibernateDb(makeEntityManagerFactory(if (DEBUG) "hibernate-pu-test" else "tepid-pu").also {
-            emf = it
-        })
+        val persistenceUnit = if (DEBUG) "hibernate-pu-test" else "tepid-pu"
+        logger.debug("creating database for persistence unit ${persistenceUnit}")
+        val newEmf = makeEntityManagerFactory(persistenceUnit)
+        this.emf = newEmf
+        logger.debug("entity manager factory created")
+        return makeHibernateDb(newEmf)
     }
 }
