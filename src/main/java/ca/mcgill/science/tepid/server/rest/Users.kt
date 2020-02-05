@@ -239,12 +239,17 @@ class Semesters(val id: Id) {
     @RolesAllowed(CTFER, ELDER)
     @Consumes(MediaType.APPLICATION_JSON)
     fun addSemester(semester: Semester, @Context ctx: ContainerRequestContext) {
-        getUserIfAuthz(id, ctx).semesters = getUserIfAuthz(id, ctx).semesters.plusElement(semester)
+        val user = getUserIfAuthz(id, ctx)
+        user.semesters = user.semesters.plusElement(semester)
+        db.update(user)
+
     }
 
     @DELETE
     @RolesAllowed(CTFER, ELDER)
     fun removeSemester(semester: Semester, @Context ctx: ContainerRequestContext) {
-        getUserIfAuthz(id, ctx).semesters = getUserIfAuthz(id, ctx).semesters.minus(semester)
+        val user = getUserIfAuthz(id, ctx)
+        user.semesters = user.semesters.minus(semester)
+        db.update(user)
     }
 }
