@@ -218,12 +218,14 @@ class Users {
 
 class Semesters(val id: Id) {
 
+    var db = DB.users
+
     private fun getUserIfAuthz(id: Id, ctx: ContainerRequestContext): FullUser {
         val session = ctx.getSession()
         if (session.role == USER && session.user.shortUser != id) {
             failForbidden()
         }
-        return DB.users.read(id)
+        return db.read(id)
     }
 
     @GET
