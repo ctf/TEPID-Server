@@ -172,6 +172,14 @@ class Users {
             .map { it.toUser().toUserQuery() }
     }
 
+    @Path("/{id}/semesters")
+    @RolesAllowed(USER, CTFER, ELDER)
+    fun manageSemesters(@PathParam("id") id: Id): Semesters {
+        return remapExceptions {
+            Semesters(id)
+        }
+    }
+
     @POST
     @Path("/{id}/refresh")
     @RolesAllowed(CTFER, ELDER)
