@@ -12,7 +12,6 @@ import ca.mcgill.science.tepid.server.util.getSession
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
-import io.mockk.slot
 import io.mockk.verify
 import org.apache.logging.log4j.kotlin.Logging
 import org.junit.jupiter.api.Test
@@ -31,7 +30,6 @@ class SemesterTest : Logging {
     lateinit var rc: ContainerRequestContext
 
     init {
-
         e = Semesters(tu._id!!)
         mockDB = mockk<DbUserLayer>()
         e.db = mockDB
@@ -49,7 +47,6 @@ class SemesterTest : Logging {
 
     fun mockUserQuery() {
         every { mockDB.read(tu._id) } returns tu
-        val slot = slot<FullUser>()
         every { mockDB.update(any()) } returnsArgument (0)
     }
 
@@ -61,6 +58,18 @@ class SemesterTest : Logging {
         e.removeSemester(testSemesters[0], rc)
 
         val expected = tu.copy(semesters = setOf(testSemesters[1], testSemesters[2]))
+        verify { mockDB.update(expected) }
+    }
+
+    @Test
+    fun testAddSemester() {
+        mockUserQuery()
+        mockSession(ELDER)
+
+        val addedSemester = Semester(Season.SUMMER, 2019)
+        e.addSemester(addedSemester, rc)
+
+        val expected = tu.copy(semesters = setOf(testSemesters[0], testSemesters[1], testSemesters[2], addedSemester))
         verify { mockDB.update(expected) }
     }
 
