@@ -38,3 +38,5 @@ transaction\.log
 openapi\.yaml
 
 openapi\.json
+
+db.env

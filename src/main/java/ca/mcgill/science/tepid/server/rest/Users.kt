@@ -8,6 +8,7 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PutResponse
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.UserQuery
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.AutoSuggest
@@ -29,6 +30,7 @@ import java.net.URI
 import java.net.URISyntaxException
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.Consumes
+import javax.ws.rs.DELETE
 import javax.ws.rs.DefaultValue
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -170,6 +172,14 @@ class Users {
             .map { it.toUser().toUserQuery() }
     }
 
+    @Path("/{id}/semesters")
+    @RolesAllowed(USER, CTFER, ELDER)
+    fun manageSemesters(@PathParam("id") id: Id): Semesters {
+        return remapExceptions {
+            Semesters(id)
+        }
+    }
+
     @POST
     @Path("/{id}/refresh")
     @RolesAllowed(CTFER, ELDER)
@@ -203,5 +213,42 @@ class Users {
 
     companion object : Logging {
         val quotaCounter: IQuotaCounter = QuotaCounter
+    }
+}
+
+class Semesters(val id: Id) {
+
+    var db = DB.users
+
+    private fun getUserIfAuthz(id: Id, ctx: ContainerRequestContext): FullUser {
+        val session = ctx.getSession()
+        if (session.role == USER && session.user.shortUser != id) {
+            failForbidden()
+        }
+        return db.read(id)
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed(USER, CTFER, ELDER)
+    fun get(@Context ctx: ContainerRequestContext): Set<Semester> {
+        return getUserIfAuthz(id, ctx).semesters
+    }
+
+    @POST
+    @RolesAllowed(CTFER, ELDER)
+    @Consumes(MediaType.APPLICATION_JSON)
+    fun addSemester(semester: Semester, @Context ctx: ContainerRequestContext) {
+        val user = getUserIfAuthz(id, ctx)
+        user.semesters = user.semesters.plusElement(semester)
+        db.update(user)
+    }
+
+    @DELETE
+    @RolesAllowed(CTFER, ELDER)
+    fun removeSemester(semester: Semester, @Context ctx: ContainerRequestContext) {
+        val user = getUserIfAuthz(id, ctx)
+        user.semesters = user.semesters.minus(semester)
+        db.update(user)
     }
 }
