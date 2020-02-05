@@ -5,6 +5,7 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.db.DB
+import ca.mcgill.science.tepid.server.util.logError
 import ca.mcgill.science.tepid.server.util.logMessage
 import org.apache.logging.log4j.kotlin.Logging
 import javax.naming.NamingException
@@ -66,7 +67,10 @@ object AuthenticationManager : Logging, IAuthenticationManager {
         } catch (e: NamingException) {
             logMessage("failed authentication", "identifier" to identifier, "error" to e)
             return null
-        } 
+        } catch (e: Exception) {
+            logError("error authenticating", e, "identifier" to identifier)
+            return null
+        }
         val mergedUser = mergeUsers(ldapUser, dbUser)
         DB.users.put(mergedUser)
         return mergedUser
