@@ -16,7 +16,7 @@ import javax.persistence.EntityNotFoundException
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 
-lateinit var DB: DbLayer;
+lateinit var DB: DbLayer
 
 /**
  * Ids are unique string keys in dbs

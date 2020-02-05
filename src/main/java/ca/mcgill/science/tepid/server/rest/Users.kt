@@ -242,7 +242,6 @@ class Semesters(val id: Id) {
         val user = getUserIfAuthz(id, ctx)
         user.semesters = user.semesters.plusElement(semester)
         db.update(user)
-
     }
 
     @DELETE
