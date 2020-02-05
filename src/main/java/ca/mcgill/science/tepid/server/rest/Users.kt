@@ -8,6 +8,7 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.PersonalIdentifier
 import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PutResponse
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.UserQuery
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.AutoSuggest
@@ -29,6 +30,7 @@ import java.net.URI
 import java.net.URISyntaxException
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.Consumes
+import javax.ws.rs.DELETE
 import javax.ws.rs.DefaultValue
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -203,5 +205,36 @@ class Users {
 
     companion object : Logging {
         val quotaCounter: IQuotaCounter = QuotaCounter
+    }
+}
+
+class Semesters(val id: Id) {
+
+    private fun getUserIfAuthz(id: Id, ctx: ContainerRequestContext): FullUser {
+        val session = ctx.getSession()
+        if (session.role == USER && session.user.shortUser != id) {
+            failForbidden()
+        }
+        return DB.users.read(id)
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed(USER, CTFER, ELDER)
+    fun get(@Context ctx: ContainerRequestContext): Set<Semester> {
+        return getUserIfAuthz(id, ctx).semesters
+    }
+
+    @POST
+    @RolesAllowed(CTFER, ELDER)
+    @Consumes(MediaType.APPLICATION_JSON)
+    fun addSemester(semester: Semester, @Context ctx: ContainerRequestContext) {
+        getUserIfAuthz(id, ctx).semesters = getUserIfAuthz(id, ctx).semesters.plusElement(semester)
+    }
+
+    @DELETE
+    @RolesAllowed(CTFER, ELDER)
+    fun removeSemester(semester: Semester, @Context ctx: ContainerRequestContext) {
+        getUserIfAuthz(id, ctx).semesters = getUserIfAuthz(id, ctx).semesters.minus(semester)
     }
 }
