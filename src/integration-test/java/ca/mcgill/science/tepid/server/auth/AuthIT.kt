@@ -198,4 +198,11 @@ class AuthenticateIT : AuthIT() {
     fun authenticateWithIncorrectPassword() {
         assertNull(AuthenticationManager.authenticate(PropsLDAPTestUser.TEST_USER, "PropsLDAPTestUser.TEST_PASSWORD"))
     }
+
+    @Test
+    fun authenticateWithEmailErrorCaught() {
+        val user = AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER) ?: fail("could not get user")
+
+        assertNull(AuthenticationManager.authenticate(user.email!!, "PropsLDAPTestUser.TEST_PASSWORD"))
+    }
 }
