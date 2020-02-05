@@ -1,0 +1,20 @@
+version: '3.5'
+
+services:
+  db:
+    image: postgres:alpine
+    restart: unless-stopped
+    env_file: db.env
+    volumes:
+      - /data/tepid/db:/var/lib/postgresql/data
+
+  tepid-server:
+    depends_on:
+      - db
+    build: .
+    volumes:
+      - /etc/tepid:/etc/tepid
+    ports:
+      - 8080:8080
+      - 8443
+    restart: unless-stopped
