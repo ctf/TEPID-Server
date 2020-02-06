@@ -6,9 +6,7 @@ import ca.mcgill.science.tepid.server.db.getDb
 import ca.mcgill.science.tepid.server.printing.GSException
 import ca.mcgill.science.tepid.server.printing.Gs
 import ca.mcgill.science.tepid.server.util.Utils
-import ca.mcgill.science.tepid.utils.DefaultProps
-import ca.mcgill.science.tepid.utils.FilePropLoader
-import ca.mcgill.science.tepid.utils.JarPropLoader
+import ca.mcgill.science.tepid.server.util.setDefaultProps
 import ca.mcgill.science.tepid.utils.PropsCreationInfo
 import ca.mcgill.science.tepid.utils.PropsDB
 import ca.mcgill.science.tepid.utils.PropsLDAP
@@ -88,14 +86,7 @@ object Config : Logging {
         logger.info("*       Setting up Configs       *")
         logger.info("**********************************")
 
-        DefaultProps.withName = { fileName ->
-            listOf(
-                FilePropLoader("/etc/tepid/$fileName"),
-                FilePropLoader("webapps/tepid/$fileName"),
-                JarPropLoader("/$fileName"),
-                FilePropLoader("/config/$fileName")
-            )
-        }
+        setDefaultProps()
 
         DEBUG = PropsURL.TESTING?.toBoolean() ?: true
 
