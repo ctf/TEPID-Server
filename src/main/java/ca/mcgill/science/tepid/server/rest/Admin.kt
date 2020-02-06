@@ -17,7 +17,6 @@ import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.Link
 import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.UriBuilder
 import javax.ws.rs.core.UriInfo
 
 @Path("/admin")
@@ -25,23 +24,18 @@ class Admin : Logging {
     @Context
     lateinit var uriInfo: UriInfo
 
-    val actionLinks: Set<Link>
-
-    init {
-        val builder = UriBuilder.fromResource(Admin::class.java)
-        actionLinks = setOf(
-            Link.fromUri(builder.clone().path(Admin::class.java, "launchJobMonitor").build()).build(),
-            Link.fromUri(builder.clone().path(Admin::class.java, "launchJobDataMonitor").build()).build(),
-            Link.fromUri(builder.clone().path(Admin::class.java, "launchSessionMonitor").build()).build(),
-            Link.fromUri(builder.clone().path(Admin::class.java, "launchUserMembershipMonitor").build()).build()
-        )
-    }
-
     @GET
     @Path("/actions")
     @RolesAllowed(ELDER)
     @Produces(MediaType.APPLICATION_JSON)
     fun getActions(): Set<Link> {
+        val builder = uriInfo.absolutePathBuilder
+        val actionLinks = setOf(
+            Link.fromUri(builder.clone().path("jobmonitor").build()).build(),
+            Link.fromUri(builder.clone().path("jobdatamonitor").build()).build(),
+            Link.fromUri(builder.clone().path("sessionmonitor").build()).build(),
+            Link.fromUri(builder.clone().path("usermembershipmonitor").build()).build()
+        )
         return actionLinks
     }
 

@@ -34,7 +34,7 @@ fun createDb(): DbLayer {
 }
 
 var DB = createDb()
-lateinit var emf : EntityManagerFactory
+lateinit var emf: EntityManagerFactory
 /**
  * Ids are unique string keys in dbs
  */
