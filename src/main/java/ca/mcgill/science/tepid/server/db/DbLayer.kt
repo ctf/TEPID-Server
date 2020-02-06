@@ -9,15 +9,28 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.models.data.Semester
+import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.text
+import ca.mcgill.science.tepid.utils.PropsURL
 import java.io.InputStream
 import javax.persistence.EntityExistsException
+import javax.persistence.EntityManagerFactory
 import javax.persistence.EntityNotFoundException
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 
-lateinit var DB: DbLayer
+fun getDb(): DbLayer {
 
+    val persistenceUnit = if (PropsURL.TESTING?.toBoolean() != false) "hibernate-pu-test" else "tepid-pu"
+    Config.logger.debug("creating database for persistence unit $persistenceUnit")
+    val newEmf = makeEntityManagerFactory(persistenceUnit)
+    emf = newEmf
+    Config.logger.debug("entity manager factory created")
+    return makeHibernateDb(newEmf)
+}
+
+var DB = getDb()
+lateinit var emf : EntityManagerFactory
 /**
  * Ids are unique string keys in dbs
  */

@@ -180,7 +180,7 @@ open class DbTest {
         @JvmStatic
         @BeforeAll
         fun initTest() {
-            Config.getDb()
+            getDb()
             emf = Persistence.createEntityManagerFactory("hibernate-pu-test")
             em = emf.createEntityManager()
         }
