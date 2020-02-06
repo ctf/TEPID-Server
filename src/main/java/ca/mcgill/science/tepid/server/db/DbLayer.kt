@@ -10,6 +10,7 @@ import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.PutResponse
 import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.server.server.Config
+import ca.mcgill.science.tepid.server.util.setDefaultProps
 import ca.mcgill.science.tepid.server.util.text
 import ca.mcgill.science.tepid.utils.PropsURL
 import java.io.InputStream
@@ -20,6 +21,7 @@ import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 
 fun getDb(): DbLayer {
+    setDefaultProps()
 
     val persistenceUnit = if (PropsURL.TESTING?.toBoolean() != false) "hibernate-pu-test" else "tepid-pu"
     Config.logger.debug("creating database for persistence unit $persistenceUnit")
