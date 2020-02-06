@@ -7,6 +7,7 @@ import ca.mcgill.science.tepid.server.server.SessionMonitor
 import ca.mcgill.science.tepid.server.server.UserMembershipMonitor
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.server.util.logMessage
+import org.apache.logging.log4j.kotlin.Logging
 import javax.annotation.security.RolesAllowed
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -20,7 +21,7 @@ import javax.ws.rs.core.UriBuilder
 import javax.ws.rs.core.UriInfo
 
 @Path("/admin")
-class Admin {
+class Admin : Logging {
     @Context
     lateinit var uriInfo: UriInfo
 
@@ -29,10 +30,10 @@ class Admin {
     init {
         val builder = UriBuilder.fromResource(Admin::class.java)
         actionLinks = setOf(
-                Link.fromUri(builder.clone().path(Admin::class.java, "launchJobMonitor").build()).build(),
-                Link.fromUri(builder.clone().path(Admin::class.java, "launchJobDataMonitor").build()).build(),
-                Link.fromUri(builder.clone().path(Admin::class.java, "launchSessionMonitor").build()).build(),
-                Link.fromUri(builder.clone().path(Admin::class.java, "launchUserMembershipMonitor").build()).build()
+            Link.fromUri(builder.clone().path(Admin::class.java, "launchJobMonitor").build()).build(),
+            Link.fromUri(builder.clone().path(Admin::class.java, "launchJobDataMonitor").build()).build(),
+            Link.fromUri(builder.clone().path(Admin::class.java, "launchSessionMonitor").build()).build(),
+            Link.fromUri(builder.clone().path(Admin::class.java, "launchUserMembershipMonitor").build()).build()
         )
     }
 
@@ -46,9 +47,23 @@ class Admin {
 
     fun logAction(crc: ContainerRequestContext, jobName: String, action: () -> Unit) {
         val session = crc.getSession()
-        logMessage("manually triggering job", "id" to session.user._id, "jobName" to jobName, "time" to System.currentTimeMillis())
+        logger.info {
+            logMessage(
+                "beginning manually triggered job",
+                "id" to session.user._id,
+                "jobName" to jobName,
+                "time" to System.currentTimeMillis()
+            )
+        }
         action()
-        logMessage("manually triggering job", "id" to session.user._id, "jobName" to jobName, "time" to System.currentTimeMillis())
+        logger.info {
+            logMessage(
+                "completed manually triggered job",
+                "id" to session.user._id,
+                "jobName" to jobName,
+                "time" to System.currentTimeMillis()
+            )
+        }
     }
 
     @POST
@@ -78,4 +93,6 @@ class Admin {
     fun launchUserMembershipMonitor(@Context crc: ContainerRequestContext) {
         logAction(crc, "UserMembershipMonitor") { UserMembershipMonitor().run() }
     }
+
+    private companion object : Logging
 }
