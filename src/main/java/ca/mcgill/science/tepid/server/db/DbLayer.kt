@@ -20,7 +20,7 @@ import javax.persistence.EntityNotFoundException
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 
-fun getDb(): DbLayer {
+fun createDb(): DbLayer {
     setDefaultProps()
 
     val persistenceUnit = if (PropsURL.TESTING?.toBoolean() != false) "hibernate-pu-test" else "tepid-pu"
@@ -33,7 +33,7 @@ fun getDb(): DbLayer {
     return hibernateDb
 }
 
-var DB = getDb()
+var DB = createDb()
 lateinit var emf : EntityManagerFactory
 /**
  * Ids are unique string keys in dbs

@@ -11,7 +11,7 @@ import ca.mcgill.science.tepid.server.TestHelpers
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
 import ca.mcgill.science.tepid.server.db.DbQuotaLayer
-import ca.mcgill.science.tepid.server.db.getDb
+import ca.mcgill.science.tepid.server.db.createDb
 import ca.mcgill.science.tepid.server.server.Config
 import io.mockk.every
 import io.mockk.mockkObject
@@ -191,7 +191,7 @@ class QuotaTest : Logging {
         @AfterAll
         fun tearTest() {
             unmockkAll()
-            DB = getDb()
+            DB = createDb()
         }
     }
 }
