@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.server
 
+import ca.mcgill.science.tepid.server.db.DB
 import org.apache.logging.log4j.kotlin.Logging
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -13,6 +14,9 @@ class BackgroundTasks : ServletContextListener {
 
     init {
         logger.info("Starting BackgroundTasks")
+        // initialising other things.
+        logger.info(Config)
+        logger.info(DB)
     }
 
     override fun contextInitialized(event: ServletContextEvent?) {

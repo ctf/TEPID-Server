@@ -6,6 +6,7 @@ import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.server.TestHelpers
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.DbLayer
+import ca.mcgill.science.tepid.server.db.createDb
 import ca.mcgill.science.tepid.server.server.Config
 import io.mockk.every
 import io.mockk.just
@@ -235,10 +236,11 @@ class QueryUserDbTest {
         @AfterAll
         fun tearTest() {
             unmockkAll()
-            DB = Config.getDb()
+            DB = createDb()
         }
     }
 }
+
 
 class AuthenticateTest {
     private lateinit var testUser: FullUser
@@ -249,6 +251,7 @@ class AuthenticateTest {
 
     @BeforeEach
     fun initTest() {
+        createDb()
         mockDb = TestHelpers.makeMockDb()
         DB = mockDb
         testUser = TestHelpers.generateTestUser("test")
@@ -266,7 +269,7 @@ class AuthenticateTest {
     @AfterEach
     fun tearTest() {
         unmockkAll()
-        DB = Config.getDb()
+        DB = createDb()
     }
 
     @Test
@@ -355,7 +358,7 @@ class RefreshUserTest {
         @AfterAll
         fun tearTest() {
             unmockkAll()
-            DB = Config.getDb()
+            DB = createDb()
         }
     }
 }
@@ -390,7 +393,7 @@ class QueryUserTest : Logging {
         @AfterAll
         fun tearTest() {
             unmockkAll()
-            DB = Config.getDb()
+            DB = createDb()
         }
     }
 

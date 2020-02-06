@@ -11,7 +11,6 @@ import ca.mcgill.science.tepid.models.data.PrintJob
 import ca.mcgill.science.tepid.models.data.PrintQueue
 import ca.mcgill.science.tepid.models.data.Season
 import ca.mcgill.science.tepid.models.data.Semester
-import ca.mcgill.science.tepid.server.server.Config
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
@@ -180,7 +179,7 @@ open class DbTest {
         @JvmStatic
         @BeforeAll
         fun initTest() {
-            Config.getDb()
+            createDb()
             emf = Persistence.createEntityManagerFactory("hibernate-pu-test")
             em = emf.createEntityManager()
         }

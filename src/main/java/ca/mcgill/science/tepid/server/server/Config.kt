@@ -2,16 +2,10 @@ package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.About
 import ca.mcgill.science.tepid.models.data.AdGroup
-import ca.mcgill.science.tepid.server.db.DB
-import ca.mcgill.science.tepid.server.db.DbLayer
-import ca.mcgill.science.tepid.server.db.makeEntityManagerFactory
-import ca.mcgill.science.tepid.server.db.makeHibernateDb
 import ca.mcgill.science.tepid.server.printing.GSException
 import ca.mcgill.science.tepid.server.printing.Gs
 import ca.mcgill.science.tepid.server.util.Utils
-import ca.mcgill.science.tepid.utils.DefaultProps
-import ca.mcgill.science.tepid.utils.FilePropLoader
-import ca.mcgill.science.tepid.utils.JarPropLoader
+import ca.mcgill.science.tepid.server.util.setDefaultProps
 import ca.mcgill.science.tepid.utils.PropsCreationInfo
 import ca.mcgill.science.tepid.utils.PropsDB
 import ca.mcgill.science.tepid.utils.PropsLDAP
@@ -24,7 +18,6 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
-import javax.persistence.EntityManagerFactory
 
 object Config : Logging {
 
@@ -45,7 +38,6 @@ object Config : Logging {
     val DB_URL: String
     val DB_USERNAME: String
     val DB_PASSWORD: String
-    var emf: EntityManagerFactory? = null
 
     /*
      * LDAP and Permission Groups
@@ -93,14 +85,7 @@ object Config : Logging {
         logger.info("*       Setting up Configs       *")
         logger.info("**********************************")
 
-        DefaultProps.withName = { fileName ->
-            listOf(
-                FilePropLoader("/etc/tepid/$fileName"),
-                FilePropLoader("webapps/tepid/$fileName"),
-                JarPropLoader("/$fileName"),
-                FilePropLoader("/config/$fileName")
-            )
-        }
+        setDefaultProps()
 
         DEBUG = PropsURL.TESTING?.toBoolean() ?: true
 
@@ -139,8 +124,6 @@ object Config : Logging {
 
         MAX_PAGES_PER_JOB = PropsPrinting.MAX_PAGES_PER_JOB ?: -1
 
-        getDb()
-
         if (DEBUG)
             setLoggingLevel(Level.TRACE)
         logger.trace(ELDERS_GROUP)
@@ -176,19 +159,18 @@ object Config : Logging {
             creationTimestamp = CREATION_TIMESTAMP
         )
 
-        logger.trace("Completed setting configs")
+        logger.info("Completed setting configs")
 
-        logger.trace("Initialising subsystems")
-
-        DB = getDb()
+        logger.info("Initialising subsystems")
 
         try {
             Gs.testRequiredDevicesInstalled()
+            logger.info("GS devices available")
         } catch (e: GSException) {
             logger.fatal("GS ink_cov device unavailable")
         }
 
-        logger.trace("Completed initialising subsystems")
+        logger.info("Completed initialising subsystems")
     }
 
     fun setLoggingLevel(level: Level) {
@@ -198,14 +180,5 @@ object Config : Logging {
         val loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME)
         loggerConfig.level = level
         ctx.updateLoggers()
-    }
-
-    fun getDb(): DbLayer {
-        val persistenceUnit = if (DEBUG) "hibernate-pu-test" else "tepid-pu"
-        logger.debug("creating database for persistence unit $persistenceUnit")
-        val newEmf = makeEntityManagerFactory(persistenceUnit)
-        this.emf = newEmf
-        logger.debug("entity manager factory created")
-        return makeHibernateDb(newEmf)
     }
 }

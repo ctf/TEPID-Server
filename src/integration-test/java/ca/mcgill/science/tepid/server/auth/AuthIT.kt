@@ -5,8 +5,9 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.HibernateCrud
+import ca.mcgill.science.tepid.server.db.emf
+import ca.mcgill.science.tepid.server.db.createDb
 import ca.mcgill.science.tepid.server.server.Config
-import ca.mcgill.science.tepid.server.server.Config.emf
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeAll
@@ -50,8 +51,8 @@ open class AuthIT {
     }
 
     fun deleteUser(shortUser: ShortUser = PropsLDAPTestUser.TEST_USER) {
-        Config.emf
-        val userDb = HibernateCrud<FullUser, String?>(emf!!, FullUser::class.java)
+        createDb()
+        val userDb = HibernateCrud<FullUser, String?>(emf, FullUser::class.java)
         try {
             userDb.deleteById(shortUser)
         } catch (e: IllegalStateException) {
