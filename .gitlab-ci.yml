@@ -65,7 +65,7 @@ deploy test:
   tags:
     - docker-build
   script:
-    - /deploy.sh sums test
+    - /deploy.sh tepid test
 
 integrationTest:
   extends: .base
