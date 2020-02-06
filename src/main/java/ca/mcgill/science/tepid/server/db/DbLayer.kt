@@ -28,7 +28,9 @@ fun getDb(): DbLayer {
     val newEmf = makeEntityManagerFactory(persistenceUnit)
     emf = newEmf
     Config.logger.debug("entity manager factory created")
-    return makeHibernateDb(newEmf)
+    val hibernateDb = makeHibernateDb(newEmf)
+    Config.logger.debug("hibernate db created")
+    return hibernateDb
 }
 
 var DB = getDb()

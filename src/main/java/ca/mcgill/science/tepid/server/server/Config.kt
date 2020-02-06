@@ -160,18 +160,19 @@ object Config : Logging {
             creationTimestamp = CREATION_TIMESTAMP
         )
 
-        logger.trace("Completed setting configs")
+        logger.info("Completed setting configs")
 
-        logger.trace("Initialising subsystems")
+        logger.info("Initialising subsystems")
 
         getDb()
         try {
             Gs.testRequiredDevicesInstalled()
+            logger.info("GS devices available")
         } catch (e: GSException) {
             logger.fatal("GS ink_cov device unavailable")
         }
 
-        logger.trace("Completed initialising subsystems")
+        logger.info("Completed initialising subsystems")
     }
 
     fun setLoggingLevel(level: Level) {
