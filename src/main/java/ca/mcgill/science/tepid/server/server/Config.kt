@@ -2,7 +2,6 @@ package ca.mcgill.science.tepid.server.server
 
 import ca.mcgill.science.tepid.models.data.About
 import ca.mcgill.science.tepid.models.data.AdGroup
-import ca.mcgill.science.tepid.server.db.getDb
 import ca.mcgill.science.tepid.server.printing.GSException
 import ca.mcgill.science.tepid.server.printing.Gs
 import ca.mcgill.science.tepid.server.util.Utils
@@ -164,7 +163,6 @@ object Config : Logging {
 
         logger.info("Initialising subsystems")
 
-        getDb()
         try {
             Gs.testRequiredDevicesInstalled()
             logger.info("GS devices available")
