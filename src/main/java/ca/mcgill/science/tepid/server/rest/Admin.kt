@@ -8,13 +8,38 @@ import ca.mcgill.science.tepid.server.server.UserMembershipMonitor
 import ca.mcgill.science.tepid.server.util.getSession
 import ca.mcgill.science.tepid.server.util.logMessage
 import javax.annotation.security.RolesAllowed
+import javax.ws.rs.GET
 import javax.ws.rs.POST
 import javax.ws.rs.Path
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.core.Context
+import javax.ws.rs.core.Link
+import javax.ws.rs.core.UriBuilder
+import javax.ws.rs.core.UriInfo
 
 @Path("/admin")
 class Admin {
+    @Context
+    lateinit var uriInfo: UriInfo
+
+    val actionLinks: Set<Link>
+
+    init {
+        val builder = UriBuilder.fromResource(Admin::class.java)
+        actionLinks = setOf(
+                Link.fromUri(builder.clone().path(Admin::class.java, "launchJobMonitor").build()).build(),
+                Link.fromUri(builder.clone().path(Admin::class.java, "launchJobDataMonitor").build()).build(),
+                Link.fromUri(builder.clone().path(Admin::class.java, "launchSessionMonitor").build()).build(),
+                Link.fromUri(builder.clone().path(Admin::class.java, "launchUserMembershipMonitor").build()).build()
+        )
+    }
+
+    @GET
+    @Path("/actions")
+    @RolesAllowed(ELDER)
+    fun getActions(): Set<Link> {
+        return actionLinks
+    }
 
     fun logAction(crc: ContainerRequestContext, jobName: String, action: () -> Unit) {
         val session = crc.getSession()
