@@ -241,7 +241,6 @@ class QueryUserDbTest {
     }
 }
 
-
 class AuthenticateTest {
     private lateinit var testUser: FullUser
     private lateinit var testUserFromDb: FullUser

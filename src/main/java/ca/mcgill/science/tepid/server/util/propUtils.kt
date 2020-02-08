@@ -4,7 +4,7 @@ import ca.mcgill.science.tepid.utils.DefaultProps
 import ca.mcgill.science.tepid.utils.FilePropLoader
 import ca.mcgill.science.tepid.utils.JarPropLoader
 
-fun setDefaultProps(){
+fun setDefaultProps() {
     DefaultProps.withName = { fileName ->
         listOf(
             FilePropLoader("/etc/tepid/$fileName"),
