@@ -12,7 +12,7 @@ import javax.naming.directory.ModificationItem
 import javax.naming.directory.SearchControls
 import javax.naming.directory.SearchResult
 
-object ExchangeManager : Logging {
+object MembershipManager : Logging {
 
     private val ldapConnector = LdapConnector()
 

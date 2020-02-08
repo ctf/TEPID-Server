@@ -12,7 +12,7 @@ import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.UserQuery
 import ca.mcgill.science.tepid.server.auth.AuthenticationManager
 import ca.mcgill.science.tepid.server.auth.AutoSuggest
-import ca.mcgill.science.tepid.server.auth.ExchangeManager
+import ca.mcgill.science.tepid.server.auth.MembershipManager
 import ca.mcgill.science.tepid.server.auth.SessionManager
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.Id
@@ -111,7 +111,7 @@ class Users {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun setExchange(@PathParam("id") id: Id, exchange: Boolean): Boolean =
-        ExchangeManager.setExchangeStudent(remapExceptions { DB.users.read(id).shortUser ?: "" }, exchange)
+            MembershipManager.setExchangeStudent(remapExceptions { DB.users.read(id).shortUser ?: "" }, exchange)
 
     @PUT
     @Path("/{id}/jobExpiration")

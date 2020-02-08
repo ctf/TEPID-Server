@@ -14,7 +14,7 @@ class SetExchangeStudentTest {
 
     @Test
     fun testSetExchangeStudentLdapEnabled() {
-        ExchangeManager.setExchangeStudent(testSam, true)
+        MembershipManager.setExchangeStudent(testSam, true)
 
         val targetUser = AuthenticationManager.mergeUsers(
             TestHelpers.makeLdapUser(),
@@ -25,7 +25,7 @@ class SetExchangeStudentTest {
                 targetUser.shortUser!!
             )
         }
-        verify { ExchangeManager.setExchangeStudentLdap(testSam, true) }
+        verify { MembershipManager.setExchangeStudentLdap(testSam, true) }
     }
 
     companion object {
@@ -35,9 +35,9 @@ class SetExchangeStudentTest {
         @BeforeAll
         fun initTest() {
             mockkObject(Ldap)
-            mockkObject(ExchangeManager)
+            mockkObject(MembershipManager)
             every {
-                ExchangeManager.setExchangeStudentLdap(
+                MembershipManager.setExchangeStudentLdap(
                     any(),
                     any()
                 )
