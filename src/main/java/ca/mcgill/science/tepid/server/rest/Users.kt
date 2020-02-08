@@ -240,6 +240,7 @@ class Semesters(val id: Id) {
     @Consumes(MediaType.APPLICATION_JSON)
     fun addSemester(semester: Semester, @Context ctx: ContainerRequestContext) {
         val user = getUserIfAuthz(id, ctx)
+        logger.info(logMessage("adding semester", "semester" to semester, "to" to id, "by" to ctx.getSession().user._id))
         user.semesters = user.semesters.plusElement(semester)
         db.update(user)
     }
@@ -248,7 +249,10 @@ class Semesters(val id: Id) {
     @RolesAllowed(CTFER, ELDER)
     fun removeSemester(semester: Semester, @Context ctx: ContainerRequestContext) {
         val user = getUserIfAuthz(id, ctx)
+        logger.info(logMessage("removing semester", "semester" to semester, "to" to id, "by" to ctx.getSession().user._id))
         user.semesters = user.semesters.minus(semester)
         db.update(user)
     }
+
+    companion object : Logging
 }
