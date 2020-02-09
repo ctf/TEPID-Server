@@ -49,7 +49,9 @@ object Ldap : Logging {
      */
     private fun queryLdap(userName: PersonalIdentifier, auth: Pair<String, String>, searchName: SearchBy): FullUser? {
         val ctx = ldapConnector.bindLdap(auth.first, auth.second) ?: return null
-        return ldapConnector.executeSearch("(&(objectClass=user)($searchName=$userName))", 1, ctx).firstOrNull()
+        return ldapConnector.executeSearch("(&(objectClass=user)($searchName=$userName))", 1, ctx)
+                .map { LdapHelper.AttributesToUser(it.attributes) }
+                .firstOrNull()
     }
 
     /**
@@ -66,6 +68,6 @@ object Ldap : Logging {
     fun getAllCurrentlyEligible(): Set<FullUser> {
         val filter =
             "(&(objectClass=user)(|${Config.QUOTA_GROUP.map { "(memberOf:1.2.840.113556.1.4.1941:=cn=${it.name},${Config.GROUPS_LOCATION})" }.joinToString()}))"
-        return LdapConnector(0).executeSearch(filter, Long.MAX_VALUE)
+        return LdapConnector(0).executeSearch(filter, Long.MAX_VALUE).map { LdapHelper.AttributesToUser(it.attributes) }.toSet()
     }
 }

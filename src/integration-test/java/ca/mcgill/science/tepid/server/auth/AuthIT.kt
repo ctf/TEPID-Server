@@ -5,8 +5,8 @@ import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.db.HibernateCrud
-import ca.mcgill.science.tepid.server.db.emf
 import ca.mcgill.science.tepid.server.db.createDb
+import ca.mcgill.science.tepid.server.db.emf
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
 import org.junit.jupiter.api.Assumptions
@@ -198,12 +198,5 @@ class AuthenticateIT : AuthIT() {
     @Test
     fun authenticateWithIncorrectPassword() {
         assertNull(AuthenticationManager.authenticate(PropsLDAPTestUser.TEST_USER, "PropsLDAPTestUser.TEST_PASSWORD"))
-    }
-
-    @Test
-    fun authenticateWithEmailErrorCaught() {
-        val user = AuthenticationManager.queryUser(PropsLDAPTestUser.TEST_USER) ?: fail("could not get user")
-
-        assertNull(AuthenticationManager.authenticate(user.email!!, "PropsLDAPTestUser.TEST_PASSWORD"))
     }
 }
