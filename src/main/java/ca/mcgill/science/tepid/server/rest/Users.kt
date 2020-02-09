@@ -236,7 +236,7 @@ class Semesters(val id: Id) {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(USER, CTFER, ELDER)
-    fun get(@Context ctx: ContainerRequestContext, @QueryParam("queryfor") queryfor: QueryFor = QueryFor.granted): Set<Semester> {
+    fun get(@Context ctx: ContainerRequestContext, @QueryParam("queryfor") @DefaultValue("granted") queryfor: QueryFor = QueryFor.granted): Set<Semester> {
         val user = getUserIfAuthz(id, ctx)
         return when (queryfor) {
             QueryFor.granted -> user.semesters
