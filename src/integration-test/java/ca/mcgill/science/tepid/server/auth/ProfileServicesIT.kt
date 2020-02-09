@@ -1,6 +1,5 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.server.db.DB
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.utils.PropsLDAPTestUser
 import org.junit.jupiter.api.Test
@@ -69,10 +68,10 @@ class MembershipManagerIT : AuthIT() {
     }
 }
 
-class EnrolledSemestersIT: AuthIT() {
+class EnrolledSemestersIT : AuthIT() {
     @Test
     fun getEnrolledSemesters() {
-        val user =  AuthenticationManager.queryUserLdap(PropsLDAPTestUser.TEST_USER) ?: fail()
+        val user = AuthenticationManager.queryUserLdap(PropsLDAPTestUser.TEST_USER) ?: fail()
         val r = MembershipManager.getEnrolledSemesters(PropsLDAPTestUser.TEST_USER)
 
         assertTrue { (r.containsAll(user.semesters)) }

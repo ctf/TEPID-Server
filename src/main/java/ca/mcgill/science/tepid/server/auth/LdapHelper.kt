@@ -13,7 +13,6 @@ import java.util.*
 import javax.naming.NamingException
 import javax.naming.directory.Attribute
 import javax.naming.directory.Attributes
-import javax.naming.ldap.LdapContext
 import javax.naming.ldap.LdapName
 
 class LdapHelper {
@@ -78,7 +77,6 @@ class LdapHelper {
                     if (groupValues != null) {
                         val semester = Semester(Season(groupValues[1]), groupValues[2].toInt())
                         ParsedLdapGroup.semester(Semester(semester.season, semester.year))
-
                     } else {
                         ParsedLdapGroup.group(AdGroup(cn))
                     }

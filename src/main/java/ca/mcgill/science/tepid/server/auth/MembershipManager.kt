@@ -35,7 +35,7 @@ object MembershipManager : Logging {
     }
 
     fun getEnrolledSemesters(shortUser: ShortUser): Set<Semester> {
-        logger.info { logMessage("getting enrolled semesters", shortUser to shortUser)}
+        logger.info { logMessage("getting enrolled semesters", shortUser to shortUser) }
         val ctx = ldapConnector.bindLdapWithResource() ?: return emptySet()
         return ldapConnector
                 .executeSearch("(&(objectClass=user)(${Ldap.SearchBy.sAMAccountName}=$shortUser))")
