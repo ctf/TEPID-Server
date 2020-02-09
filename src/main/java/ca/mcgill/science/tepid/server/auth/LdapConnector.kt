@@ -52,7 +52,7 @@ class LdapConnector(val timeout: Int? = 5000) : Logging {
         searchFilter: String,
         limit: Long = 10,
         ctx: LdapContext? = bindLdapWithResource()
-    ): Set<FullUser> {
+    ): Set<SearchResult> {
         ctx ?: return emptySet()
         val results: List<SearchResult>
         try {
@@ -68,7 +68,7 @@ class LdapConnector(val timeout: Int? = 5000) : Logging {
                 results = ctx.search(Config.LDAP_SEARCH_BASE, searchFilter, searchControls).toList()
             }
 
-            return results.map { LdapHelper.AttributesToUser(it.attributes, ctx) }.toSet()
+            return results.toSet()
         } finally {
             ctx.close()
         }
