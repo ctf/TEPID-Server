@@ -228,11 +228,20 @@ class Semesters(val id: Id) {
         return db.read(id)
     }
 
+    enum class QueryFor {
+        enrolled,
+        granted,
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(USER, CTFER, ELDER)
-    fun get(@Context ctx: ContainerRequestContext): Set<Semester> {
-        return getUserIfAuthz(id, ctx).semesters
+    fun get(@Context ctx: ContainerRequestContext, @QueryParam("queryfor") queryfor: QueryFor = QueryFor.granted): Set<Semester> {
+        val user = getUserIfAuthz(id, ctx)
+        return when (queryfor) {
+            QueryFor.granted -> user.semesters
+            QueryFor.enrolled -> user._id?.let { MembershipManager.getEnrolledSemesters(it) } ?: emptySet()
+        }
     }
 
     @POST
