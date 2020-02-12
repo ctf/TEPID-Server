@@ -1,5 +1,5 @@
 group 'ca.mcgill.science.ctf'
-version '2.3.0'
+version '3.1.0'
 
 buildscript {
     repositories {
@@ -28,7 +28,7 @@ apply plugin: "kotlin-jpa"                                  // For Hibernate
 apply plugin: "org.jlleitschuh.gradle.ktlint"               // For ktlint-gradle
 
 sourceCompatibility = JavaVersion.VERSION_11
-war.baseName = 'tepid'
+war.archiveBaseName = 'tepid'
 
 ext {
     // can be passed with -Ptepid_config_dir=CONFIG_DIR, or set in an environment variable "tepid_config_dir
@@ -118,6 +118,8 @@ dependencies {
     compile "org.hibernate:hibernate-testing:5.4.1.Final"
     compile "com.h2database:h2:1.3.148"
     compile "org.postgresql:postgresql:42.2.5"
+    // Connection pooling for Hibernate
+    compile "org.hibernate:hibernate-c3p0:5.4.1.Final"
 }
 
 compileKotlin {
@@ -158,13 +160,12 @@ task copyConfigs(type: Copy) {
             "$tepid_config_dir/LDAPGroups.properties",
             "$tepid_config_dir/LDAPResource.properties",
             "$tepid_config_dir/LDAPTestUser.properties",
-            "$tepid_config_dir/TEM.properties",
+            "$tepid_config_dir/printing.properties",
             "$tepid_config_dir/URL.properties"
     into "config"
 }
 
 war {
-
     from('config') {
         include '*.properties'
     }

@@ -36,7 +36,7 @@ object AutoSuggest : Logging {
             return ldapConnector.executeSearch(
                 "(&(objectClass=user)(|(userPrincipalName=$like*)(samaccountname=$like*)))",
                 limit.toLong()
-            ).toList()
+            ).map { LdapHelper.AttributesToUser(it.attributes) }
         } catch (ne: NamingException) {
             logger.logError("could not get autosuggest", ne, "like" to like)
             return emptyList()

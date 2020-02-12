@@ -60,6 +60,7 @@ class Destinations {
     @GET
     @Path("/{dest}")
     @RolesAllowed(USER, CTFER, ELDER)
+    @Consumes(MediaType.APPLICATION_JSON)
     fun getDestination(@Context ctx: ContainerRequestContext, @PathParam("dest") id: String): Destination {
         val session = ctx.getSession()
         return remapExceptions { DB.destinations.read(id).toDestination(session.role) }

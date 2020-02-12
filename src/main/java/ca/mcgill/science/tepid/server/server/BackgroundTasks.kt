@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.server
 
+import ca.mcgill.science.tepid.server.db.DB
 import org.apache.logging.log4j.kotlin.Logging
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -13,13 +14,16 @@ class BackgroundTasks : ServletContextListener {
 
     init {
         logger.info("Starting BackgroundTasks")
+        // initialising other things.
+        logger.info(Config)
+        logger.info(DB)
     }
 
     override fun contextInitialized(event: ServletContextEvent?) {
         scheduler = Executors.newScheduledThreadPool(2)
-        scheduler.scheduleAtFixedRate(JobMonitor(), 0, 30, TimeUnit.MINUTES)
-        scheduler.scheduleAtFixedRate(JobDataMonitor(), 0, 12, TimeUnit.HOURS)
-        scheduler.scheduleAtFixedRate(SessionMonitor(), 0, 4, TimeUnit.HOURS)
+        scheduler.scheduleAtFixedRate(JobMonitor(), 1, 30, TimeUnit.MINUTES)
+        scheduler.scheduleAtFixedRate(JobDataMonitor(), 1, 12, TimeUnit.HOURS)
+        scheduler.scheduleAtFixedRate(SessionMonitor(), 1, 4, TimeUnit.HOURS)
         scheduler.scheduleAtFixedRate(UserMembershipMonitor(), 1, 7, TimeUnit.DAYS)
         logger.info("BackgroundTasks initialized")
     }

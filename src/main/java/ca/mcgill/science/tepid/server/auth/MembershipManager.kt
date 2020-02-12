@@ -1,5 +1,6 @@
 package ca.mcgill.science.tepid.server.auth
 
+import ca.mcgill.science.tepid.models.data.Semester
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.logError
@@ -12,7 +13,7 @@ import javax.naming.directory.ModificationItem
 import javax.naming.directory.SearchControls
 import javax.naming.directory.SearchResult
 
-object ExchangeManager : Logging {
+object MembershipManager : Logging {
 
     private val ldapConnector = LdapConnector()
 
@@ -31,6 +32,18 @@ object ExchangeManager : Logging {
         val newStatus = setExchangeStudentLdap(shortUser, exchange)
         AuthenticationManager.refreshUser(shortUser)
         return newStatus
+    }
+
+    fun getEnrolledSemesters(shortUser: ShortUser): Set<Semester> {
+        logger.info { logMessage("getting enrolled semesters", "shortUser" to shortUser) }
+        return ldapConnector
+                .executeSearch("(&(objectClass=user)(${Ldap.SearchBy.sAMAccountName}=$shortUser))")
+                .first()
+                .let { LdapHelper.parseLdapGroups(it.attributes) }
+                .filterIsInstance<LdapHelper.ParsedLdapGroup.semester>()
+                .distinct()
+                .map { it.semester }
+                .toSet()
     }
 
     /**

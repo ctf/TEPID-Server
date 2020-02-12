@@ -7,7 +7,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-class ExchangeManagerIT : AuthIT() {
+class MembershipManagerIT : AuthIT() {
     fun isExchange(testSU: String): Boolean {
         val ldapUser = AuthenticationManager.queryUserLdap(testSU)
             ?: fail("Couldn't get test user $testSU from LDAP")
@@ -17,14 +17,14 @@ class ExchangeManagerIT : AuthIT() {
     fun addToExchangeStudent(testSU: String) {
         println("Adding")
         assertFalse(isExchange(testSU), "Precondition failed: user $testSU is already in LDAP group")
-        assertTrue(ExchangeManager.setExchangeStudent(testSU, true))
+        assertTrue(MembershipManager.setExchangeStudent(testSU, true))
         assertTrue(isExchange(testSU))
     }
 
     fun addToExchangeStudentAlreadyIn(testSU: String) {
         println("Re-adding")
         assertTrue(isExchange(testSU), "Precondition failed: user $testSU is not already in LDAP group")
-        assertTrue(ExchangeManager.setExchangeStudent(testSU, true))
+        assertTrue(MembershipManager.setExchangeStudent(testSU, true))
         assertTrue(isExchange(testSU))
     }
 
@@ -34,14 +34,14 @@ class ExchangeManagerIT : AuthIT() {
             isExchange(testSU),
             "Precondition failed: user $testSU is not already out of LDAP group"
         )
-        assertFalse(ExchangeManager.setExchangeStudent(testSU, false))
+        assertFalse(MembershipManager.setExchangeStudent(testSU, false))
         assertFalse(isExchange(testSU))
     }
 
     fun removeFromExchangeStudent(testSU: String) {
         println("Removing")
         assertTrue(isExchange(testSU), "Precondition failed: user $testSU is not already in LDAP group")
-        assertFalse(ExchangeManager.setExchangeStudent(testSU, false))
+        assertFalse(MembershipManager.setExchangeStudent(testSU, false))
         assertFalse(isExchange(testSU))
     }
 
@@ -65,6 +65,16 @@ class ExchangeManagerIT : AuthIT() {
                 println("Done")
             }
         }
+    }
+}
+
+class EnrolledSemestersIT : AuthIT() {
+    @Test
+    fun getEnrolledSemesters() {
+        val user = AuthenticationManager.queryUserLdap(PropsLDAPTestUser.TEST_USER) ?: fail()
+        val r = MembershipManager.getEnrolledSemesters(PropsLDAPTestUser.TEST_USER)
+
+        assertFalse { (r.isEmpty()) }
     }
 }
 

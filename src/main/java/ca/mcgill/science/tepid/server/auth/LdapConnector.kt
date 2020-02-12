@@ -1,6 +1,5 @@
 package ca.mcgill.science.tepid.server.auth
 
-import ca.mcgill.science.tepid.models.data.FullUser
 import ca.mcgill.science.tepid.models.data.ShortUser
 import ca.mcgill.science.tepid.server.server.Config
 import ca.mcgill.science.tepid.server.util.logError
@@ -52,8 +51,8 @@ class LdapConnector(val timeout: Int? = 5000) : Logging {
         searchFilter: String,
         limit: Long = 10,
         ctx: LdapContext? = bindLdapWithResource()
-    ): Set<FullUser> {
-        ctx ?: return emptySet()
+    ): List<SearchResult> {
+        ctx ?: return emptyList()
         val results: List<SearchResult>
         try {
             val searchControls = SearchControls()
@@ -68,7 +67,7 @@ class LdapConnector(val timeout: Int? = 5000) : Logging {
                 results = ctx.search(Config.LDAP_SEARCH_BASE, searchFilter, searchControls).toList()
             }
 
-            return results.map { LdapHelper.AttributesToUser(it.attributes, ctx) }.toSet()
+            return results
         } finally {
             ctx.close()
         }
