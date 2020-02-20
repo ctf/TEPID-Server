@@ -1,3 +1,4 @@
+import base64
 import json
 from contextlib import ExitStack
 from typing import List
@@ -49,6 +50,12 @@ def authenticate(props):
 	r = requests.post(url=URL, data=json.dumps(data), headers=headers)
 
 	return json.loads(r.content)
+
+
+def make_auth_headers(session):
+	token = str(base64.b64encode(f"{session['user']['shortUser']}:{session['_id']}".encode("utf-8")), "utf-8")
+	return {'Authorization': f"Token {token}"}
+
 
 if __name__ == '__main__':
 
