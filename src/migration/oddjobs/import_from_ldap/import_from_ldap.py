@@ -66,6 +66,17 @@ def get_user_semesters(props, shortUser, session):
 	return json.loads(r.content)
 
 
+def grant_user_semesters(props, shortUser, semesters, session):
+
+	URL = f"{props['URL']['SERVER_URL_PRODUCTION']}users/{shortUser}/semesters"
+
+	headers = make_auth_headers(session)
+	headers['content-type'] =  'application/json'
+
+	for semester in semesters:
+		r = requests.post(url=URL, data=json.dumps(semester), headers=headers)
+
+
 if __name__ == '__main__':
 
 	props_files = ['LDAP', 'LDAPResource', 'LDAPGroups', 'URL']
@@ -82,3 +93,5 @@ if __name__ == '__main__':
 
 		for shortUser in results:
 			semesters = get_user_semesters(props, shortUser, session)
+			grant_user_semesters(props, shortUser, semesters, session)
+
