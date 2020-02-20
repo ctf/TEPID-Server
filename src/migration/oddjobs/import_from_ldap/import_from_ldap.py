@@ -57,6 +57,15 @@ def make_auth_headers(session):
 	return {'Authorization': f"Token {token}"}
 
 
+def get_user_semesters(props, shortUser, session):
+	URL = f"{props['URL']['SERVER_URL_PRODUCTION']}users/{shortUser}/semesters?queryfor=enrolled"
+
+	headers = make_auth_headers(session)
+
+	r = requests.get(URL, headers=headers)
+	return json.loads(r.content)
+
+
 if __name__ == '__main__':
 
 	props_files = ['LDAP', 'LDAPResource', 'LDAPGroups', 'URL']
@@ -70,3 +79,6 @@ if __name__ == '__main__':
 		results = get_eligible_users_from_ldap(props)
 
 		session = authenticate(props)
+
+		for shortUser in results:
+			semesters = get_user_semesters(props, shortUser, session)
