@@ -12,6 +12,8 @@ def get_eligible_users_from_ldap(props) -> List[str]:
 	l = ldap.initialize(props['LDAP']['PROVIDER_URL'])
 	l.protocol_version = ldap.VERSION3
 	l.set_option(ldap.OPT_REFERRALS, 0)
+	l.set_option(ldap.OPT_NETWORK_TIMEOUT, 200000)
+	l.set_option(ldap.OPT_TIMEOUT, 200000)
 
 	unparsed_groups = map(lambda s: s.split('+'), [
 		props['LDAPGroups']['QUOTA_GROUPS'],
