@@ -25,6 +25,12 @@ def get_eligible_users_from_ldap(props) -> List[str]:
 		props['LDAP']['SECURITY_PRINCIPAL_PREFIX'] + props['LDAPResource']['LDAP_RESOURCE_USER'],
 		props['LDAPResource']['LDAP_RESOURCE_CREDENTIALS']
 		)
+	raw_results = l.search_s(
+		base=props['LDAP']['LDAP_SEARCH_BASE'],
+		scope=ldap.SCOPE_SUBTREE,
+		filterstr=f'(&(objectClass=user)(|{quota_groups_filter}))',
+		attrlist=["sAMAccountName"]
+		)
 
 if __name__ == '__main__':
 
