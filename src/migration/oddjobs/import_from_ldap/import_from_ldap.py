@@ -1,8 +1,10 @@
+import json
 from contextlib import ExitStack
 from typing import List
 
 import javaproperties
 import ldap
+import requests
 
 
 def get_eligible_users_from_ldap(props) -> List[str]:
@@ -35,6 +37,19 @@ def get_eligible_users_from_ldap(props) -> List[str]:
 	results = [r[1].get('sAMAccountName')[0].decode('utf-8') for r in raw_results[:-1]]
 	return results
 
+def authenticate(props):
+	URL = f"{props['URL']['SERVER_URL_PRODUCTION']}sessions/"
+
+	data = {
+		'username':props['LDAPResource']['LDAP_RESOURCE_USER'],
+		'password':props['LDAPResource']['LDAP_RESOURCE_CREDENTIALS']
+		}
+	headers = {'content-type': 'application/json'}
+
+	r = requests.post(url=URL, data=json.dumps(data), headers=headers)
+
+	return json.loads(r.content)
+
 if __name__ == '__main__':
 
 	props_files = ['LDAP', 'LDAPResource', 'LDAPGroups', 'URL']
@@ -46,3 +61,5 @@ if __name__ == '__main__':
 			}
 
 		results = get_eligible_users_from_ldap(props)
+
+		session = authenticate(props)
