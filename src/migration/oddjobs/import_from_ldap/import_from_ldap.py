@@ -32,6 +32,9 @@ def get_eligible_users_from_ldap(props) -> List[str]:
 		attrlist=["sAMAccountName"]
 		)
 
+	results = [r[1].get('sAMAccountName')[0].decode('utf-8') for r in raw_results[:-1]]
+	return results
+
 if __name__ == '__main__':
 
 	props_files = ['LDAP', 'LDAPResource', 'LDAPGroups', 'URL']
