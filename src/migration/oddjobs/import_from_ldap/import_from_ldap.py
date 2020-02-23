@@ -6,6 +6,7 @@ from typing import List
 import javaproperties
 import ldap
 import requests
+import logging
 
 from src.migration.oddjobs.tools import ldap_utils
 
@@ -44,7 +45,8 @@ def get_eligible_users_from_ldap(props) -> List[str]:
 
 	raw_results = ldap_utils.paged_search(l, query_function)
 
-	results = [r[1].get('sAMAccountName')[0].decode('utf-8') for r in raw_results[:-1]]
+	logging.info('parsing results')
+	results = [r[1].get('sAMAccountName')[0].decode('utf-8') for r in raw_results if r[0] is not None]
 	return results
 
 
