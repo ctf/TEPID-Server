@@ -7,4 +7,5 @@ pyasn1-modules==0.2.8
 python-ldap==3.2.0
 requests==2.23.0
 six==1.14.0
+tqdm==4.43.0
 urllib3==1.25.8

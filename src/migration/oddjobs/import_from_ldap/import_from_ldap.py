@@ -8,6 +8,7 @@ import ldap
 import requests
 import logging
 
+from tqdm import tqdm
 from src.migration.oddjobs.tools import ldap_utils
 
 
@@ -29,6 +30,7 @@ def get_eligible_users_from_ldap(props) -> List[str]:
 		map(lambda g: f"(memberOf:1.2.840.113556.1.4.1941:=cn={g},{props['LDAPGroups']['GROUPS_LOCATION']})",
 			quota_groups))
 
+	logging.info('binding to LDAP')
 	l.bind_s(
 		props['LDAP']['SECURITY_PRINCIPAL_PREFIX'] + props['LDAPResource']['LDAP_RESOURCE_USER'],
 		props['LDAPResource']['LDAP_RESOURCE_CREDENTIALS']
@@ -43,6 +45,7 @@ def get_eligible_users_from_ldap(props) -> List[str]:
 			serverctrls=[pagecontrol]
 			)
 
+	logging.info('executing query')
 	raw_results = ldap_utils.paged_search(l, query_function)
 
 	logging.info('parsing results')
@@ -69,12 +72,23 @@ def make_auth_headers(session):
 	return {'Authorization': f"Token {token}"}
 
 
+def get_user(props, userID, session):
+	URL = f"{props['URL']['SERVER_URL_PRODUCTION']}users/{userID}"
+
+	headers = make_auth_headers(session)
+
+	r = requests.get(URL, headers=headers)
+
+	return json.loads(r.content)
+
+
 def get_user_semesters(props, shortUser, session):
 	URL = f"{props['URL']['SERVER_URL_PRODUCTION']}users/{shortUser}/semesters?queryfor=enrolled"
 
 	headers = make_auth_headers(session)
 
 	r = requests.get(URL, headers=headers)
+
 	return json.loads(r.content)
 
 
@@ -98,10 +112,21 @@ if __name__ == '__main__':
 			for fname in props_files
 			}
 
+		logging.info('begin ldap query')
 		results = get_eligible_users_from_ldap(props)
 
+		logging.info('authenticate with tepid')
 		session = authenticate(props)
 
-		for shortUser in results:
-			semesters = get_user_semesters(props, shortUser, session)
-			grant_user_semesters(props, shortUser, semesters, session)
+		logging.info('add semesters')
+		for shortUser in tqdm(results):
+			try:
+				try:
+					semesters = get_user_semesters(props, shortUser, session)
+				except:
+					get_user(props, shortUser, session)
+					semesters = get_user_semesters(props, shortUser, session)
+
+				grant_user_semesters(props, shortUser, semesters, session)
+			except:
+				logging.error(f'failed processing for user {shortUser}')
