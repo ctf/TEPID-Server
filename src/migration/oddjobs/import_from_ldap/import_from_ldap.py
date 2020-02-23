@@ -1,14 +1,15 @@
 import base64
 import json
+import logging
 from contextlib import ExitStack
 from typing import List
 
 import javaproperties
 import ldap
 import requests
-import logging
-
+from joblib import delayed, Parallel
 from tqdm import tqdm
+
 from src.migration.oddjobs.tools import ldap_utils
 
 
@@ -102,7 +103,7 @@ def grant_user_semesters(props, shortUser, semesters, session):
 		r = requests.post(url=URL, data=json.dumps(semester), headers=headers)
 
 
-def migrate():
+def migrate(props, shortUser, session):
 	try:
 		try:
 			semesters = get_user_semesters(props, shortUser, session)
@@ -116,7 +117,6 @@ def migrate():
 
 
 if __name__ == '__main__':
-
 	props_files = ['LDAP', 'LDAPResource', 'LDAPGroups', 'URL']
 
 	with ExitStack() as ctx:
@@ -132,5 +132,7 @@ if __name__ == '__main__':
 		session = authenticate(props)
 
 		logging.info('add semesters')
-		for shortUser in tqdm(results):
-			migrate()
+
+		process = lambda x: migrate(props, x, session)
+
+		Parallel(n_jobs=16)(delayed(process)(x) for x in tqdm(results))
