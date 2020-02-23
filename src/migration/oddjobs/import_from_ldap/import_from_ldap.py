@@ -7,6 +7,8 @@ import javaproperties
 import ldap
 import requests
 
+from src.migration.oddjobs.tools import ldap_utils
+
 
 def get_eligible_users_from_ldap(props) -> List[str]:
 	l = ldap.initialize(props['LDAP']['PROVIDER_URL'])
@@ -30,22 +32,28 @@ def get_eligible_users_from_ldap(props) -> List[str]:
 		props['LDAP']['SECURITY_PRINCIPAL_PREFIX'] + props['LDAPResource']['LDAP_RESOURCE_USER'],
 		props['LDAPResource']['LDAP_RESOURCE_CREDENTIALS']
 		)
-	raw_results = l.search_s(
-		base=props['LDAP']['LDAP_SEARCH_BASE'],
-		scope=ldap.SCOPE_SUBTREE,
-		filterstr=f'(&(objectClass=user)(|{quota_groups_filter}))',
-		attrlist=["sAMAccountName"]
-		)
+
+	def query_function(pagecontrol):
+		return l.search_ext(
+			base=props['LDAP']['LDAP_SEARCH_BASE'],
+			scope=ldap.SCOPE_SUBTREE,
+			filterstr=f'(&(objectClass=user)(|{quota_groups_filter}))',
+			attrlist=["sAMAccountName"],
+			serverctrls=[pagecontrol]
+			)
+
+	raw_results = ldap_utils.paged_search(l, query_function)
 
 	results = [r[1].get('sAMAccountName')[0].decode('utf-8') for r in raw_results[:-1]]
 	return results
+
 
 def authenticate(props):
 	URL = f"{props['URL']['SERVER_URL_PRODUCTION']}sessions/"
 
 	data = {
-		'username':props['LDAPResource']['LDAP_RESOURCE_USER'],
-		'password':props['LDAPResource']['LDAP_RESOURCE_CREDENTIALS']
+		'username': props['LDAPResource']['LDAP_RESOURCE_USER'],
+		'password': props['LDAPResource']['LDAP_RESOURCE_CREDENTIALS']
 		}
 	headers = {'content-type': 'application/json'}
 
@@ -69,11 +77,10 @@ def get_user_semesters(props, shortUser, session):
 
 
 def grant_user_semesters(props, shortUser, semesters, session):
-
 	URL = f"{props['URL']['SERVER_URL_PRODUCTION']}users/{shortUser}/semesters"
 
 	headers = make_auth_headers(session)
-	headers['content-type'] =  'application/json'
+	headers['content-type'] = 'application/json'
 
 	for semester in semesters:
 		r = requests.post(url=URL, data=json.dumps(semester), headers=headers)
@@ -96,4 +103,3 @@ if __name__ == '__main__':
 		for shortUser in results:
 			semesters = get_user_semesters(props, shortUser, session)
 			grant_user_semesters(props, shortUser, semesters, session)
-
