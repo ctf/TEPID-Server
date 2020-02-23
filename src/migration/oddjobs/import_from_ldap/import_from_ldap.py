@@ -102,6 +102,19 @@ def grant_user_semesters(props, shortUser, semesters, session):
 		r = requests.post(url=URL, data=json.dumps(semester), headers=headers)
 
 
+def migrate():
+	try:
+		try:
+			semesters = get_user_semesters(props, shortUser, session)
+		except:
+			get_user(props, shortUser, session)
+			semesters = get_user_semesters(props, shortUser, session)
+
+		grant_user_semesters(props, shortUser, semesters, session)
+	except:
+		logging.error(f'failed processing for user {shortUser}')
+
+
 if __name__ == '__main__':
 
 	props_files = ['LDAP', 'LDAPResource', 'LDAPGroups', 'URL']
@@ -120,13 +133,4 @@ if __name__ == '__main__':
 
 		logging.info('add semesters')
 		for shortUser in tqdm(results):
-			try:
-				try:
-					semesters = get_user_semesters(props, shortUser, session)
-				except:
-					get_user(props, shortUser, session)
-					semesters = get_user_semesters(props, shortUser, session)
-
-				grant_user_semesters(props, shortUser, semesters, session)
-			except:
-				logging.error(f'failed processing for user {shortUser}')
+			migrate()
